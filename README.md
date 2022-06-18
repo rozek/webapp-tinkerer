@@ -64,9 +64,9 @@ The initial version of WAT is the absolutely "minimal viable product" the author
 * find visuals containing a given text
 * find visuals with a given state (e.g., pending script, pending error)
 * remove jQuery dependency
-* integrate [JS-Interpreter](https://github.com/NeilFraser/JS-Interpreter)
-* inspect and debug JS-Interpreter scripts
-* optional: perhaps integrate [Blockly](https://github.com/google/blockly)
+* integrate [JS-Interpreter](https://github.com/NeilFraser/JS-Interpreter) (yet to be developed)
+* inspect and debug JS-Interpreter scripts (yet to be developed)
+* optional: perhaps integrate [Blockly](https://github.com/google/blockly) (yet to be developed)
 
 and, of course, many additional masters
 
