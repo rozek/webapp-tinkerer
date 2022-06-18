@@ -18,9 +18,11 @@ Compared to HyperCard, WAT lacks
 On the other side, WAT offers
 
 * support for many platforms and form factors,
-* no need for any installation, automatic updates (if desired)
 * access to all [Web APIs](https://whatwebcando.today/) (e.g., Bluetooth, RTC, Speech Synthesis and Recognition, AR and VR and much more)
+* no need for an explicit installation
+* automatic updates (if desired)
 
+(t.b.c.)
 
 
 
