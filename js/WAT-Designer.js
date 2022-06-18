@@ -4874,18 +4874,40 @@ var WAD;
             this.configureDialog();
             this.configureCloseButton();
             this.cacheNamedElements();
-            this.ScriptInput.replaceWith('<div name="ScriptInput"></div>');
-            this.ScriptInput = this.Peer.find('[name="ScriptInput"]');
-            this.CodeFlask = new CodeFlask(this.ScriptInput[0], { language: 'js', lineNumbers: true });
+            /*
+                  this.ScriptInput.replaceWith('<div name="ScriptInput"></div>')
+                  this.ScriptInput = this.Peer.find('[name="ScriptInput"]')
+            
+                  this.CodeFlask = new CodeFlask(this.ScriptInput[0],{ language:'js', lineNumbers:true })
+            */
             this.defineElementBehaviours();
         };
         /**** define element behaviours ****/
         WAD_ScriptEditor.prototype.defineElementBehaviours = function () {
             var _this = this;
-            this.CodeFlask.onUpdate(function (Code) {
+            /*
+                  this.CodeFlask.onUpdate((Code:string) => {// also triggered by "updateCode"
+                    if (memoized('chosenApplet') == null) { return }
+            
+                    ScriptEditor.clearError()
+                    tryTo(() => {
+                      let actualScript = memoized('selected' + this.Mode + 'sScript')
+                      if (ValueIsString(actualScript) && (actualScript !== Code)) {
+                        switch (this.Mode) {
+                          case 'Applet':    doSetPendingScriptOfSelectedAppletsTo(Code); break
+                          case 'Card':      doSetPendingScriptOfSelectedCardsTo(Code);   break
+                          case 'Component': doSetPendingScriptOfSelectedComponentsTo(Code)
+                        }
+                        this.pendingUserEdits = true
+                      }
+                    })
+                  })
+            */
+            this.ScriptInput.on('input', function () {
                 if (memoized('chosenApplet') == null) {
                     return;
                 }
+                var Code = ScriptEditor.ScriptInput.val();
                 ScriptEditor.clearError();
                 tryTo(function () {
                     var actualScript = memoized('selected' + _this.Mode + 'sScript');
@@ -4945,13 +4967,15 @@ var WAD;
         };
         /**** close (specific implementation) ****/
         WAD_ScriptEditor.prototype.close = function () {
-            this.CodeFlask.updateCode('');
+            //    this.CodeFlask.updateCode('')
+            this.ScriptInput.val('');
             this.pendingUserEdits = false;
             this.hide();
         }; /**** onTick ****/
         WAD_ScriptEditor.prototype.onTick = function () {
             if (chosenDesignerInfo == null) {
-                this.CodeFlask.updateCode('');
+                //      this.CodeFlask.updateCode('')
+                this.ScriptInput.val('');
                 this.hide();
                 return;
             }
@@ -4961,14 +4985,17 @@ var WAD;
             }
             var actualScript = memoized('selected' + this.Mode + 'sScript');
             if (!ValueIsString(actualScript) && !this.pendingUserEdits) {
-                this.CodeFlask.updateCode('');
+                //      this.CodeFlask.updateCode('')
+                this.ScriptInput.val('');
                 this.hide();
                 return;
             }
-            var shownScript = this.CodeFlask.getCode();
+            //    let shownScript = this.CodeFlask.getCode()
+            var shownScript = this.ScriptInput.val();
             if (ValueIsString(actualScript) && (actualScript !== shownScript) &&
                 !this.pendingUserEdits) {
-                this.CodeFlask.updateCode(actualScript);
+                //      this.CodeFlask.updateCode(actualScript)
+                this.ScriptInput.val(actualScript);
             }
             var activeScript = memoized('selected' + this.Mode + 'sActiveScript');
             var mayBeApplied = (activeScript !== shownScript);
