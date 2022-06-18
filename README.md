@@ -43,6 +43,17 @@ On the other side, WAT offers
 
 * 0.1.0 Initial Release (absolutely Minimum Viable Product, MVP)<br>*(to be launched on Tuesday, June 21, 2022)*
 
+## Credits ##
+
+WAT internally uses the following open-source software:
+
+* [jQuery](https://github.com/jquery/jquery) - temporarily only, to be removed
+* [JavaScript Interface Library](https://github.com/rozek/javascript-interface-library)
+* [localForage](https://github.com/localForage/localForage)
+* [download](http://danml.com/download.html)
+* [CodeFlask](https://github.com/kazzkiq/CodeFlask)
+* [Pell](https://github.com/jaredreich/pell)
+
 ## License ##
 
 [MIT License](LICENSE.md)
