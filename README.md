@@ -40,7 +40,7 @@ On the other side, WAT offers
 
 ## Roadmap ##
 
-The initial version of WAT is the absolutely minimal "minimal viable product" the author could think of - usable to develop (yet very simple) web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
+The initial version of WAT is the absolutely minimal "minimal viable product" (MVP) the author could think of - usable to develop (yet very simple) web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
 
 * test on multiple platforms and browsers (Chrome, Firefox, Safari)
 * full support for mobile and touch devices, including convertibles (still requires some tweaks)
