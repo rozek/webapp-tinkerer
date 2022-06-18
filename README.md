@@ -4,6 +4,8 @@
 
 The **WebApp Tinkerer** (**WAT**) allows people to develop web applications directly in their browser. Both the development environment and the final application may be run on many operating systems (such as Windows, Linux, macOS, iOS, iPadOS, Android, ChromeOS) and on devices with multiple form factors (such as desktops, notebooks, convertibles, tablets, smartphones) - although developing on smartphones may be challenging because of their small displays (from a technical viewpoint, however, it is absolutely feasible). Even smartwatches may run WAT applications if they provide a modern browser.
 
+#### The Inspiration ####
+
 WAT was inspired by the incredibly brilliant [HyperCard](https://en.wikipedia.org/wiki/HyperCard), but it is by no means any kind of HyperCard "clone".
 
 Compared to HyperCard, WAT lacks
