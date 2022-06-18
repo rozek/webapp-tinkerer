@@ -42,13 +42,13 @@ On the other side, WAT offers
 
 ### Scripting ###
 
-### intrinsic Properties ###
+### Intrinsic Properties ###
 
-### custom Properties ###
+### Custom Properties ###
 
 ### Event Handling ###
 
-### Reactivd Programming ###
+### Reactive Programming ###
 
 (t.b.c.)
 
