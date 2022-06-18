@@ -5976,7 +5976,7 @@ var WAT;
     }(WAT_Control));
     $(document.body).on('input', '.WAT.Control.nativeNumberInput > input', function () {
         var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [parseFloat($(this.SubPeer).val())]);
+        SubPeer.parent().trigger('value-changed', [parseFloat(SubPeer.val())]);
     });
     $(document.body).on('after-refresh', '.WAT.Control.nativeNumberInput', function () {
         var Visual = WAT.VisualOfElement(this);
