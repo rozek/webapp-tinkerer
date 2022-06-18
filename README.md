@@ -19,8 +19,6 @@
 
 &nbsp;
 
-&nbsp;
-
 <script name="JIL"         src="js/javascript-interface-library.js"></script>
 <script name="jquery"      src="js/jquery-1.12.4.min.js"></script>
 <script name="localforage" src="js/localforage.min.js"></script>
