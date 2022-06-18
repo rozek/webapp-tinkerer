@@ -8,6 +8,8 @@ The **WebApp Tinkerer** (**WAT**) allows people to **develop web applications di
 
 **(WAT is currently under active development, please stay tuned - it is planned to be finished by end of July)**
 
+(current Version, Browser Requirements)
+
 **WAT vs. HyperCard**
 
 WAT was inspired by the incredibly brilliant [HyperCard](https://en.wikipedia.org/wiki/HyperCard), but it is by no means any kind of HyperCard "clone".
