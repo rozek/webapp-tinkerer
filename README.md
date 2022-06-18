@@ -31,6 +31,7 @@ On the other side, WAT offers
   <div id="Applet" class="WAT Applet" style="
     display:block; position:relative; overflow:hidden;
     width:480px; height:320px;
+    border:dotted 1px black; border-radius:20px;
     background:white; color:black;
   "></div>
 
@@ -39,7 +40,7 @@ On the other side, WAT offers
 
 ## Roadmap ##
 
-The initial version of WAT is the absolutely "minimal viable product" the author could think of - usable to develop first and very simple web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
+The initial version of WAT is the absolutely "minimal viable product" the author could think of - usable to develop (yet very simple) web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
 
 * full support for mobile and touch devices, including convertibles (still requires some tweaks)
 * test on [Electron](https://www.electronjs.org/) and [NW.js](https://nwjs.io/) with internal dialogs
