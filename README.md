@@ -30,7 +30,7 @@ On the other side, WAT offers
 
 ## User Manual ##
 
-(Designer Button, Toolbox, Layout Mode, Layouting, Nudger, Configuration Dialog, Script Editor, Applet Import, Applet Export)
+(Designer Button, Toolbox, Layout Mode, Layouting (Matte, Positioning Guides), Nudger, Configuration Dialog (for Applet, Card, Component Selection), Script Editor (for Applet, Card, Component Selection), Applet Import, Applet Export)
 
 ### How to embed WAT Applets ###
 
