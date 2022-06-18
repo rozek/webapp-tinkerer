@@ -91,7 +91,7 @@ The initial version of WAT is the absolutely minimal "minimal viable product" (M
 * Master Scripting (develop your own masters, directly in the browser)
 * extended Import (import one or multiple cards or components)
 * additional import sources (i.e., from a given URL or from GitHub, with authentication)
-* allow Drag-and-Drop import from filesystem onto applet itself
+* allow Drag-and-Drop import from filesystem onto applet itself (rather than Inspector)
 * native Drag-and-Drop
 * additional export targets (i.e., to a given URL or to GitHub, with authentication)
 * export complete web applications
