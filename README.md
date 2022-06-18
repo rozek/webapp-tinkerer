@@ -31,6 +31,7 @@ On the other side, WAT offers
   <div id="Applet" class="WAT Applet" style="
     display:block; position:relative; overflow:hidden;
     width:480px; height:320px;
+    border:dotted 1px black; border-radius:20px,
     background:white; color:black;
   "></div>
 
