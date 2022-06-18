@@ -37,6 +37,39 @@ On the other side, WAT offers
 
 
 
+## Roadmap ##
+
+The initial version of WAT is the absolutely "minimal viable product" the author could think of - usable to develop first and very simple web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
+
+* Undo/Redo
+* (Card) Visit History
+* local Backup in the Browser (using localForage)
+* Synchronisation with external Server (develop the same WebApp from several computers)
+* Support for designing "Compounds"
+* Support for designing multiple cards
+* Resource Handling (Resources are additional, usually external, CSS and Script files an applet may need)
+* Master Scripting (develop your own masters, directly in the browser)
+* extended Import (import one or multiple cards or components)
+* additional import sources (i.e., from a given URL or from GitHub, with authentication)
+* allow Drag-and-Drop import from filesystem onto applet itself
+* additional export targets (i.e., to a given URL or to GitHub, with authentication)
+* export complete web applications
+* Applet Overview (choose from all applets on a given web document)
+* Card Overview (manage presence and order of all cards in an applet)
+* Overview of Visuals with prominent names
+* Overview of Visuals with reactive Variables
+* Overview of currently known reactive Variables
+* Overview of all Masters (and their actual usage)
+* applet-wide event handling (aka message bus, publish/subscribe)
+* find visuals containing a given text
+* find visuals with a given state (e.g., pending script, pending error)
+* remove jQuery dependency
+* integrate [JS-Interpreter](https://github.com/NeilFraser/JS-Interpreter)
+* inspect and debug JS-Interpreter scripts
+* optional: perhaps integrate [Blockly](https://github.com/google/blockly)
+
+and, of course, many additional masters
+
 ## Version History ##
 
 (in reverse chronological order)
