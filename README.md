@@ -66,6 +66,7 @@ The initial version of WAT is the absolutely "minimal viable product" the author
 * remove jQuery dependency
 * integrate [JS-Interpreter](https://github.com/NeilFraser/JS-Interpreter) (yet to be developed)
 * inspect and debug JS-Interpreter scripts (yet to be developed)
+* optional: add predefined "interactions" (to avoid scripting, yet to be developed)
 * optional: perhaps integrate [Blockly](https://github.com/google/blockly) (yet to be developed)
 
 and, of course, many additional masters
