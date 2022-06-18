@@ -2,6 +2,7 @@
 
 > This file is meant to be read as a "GitHub Page". If it looks "strange" because of visible &lt;script&gt; tags (or others), you should probably navigate to [https://rozek.github.io/webapp-tinkerer/](https://rozek.github.io/webapp-tinkerer/) instead
 
+*(currently under active development, please stay tuned - to be finished by end of July)*
 
   <div id="Applet" class="WAT Applet" style="
     display:block; position:relative; overflow:hidden;
@@ -11,6 +12,10 @@
 
 
 
+
+## License ##
+
+[MIT License](LICENSE.md)
 
 <script name="JIL"         src="js/javascript-interface-library.js"></script>
 <script name="jquery"      src="js/jquery-1.12.4.min.js"></script>
