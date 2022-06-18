@@ -4,6 +4,9 @@
 
 *(currently under active development, please stay tuned - to be finished by end of July)*
 
+
+
+
   <div id="Applet" class="WAT Applet" style="
     display:block; position:relative; overflow:hidden;
     width:480px; height:320px;
@@ -14,6 +17,8 @@
 
 
 ## Version History ##
+
+(in reverse chronological order)
 
 * 0.1.0 Initial Release (Minimum Viable Product, MVP)<br>*(to be launched on Tuesday, June 21, 2022)*
 
