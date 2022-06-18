@@ -39,7 +39,7 @@ On the other side, WAT offers
 
 (in reverse chronological order)
 
-* 0.1.0 Initial Release (Minimum Viable Product, MVP)<br>*(to be launched on Tuesday, June 21, 2022)*
+* 0.1.0 Initial Release (absolutely Minimum Viable Product, MVP)<br>*(to be launched on Tuesday, June 21, 2022)*
 
 ## License ##
 
