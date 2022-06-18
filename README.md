@@ -28,6 +28,10 @@ On the other side, WAT offers
 
 (runtime and designer, nested visuals, categories, applets, cards, compounds, controls, containers, components, master, builtin and custom, resources, configuration, custom properties, scripts, active and pending, event handling, bubbling, applet-wide, publish and subscribe, reactive programming, unique names)
 
+## User Manual ##
+
+(Designer Button, Toolbox, Layout Mode, Layouting, Nudger, Configuration Dialog, Script Editor)
+
 ### Resources ###
 
 ### Masters ###
@@ -71,6 +75,7 @@ The initial version of WAT is the absolutely minimal "minimal viable product" (M
 * test on multiple platforms and browsers (Chrome, Firefox, Safari)
 * full support for mobile and touch devices, including convertibles (still requires some tweaks)
 * test on [Electron](https://www.electronjs.org/) and [NW.js](https://nwjs.io/) with internal dialogs
+* Keyboard Bindings
 * Undo/Redo
 * (Card) Visit History
 * local Backup in the Browser (using localForage)
