@@ -1,6 +1,6 @@
 **Web Application Development made easy**
 
-> This file is meant to be read as a "GitHub Page". If it looks "strange" because of visible &lt;script&gt; tags (or others), you should probably navigate to [https://rozek.github.io/webapp-tinkerer/](https://rozek.github.io/webapp-tinkerer/) instead
+> This file is meant to be read as a "GitHub Page". If it looks "strange" because of visible &lt;script&gt; tags (or others), you should probably navigate to [https://rozek.github.io/webapp-tinkerer/](https://rozek.github.io/webapp-tinkerer/)
 
 The **WebApp Tinkerer** (**WAT**) allows people to **develop web applications directly in a browser**. Both the development environment and the final application may be run on **many operating systems** (such as Windows, Linux, macOS, iOS, iPadOS, Android, ChromeOS) and on devices with *multiple form factors* (such as desktops, notebooks, convertibles, tablets, smartphones) - although developing on smartphones may be challenging because of their small displays (from a technical viewpoint, however, it is absolutely feasible). Even smartwatches may run WAT applications if they provide a modern browser and the applications were designed for such small displays.
 
