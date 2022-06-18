@@ -30,7 +30,7 @@ On the other side, WAT offers
 
 ## User Manual ##
 
-(Designer Button, Toolbox, Layout Mode, Layouting, Nudger, Configuration Dialog, Script Editor)
+(Designer Button, Toolbox, Layout Mode, Layouting, Nudger, Configuration Dialog, Script Editor, Applet Import, Applet Export)
 
 ### Resources ###
 
