@@ -17,7 +17,7 @@ On the other side, WAT offers
 * no need for any installation, automatic updates (if desired)
 * access to all [Web APIs](https://whatwebcando.today/) (e.g., Bluetooth, RTC, Speech Synthesis and Recognition, AR and VR and much more)
 
-*(WAT is currently under active development, please stay tuned - to be finished by end of July)*
+**(WAT is currently under active development, please stay tuned - to be finished by end of July)**
 
 
 
