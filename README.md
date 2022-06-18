@@ -42,7 +42,7 @@ On the other side, WAT offers
 The initial version of WAT is the absolutely "minimal viable product" the author could think of - usable to develop first and very simple web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
 
 * full support for mobile and touch devices, including convertibles (still requires some tweaks)
-* support for [Electron](https://www.electronjs.org/) and [NW.js](https://nwjs.io/) (external dialogs)
+* test on [Electron](https://www.electronjs.org/) and [NW.js](https://nwjs.io/) with internal dialogs
 * Undo/Redo
 * (Card) Visit History
 * local Backup in the Browser (using localForage)
@@ -66,6 +66,7 @@ The initial version of WAT is the absolutely "minimal viable product" the author
 * find visuals containing a given text
 * find visuals with a given state (e.g., pending script, pending error)
 * remove jQuery dependency
+* support for [Electron](https://www.electronjs.org/) and [NW.js](https://nwjs.io/) with external dialogs (yet to be developed)
 * integrate [JS-Interpreter](https://github.com/NeilFraser/JS-Interpreter) (yet to be developed)
 * inspect and debug JS-Interpreter scripts (yet to be developed)
 * optional: add predefined "interactions" (to avoid scripting, yet to be developed)
