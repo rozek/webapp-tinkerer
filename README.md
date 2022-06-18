@@ -32,7 +32,7 @@ On the other side, WAT offers
 
 (Designer Button, Toolbox, Layout Mode, Layouting, Nudger, Configuration Dialog, Script Editor, Applet Import, Applet Export)
 
-## How to embed WAT Applets ##
+### How to embed WAT Applets ###
 
 ### Resources ###
 
