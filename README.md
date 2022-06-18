@@ -41,6 +41,8 @@ On the other side, WAT offers
 
 The initial version of WAT is the absolutely "minimal viable product" the author could think of - usable to develop first and very simple web applications, but lacking many features users would normally expect. These features are planned to be integrated until end of July 2022:
 
+* full support for mobile and touch devices, including convertibles (still requires some tweaks)
+* test with [Electron](https://www.electronjs.org/) and [NW.js](https://nwjs.io/)
 * Undo/Redo
 * (Card) Visit History
 * local Backup in the Browser (using localForage)
