@@ -92,6 +92,7 @@ The initial version of WAT is the absolutely minimal "minimal viable product" (M
 * extended Import (import one or multiple cards or components)
 * additional import sources (i.e., from a given URL or from GitHub, with authentication)
 * allow Drag-and-Drop import from filesystem onto applet itself
+* native Drag-and-Drop
 * additional export targets (i.e., to a given URL or to GitHub, with authentication)
 * export complete web applications
 * Applet Overview (choose from all applets on a given web document)
