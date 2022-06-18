@@ -10,7 +10,11 @@ The **WebApp Tinkerer** (**WAT**) allows people to **develop web applications di
 
 (current Version, Browser Requirements)
 
-**WAT vs. HyperCard**
+## Introduction ##
+
+(runtime and designer, nested visuals, categories, applets, cards, compounds, controls, containers, components, master, builtin and custom, resources, configuration, custom properties, scripts, active and pending, event handling, bubbling, applet-wide, publish and subscribe, reactive programming, unique names)
+
+### WAT vs. HyperCard ###
 
 WAT was inspired by the incredibly brilliant [HyperCard](https://en.wikipedia.org/wiki/HyperCard), but it is by no means any kind of HyperCard "clone".
 
@@ -25,10 +29,6 @@ On the other side, WAT offers
 * access to all [Web APIs](https://whatwebcando.today/) (e.g., Bluetooth, RTC, Speech Synthesis and Recognition, AR/VR and many more)
 * no need for an explicit installation
 * automatic updates (if desired)
-
-## Introduction ##
-
-(runtime and designer, nested visuals, categories, applets, cards, compounds, controls, containers, components, master, builtin and custom, resources, configuration, custom properties, scripts, active and pending, event handling, bubbling, applet-wide, publish and subscribe, reactive programming, unique names)
 
 ## User Manual ##
 
