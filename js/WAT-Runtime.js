@@ -314,6 +314,58 @@ var WAT;
         throwError('ReadOnlyProperty: property ' + quoted(Name) + ' must not be set');
     }
     WAT.throwReadOnlyError = throwReadOnlyError;
+    /**** TouchEventHandler ****/
+    // see https://stackoverflow.com/questions/1517924/javascript-mapping-touch-events-to-mouse-events
+    // and https://stackoverflow.com/questions/5885808/includes-touch-events-clientx-y-scrolling-or-not
+    function TouchEventHandler(Event) {
+        var EventType;
+        switch (Event.type) {
+            case "touchstart":
+                EventType = "mousedown";
+                break;
+            case "touchmove":
+                EventType = "mousemove";
+                break;
+            case "touchend":
+                EventType = "mouseup";
+                break;
+            case "touchcancel":
+                EventType = "mouseup";
+                break;
+            default: return;
+        }
+        ;
+        var firstTouch = Event.changedTouches[0];
+        var clientX = firstTouch.clientX, pageX = firstTouch.pageX, PageXOffset = window.pageXOffset;
+        var clientY = firstTouch.clientY, pageY = firstTouch.pageY, PageYOffset = window.pageYOffset;
+        if ((pageX === 0) && (Math.floor(clientX) > Math.floor(pageX)) ||
+            (pageY === 0) && (Math.floor(clientY) > Math.floor(pageY))) {
+            clientX -= PageXOffset;
+            clientY -= PageYOffset;
+        }
+        else if ((clientX < pageX - PageXOffset) || (clientY < pageY - PageYOffset)) {
+            clientX = pageX - PageXOffset;
+            clientY = pageY - PageYOffset;
+        }
+        var simulatedEvent = document.createEvent("MouseEvent");
+        simulatedEvent.initMouseEvent(EventType, true, true, window, 1, // type, canBubble, cancelable, view, clickCount,
+        firstTouch.screenX, firstTouch.screenY, // screenX, screenY,
+        clientX, clientY, // clientX, clientY,
+        false, false, false, false, 0, null // ctrlKey, altKey, shiftKey, metaKey, button, relatedTarget
+        );
+        var MouseGrabLayer = document.getElementById('MouseGrabLayer');
+        if (MouseGrabLayer == null) {
+            firstTouch.target.dispatchEvent(simulatedEvent);
+        }
+        else {
+            MouseGrabLayer.dispatchEvent(simulatedEvent);
+        }
+    }
+    ;
+    document.addEventListener('touchstart', TouchEventHandler, true);
+    document.addEventListener('touchmove', TouchEventHandler, true);
+    document.addEventListener('touchend', TouchEventHandler, true);
+    document.addEventListener('touchcancel', TouchEventHandler, true);
     function parseHTML(HTML, Callbacks) {
         var StartTagPattern = /^<([-a-z0-9]+)((?:[\s\xA0]+[-a-z0-9_]+(?:[\s\xA0]*=[\s\xA0]*(?:(?:"[^"]*")|(?:'[^']*')|[^>\s\xA0]+))?)*)[\s\xA0]*(\/?)>/i;
         var EndTagPattern = /^<\/([-a-z0-9_]+)[^>]*>/i;
