@@ -129,14 +129,19 @@ WAT internally uses the following open-source software:
 * [JavaScript Interface Library](https://github.com/rozek/javascript-interface-library)
 * [localForage](https://github.com/localForage/localForage)
 * [download](http://danml.com/download.html)
-* [CodeFlask](https://github.com/kazzkiq/CodeFlask)
-* [Pell](https://github.com/jaredreich/pell)
+* ~~[CodeFlask](https://github.com/kazzkiq/CodeFlask)~~
+* ~~[Pell](https://github.com/jaredreich/pell)~~
 
 ## License ##
 
 [MIT License](LICENSE.md)
 
 &nbsp;
+
+<style>
+  html { width:100%; height:100% }
+  body { min-width:100%; min-height:100% }
+</style>
 
 <script name="JIL"         src="js/javascript-interface-library.js"></script>
 <script name="jquery"      src="js/jquery-1.12.4.min.js"></script>
