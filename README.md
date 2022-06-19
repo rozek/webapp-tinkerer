@@ -37,6 +37,8 @@ On the other side, WAT offers
 
 ### How to embed WAT Applets ###
 
+(Runtime with/without Designer, dependencies, applet template or serialization)
+
 ### Resources ###
 
 ### Masters ###
