@@ -8774,6 +8774,7 @@ var WAT;
                         _a.sent();
                         WAT_isRunning = true;
                         invokeAllRunningFunctionsToCall();
+debugger
                         if (Designer != null) {
                             $('.WAT.Applet').each(function () {
                                 Designer.createDesignerButtonForApplet(VisualOfElement(this));
