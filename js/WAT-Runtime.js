@@ -8716,7 +8716,7 @@ var WAT;
     // ReadyFunctionsToCall may be extended while invokeAllReadyFunctionsToCall is running!
     var ReadyFunctionsAreRunning = false;
     function invokeAllReadyFunctionsToCall() {
-        console.log('WAT is ready');
+        console.info('WAT is ready');
         ReadyFunctionsAreRunning = true;
         for (var i = 0; i < ReadyFunctionsToCall.length; i++) {
             try {
@@ -8745,7 +8745,7 @@ var WAT;
     // RunningFunctionsToCall may be extended while invokeAllRunningFunctionsToCall is running!
     var RunningFunctionsAreRunning = false;
     function invokeAllRunningFunctionsToCall() {
-        console.log('WAT is running');
+        console.info('WAT is running');
         RunningFunctionsAreRunning = true;
         for (var i = 0; i < RunningFunctionsToCall.length; i++) {
             try {
@@ -8826,5 +8826,5 @@ var WAT;
         startWAT();
     }
     $(startup);
-    console.log('WAT is available');
+    console.info('WAT is available');
 })(WAT || (WAT = {}));
