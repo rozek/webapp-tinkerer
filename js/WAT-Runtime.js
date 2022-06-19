@@ -2013,19 +2013,21 @@ var WAT;
         KeyCounter += 1;
         return 'BRE-' + KeyCounter;
     }
-    $(document).on('value-changed', '.WAT', function (Event, newValue) {
-        if (Event.target !== this) {
-            return;
-        }
-        var Visual = VisualOfElement(this);
-        if (Visual == null) {
-            return;
-        }
-        var reactiveVariable = Visual.reactiveVariable;
-        if (reactiveVariable != null) {
-            console.log('reactiveVariable', reactiveVariable, ' = ', newValue);
-            ReactivityContextOfApplet(Visual.Applet).setReactiveVariable(reactiveVariable, newValue);
-        }
+    $(function () {
+        $(document).on('value-changed', '.WAT', function (Event, newValue) {
+            if (Event.target !== this) {
+                return;
+            }
+            var Visual = VisualOfElement(this);
+            if (Visual == null) {
+                return;
+            }
+            var reactiveVariable = Visual.reactiveVariable;
+            if (reactiveVariable != null) {
+                console.log('reactiveVariable', reactiveVariable, ' = ', newValue);
+                ReactivityContextOfApplet(Visual.Applet).setReactiveVariable(reactiveVariable, newValue);
+            }
+        });
     });
     /**** [set]ErrorInfoOfVisual ****/
     function ErrorInfoOfVisual(Visual) {
@@ -4618,9 +4620,11 @@ var WAT;
         });
         return WAT_ImageView;
     }(WAT_Control));
-    $(document.body).on('after-refresh', '.WAT.Control.ImageView', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('after-refresh', '.WAT.Control.ImageView', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['ImageView'.toLowerCase()] = {
         Category: 'Control', Name: 'ImageView',
@@ -4754,9 +4758,11 @@ var WAT;
         });
         return WAT_IFrameView;
     }(WAT_Control));
-    $(document.body).on('after-refresh', '.WAT.Control.IFrameView', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('after-refresh', '.WAT.Control.IFrameView', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['IFrameView'.toLowerCase()] = {
         Category: 'Control', Name: 'IFrameView',
@@ -4803,13 +4809,15 @@ var WAT;
         });
         return WAT_nativePushButton;
     }(WAT_Control));
-    $(document.body).on('click', '.WAT.Control.nativePushButton > button', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('triggered');
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativePushButton', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('click', '.WAT.Control.nativePushButton > button', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('triggered');
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativePushButton', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativePushButton'.toLowerCase()] = {
         Category: 'Control', Name: 'nativePushButton',
@@ -4899,24 +4907,26 @@ var WAT;
         });
         return WAT_nativeCheckbox;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeCheckbox > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeCheckbox', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
-    });
-    $(document.body).on('before-serialization', '.WAT.Control.nativeCheckbox', function () {
-        var Visual = WAT.VisualOfElement(this);
-        $(this).attr('value', Visual.Value);
-    });
-    $(document.body).on('after-deserialization', '.WAT.Control.nativeCheckbox', function () {
-        var Value = $(this).attr('value');
-        if (Value != null) {
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeCheckbox > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeCheckbox', function () {
             var Visual = WAT.VisualOfElement(this);
-            Visual.Value = Value;
-        }
+            Visual['SubPeer'] = $(this).children()[0];
+        });
+        $(document.body).on('before-serialization', '.WAT.Control.nativeCheckbox', function () {
+            var Visual = WAT.VisualOfElement(this);
+            $(this).attr('value', Visual.Value);
+        });
+        $(document.body).on('after-deserialization', '.WAT.Control.nativeCheckbox', function () {
+            var Value = $(this).attr('value');
+            if (Value != null) {
+                var Visual = WAT.VisualOfElement(this);
+                Visual.Value = Value;
+            }
+        });
     });
     MasterRegistry['nativeCheckbox'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeCheckbox',
@@ -5084,24 +5094,26 @@ var WAT;
         WAT_nativeRadiobutton.prototype.uncheck = function () { this.Value = 'unchecked'; };
         return WAT_nativeRadiobutton;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeRadiobutton > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeRadiobutton', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
-    });
-    $(document.body).on('before-serialization', '.WAT.Control.nativeRadiobutton', function () {
-        var Visual = WAT.VisualOfElement(this);
-        $(this).attr('value', Visual.Value);
-    });
-    $(document.body).on('after-deserialization', '.WAT.Control.nativeRadiobutton', function () {
-        var Value = $(this).attr('value');
-        if (Value != null) {
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeRadiobutton > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeRadiobutton', function () {
             var Visual = WAT.VisualOfElement(this);
-            Visual.Value = Value;
-        }
+            Visual['SubPeer'] = $(this).children()[0];
+        });
+        $(document.body).on('before-serialization', '.WAT.Control.nativeRadiobutton', function () {
+            var Visual = WAT.VisualOfElement(this);
+            $(this).attr('value', Visual.Value);
+        });
+        $(document.body).on('after-deserialization', '.WAT.Control.nativeRadiobutton', function () {
+            var Value = $(this).attr('value');
+            if (Value != null) {
+                var Visual = WAT.VisualOfElement(this);
+                Visual.Value = Value;
+            }
+        });
     });
     MasterRegistry['nativeRadiobutton'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeRadiobutton',
@@ -5231,9 +5243,11 @@ var WAT;
         });
         return WAT_nativeGauge;
     }(WAT_Control));
-    $(document.body).on('after-refresh', '.WAT.Control.nativeGauge', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('after-refresh', '.WAT.Control.nativeGauge', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeGauge'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeGauge',
@@ -5300,9 +5314,11 @@ var WAT;
         });
         return WAT_nativeProgressbar;
     }(WAT_Control));
-    $(document.body).on('after-refresh', '.WAT.Control.nativeProgressbar', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('after-refresh', '.WAT.Control.nativeProgressbar', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeProgressbar'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeProgressbar',
@@ -5458,13 +5474,15 @@ var WAT;
         });
         return WAT_nativeSlider;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeSlider > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [parseFloat($(this.SubPeer).val())]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeSlider', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeSlider > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [parseFloat($(this.SubPeer).val())]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeSlider', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeSlider'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeSlider',
@@ -5655,13 +5673,15 @@ var WAT;
         });
         return WAT_nativeTextlineInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeTextlineInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeTextlineInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeTextlineInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeTextlineInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeTextlineInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeTextlineInput',
@@ -5788,13 +5808,15 @@ var WAT;
         });
         return WAT_nativePasswordInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativePasswordInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativePasswordInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativePasswordInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativePasswordInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativePasswordInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativePasswordInput',
@@ -5974,13 +5996,15 @@ var WAT;
         });
         return WAT_nativeNumberInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeNumberInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [parseFloat(SubPeer.val())]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeNumberInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeNumberInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [parseFloat(SubPeer.val())]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeNumberInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeNumberInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeNumberInput',
@@ -6147,13 +6171,15 @@ var WAT;
         });
         return WAT_nativePhoneNumberInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativePhoneNumberInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativePhoneNumberInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativePhoneNumberInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativePhoneNumberInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativePhoneNumberInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativePhoneNumberInput',
@@ -6347,13 +6373,15 @@ var WAT;
         });
         return WAT_nativeEMailAddressInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeEMailAddressInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeEMailAddressInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeEMailAddressInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeEMailAddressInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeEMailAddressInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeEMailAddressInput',
@@ -6521,13 +6549,15 @@ var WAT;
         });
         return WAT_nativeURLInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeURLInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeURLInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeURLInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeURLInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeURLInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeURLInput',
@@ -6711,13 +6741,15 @@ var WAT;
         });
         return WAT_nativeDateInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeDateInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeDateInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeDateInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeDateInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeDateInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeDateInput',
@@ -6901,13 +6933,15 @@ var WAT;
         });
         return WAT_nativeMonthInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeMonthInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeMonthInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeMonthInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeMonthInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeMonthInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeMonthInput',
@@ -7091,13 +7125,15 @@ var WAT;
         });
         return WAT_nativeWeekInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeWeekInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeWeekInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeWeekInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeWeekInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeWeekInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeWeekInput',
@@ -7281,13 +7317,15 @@ var WAT;
         });
         return WAT_nativeDateTimeInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeDateTimeInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeDateTimeInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeDateTimeInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeDateTimeInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeDateTimeInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeDateTimeInput',
@@ -7471,13 +7509,15 @@ var WAT;
         });
         return WAT_nativeTimeInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeTimeInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeTimeInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeTimeInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeTimeInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeTimeInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeTimeInput',
@@ -7670,13 +7710,15 @@ var WAT;
         });
         return WAT_nativeSearchInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeSearchInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeSearchInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeSearchInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeSearchInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeSearchInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeSearchInput',
@@ -7836,13 +7878,15 @@ var WAT;
         });
         return WAT_nativeTextInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeTextInput > textarea', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeTextInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeTextInput > textarea', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeTextInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeTextInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeTextInput',
@@ -7931,13 +7975,15 @@ var WAT;
         });
         return WAT_nativeColorInput;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeColorInput > input', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeColorInput', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeColorInput > input', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeColorInput', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeColorInput'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeColorInput',
@@ -8041,13 +8087,15 @@ var WAT;
         });
         return WAT_nativeDropDown;
     }(WAT_Control));
-    $(document.body).on('input', '.WAT.Control.nativeDropDown > select', function () {
-        var SubPeer = $(this);
-        SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
-    });
-    $(document.body).on('after-refresh', '.WAT.Control.nativeDropDown', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('input', '.WAT.Control.nativeDropDown > select', function () {
+            var SubPeer = $(this);
+            SubPeer.parent().trigger('value-changed', [SubPeer.val()]);
+        });
+        $(document.body).on('after-refresh', '.WAT.Control.nativeDropDown', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['nativeDropDown'.toLowerCase()] = {
         Category: 'Control', Name: 'nativeDropDown',
@@ -8251,9 +8299,11 @@ var WAT;
         };
         return WAT_straightLineView;
     }(WAT_Control));
-    $(document.body).on('after-refresh', '.WAT.Control.straightLineView', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('after-refresh', '.WAT.Control.straightLineView', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['straightLineView'.toLowerCase()] = {
         Category: 'Control', Name: 'straightLineView',
@@ -8454,9 +8504,11 @@ var WAT;
         };
         return WAT_angledLineView;
     }(WAT_Control));
-    $(document.body).on('after-refresh', '.WAT.Control.angledLineView', function () {
-        var Visual = WAT.VisualOfElement(this);
-        Visual['SubPeer'] = $(this).children()[0];
+    $(function () {
+        $(document.body).on('after-refresh', '.WAT.Control.angledLineView', function () {
+            var Visual = WAT.VisualOfElement(this);
+            Visual['SubPeer'] = $(this).children()[0];
+        });
     });
     MasterRegistry['angledLineView'.toLowerCase()] = {
         Category: 'Control', Name: 'angledLineView',
