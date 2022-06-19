@@ -5330,6 +5330,7 @@ var WAD;
             createDesignerButtonForApplet: createDesignerButtonForApplet,
             importInternalFunctions: importInternalFunctions // <<<< will be invoked upon registration
         });
+        console.info('WAD has been registered');
     });
-    console.log('WAD is available');
+    console.info('WAD is available');
 })(WAD || (WAD = {}));
