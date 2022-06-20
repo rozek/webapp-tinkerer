@@ -6,8 +6,10 @@
 // hover color:  #FDEC2E
 // active color: #D3FF4B
 
-  html { width:100%; height:100% }
-  body { min-width:100%; min-height:100% }  /* NOT just "width" and "height"! */
+  html, body {
+    min-width:100%; min-height:100%;                     /* based on viewport */
+    width:fit-content; height:fit-content;                 /* based on <body> */
+  }
 
   .WAD,        .WAD *,
   .WAD:before, .WAD *:before,
