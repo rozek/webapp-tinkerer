@@ -1407,12 +1407,12 @@ var WAT;
             y: Peer.offsetTop, Height: Peer.offsetHeight // dto.
         };
     }
-    /**** GeometryOfVisualOnPage ****/
+    /**** GeometryOfVisualOnPage - relative to <body> element ****/
     function GeometryOfVisualOnPage(Visual) {
         var boundingRect = Visual.Peer.getBoundingClientRect(); // incl. border
         return {
-            x: boundingRect.left + window.scrollX, Width: boundingRect.width,
-            y: boundingRect.top + window.scrollY, Height: boundingRect.height
+            x: boundingRect.left + window.scrollX - document.body.offsetLeft, Width: boundingRect.width,
+            y: boundingRect.top + window.scrollY - document.body.offsetTop, Height: boundingRect.height
         };
     }
     /**** changeGeometryOfVisualTo ****/
