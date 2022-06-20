@@ -4,6 +4,9 @@
 *                                                                              *
 *******************************************************************************/
 
+  body { position:relative }               /* IMPORTANT for the WAT Designer! */
+  /* see http://book.mixu.net/css/5-tricks.html */
+
   .WAT,        .WAT *,
   .WAT:before, .WAT *:before,
   .WAT:after,  .WAT *:after {
