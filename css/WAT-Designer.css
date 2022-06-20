@@ -6,10 +6,8 @@
 // hover color:  #FDEC2E
 // active color: #D3FF4B
 
-  html, body {
-    min-width:100%; min-height:100%;                     /* based on viewport */
-    width:fit-content; height:fit-content;                 /* based on <body> */
-  }
+  body { position:relative }    /* IMPORTANT for full-document DesignerLayer! */
+  /* see http://book.mixu.net/css/5-tricks.html */
 
   .WAD,        .WAD *,
   .WAD:before, .WAD *:before,
@@ -33,7 +31,6 @@
   #WAD-DesignerLayer {
     display:block; position:absolute;
     left:0px; top:0px; right:0px; bottom:0px; overflow:hidden;
-    /*overflow:visible; /* because it's hard to create full-document divs */
     background:none; pointer-events:none;
     z-index:1000000; /* z-indices <= 999999 are for WAT content */
   }
