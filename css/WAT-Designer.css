@@ -32,8 +32,8 @@
 
   #WAD-DesignerLayer {
     display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px;
-    overflow:visible; /* because it's hard to create full-document divs */
+    left:0px; top:0px; right:0px; bottom:0px; overflow:hidden;
+    /*overflow:visible; /* because it's hard to create full-document divs */
     background:none; pointer-events:none;
     z-index:1000000; /* z-indices <= 999999 are for WAT content */
   }
