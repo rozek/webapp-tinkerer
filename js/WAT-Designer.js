@@ -1244,6 +1244,17 @@ var WAD;
         };
         /**** tick ****/
         WAD_Ticker.prototype.tick = function () {
+            var boundingRect = DesignerLayer[0].getBoundingClientRect();
+            var x = boundingRect.left + window.scrollX, currentStyle;
+            var y = boundingRect.top + window.scrollY;
+            if (x !== 0) {
+                currentStyle = window.getComputedStyle(DesignerLayer[0]);
+                DesignerLayer.css('left', (parseInt(currentStyle.left, 10) - x) + 'px');
+            }
+            if (y !== 0) {
+                currentStyle = currentStyle || window.getComputedStyle(DesignerLayer[0]);
+                DesignerLayer.css('top', (parseInt(currentStyle.top, 10) - y) + 'px');
+            }
             updateDesignerButtons();
             Memoizer.reset();
             validateChoices();
