@@ -1244,24 +1244,17 @@ var WAD;
         };
         /**** tick ****/
         WAD_Ticker.prototype.tick = function () {
-            var boundingRect = DesignerLayer[0].getBoundingClientRect();
-            var x = boundingRect.left + window.scrollX, currentStyle;
-            var y = boundingRect.top + window.scrollY;
-            if (x !== 0) {
-                currentStyle = window.getComputedStyle(DesignerLayer[0]);
-                DesignerLayer.css('left', (parseInt(currentStyle.left, 10) - x) + 'px');
-            }
-            if (y !== 0) {
-                currentStyle = currentStyle || window.getComputedStyle(DesignerLayer[0]);
-                DesignerLayer.css('top', (parseInt(currentStyle.top, 10) - y) + 'px');
-            }
             updateDesignerButtons();
             Memoizer.reset();
             validateChoices();
             validateSelections();
-            this.Prospects.forEach(function (Prospect) { return Prospect.onTick(); });
             if (chosenDesignerInfo == null) {
+                Layouter.stopLayouting();
+                this.Prospects.forEach(function (Prospect) { return Prospect.onTick(); });
                 this.stopTicking();
+            }
+            else {
+                this.Prospects.forEach(function (Prospect) { return Prospect.onTick(); });
             }
         };
         return WAD_Ticker;
@@ -2183,6 +2176,9 @@ var WAD;
         /**** stopLayouting ****/
         WAD_Layouter.prototype.stopLayouting = function () {
             Ticker.ignore(this);
+            if (this.LayouterLayer == null) {
+                return;
+            }
             this.stopEventHandling();
             this.abortAnyOngoingLayoutMode();
             this.ignoreAllComponents();
@@ -3532,7 +3528,7 @@ var WAD;
         WAD_Nudger.prototype.onTick = function () {
             if ((chosenDesignerInfo == null) ||
                 (!chosenDesignerInfo.inLayoutMode)) {
-                this.hide();
+                this.close();
                 return;
             }
             var hasSelection = (memoized('selectedComponents').length > 0);
@@ -4271,6 +4267,10 @@ var WAD;
         };
         /**** onTick ****/
         WAD_ConfigurationDialog.prototype.onTick = function () {
+            if (chosenDesignerInfo == null) {
+                this.close();
+                return;
+            }
             this.refresh();
         };
         WAD_ConfigurationDialog.prototype.setMode = function (newMode) {
@@ -4985,9 +4985,7 @@ var WAD;
         }; /**** onTick ****/
         WAD_ScriptEditor.prototype.onTick = function () {
             if (chosenDesignerInfo == null) {
-                //      this.CodeFlask.updateCode('')
-                this.ScriptInput.val('');
-                this.hide();
+                this.close();
                 return;
             }
             var SelectionHasChanged = memoized('selected' + this.Mode + 'sHaveChanged');
@@ -5328,6 +5326,21 @@ var WAD;
     WAT(function WAD_Startup() {
         DesignerLayer = $('<div id="WAD-DesignerLayer"></div>');
         $(document.body).append(DesignerLayer);
+        /**** updateDesignerLayer ****/
+        function updateDesignerLayer() {
+            var boundingRect = DesignerLayer[0].getBoundingClientRect();
+            var x = boundingRect.left + window.scrollX, currentStyle;
+            var y = boundingRect.top + window.scrollY;
+            if (x !== 0) {
+                currentStyle = window.getComputedStyle(DesignerLayer[0]);
+                DesignerLayer.css('left', (parseInt(currentStyle.left, 10) - x) + 'px');
+            }
+            if (y !== 0) {
+                currentStyle = currentStyle || window.getComputedStyle(DesignerLayer[0]);
+                DesignerLayer.css('top', (parseInt(currentStyle.top, 10) - y) + 'px');
+            }
+        }
+        setInterval(updateDesignerLayer, 200);
         Memoizer.reset();
         resetChoices();
         resetSelections();
