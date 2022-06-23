@@ -4310,7 +4310,15 @@ var WAD;
                 var Configuration = memoized('selected' + this.Mode + 'sConfiguration');
                 this.refreshPropertyInputsFrom(this.Mode, Configuration);
             }
-            this.refreshCustomPropertyGroup();
+            if (this.Mode === 'Component') {
+                this.refreshCustomPropertyGroup();
+            }
+            else {
+                this.oldPropertySpecs = undefined;
+                this.customGroup.children().slice(2).remove();
+                this.customGroupPlaceholder.css('display', 'block');
+                this.customGroupPlaceholder.text('(not in Component mode)');
+            }
         };
         /**** clearErrorIndicators ****/
         WAD_ConfigurationDialog.prototype.clearErrorIndicators = function () {
