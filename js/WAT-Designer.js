@@ -2042,6 +2042,7 @@ var WAD;
     function doImportAppletFrom(Serialization) {
         var oldApplet = memoized('chosenApplet');
         var newApplet = oldApplet.deserializedFrom(Serialization);
+        Layouter.stopLayouting();
         chooseApplet(newApplet);
         needsDownload = false;
     }
@@ -3422,6 +3423,7 @@ var WAD;
             this.UploadButton.on('change', handleUpload);
             this.DownloadButton.on('click', function () {
                 doDownloadApplet();
+                Ticker.tickNow();
             });
         };
         /**** onTick ****/
@@ -4295,10 +4297,8 @@ var WAD;
             this.clearErrorIndicators();
             var SelectionHasChanged = memoized('selected' + this.Mode + 'sHaveChanged');
             if (SelectionHasChanged) {
-                console.log('selected' + this.Mode + 'sHaveChanged');
                 var focusedElement = $(':focus');
                 if ($.contains(this.Peer[0], focusedElement[0])) {
-                    console.log('blurring', focusedElement);
                     focusedElement.blur();
                 }
             }
