@@ -1698,18 +1698,20 @@ var WAD;
         var chosenContainer = memoized('chosenContainer');
         var selectedComponents = memoized('selectedComponents');
         deselectAllComponents();
+        var Duplicates = [];
         selectedComponents.forEach(function (Component) {
             try {
                 var newComponent = chosenContainer.newDuplicateOfComponent(Component);
                 newComponent.x += 10;
                 newComponent.y += 10;
-                selectComponent(newComponent);
+                Duplicates.push(newComponent);
                 needsDownload = true;
             }
             catch (Signal) {
                 Failure = Failure || Signal;
             }
         });
+        selectComponents(Duplicates);
         if (Failure != null) {
             throw Failure;
         }
@@ -2197,7 +2199,9 @@ var WAD;
             this.verticalGuideList = [];
             this.DummyForComponent = Object.create(null);
             this.tabbedComponent = null;
-            chosenDesignerInfo.inLayoutMode = false;
+            if (chosenDesignerInfo != null) {
+                chosenDesignerInfo.inLayoutMode = false;
+            }
             Ticker.ignore(this);
             Ticker.tickPromptly();
         };
@@ -2506,7 +2510,7 @@ var WAD;
                 case 8: // Backspace key
                 case 46: // Delete key
                     Layouter.finishAnyOngoingLayoutMode(Event);
-                    memoized('selectedComponents').remove();
+                    doRemoveSelectedComponents();
                     Ticker.tickNow();
                     break;
                 case 9: // TAB key
@@ -5326,7 +5330,7 @@ var WAD;
     WAT(function WAD_Startup() {
         DesignerLayer = $('<div id="WAD-DesignerLayer"></div>');
         $(document.body).append(DesignerLayer);
-        /**** updateDesignerLayer ****/
+        /**** updateDesignerLayer - let it cover really EVERYTHING ****/
         function updateDesignerLayer() {
             var boundingRect = DesignerLayer[0].getBoundingClientRect();
             var x = boundingRect.left + window.scrollX, currentStyle;
