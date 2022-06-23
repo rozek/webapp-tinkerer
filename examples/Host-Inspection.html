@@ -1,0 +1,152 @@
+<div id="Applet" class="WAT Applet" style="display: block; position: absolute; overflow: hidden; left: 40px; top: 40px; width: 320px; height: 580px; background: white; color: black;" wat-resizable="true" name="Host-Inspection">
+   <div class="WAT Card" style="visibility: visible; display: block;">
+    
+   <div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-1" style="width: auto; height: 30px; left: 10px; top: 10px; line-height: 30px; font-size: 16px; font-style: normal; font-weight: bold; right: 10px; text-align: center;">Host Inspection</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-2" style="width: 100px; height: 30px; left: 10px; top: 40px; line-height: 30px; font-weight: bold;">Device Info</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-3" style="width: 120px; height: 30px; left: 20px; top: 70px; line-height: 30px;">is mobile:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-4" style="width: 120px; height: 30px; left: 20px; top: 100px; line-height: 30px;">Form Factor:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-5" style="width: 120px; height: 30px; left: 20px; top: 130px; line-height: 30px;">can hover:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-6" style="width: 120px; height: 30px; left: 20px; top: 160px; line-height: 30px;">Pointer Accuracy:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-7" style="width: auto; height: 30px; left: 140px; top: 70px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Device = WAT.global['Device']
+  if (Device != null) {
+    my.Value = (Device.isMobile ? 'yes' : 'no') + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-8" style="width: auto; height: 30px; left: 140px; top: 100px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Device = WAT.global['Device']
+  if (Device != null) {
+    my.Value = (
+      Device.isPhone
+      ? 'Phone'
+      : Device.isTablet ? 'Tablet' : 'PC'
+    ) + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-9" style="width: auto; height: 30px; left: 140px; top: 130px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Device = WAT.global['Device']
+  if (Device != null) {
+    my.Value = (Device.canHover ? 'yes' : 'no') + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-10" style="width: auto; height: 30px; left: 140px; top: 160px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Device = WAT.global['Device']
+  if (Device != null) {
+    my.Value = Device.PointingAccuracy + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-11" style="width: 100px; height: 30px; left: 10px; top: 200px; line-height: 30px; font-weight: bold;">System Info</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-12" style="width: 120px; height: 30px; left: 20px; top: 230px; line-height: 30px;">Browser Name:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-13" style="width: 120px; height: 30px; left: 20px; top: 260px; line-height: 30px;">Browser Version:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-14" style="width: 120px; height: 30px; left: 20px; top: 290px; line-height: 30px;">System Name:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-15" style="width: 120px; height: 30px; left: 20px; top: 320px; line-height: 30px;">System Version:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-16" style="width: auto; height: 30px; left: 140px; top: 230px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let System = WAT.global['System']
+  if (System != null) {
+    my.Value = System.BrowserName + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-17" style="width: auto; height: 30px; left: 140px; top: 260px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let System = WAT.global['System']
+  if (System != null) {
+    my.Value = System.BrowserVersion + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-18" style="width: auto; height: 30px; left: 140px; top: 290px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let System = WAT.global['System']
+  if (System != null) {
+    my.Value = System.OSName + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-19" style="width: auto; height: 30px; left: 140px; top: 320px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let System = WAT.global['System']
+  if (System != null) {
+    my.Value = System.OSVersion + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-20" style="width: 100px; height: 30px; left: 10px; top: 360px; line-height: 30px; font-weight: bold;">Viewport Info</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-21" style="width: 120px; height: 30px; left: 20px; top: 390px; line-height: 30px;">Viewport Size:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-22" style="width: 120px; height: 30px; left: 20px; top: 420px; line-height: 30px;">Orientation:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-23" style="width: 120px; height: 30px; left: 20px; top: 450px; line-height: 30px;">detailled:</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-24" style="width: auto; height: 30px; left: 140px; top: 390px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Viewport = WAT.global['Viewport']
+  if (Viewport != null) {
+    my.Value = Viewport.Width+'x'+Viewport.Height + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-25" style="width: auto; height: 30px; left: 140px; top: 420px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Viewport = WAT.global['Viewport']
+  if (Viewport != null) {
+    my.Value = Viewport.Orientation + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-26" style="width: auto; height: 30px; left: 140px; top: 450px; line-height: 30px; text-align: right; box-shadow: none; border-style: dotted; border-width: 1px; right: 10px;" wat-script="on('before-serialization',() => {
+  this.Value = '(unknown) '
+})
+
+let my = this
+function updateValue () {
+  let Viewport = WAT.global['Viewport']
+  if (Viewport != null) {
+    my.Value = (Viewport.detailledOrientation || '(n/a)') + ' '
+  }
+}
+
+on('after-serialization', updateValue)
+on('after-deserialization', updateValue)">(unknown) </div><div wat-master="TextView" class="WAT Control TextView" id="wat-28" style="width: auto; height: auto; inset: 490px 10px 10px; overflow: visible; text-align: justify;">Display contents will be updated, when the underlying values change: mobile devices may change their orientation, convertibles their mode.</div></div>
+  </div>
