@@ -179,6 +179,43 @@ var WAT;
     /**** allow/expect[ed]UniqueName ****/
     WAT.allowUniqueName = ValidatorForClassifier(ValueIsUniqueName, acceptNil, 'unique WAT name'), WAT.allowedUniqueName = WAT.allowUniqueName;
     WAT.expectUniqueName = ValidatorForClassifier(ValueIsUniqueName, rejectNil, 'unique WAT name'), WAT.expectedUniqueName = WAT.expectUniqueName;
+    /**** ValueIsPath ****/
+    function ValueIsPath(Value) {
+        if (!ValueIsString(Value)) {
+            return false;
+        }
+        if (Value === '.') {
+            return true;
+        }
+        if (Value === '..') {
+            return true;
+        }
+        if (Value === '/') {
+            return true;
+        }
+        if (Value === './') {
+            return true;
+        }
+        if (Value === '../') {
+            return true;
+        }
+        var PathItemList = Value.replace(/\/\/+/, '/').replace(/^\.?\.?\/?/, '').split('/');
+        for (var i = 0, l = PathItemList.length; i < l; i++) {
+            var PathItem = PathItemList[i];
+            switch (true) {
+                case (PathItem === '.'):
+                case (PathItem === '..'):
+                case /^@\d+$/.test(PathItem):
+                case ValueIsName(PathItem): continue;
+                default: return false;
+            }
+        }
+        return true;
+    }
+    WAT.ValueIsPath = ValueIsPath;
+    /**** allow/expect[ed]Path ****/
+    WAT.allowPath = ValidatorForClassifier(ValueIsPath, acceptNil, 'WAT path'), WAT.allowedPath = WAT.allowPath;
+    WAT.expectPath = ValidatorForClassifier(ValueIsPath, rejectNil, 'WAT path'), WAT.expectedPath = WAT.expectPath;
     /**** ValueIsIdentifier ****/
     var IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i;
     function ValueIsIdentifier(Value) {
@@ -2173,6 +2210,116 @@ var WAT;
             }
         });
     }
+    /**** VisualAtPath ****/
+    function VisualAtPath(Path, Base) {
+        WAT.expectPath('visual path', Path);
+        WAT.allowVisual('base visual', Base);
+        var PathItemList = Path.replace(/\/\/+/, '/').split('/');
+        if ((PathItemList[0] === '') && (PathItemList.length > 1)) {
+            PathItemList.shift();
+            var AppletNameOrIndex = PathItemList.shift();
+            switch (true) {
+                case AppletNameOrIndex.startsWith('@'):
+                    Base = AppletAtIndex(parseInt(AppletNameOrIndex.slice(1), 10));
+                    if (Base == null) {
+                        return undefined;
+                    }
+                    break;
+                case ValueIsName(AppletNameOrIndex):
+                    Base = AppletWithName(AppletNameOrIndex);
+                    if (Base == null) {
+                        return undefined;
+                    }
+                    break;
+                default:
+                    throwError('InvalidArgument: absolute visual paths must start with the ' +
+                        'name or index of an applet');
+            }
+        }
+        if (Base == null)
+            throwError('MissingArgument: no base visual for relative visual path given');
+        var currentVisual = Base;
+        for (var i = 0, l = PathItemList.length; i < l; i++) {
+            var PathItem = PathItemList[i];
+            switch (true) {
+                case (PathItem === '.'):
+                    continue;
+                case (PathItem === '..'):
+                    switch (true) {
+                        case ValueIsApplet(currentVisual): throwError('InvalidPath: the given path leaves the current applet');
+                        case ValueIsCard(currentVisual):
+                            currentVisual = currentVisual.Applet;
+                            break;
+                        default:
+                            currentVisual = currentVisual.Container;
+                    }
+                    break;
+                case /^@\d+$/.test(PathItem):
+                    var Index = parseInt(PathItem.slice(1), 10);
+                    switch (true) {
+                        case ValueIsApplet(currentVisual):
+                            currentVisual = currentVisual.CardAtIndex(Index);
+                            break;
+                        case ValueIsContainer(currentVisual):
+                            currentVisual = currentVisual.ComponentAtIndex(Index);
+                            break;
+                        default: throwError('InvalidPath: components do not have any inner visuals');
+                    }
+                    if (currentVisual == null) {
+                        return undefined;
+                    }
+                    break;
+                case ValueIsName(PathItem):
+                    switch (true) {
+                        case ValueIsApplet(currentVisual):
+                            currentVisual = currentVisual.CardWithName(PathItem);
+                            break;
+                        case ValueIsContainer(currentVisual):
+                            currentVisual = currentVisual.ComponentWithName(PathItem);
+                            break;
+                        default: throwError('InvalidPath: components do not have any inner visuals');
+                    }
+                    if (currentVisual == null) {
+                        return undefined;
+                    }
+                    break;
+                default: throwError('InvalidPath: invalid visual path given');
+            }
+        }
+        return currentVisual;
+    }
+    WAT.VisualAtPath = VisualAtPath;
+    /**** AppletAtIndex ****/
+    function AppletAtIndex(Index) {
+        expectInteger('applet index', Index);
+        var $AppletPeers = $('.WAT.Applet');
+        if (Index < 0) {
+            Index += $AppletPeers.length;
+        }
+        var $AppletPeer = $AppletPeers.eq(Index);
+        return ($AppletPeer.length === 0
+            ? undefined
+            : VisualWithElement($AppletPeer[0]));
+    }
+    WAT.AppletAtIndex = AppletAtIndex;
+    /**** AppletWithName ****/
+    function AppletWithName(Name) {
+        WAT.expectName('applet name', Name);
+        Name = Name.toLowerCase();
+        var Result = $();
+        $('.WAT.Applet').each(function () {
+            var Candidate = $(this);
+            if (((Candidate.attr('id') || '').toLowerCase() === Name) ||
+                ((Candidate.attr('name') || '').toLowerCase() === Name)) {
+                Result = Candidate;
+                return false;
+            }
+        });
+        return (Result.length === 0
+            ? undefined
+            : VisualWithElement(Result[0]));
+    }
+    WAT.AppletWithName = AppletWithName;
     /**** applyMixin ****/
     function applyMixinTo(Mixin, TargetClass) {
         Object.getOwnPropertyNames(Mixin.prototype).forEach(function (Name) {
@@ -2239,6 +2386,10 @@ var WAT;
             enumerable: false,
             configurable: true
         });
+        /**** VisualAtPath ****/
+        WAT_Visual.prototype.VisualAtPath = function (Path) {
+            return WAT.VisualAtPath(Path, this);
+        };
         Object.defineProperty(WAT_Visual.prototype, "Applet", {
             /**** Applet ****/
             get: function () {
@@ -3472,7 +3623,7 @@ var WAT;
             get: function () {
                 this.mustBeAttached();
                 var Name = this.Name;
-                return (Name == null ? '/#' + this.Index : '/' + Name);
+                return (Name == null ? '/@' + this.Index : '/' + Name);
             },
             set: function (_) { throwReadOnlyError('Path'); },
             enumerable: false,
@@ -3546,9 +3697,12 @@ var WAT;
         /**** CardWithName ****/
         WAT_Applet.prototype.CardWithName = function (Name) {
             WAT.expectName('card name', Name);
+            Name = Name.toLowerCase();
             var Result;
             this.Cards.some(function (Card) {
-                return (Card.Name === Name ? (Result = Card, true) : false);
+                return ((Card.Name || '').toLowerCase() === Name
+                    ? (Result = Card, true)
+                    : false);
             });
             return Result;
         };
@@ -3847,11 +4001,14 @@ var WAT;
             return this.Components.indexOf(Component);
         };
         /**** ComponentWithName ****/
-        WAT_Container.prototype.CardWithName = function (Name) {
+        WAT_Container.prototype.ComponentWithName = function (Name) {
             WAT.expectName('component name', Name);
+            Name = Name.toLowerCase();
             var Result;
             this.Components.some(function (Component) {
-                return (Component.Name === Name ? (Result = Component, true) : false);
+                return ((Component.Name || '').toLowerCase() === Name
+                    ? (Result = Component, true)
+                    : false);
             });
             return Result;
         };
@@ -4083,7 +4240,7 @@ var WAT;
             get: function () {
                 this.mustBeAttached();
                 var Name = this.Name;
-                return this.Applet.Path + (Name == null ? '/#' + this.Index : '/' + Name);
+                return this.Applet.Path + (Name == null ? '/@' + this.Index : '/' + Name);
             },
             set: function (_) { throwReadOnlyError('Path'); },
             enumerable: false,
@@ -4466,7 +4623,7 @@ var WAT;
             get: function () {
                 this.mustBeAttached();
                 var Name = this.Name;
-                return this.Container.Path + (Name == null ? '/#' + this.Index : '/' + Name);
+                return this.Container.Path + (Name == null ? '/@' + this.Index : '/' + Name);
             },
             set: function (_) { throwReadOnlyError('Path'); },
             enumerable: false,
@@ -4497,7 +4654,7 @@ var WAT;
             get: function () {
                 this.mustBeAttached();
                 var Name = this.Name;
-                return this.Container.Path + (Name == null ? '/#' + this.Index : '/' + Name);
+                return this.Container.Path + (Name == null ? '/@' + this.Index : '/' + Name);
             },
             set: function (_) { throwReadOnlyError('Path'); },
             enumerable: false,
