@@ -1,0 +1,176 @@
+<div id="wat-64" class="WAT Applet" style="display: block; position: relative; overflow: hidden; width: 620px; height: 480px; margin-left: 20px; border: 1px solid black; border-radius: 4px; background: ivory; color: black;" wat-resizable="true" name="WAT-nativeControls" wat-reactive-variable="numericValue">
+  <div class="WAT Card" style="visibility: visible; display: block;" wat-script="on('after-deserialization',() => {
+  $('literalValue','')
+})" id="wat-64"><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-65" style="width: 130px; height: 30px; font-size: 22px; left: 10px; top: 10px; line-height: 30px; font-weight: bold;">Smoke Test</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-66" style="width: 125px; height: 30px; left: 10px; top: 50px; line-height: 30px; font-weight: bold;">PushButton</div><div wat-master="nativePushButton" class="WAT Control nativePushButton" id="wat-67" style="width: 110px; height: 30px; left: 150px; top: 50px; line-height: 28px; font-weight: bold;" wat-script="on('triggered',() => {
+  $('literalValue','Button triggered')
+})"><button class="WAT-Content">Push Me</button></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-68" style="width: 130px; height: 30px; left: 10px; top: 80px; line-height: 30px; font-weight: bold;">Checkbox</div><div wat-master="nativeCheckbox" class="WAT Control nativeCheckbox" id="wat-69" wat-name="Checkbox_1" style="width: 20px; height: 20px; left: 146px; top: 86px;" wat-script="on('value-changed',() => {
+  let literalValue = 'Checkbox #1 '
+  switch (this.Value) {
+    case 'indeterminate': literalValue += 'became indeterminate'; break
+    case 'checked':       literalValue += 'was checked';          break
+    case 'unchecked':     literalValue += 'was unchecked'
+  }
+  $('literalValue',literalValue)
+})
+
+on('before-serialization',() => {
+  this.Value = 'checked'
+})" value="checked"><input type="checkbox"></div><div wat-master="nativeCheckbox" class="WAT Control nativeCheckbox" id="wat-70" wat-name="Checkbox_2" style="width: 20px; height: 20px; left: 166px; top: 86px;" wat-script="on('value-changed',() => {
+  let literalValue = 'Checkbox #2 '
+  switch (this.Value) {
+    case 'indeterminate': literalValue += 'became indeterminate'; break
+    case 'checked':       literalValue += 'was checked';          break
+    case 'unchecked':     literalValue += 'was unchecked'
+  }
+  $('literalValue',literalValue)
+})
+
+on('before-serialization',() => {
+  this.Value = 'unchecked'
+})" value="unchecked"><input type="checkbox"></div><div wat-master="nativeCheckbox" class="WAT Control nativeCheckbox" id="wat-71" wat-name="Checkbox_3" style="width: 20px; height: 20px; left: 186px; top: 86px;" wat-script="on('value-changed',() => {
+  let literalValue = 'Checkbox #3 '
+  switch (this.Value) {
+    case 'indeterminate': literalValue += 'became indeterminate'; break
+    case 'checked':       literalValue += 'was checked';          break
+    case 'unchecked':     literalValue += 'was unchecked'
+  }
+  $('literalValue',literalValue)
+})
+
+on('before-serialization',() => {
+  this.Value = 'indeterminate'
+})" value="indeterminate"><input type="checkbox"></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-72" style="width: 130px; height: 30px; left: 10px; top: 110px; line-height: 30px; font-weight: bold;">Radiobutton</div><div wat-master="nativeRadiobutton" class="WAT Control nativeRadiobutton" id="wat-73" wat-name="Radiobutton_1" style="width: 20px; height: 20px; left: 146px; top: 116px;" wat-script="on('value-changed',() => {
+  $('literalValue','Radiobutton #1 was ' + (
+    this.isChecked ? 'checked' : 'unchecked'
+  ))
+})
+
+on('before-serialization',() => {
+  this.Value = 'checked'
+})" value="checked"><input type="radio" name="SmokeTest" value="1"></div><div wat-master="nativeRadiobutton" class="WAT Control nativeRadiobutton" id="wat-74" wat-name="Radiobutton_2" style="width: 20px; height: 20px; left: 166px; top: 116px;" wat-script="on('value-changed',() => {
+  $('literalValue','Radiobutton #2 was ' + (
+    this.isChecked ? 'checked' : 'unchecked'
+  ))
+})" value="unchecked"><input type="radio" name="SmokeTest" value="2"></div><div wat-master="nativeRadiobutton" class="WAT Control nativeRadiobutton" id="wat-75" wat-name="Radiobutton_3" style="width: 20px; height: 20px; left: 186px; top: 116px;" wat-script="on('value-changed',() => {
+  $('literalValue','Radiobutton #3 was ' + (
+    this.isChecked ? 'checked' : 'unchecked'
+  ))
+})" value="unchecked"><input type="radio" name="SmokeTest" value="3"></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-76" style="width: 100px; height: 30px; left: 300px; top: 50px; line-height: 30px; font-weight: bold;">Gauge</div><div wat-master="nativeGauge" class="WAT Control nativeGauge" id="wat-77" style="width: 200px; height: 20px; left: 410px; top: 57px;" wat-script="$(() => {
+  this.Value = $('numericValue') || 0
+})"><meter class="WAT-Content" value="1" min="0" max="12" low="4" optimum="6" high="8"></meter></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-78" style="width: 100px; height: 30px; left: 300px; top: 80px; line-height: 30px; font-weight: bold;">Progressbar</div><div wat-master="nativeProgressbar" class="WAT Control nativeProgressbar" id="wat-79" style="width: 200px; height: 20px; left: 410px; top: 88px;" wat-script="$(() => {
+  this.Value = $('numericValue') || 0
+})"><progress class="WAT-Content" value="1" max="12"></progress></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-80" style="width: 100px; height: 30px; left: 300px; top: 110px; line-height: 30px; font-weight: bold;">Slider</div><div wat-master="nativeSlider" class="WAT Control nativeSlider" id="wat-81" style="width: 200px; height: 30px; left: 410px; top: 110px;" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value + '')
+  $('numericValue',this.Value)
+})
+
+$(() => {
+  this.Value = $('numericValue') || 0
+})"><input type="range" class="WAT-Content" min="1" max="12" list="wat-82"><datalist id="wat-82"><option value="1"></option><option value="2"></option><option value="3"></option><option value="4"></option><option value="5"></option><option value="6"></option><option value="7"></option><option value="8"></option><option value="9"></option><option value="10"></option><option value="11"></option><option value="12"></option></datalist></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-82" style="width: 100px; height: 30px; left: 300px; top: 140px; line-height: 30px; font-weight: bold;">last Input</div><div wat-master="nativeTextlineInput" class="WAT Control nativeTextlineInput" id="wat-83" style="width: 200px; height: 24px; left: 410px; top: 143px;" wat-script="$(() => {
+  this.Value = ('' + ($('literalValue') || ''))
+    .replace(/[\r\n]+/g,' ')
+})
+
+on('before-serialization',() => { this.Value = '' })
+"><input type="text" class="WAT-Content" readonly="readonly"></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-84" style="width: 130px; height: 30px; left: 10px; top: 140px; line-height: 30px; font-weight: bold;">TextlineInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-85" style="width: 130px; height: 30px; left: 10px; top: 170px; line-height: 30px; font-weight: bold;">PasswordInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-86" style="width: 130px; height: 30px; left: 10px; top: 200px; line-height: 30px; font-weight: bold;">NumberInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-87" style="width: 140px; height: 30px; left: 10px; top: 230px; line-height: 30px; font-weight: bold;">PhoneNumberInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-88" style="width: 140px; height: 30px; left: 10px; top: 260px; line-height: 30px; font-weight: bold;">EMailAddressInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-89" style="width: 140px; height: 30px; left: 10px; top: 290px; line-height: 30px; font-weight: bold;">URLInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-90" style="width: 140px; height: 30px; left: 10px; top: 320px; line-height: 30px; font-weight: bold;">SearchInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-91" style="width: 100px; height: 30px; left: 300px; top: 170px; line-height: 30px; font-weight: bold;">DateInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-92" style="width: 100px; height: 30px; left: 300px; top: 200px; line-height: 30px; font-weight: bold;">MonthInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-93" style="width: 100px; height: 30px; left: 300px; top: 230px; line-height: 30px; font-weight: bold;">WeekInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-94" style="width: 100px; height: 30px; left: 300px; top: 260px; line-height: 30px; font-weight: bold;">DateTimeInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-95" style="width: 100px; height: 30px; left: 300px; top: 290px; line-height: 30px; font-weight: bold;">TimeInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-96" style="width: 140px; height: 30px; left: 10px; top: 350px; line-height: 30px; font-weight: bold;">TextInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-97" style="width: 100px; height: 30px; left: 300px; top: 320px; line-height: 30px; font-weight: bold;">ColorInput</div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-98" style="width: 100px; height: 30px; left: 300px; top: 350px; line-height: 30px; font-weight: bold;">DropDown</div><div wat-master="nativeTextlineInput" class="WAT Control nativeTextlineInput" style="width: 130px; height: 24px; left: 150px; top: 142px;" id="wat-99" wat-script="on('value-changed',(Event) => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="text" class="WAT-Content" placeholder="enter text" list="wat-100"><datalist id="wat-100"><option value="Hello, World!"></option></datalist></div><div wat-master="nativePasswordInput" class="WAT Control nativePasswordInput" style="width: 130px; height: 24px; left: 150px; top: 172px;" id="wat-101" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="password" class="WAT-Content" placeholder="enter password"></div><div wat-master="nativeNumberInput" class="WAT Control nativeNumberInput" style="width: 130px; height: 24px; left: 150px; top: 202px;" id="wat-102" wat-script="on('value-changed',() => {
+  $('literalValue','' + (this.Value || ''))
+  $('numericValue',this.Value || 1)
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="number" class="WAT-Content" min="1" max="12" placeholder="enter number" list="wat-103"><datalist id="wat-103"><option value="6"></option></datalist></div><div wat-master="nativePhoneNumberInput" class="WAT Control nativePhoneNumberInput" style="width: 130px; height: 24px; left: 150px; top: 232px;" id="wat-104" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="tel" class="WAT-Content" placeholder="enter phone no" list="wat-105"><datalist id="wat-105"><option value="+49 1234 567890"></option></datalist></div><div wat-master="nativeEMailAddressInput" class="WAT Control nativeEMailAddressInput" style="width: 130px; height: 24px; left: 150px; top: 262px;" id="wat-106" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="email" class="WAT-Content" placeholder="enter email addr" list="wat-107"><datalist id="wat-107"><option value="a.b@c.de"></option></datalist></div><div wat-master="nativeURLInput" class="WAT Control nativeURLInput" id="wat-108" style="width: 130px; height: 24px; left: 150px; top: 292px;" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="url" class="WAT-Content" placeholder="enter URL" list="wat-109"><datalist id="wat-109"><option value="https://www.rozek.de"></option></datalist></div><div wat-master="nativeSearchInput" class="WAT Control nativeSearchInput" style="width: 130px; height: 24px; left: 150px; top: 322px;" id="wat-110" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="search" class="WAT-Content" placeholder="enter text" list="wat-111"><datalist id="wat-111"><option value="(text to search for)"></option></datalist></div><div wat-master="nativeDateInput" class="WAT Control nativeDateInput" style="width: 150px; height: 24px; left: 410px; top: 172px;" id="wat-112" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="date" pattern="\d{4}-\d{2}-\d{2}" class="WAT-Content" list="wat-113"><datalist id="wat-113"><option value="2022-06-24"></option></datalist></div><div wat-master="nativeMonthInput" class="WAT Control nativeMonthInput" style="width: 180px; height: 24px; left: 410px; top: 202px;" id="wat-114" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="month" pattern="\d{4}-\d{2}" class="WAT-Content" list="wat-115"><datalist id="wat-115"><option value="2022-06"></option></datalist></div><div wat-master="nativeWeekInput" class="WAT Control nativeWeekInput" style="width: 180px; height: 24px; left: 410px; top: 232px;" id="wat-116" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="week" pattern="\d{4}-W\d{2}" class="WAT-Content" list="wat-117"><datalist id="wat-117"><option value="2022-W25"></option></datalist></div><div wat-master="nativeDateTimeInput" class="WAT Control nativeDateTimeInput" id="wat-118" style="width: 200px; height: 24px; left: 410px; top: 262px;" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="datetime-local" pattern="\d{4}-\d{2}-\d{2}T\d{2}:\d{2}" class="WAT-Content" list="wat-119"><datalist id="wat-119"><option value="2022-06-24T16:00"></option></datalist></div><div wat-master="nativeTimeInput" class="WAT Control nativeTimeInput" id="wat-120" style="width: 130px; height: 24px; left: 410px; top: 292px;" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="time" pattern="\d{2}:\d{2}" class="WAT-Content" list="wat-121"><datalist id="wat-121"><option value="16:00"></option></datalist></div><div wat-master="nativeColorInput" class="WAT Control nativeColorInput" style="width: 100px; height: 30px; left: 410px; top: 320px;" id="wat-122" wat-script="on('value-changed',() => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><input type="color" class="WAT-Content" list="wat-123"><datalist id="wat-123"> <option value="#000000"></option><option value="#FF0000"></option><option value="#00FF00"></option><option value="#0000FF"></option><option value="#FFFF00"></option><option value="#FF00FF"></option><option value="#00FFFF"></option><option value="#FFFFFF"></option></datalist></div><div wat-master="nativeDropDown" class="WAT Control nativeDropDown" style="width: 130px; height: 24px; left: 410px; top: 352px;" id="wat-124" wat-script="const Months = [
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
+]
+
+on('value-changed',() => {
+  $('literalValue',this.Value || '')
+  
+  let Index = Months.indexOf(this.Value) + 1
+  if (Index > 0) {
+    $('numericValue',Index)
+  }
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><select class="WAT-Content"><option value="January" label="January"></option><option value="February" label="February"></option><option value="March" label="March"></option><option value="April" label="April"></option><option value="May" label="May"></option><option value="June" label="June"></option><option value="July" label="July"></option><option value="August" label="August"></option><option value="September" label="September"></option><option value="October" label="October"></option><option value="November" label="November"></option><option value="December" label="December"></option></select></div><div wat-master="nativeTextInput" class="WAT Control nativeTextInput" style="width: 600px; height: 90px; left: 10px; top: 380px;" id="wat-125" wat-script="on('value-changed',(Event) => {
+  $('literalValue',this.Value || '')
+})
+
+on('before-serialization',() => {
+  this.Value = undefined
+})"><textarea class="WAT-Content" style="resize: none;"></textarea></div><div wat-master="TextlineView" class="WAT Control TextlineView" id="wat-126" style="width: 140px; height: 20px; left: 140px; top: 17px;">(for native Controls)</div></div></div>
