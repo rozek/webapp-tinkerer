@@ -1172,6 +1172,7 @@ var WAT;
     function PeerDeserializedFrom(Serialization) {
         var Peer = $(Serialization)[0];
         validateContentsOfPeer(Peer);
+        removeErrorIndicatorsFromPeer(Peer);
         updateUniqueIdsInPeer(Peer);
         return Peer;
     }
@@ -2038,13 +2039,13 @@ var WAT;
         if (newErrorInfo == null) {
             if (Peer.data('wat-error-info') != null) {
                 Peer.data('wat-error-info', null);
-                Peer.children('.WAT-ErrorIndicator').remove();
+                Peer.children('.WAT-ErrorIndicator').remove(); // for this peer only
             }
         }
         else {
             if (Peer.data('wat-error-info') == null) { // keep first error set
                 Peer.data('wat-error-info', newErrorInfo);
-                Peer.children('.WAT-ErrorIndicator').remove();
+                Peer.children('.WAT-ErrorIndicator').remove(); // for this peer only
                 Peer.append('<div class="WAT-ErrorIndicator"></div>');
             }
         }
@@ -2080,6 +2081,10 @@ var WAT;
                 }
             }
         });
+    }
+    /**** removeErrorIndicatorsFromPeer ****/
+    function removeErrorIndicatorsFromPeer(Peer) {
+        $(Peer).find('.WAT-ErrorIndicator').remove();
     }
     /**** VisualOfElement ****/
     function VisualOfElement(Element) {
