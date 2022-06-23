@@ -1407,12 +1407,12 @@ var WAT;
             y: Peer.offsetTop, Height: Peer.offsetHeight // dto.
         };
     }
-    /**** GeometryOfVisualOnPage - relative to <body> element ****/
+    /**** GeometryOfVisualOnPage ****/
     function GeometryOfVisualOnPage(Visual) {
         var boundingRect = Visual.Peer.getBoundingClientRect(); // incl. border
         return {
-            x: boundingRect.left + window.scrollX - document.body.offsetLeft, Width: boundingRect.width,
-            y: boundingRect.top + window.scrollY - document.body.offsetTop, Height: boundingRect.height
+            x: boundingRect.left + window.scrollX, Width: boundingRect.width,
+            y: boundingRect.top + window.scrollY, Height: boundingRect.height
         };
     }
     /**** changeGeometryOfVisualTo ****/
@@ -3345,6 +3345,9 @@ var WAT;
                     $(this.Peer).css('overflow', '');
                 }
                 else {
+                    if (newOverflows[0] === 'visible') {
+                        newOverflows[1] = 'visible'; // special workaround to achieve "visible"
+                    }
                     $(this.Peer).css('overflow', newOverflows.join(' '));
                 }
             },
@@ -3426,6 +3429,9 @@ var WAT;
             var newApplet = VisualFromPeer(new$Peer[0], 'recursively');
             $(this.Peer).replaceWith(new$Peer);
             triggerRecursivelyOutwards(new$Peer[0], 'after-deserialization');
+            if (Designer != null) {
+                Designer.createDesignerButtonForApplet(newApplet);
+            }
             return newApplet;
         };
         Object.defineProperty(WAT_Applet.prototype, "Name", {
@@ -6010,7 +6016,7 @@ var WAT;
         Category: 'Control', Name: 'nativeNumberInput',
         Group: 'native Controls', Label: 'Number Input',
         Classes: 'WAT Control nativeNumberInput',
-        Template: '<input type="number" class="WAT-Content">',
+        Template: '<input type="number" class="WAT-Content" style="width:100%; height:100%">',
         Initializer: function () { this.SubPeer = $(this.Peer).children()[0]; },
         customPropertyDescriptorList: [
             { Name: 'isReadonly', Label: 'read-only', EditorType: 'checkbox' },
