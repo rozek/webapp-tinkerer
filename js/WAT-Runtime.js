@@ -654,6 +654,385 @@ var WAT;
     }
     WAT.newUniqueId = newUniqueId;
     //----------------------------------------------------------------------------//
+    //                            Resource Management                             //
+    //----------------------------------------------------------------------------//
+    var WAT_ResourceForms = ['literal-style', 'external-style', 'literal-script', 'external-script'];
+    var WAT_ResourceCategories = ['style', 'script'];
+    /**** allResources - i.e., w/o script[type="wat-master"] ****/
+    function allResources() {
+        var Result = $();
+        $(document.head).children('link[rel="stylesheet"],style,script').each(function () {
+            var Resource = $(this), Type;
+            switch (Resource.prop('tagName')) {
+                case 'LINK':
+                    Result = Result.add(Resource);
+                    break;
+                case 'STYLE':
+                    Type = Resource.attr('type');
+                    if ((Type == null) || (Type === 'text/css')) {
+                        Result = Result.add(Resource);
+                    }
+                    break;
+                case 'SCRIPT':
+                    Type = Resource.attr('type');
+                    if (Type !== 'wat-master') { // still allows non-executable scripts
+                        Result = Result.add(Resource);
+                    }
+                    break;
+            }
+        });
+        return Result;
+    }
+    /**** generalResources - i.e., w/o "for-wat-masters" ****/
+    function generalResources() {
+        return allResources().filter(function () {
+            var Beneficiaries = $(this).attr('for-wat-masters');
+            return (Beneficiaries == null) || (Beneficiaries.trim() === '');
+        });
+    }
+    /**** requiredResources ****/
+    function requiredResources() {
+        var Result = $();
+        Result = Result.add($(document.head).children('name="jquery"'));
+        Result = Result.add($(document.head).children('name="javascript-interface-library"'));
+        Result = Result.add($(document.head).children('name="localforage"'));
+        Result = Result.add($(document.head).children('name="download"'));
+        return Result;
+    }
+    /**** ResourcesForMaster - i.e., w/ "for-wat-masters" ****/
+    function ResourcesForMaster(Name) {
+        var Pattern = new RegExp('\\b' + Name + '\\b', 'i');
+        return allResources().filter(function () {
+            var Beneficiaries = $(this).attr('for-wat-masters') || '';
+            return Beneficiaries.test(Pattern);
+        });
+    }
+    /**** ResourcesForMasters - i.e., w/ "for-wat-masters" ****/
+    function ResourcesForMasters(Names) {
+        var Pattern = new RegExp('(\\b' + Names.join('\\b)|(\\b') + '\\b)', 'i');
+        return allResources().filter(function () {
+            var Beneficiaries = $(this).attr('for-wat-masters') || '';
+            return Beneficiaries.test(Pattern);
+        });
+    }
+    /**** MastersOfResource ****/
+    function MastersOfResource(Resource) {
+        var Masters = Resource.attr('for-wat-masters');
+        if ((Masters == null) || (Masters.trim() === '')) {
+            return [];
+        }
+        var MasterList = Masters.trim().replace(/\s+/g, ' ').split(' ');
+        for (var i = MasterList.length - 1; i >= 0; i--) {
+            if (!ValueIsOrdinaryName(MasterList[i])) {
+                MasterList.splice(i, 1);
+            }
+        }
+        return MasterList;
+    }
+    /**** NameOfResource ****/
+    function NameOfResource(Element, Name) {
+        if (arguments.length === 1) {
+            var Name_1 = Element.attr('name');
+            return (ValueIsOrdinaryName(Name_1) ? Name_1 : undefined);
+        }
+        else {
+            WAT.allowOrdinaryName('resource name', Name);
+            if (Name == null) {
+                Element.removeAttr('name');
+            }
+            else {
+                if (Element.attr('name') !== Name) {
+                    var Category = CategoryOfResource(Element);
+                    if (ResourceNameIsUsed(Name, Category))
+                        throwError('NameInUse: there is already a ' + Category + ' resource ' +
+                            'with the name ' + quoted(Name));
+                    Element.attr('name', Name);
+                }
+            }
+        }
+    }
+    /**** ResourceNames ****/
+    function ResourceNames() {
+        var NameSet = Object.create(null);
+        allResources().each(function () {
+            var Name = NameOfResource($(this));
+            NameSet[Name] = true;
+        });
+        var Result = [];
+        for (var Name in NameSet) {
+            Result.push(Name);
+        }
+        return Result;
+    }
+    /**** ResourceWithName ****/
+    // the same name may be used for a style and script resource
+    // but only for one each
+    function ResourceWithName(Name, Category) {
+        if (Category === 'stylesheet') {
+            return $(document.head).children('link[rel="style"][name="' + Name + '" i],' +
+                'style[name="' + Name + '" i]');
+        }
+        else {
+            return $(document.head).children('script[name="' + Name + '" i]').filter(function () {
+                return ($(this).attr('type') !== 'wat-master');
+            });
+        }
+    }
+    /**** ResourceNameIsUsed ****/
+    function ResourceNameIsUsed(Name, Category) {
+        Name = Name.toLowerCase();
+        return (allResources().filter(function () {
+            return (($(this).attr('name') || '').toLowerCase() === Name);
+        }).length > 0);
+    }
+    /**** renameResources ****/
+    function renameResources(oldName, newName) {
+        if (oldName === newName) {
+            return;
+        }
+        var StyleResource = ResourceWithName(oldName, 'style');
+        var ScriptResource = ResourceWithName(oldName, 'script');
+        if ((StyleResource.length === 0) && (ScriptResource.length === 0))
+            throwError('NoSuchResource: there is no resource with the name ' + quoted(oldName));
+        if (newName == null) {
+            StyleResource.removeAttr('name');
+            ScriptResource.removeAttr('name');
+            return;
+        }
+        if ((StyleResource.length > 0) && ResourceNameIsUsed(newName, 'style'))
+            throwError('NameInUse: there is already a style resource with the name ' + quoted(newName));
+        if ((ScriptResource.length > 0) && ResourceNameIsUsed(newName, 'script'))
+            throwError('NameInUse: there is already a script resource with the name ' + quoted(newName));
+        StyleResource.attr('name', newName);
+        ScriptResource.attr('name', newName);
+    }
+    /**** CategoryOfResource ****/
+    function CategoryOfResource(Element) {
+        switch (Element.prop('tagName')) {
+            case 'LINK': if (Element.attr('rel') !== 'stylesheet') {
+                break;
+            }
+            case 'STYLE': return 'stylesheet';
+            case 'SCRIPT': return 'script';
+            default:
+        }
+        throwError('InvalidArgument: the given DOM element is not a valid WAT resource');
+    }
+    /**** ResourceIsGeneric ****/
+    function ResourceIsGeneric(Element) {
+        return ((Element.attr('for-wat-masters') || '').trim() === '');
+    }
+    /**** ResourceIsSpecific ****/
+    function ResourceIsSpecific(Element) {
+        return ((Element.attr('for-wat-masters') || '').trim() !== '');
+    }
+    /**** ResourceIsRequired ****/
+    function ResourceIsRequired(Element) {
+        switch (Element.attr('name')) {
+            case 'jquery':
+            case 'javascript-interface-library':
+                return true;
+            case 'localforage':
+            case 'download':
+                return (Designer != null);
+            default:
+                return false;
+        }
+    }
+    /**** importResource ****/
+    function importResource(Form, HTML) {
+        var Category = (Form.endsWith('style') ? 'style' : 'script');
+        var Name = HTML // isolate Name
+            .replace(/^<[^>]+name\s*=("|')?/, '')
+            .replace(/("|'|\s|>).*$/, '');
+        if (!ValueIsOrdinaryName(Name)) {
+            Name = undefined;
+        }
+        if (Name != null) { // if need be, replace existing resource with that name
+            var existingResource = ResourceWithName(Name, Category);
+            if (existingResource.length > 0) {
+                var existingMasters = MastersOfResource(existingResource);
+                var newResource = existingResource.replaceWith(HTML);
+                if (existingMasters.length > 0) {
+                    attachMastersToResource(existingMasters, newResource);
+                }
+                return;
+            }
+        }
+        var Content;
+        switch (Form) {
+            case 'literal-style':
+                Content = HTML // isolate CSS
+                    .replace(/^<[^>]+>/, '')
+                    .replace(/<\/[^>]+>$/, '');
+                break;
+            case 'external-style':
+                Content = HTML // isolate URL
+                    .replace(/^<[^>]+href\s*=("|')?/, '')
+                    .replace(/("|'|\s|>).*$/, '');
+                break;
+            case 'literal-script':
+                Content = HTML // isolate actual script
+                    .replace(/^<[^>]+>/, '')
+                    .replace(/<\/[^>]+>$/, '');
+                break;
+            case 'external-script':
+                Content = HTML // isolate URL
+                    .replace(/^<[^>]+src\s*=("|')?/, '')
+                    .replace(/("|'|\s|>).*$/, '');
+                break;
+        }
+        var Resource = ResourceResembling(Form, Content);
+        if (Resource.length === 0) { // resource does not seem to exist yet
+            var newResource = $(HTML);
+            $(document.head).append(newResource);
+            return;
+        }
+        /**** if both resources have different names, keep both ****/
+        var oldName = NameOfResource(Resource);
+        if ((oldName != null) && (Name != null) && (Name !== oldName)) {
+            var newResource = $(HTML);
+            $(document.head).append(newResource); // this approach may lead to errors
+            return;
+        }
+        /**** if need be, use imported name for existing resource ****/
+        if ((oldName == null) && (Name != null)) { // "Name" has not yet been used!
+            Resource.attr('name', Name);
+        }
+        /**** if new resource is for a master, mention that in existing resource ****/
+        var newMasters = HTML // isolate beneficiaries
+            .replace(/^<[^>]+for\s*=("|')?/, '')
+            .replace(/("|'|>).*$/, '') // *C* may fail if quotes are missing
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (newMasters !== '') {
+            attachMastersToResource(newMasters.split(' '), Resource);
+        }
+    }
+    /**** ResourceResembling - independent of a name ****/
+    function ResourceResembling(Form, ContentOrURL) {
+        var normalizedContent = ContentOrURL
+            .replace(/^\s*\n/, '')
+            .replace(/\n\s*$/, '\n');
+        return allResources().filter(function () {
+            var Resource = $(this), TagName = Resource.prop('tagName'), normalizedResource;
+            switch (Form) {
+                case 'literal-style':
+                    if (TagName !== 'STYLE') {
+                        return false;
+                    }
+                    normalizedResource = Resource.html()
+                        .replace(/^\s*\n/, '')
+                        .replace(/\n\s*$/, '\n');
+                    return (normalizedResource === normalizedContent);
+                case 'external-style':
+                    return ((TagName === 'LINK') &&
+                        (Resource.attr('href') === ContentOrURL));
+                case 'literal-script':
+                    if ((TagName !== 'SCRIPT') || (Resource.attr('src') != null)) {
+                        return false;
+                    }
+                    normalizedResource = Resource.html()
+                        .replace(/^\s*\n/, '')
+                        .replace(/\n\s*$/, '\n');
+                    return (normalizedResource === normalizedContent);
+                case 'external-script':
+                    return ((TagName === 'SCRIPT') &&
+                        (Resource.attr('src') === ContentOrURL));
+            }
+            return false;
+        });
+    }
+    /**** serializedResourcesForMasters ****/
+    function serializedResourcesForMasters(Masters) {
+        var Serialization = '';
+        ResourcesForMasters(Masters).each(function () {
+            var Resource = $(this);
+            var oldMasters = MastersOfResource(Resource);
+            var newMasters = filteredMasters(oldMasters, Masters);
+            Resource.attr('for-wat-masters', newMasters.join(' '));
+            Serialization += (Serialization === '' ? '' : '\n') + Resource.prop('outerHTML');
+            Resource.attr('for-wat-masters', oldMasters.join(' '));
+        });
+        return Serialization;
+    }
+    var serializedResourcesForMaster = serializedResourcesForMasters;
+    /**** removeResource ****/
+    function removeResource(Resource) {
+        if (ResourceIsRequired(Resource)) {
+            throwError('RequiredResource: the given resource is required by the WebApp ' +
+                'Tinkerer itself and, thus, must not be deleted');
+        }
+        else {
+            Resource.remove();
+        }
+    }
+    /**** removeResourceForMasters ****/
+    function removeResourceForMasters(Resource, Masters) {
+        detachMastersFromResource(Masters, Resource);
+        if ((MastersOfResource(Resource).length === 0) &&
+            ResourceIsGeneric(Resource) && !ResourceIsRequired(Resource)) {
+            Resource.remove();
+        }
+    }
+    var removeResourceForMaster = removeResourceForMasters;
+    /**** removeResourcesForMasters ****/
+    function removeResourcesForMasters(Masters) {
+        ResourcesForMasters(Masters).each(function () {
+            removeResourceForMasters($(this), Masters);
+        });
+    }
+    var removeResourcesForMaster = removeResourcesForMasters;
+    /**** attachMastersToResource ****/
+    function attachMastersToResource(newMasters, Resource) {
+        var Masters = MastersOfResource(Resource);
+        if (Masters.length === 0) {
+            Masters = newMasters;
+        }
+        else {
+            Masters = joinedMasters(Masters, newMasters);
+        }
+        Resource.attr('for-wat-masters', Masters.join(' '));
+    }
+    /**** detachMastersFromResource ****/
+    function detachMastersFromResource(oldMasters, Resource) {
+        var Masters = MastersOfResource(Resource);
+        if (Masters.length === 0) {
+            return;
+        }
+        for (var i = 0, l = oldMasters.length; i < l; i++) {
+            Masters = MastersWithout(Masters, oldMasters[i]);
+        }
+        if (Masters.length === 0) {
+            Resource.removeAttr('for-wat-masters');
+        }
+        else {
+            Resource.attr('for-wat-masters', Masters.join(' '));
+        }
+    }
+    /**** MastersWith ****/
+    function MastersWith(Masters, Master) {
+        if (Masters.map(function (Master) { return Master.toLowerCase(); }).indexOf(Master.toLowerCase()) < 0) {
+            return Masters.concat(Master);
+        }
+        else {
+            return Masters.slice();
+        }
+    }
+    /**** MastersWithout ****/
+    function MastersWithout(Masters, Candidate) {
+        return Masters.filter(function (Master) { return (Master.toLowerCase() !== Candidate.toLowerCase()); });
+    }
+    /**** joinedMasters ****/
+    function joinedMasters(MastersA, MastersB) {
+        return MastersB.reduce(function (Result, Master) { return MastersWith(Result, Master); }, MastersA);
+    }
+    /**** filteredMasters ****/
+    function filteredMasters(Masters, MastersToFilter) {
+        MastersToFilter = MastersToFilter.map(function (Master) { return Master.toLowerCase(); });
+        return Masters.filter(function (Master) { return (MastersToFilter.indexOf(Master.toLowerCase()) >= 0); });
+    }
+    //----------------------------------------------------------------------------//
     //                             Category Handling                              //
     //----------------------------------------------------------------------------//
     WAT.WAT_Categories = ['Applet', 'Card', 'Compound', 'Control'];
