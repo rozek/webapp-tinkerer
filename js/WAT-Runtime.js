@@ -1,3 +1,8 @@
+/*******************************************************************************
+*                                                                              *
+*                        WebApp Tinkerer (WAT) Runtime                         *
+*                                                                              *
+*******************************************************************************/
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = function (d, b) {
         extendStatics = Object.setPrototypeOf ||
@@ -1031,6 +1036,209 @@ var WAT;
     function filteredMasters(Masters, MastersToFilter) {
         MastersToFilter = MastersToFilter.map(function (Master) { return Master.toLowerCase(); });
         return Masters.filter(function (Master) { return (MastersToFilter.indexOf(Master.toLowerCase()) >= 0); });
+    }
+    //----------------------------------------------------------------------------//
+    //                              Backup Handling                               //
+    //----------------------------------------------------------------------------//
+    var BackupIsSupported = false;
+    try {
+        localforage.config({
+            driver: [localforage.INDEXEDDB, localforage.WEBSQL]
+        });
+        BackupIsSupported = true;
+    }
+    catch (Signal) { /* nop */ }
+    var AppletStore; // will be filled during start-up
+    /**** AppletPeersMayBePreserved ****/
+    function AppletPeersMayBePreserved() {
+        return (AppletStore != null);
+    }
+    WAT.AppletPeersMayBePreserved = AppletPeersMayBePreserved;
+    /**** AppletMayBePreserved ****/
+    function AppletPeerMayBePreserved(AppletPeer) {
+        var Peer = $(AppletPeer);
+        return (AppletPeersMayBePreserved &&
+            ValueIsName(Peer.attr('name') || Peer.attr('id')) &&
+            (Peer.data('wat-backup-status') == null));
+    }
+    /**** AppletMayBeRestored ****/
+    function AppletPeerMayBeRestored(AppletPeer) {
+        return __awaiter(this, void 0, Promise, function () {
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0: return [4 /*yield*/, AppletPeerHasBackup(AppletPeer)];
+                    case 1: return [2 /*return*/, ((_a.sent()) &&
+                            ($(AppletPeer).data('wat-backup-status') == null))];
+                }
+            });
+        });
+    }
+    /**** AppletPeerHasBackup ****/
+    function AppletPeerHasBackup(AppletPeer) {
+        return __awaiter(this, void 0, Promise, function () {
+            var Peer, AppletName, normalizedAppletName, _a, Signal_1;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        if (!AppletPeersMayBePreserved()) {
+                            return [2 /*return*/, false];
+                        }
+                        Peer = $(AppletPeer);
+                        AppletName = Peer.attr('name') || Peer.attr('id');
+                        if (!ValueIsName(AppletName)) {
+                            return [2 /*return*/, false];
+                        }
+                        _b.label = 1;
+                    case 1:
+                        _b.trys.push([1, 3, , 4]);
+                        normalizedAppletName = (AppletName.startsWith('#')
+                            ? AppletName.slice(1)
+                            : AppletName);
+                        _a = ValueIsString;
+                        return [4 /*yield*/, AppletStore.getItem(normalizedAppletName)];
+                    case 2: return [2 /*return*/, _a.apply(void 0, [_b.sent()])];
+                    case 3:
+                        Signal_1 = _b.sent();
+                        console.error('backup of applet "' + AppletName + ' could not be checked, reason: ', Signal_1);
+                        return [2 /*return*/, false];
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**** preserveAppletPeer ****/
+    function preserveAppletPeer(AppletPeer) {
+        return __awaiter(this, void 0, Promise, function () {
+            var Peer, AppletName, normalizedAppletName, Serialization, Signal_2;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        validateBackupAccessForAppletPeer(AppletPeer);
+                        Peer = $(AppletPeer);
+                        AppletName = Peer.attr('name') || Peer.attr('id') // validated before
+                        ;
+                        normalizedAppletName = (AppletName.startsWith('#')
+                            ? AppletName.slice(1)
+                            : AppletName);
+                        Serialization = SerializationOfVisual(VisualOfElement(AppletPeer));
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        Peer.data('wat-backup-status', 'is-being-preserved');
+                        return [4 /*yield*/, AppletStore.setItem(normalizedAppletName, Serialization)];
+                    case 2:
+                        _a.sent();
+                        Peer.data('wat-backup-status', null);
+                        return [3 /*break*/, 4];
+                    case 3:
+                        Signal_2 = _a.sent();
+                        Peer.data('wat-backup-status', null);
+                        console.error('applet "' + AppletName + '" could not be preserved, reason: ', Signal_2);
+                        throwError('applet could not be preserved (see browser console)');
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**** restoredAppletPeer (while applet is running) ****/
+    function restoredAppletPeer(AppletPeer) {
+        return __awaiter(this, void 0, Promise, function () {
+            var Peer, AppletName, normalizedAppletName, Serialization, Signal_3, newPeer, SettingsToKeep;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        validateBackupAccessForAppletPeer(AppletPeer);
+                        Peer = $(AppletPeer);
+                        AppletName = Peer.attr('name') || Peer.attr('id') // validated before
+                        ;
+                        normalizedAppletName = (AppletName.startsWith('#')
+                            ? AppletName.slice(1)
+                            : AppletName);
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        Peer.data('wat-backup-status', 'is-being-restored');
+                        return [4 /*yield*/, AppletStore.getItem(normalizedAppletName)];
+                    case 2:
+                        Serialization = _a.sent();
+                        Peer.data('wat-backup-status', null);
+                        return [3 /*break*/, 4];
+                    case 3:
+                        Signal_3 = _a.sent();
+                        Peer.data('wat-backup-status', null);
+                        console.error('applet "' + AppletName + '" could not be restored, reason: ', Signal_3);
+                        throwError('applet could not be restored (see browser console)');
+                        return [3 /*break*/, 4];
+                    case 4:
+                        if (WAT_isRunning) {
+                            triggerRecursivelyOutwards(Peer[0], 'shutdown');
+                        }
+                        newPeer = $(Serialization);
+                        validateContentsOfPeer(newPeer[0]);
+                        SettingsToKeep = Peer.css([
+                            'display', 'position', 'left', 'top', 'right', 'bottom', 'width', 'height'
+                        ]);
+                        Peer.replaceWith(newPeer);
+                        if (WAT_isRunning) {
+                            buildVisualFromPeer(newPeer[0], 'recursively');
+                        }
+                        newPeer.css(SettingsToKeep);
+                        if (WAT_isRunning) {
+                            triggerRecursivelyOutwards(newPeer[0], 'after-deserialization');
+                        }
+                        return [2 /*return*/, newPeer[0]];
+                }
+            });
+        });
+    }
+    /**** removeBackupOfAppletPeer ****/
+    function removeBackupOfAppletPeer(AppletPeer) {
+        return __awaiter(this, void 0, Promise, function () {
+            var Peer, AppletName, normalizedAppletName, Signal_4;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        validateBackupAccessForAppletPeer(AppletPeer);
+                        Peer = $(AppletPeer);
+                        AppletName = Peer.attr('name') || Peer.attr('id') // validated before
+                        ;
+                        normalizedAppletName = (AppletName.startsWith('#')
+                            ? AppletName.slice(1)
+                            : AppletName);
+                        _a.label = 1;
+                    case 1:
+                        _a.trys.push([1, 3, , 4]);
+                        Peer.data('wat-backup-status', 'is-being-removed');
+                        return [4 /*yield*/, AppletStore.removeItem(normalizedAppletName)];
+                    case 2:
+                        _a.sent();
+                        Peer.data('wat-backup-status', null);
+                        return [3 /*break*/, 4];
+                    case 3:
+                        Signal_4 = _a.sent();
+                        Peer.data('wat-backup-status', null);
+                        console.error('applet "' + AppletName + '" could not be removed, reason: ', Signal_4);
+                        throwError('applet could not be removed (see browser console)');
+                        return [3 /*break*/, 4];
+                    case 4: return [2 /*return*/];
+                }
+            });
+        });
+    }
+    /**** validateBackupAccessForAppletPeer ****/
+    function validateBackupAccessForAppletPeer(AppletPeer) {
+        if (!AppletPeersMayBePreserved())
+            throwError('NotSupported: WAT applets can not be preserved in this environment');
+        var Peer = $(AppletPeer);
+        var AppletName = Peer.attr('name') || Peer.attr('id');
+        if (!ValueIsName(AppletName))
+            throwError('InvalidArgument: the given applet does not have a valid name');
+        switch (Peer.data('wat-backup-status')) {
+            case 'is-being-preserved': throwError('ForbiddenOperation: applet "' + AppletName + '" is currently being backed-up');
+            case 'is-being-restored': throwError('ForbiddenOperation: applet "' + AppletName + '" is currently being restored from its backup');
+            case 'is-being-removed': throwError('ForbiddenOperation: the backup of applet "' + AppletName + '" is currently being removed');
+        }
     }
     //----------------------------------------------------------------------------//
     //                             Category Handling                              //
@@ -9314,6 +9522,7 @@ var WAT;
             return __generator(this, function (_a) {
                 switch (_a.label) {
                     case 0:
+                        //  defineAllMastersInDocument()
                         WAT_isReady = true;
                         invokeAllReadyFunctionsToCall();
                         return [4 /*yield*/, startAllApplets()];
@@ -9355,12 +9564,28 @@ var WAT;
     /**** startAppletFromPeer ****/
     function startAppletFromPeer(Peer) {
         return __awaiter(this, void 0, Promise, function () {
-            var Applet;
-            return __generator(this, function (_a) {
-                Applet = VisualFromPeer(Peer, 'recursively') // WAT is not yet running!
-                ;
-                triggerRecursivelyOutwards(Peer, 'after-deserialization');
-                return [2 /*return*/];
+            var _a, Applet;
+            return __generator(this, function (_b) {
+                switch (_b.label) {
+                    case 0:
+                        _a = BackupIsSupported;
+                        if (!_a) return [3 /*break*/, 2];
+                        return [4 /*yield*/, AppletPeerHasBackup(Peer)];
+                    case 1:
+                        _a = (_b.sent());
+                        _b.label = 2;
+                    case 2:
+                        if (!_a) return [3 /*break*/, 4];
+                        return [4 /*yield*/, restoredAppletPeer(Peer)]; // WAT is not yet running!
+                    case 3:
+                        Peer = _b.sent(); // WAT is not yet running!
+                        _b.label = 4;
+                    case 4:
+                        Applet = VisualFromPeer(Peer, 'recursively') // WAT is not yet running!
+                        ;
+                        triggerRecursivelyOutwards(Peer, 'after-deserialization');
+                        return [2 /*return*/];
+                }
             });
         });
     }
