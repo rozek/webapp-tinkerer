@@ -21,7 +21,7 @@ WAT was inspired by the incredibly brilliant [HyperCard](https://en.wikipedia.or
 
 Compared to HyperCard, WAT lacks
 
-* the built-in drawing tool and
+* the built-in bitmap drawing tool and
 * the novice-friendly scripting language (WAT uses JavaScript instead)
 
 On the other side, WAT offers
