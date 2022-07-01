@@ -31,6 +31,10 @@ On the other side, WAT offers
 * no need for an explicit installation
 * automatic updates (if desired)
 
+## Special Use Cases ##
+
+(active Personal Notebook, active Presentations)
+
 ## User Manual ##
 
 (Designer Button, Toolbox, Layout Mode, Layouting (Matte, Positioning Guides), Nudger, Configuration Dialog (for Applet, Card, Component Selection), Script Editor (for Applet, Card, Component Selection), Applet Import, Applet Export)
