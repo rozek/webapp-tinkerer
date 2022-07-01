@@ -55,6 +55,10 @@ On the other side, WAT offers
 
 ### Controls ###
 
+### Groups ###
+
+### Graphics ###
+
 ### Scripting ###
 
 ### Intrinsic Properties ###
