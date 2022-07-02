@@ -48,7 +48,7 @@ On the other side, WAT offers
 
 ### Masters ###
 
-*(Master Scripting, )*
+*(Master Scripting, defineName/Category/Template/Method[s]/Property/Properties, on)*
 
 ### Applets ###
 
