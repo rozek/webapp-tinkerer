@@ -39,6 +39,7 @@ On the other side, WAT offers
 ## User Manual ##
 
 (Designer Button, Toolbox, Layout Mode, Layouting (Matte, Positioning Guides), Nudger, Configuration Dialog (for Applet, Container, Component Selection), Script Editor (for Applet, Card, Component Selection), Applet Import, Applet Export)
+(min. size for development: 320x480px)
 
 ### How to embed WAT Applets ###
 
