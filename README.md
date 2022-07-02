@@ -60,6 +60,8 @@ On the other side, WAT offers
 
 ### Groups ###
 
+*(special compound, simple group/ungroup, x/y configurable, automatic width/height, no other configuration possibilities, use compound for configuration and scripting)*
+
 ### Graphics ###
 
 ### Scripting ###
