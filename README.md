@@ -7,7 +7,7 @@
 The **WebApp Tinkerer** (**WAT**) allows novices, casual and professional programmers to **easily develop web applications directly in a browser**. Both the development environment and the final application may be run on **many operating systems** (such as Windows, Linux, macOS, iOS, iPadOS, Android, ChromeOS) and on devices with **multiple form factors** (such as desktops, notebooks, convertibles, tablets, smartphones).
 Smartwatches *may* run WAT applications if they provide a modern browser and the applications have been designed with such small displays in mind.
 
-**(WAT is currently under active development, please stay tuned - it is planned to be finished by mid of August)**
+**(WAT is currently under active development, please stay tuned - it is planned to be finished by end of August)**
 
 (current Version, Browser Requirements)
 
