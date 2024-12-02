@@ -1494,6 +1494,8 @@ function generateStandaloneWebApp() {
     }
   }
   ${'<'}/script>
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/download.min.js">${'<'}/script>""
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>""
 
   ${'<'}script type="wat/applet">${JSON.stringify(Serialization)}${'<'}/script>
   ${(AppletScript || '').trim() === ''
