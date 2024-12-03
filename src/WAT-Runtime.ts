@@ -4,6 +4,8 @@
 *                                                                              *
 *******************************************************************************/
 
+  const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons'
+
   declare const download:Function
   declare const localforage:any
 
@@ -34,7 +36,12 @@
   } from 'javascript-interface-library'
   import * as JIL from 'javascript-interface-library'
 
-  import { render, html, Component } from 'htm/preact'
+  const ValueIsPhoneNumber = ValueIsTextline // *C* should be implemented
+
+  import {
+    render, html, Component,
+    useRef, useMemo, useCallback
+  } from 'htm/preact'
 
   import hyperactiv from 'hyperactiv'
   const { observe, computed, dispose } = hyperactiv
@@ -122,6 +129,19 @@
 
   export const WAT_FontStyles = ['normal','italic']
   export type  WAT_FontStyle  = typeof WAT_FontStyles[number]
+
+  export const WAT_TextDecorationLines = [ 'none','underline','overline','line-through' ]
+  export type  WAT_TextDecorationLine  = typeof WAT_TextDecorationLines[number]
+
+  export const WAT_TextDecorationStyles = [ 'solid','double','dotted','dashed','wavy' ]
+  export type  WAT_TextDecorationStyle  = typeof WAT_TextDecorationStyles[number]
+
+  export type WAT_TextDecoration = {
+    Line:       WAT_TextDecorationLine,
+    Color?:     WAT_Color,          // "null" or "undefined" mean "currentColor"
+    Style?:     WAT_TextDecorationStyle,
+    Thickness?: WAT_Dimension          // "null" or "undefined" mean "from-font"
+  }
 
   export type WAT_TextShadow = {
     xOffset:   WAT_Location,
@@ -452,6 +472,28 @@
   const expectIncompleteGeometry = ValidatorForClassifier(
     ValueIsIncompleteGeometry, rejectNil, 'WAT geometry'
   ), expectedIncompleteGeometry = expectIncompleteGeometry
+
+/**** ValueIsTextDecoration ****/
+
+  export function ValueIsTextDecoration (Value:any):boolean {
+    return (Value === 'none') || (
+      ValueIsObject(Value) &&
+      ValueIsOneOf(Value.Line, WAT_TextDecorationLines) &&
+      ((Value.Color == null) || ValueIsColor(Value.Color)) &&
+      ((Value.Style == null) || ValueIsOneOf(Value.Style,WAT_TextDecorationStyles)) &&
+      ((Value.Thickness == null) || ValueIsDimension(Value.Thickness))
+    )
+  }
+
+/**** allow/expect[ed]TextDecoration ****/
+
+  export const allowTextDecoration = ValidatorForClassifier(
+    ValueIsTextDecoration, acceptNil, 'a text decoration'
+  ), allowedTextDecoration = allowTextDecoration
+
+  export const expectTextDecoration = ValidatorForClassifier(
+    ValueIsTextDecoration, rejectNil, 'a text decoration'
+  ), expectedTextDecoration = expectTextDecoration
 
 /**** ValueIsTextShadow ****/
 
@@ -1094,12 +1136,37 @@
       }
     }
 
-  /**** TextShadow - not inheritable ****/
+  /**** TextDecoration - not inheritable ****/
+
+    protected _TextDecoration:WAT_TextDecoration|undefined
+
+    public get TextDecoration ():WAT_TextDecoration|undefined {
+      return (this._TextDecoration == null ? undefined : { ...this._TextDecoration })
+    }
+
+    public set TextDecoration (newTextDecoration:WAT_TextDecoration|undefined) {
+      allowTextDecoration('widget text decoration',newTextDecoration)
+      if (ValuesDiffer(this._TextDecoration,newTextDecoration)) {
+        if (newTextDecoration == null) {
+          this._TextDecoration = undefined
+        } else {
+          const { Line, Color, Style, Thickness } = newTextDecoration
+          this._TextDecoration = { Line, Color, Style, Thickness }
+        }
+        this.rerender()
+      }
+    }
+
+  /**** TextShadow - inheritable ****/
 
     protected _TextShadow:WAT_TextShadow|undefined
 
     public get TextShadow ():WAT_TextShadow|undefined {
-      return (this._TextShadow == null ? undefined : { ...this._TextShadow })
+      return (
+        this._TextShadow == null
+        ? this._Container == null ? undefined : this._Container.TextShadow
+        : this._TextShadow
+      )
     }
 
     public set TextShadow (newTextShadow:WAT_TextShadow|undefined) {
@@ -1227,13 +1294,13 @@
 
   /**** BorderWidths - in "t,r,b,l" order, not inheritable ****/
 
-    protected _BorderWidths:(WAT_Dimension|undefined)[]|undefined
+    protected _BorderWidths:WAT_Dimension[]|undefined
 
-    public get BorderWidths ():WAT_Dimension|(WAT_Dimension|undefined)[]|undefined {
+    public get BorderWidths ():WAT_Dimension[]|undefined {
       return ( this._BorderWidths == null ? undefined : this._BorderWidths.slice())
     }
 
-    public set BorderWidths (newBorderWidths:(WAT_Dimension|undefined)[]|undefined) {
+    public set BorderWidths (newBorderWidths:WAT_Dimension|WAT_Dimension[]|undefined) {
       let newSettings:WAT_Dimension[]|undefined = undefined
       switch (true) {
         case (newBorderWidths == null):
@@ -1241,9 +1308,7 @@
         case ValueIsDimension(newBorderWidths):
           newSettings = new Array(4).fill(newBorderWidths as any)// satisfies TS
           break
-        case ValueIsListSatisfying(
-          newBorderWidths,(Value:any) => (Value == null) || ValueIsDimension(Value)
-        ):
+        case ValueIsListSatisfying(newBorderWidths,ValueIsDimension):
           switch ((newBorderWidths as any).length) {    // "as any" satisfies TS
             case 0: break
             case 1:
@@ -1277,13 +1342,13 @@
 
   /**** BorderStyles - in "t,r,b,l" order, not inheritable ****/
 
-    protected _BorderStyles:(WAT_BorderStyle|undefined)[]|undefined
+    protected _BorderStyles:WAT_BorderStyle[]|undefined
 
-    public get BorderStyles ():WAT_BorderStyle|(WAT_BorderStyle|undefined)[]|undefined {
+    public get BorderStyles ():WAT_BorderStyle[]|undefined {
       return ( this._BorderStyles == null ? undefined : this._BorderStyles.slice())
     }
 
-    public set BorderStyles (newBorderStyles:(WAT_BorderStyle|undefined)[]|undefined) {
+    public set BorderStyles (newBorderStyles:WAT_BorderStyle|WAT_BorderStyle[]|undefined) {
       let newSettings:WAT_BorderStyle[]|undefined = undefined
       switch (true) {
         case (newBorderStyles == null):
@@ -1327,13 +1392,13 @@
 
   /**** BorderColors - in "t,r,b,l" order, not inheritable ****/
 
-    protected _BorderColors:(WAT_Color|undefined)[]|undefined
+    protected _BorderColors:WAT_Color[]|undefined
 
-    public get BorderColors ():WAT_Color|(WAT_Color|undefined)[]|undefined {
+    public get BorderColors ():WAT_Color[]|undefined {
       return ( this._BorderColors == null ? undefined : this._BorderColors.slice())
     }
 
-    public set BorderColors (newBorderColors:(WAT_Color|undefined)[]|undefined) {
+    public set BorderColors (newBorderColors:WAT_Color|WAT_Color[]|undefined) {
       let newSettings:WAT_Color[]|undefined = undefined
       switch (true) {
         case (newBorderColors == null):
@@ -1377,13 +1442,13 @@
 
   /**** BorderRadii - in "tl,tr,br,bl" order, not inheritable ****/
 
-    protected _BorderRadii:(WAT_Dimension|undefined)[]|undefined
+    protected _BorderRadii:WAT_Dimension[]|undefined
 
-    public get BorderRadii ():WAT_Dimension|(WAT_Dimension|undefined)[]|undefined {
+    public get BorderRadii ():WAT_Dimension[]|undefined {
       return ( this._BorderRadii == null ? undefined : this._BorderRadii.slice())
     }
 
-    public set BorderRadii (newBorderRadii:(WAT_Dimension|undefined)[]|undefined) {
+    public set BorderRadii (newBorderRadii:WAT_Dimension|WAT_Dimension[]|undefined) {
       let newSettings:WAT_Dimension[]|undefined = undefined
       switch (true) {
         case (newBorderRadii == null):
@@ -1391,9 +1456,7 @@
         case ValueIsDimension(newBorderRadii):
           newSettings = new Array(4).fill(newBorderRadii as any) // satisfies TS
           break
-        case ValueIsListSatisfying(
-          newBorderRadii,(Value:any) => (Value == null) || ValueIsDimension(Value)
-        ):
+        case ValueIsListSatisfying(newBorderRadii,ValueIsDimension):
           switch ((newBorderRadii as any).length) {     // "as any" satisfies TS
             case 0: break
             case 1:
@@ -1698,7 +1761,7 @@
       ;[
         'Name',
         'FontFamily','FontSize','FontWeight','FontStyle',
-        'TextShadow','TextAlignment','LineHeight',
+        'TextDecoration', 'TextShadow','TextAlignment','LineHeight',
         'ForegroundColor', 'BackgroundColor','BackgroundTexture',
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
@@ -1726,7 +1789,7 @@
       ;[
         'Name',
         'FontFamily','FontSize','FontWeight','FontStyle',
-        'TextShadow','TextAlignment','LineHeight',
+        'TextDecoration', 'TextShadow','TextAlignment','LineHeight',
         'ForegroundColor', 'BackgroundColor','BackgroundTexture',
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
@@ -2918,6 +2981,24 @@
     public get isDisabled ():boolean             { return ! this.Enabling }
     public set isDisabled (newDisabling:boolean) { this.Enabling = ! newDisabling }
 
+  /**** onFocus ****/
+
+    protected _onFocus:Function|undefined
+
+    public onFocus (newHandler:Function):void {
+      expectFunction('"focus" event handler',newHandler)
+      this._onFocus = newHandler
+    }
+
+  /**** onBlur ****/
+
+    protected _onBlur:Function|undefined
+
+    public onBlur (newHandler:Function):void {
+      expectFunction('"blur" event handler',newHandler)
+      this._onBlur = newHandler
+    }
+
   /**** onClick ****/
 
     protected _onClick:Function|undefined
@@ -3848,18 +3929,18 @@
     public set Type (_:string) { throwReadOnlyError('Type') }
 
     protected _Renderer = () => {
-      const onClick = (Event:any) => {
+      const _onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (typeof this._onClick === 'function') { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick(Event) }
       }
 
-      const Value = acceptableURL(this.Value,'./icons/pencil.png')
+      const Value = acceptableURL(this.Value,`${IconFolder}/pencil.png`)
       const Color = acceptableColor(this.Color,'black')
 
       return html`<div class="WAT Content Icon" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
         background-color:${Color};
-      " disabled=${this.Enabling == false} onClick=${onClick}
+      " disabled=${this.Enabling == false} onClick=${_onClick}
       />`
     }
   }
@@ -3932,7 +4013,7 @@
     protected _Renderer = () => {
       const onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (typeof this._onClick === 'function') { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick(Event) }
       }
 
       const Label = acceptableTextline(this.Label || this.Value,'')
@@ -3967,7 +4048,7 @@
         if (this.Enabling == false) { return consumingEvent(Event) }
 
         this.Value = Event.target.checked
-        if (typeof this._onClick === 'function') { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick(Event) }
       }
 
       const Value = acceptableOptionalBoolean(this.Value)
@@ -4001,7 +4082,7 @@
         if (this.Enabling == false) { return consumingEvent(Event) }
 
         this.Value = Event.target.checked
-        if (typeof this._onClick === 'function') { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick(Event) }
       }
 
       const Value = acceptableBoolean(this.Value,false)
@@ -4019,6 +4100,1724 @@
   }
   `)
 
+/**** Gauge ****/
+
+  export class WAT_Gauge extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'Gauge' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const Value = acceptableNumber(
+        ValueIsString(this.Value) ? parseFloat(this.Value as string) : this.Value, 0
+      )
+      const Minimum    = acceptableOptionalNumber((this as Indexable).Minimum)
+      const lowerBound = acceptableOptionalNumber((this as Indexable).lowerBound)
+      const Optimum    = acceptableOptionalNumber((this as Indexable).Optimum)
+      const upperBound = acceptableOptionalNumber((this as Indexable).upperBound)
+      const Maximum    = acceptableOptionalNumber((this as Indexable).Maximum)
+
+      return html`<meter class="WAT Content Gauge" value=${Value}
+        min=${Minimum} low=${lowerBound} opt=${Optimum}
+        high=${upperBound} max=${Maximum}
+      />`
+
+      return html`<div class="WAT Gauge">${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['Gauge'] = WAT_Gauge
+
+  appendStyle(`
+  .WAT.Widget > .WAT.Gauge {
+  }
+  `)
+
+/**** Progressbar ****/
+
+  export class WAT_Progressbar extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'Progressbar' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const Value = acceptableNumber(
+        ValueIsString(this.Value) ? parseFloat(this.Value as string) : this.Value, 0
+      )
+      const Maximum = acceptableOptionalNumber((this as Indexable).Maximum)
+
+      return html`<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
+      style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`
+    }
+  }
+  builtInWidgetTypes['Progressbar'] = WAT_Progressbar
+
+  appendStyle(`
+  .WAT.Widget > .WAT.Progressbar {
+    -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    background-color:#EEEEEE;
+  }
+  .WAT.Widget > .WAT.Progressbar::-webkit-progress-bar {
+    background-color:#EEEEEE;
+    border:solid 1px #E0E0E0; border-radius:2px;
+  }
+  .WAT.Widget > .WAT.Progressbar::-webkit-progress-value,
+  .WAT.Widget > .WAT.Progressbar::-moz-progress-bar {
+    background-color:dodgerblue;
+    border:none; border-radius:2px;
+  }
+  `)
+
+/**** Slider ****/
+
+  const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d*[.](?:\d*))(?:\s*:\s*([^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]+))?$/
+
+  export class WAT_Slider extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'Slider' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    public HashmarkMatcher (Value:any):boolean {
+      return ValueIsStringMatching(Value,HashmarkPattern) || ValueIsNumber(Value)
+    }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:number = acceptableNumber(
+        ValueIsString(Value) ? parseFloat(Value as string) : Value, 0
+      )
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = parseFloat(Event.target.value)
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+      })
+
+    /**** process any other parameters ****/
+
+      const Minimum  = acceptableOptionalNumber((this as Indexable).Minimum)
+      const Stepping = acceptableOptionalNumberInRange((this as Indexable).Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalNumber((this as Indexable).Maximum)
+
+      const Hashmarks = acceptableOptionalListSatisfying(
+        (this as Indexable).Hashmarks, undefined, this.HashmarkMatcher
+      )
+
+      let HashmarkList:any = '', HashmarkId
+      if ((Hashmarks != null) && (Hashmarks.length > 0)) {
+        HashmarkId = IdOfWidget(this) + '-Hashmarks'
+
+        HashmarkList = html`\n<datalist id=${HashmarkId}>
+          ${Hashmarks.map((Item:string|number) => {
+            Item = ''+Item
+            const Value = Item.replace(/:.*$/,'').trim()
+            const Label = Item.replace(/^[^:]+:/,'').trim()
+
+            return html`<option value=${Value}>${Label}</option>`
+          })}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="range" class="WAT Content Slider"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${HashmarkId}
+      />${HashmarkList}`
+    }
+  }
+  builtInWidgetTypes['Slider'] = WAT_Slider
+
+  appendStyle(`
+  .WAT.Widget > .WAT.Slider {
+  }
+  `)
+
+/**** TextlineInput ****/
+
+  export class WAT_TextlineInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'TextlineInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder   = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly      = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength     = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength     = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const Pattern       = acceptableOptionalTextline((this as Indexable).Pattern)
+      const SpellChecking = acceptableOptionalBoolean ((this as Indexable).SpellChecking)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsTextline
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="text" class="WAT Content TextlineInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['TextlineInput'] = WAT_TextlineInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.TextlineInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.TextlineInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** PasswordInput ****/
+
+  export class WAT_PasswordInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'PasswordInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength   = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength   = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const Pattern     = acceptableOptionalTextline((this as Indexable).Pattern)
+
+    /**** actual rendering ****/
+
+      return html`<input type="password" class="WAT Content PasswordInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+      />`
+    }
+  }
+  builtInWidgetTypes['PasswordInput'] = WAT_PasswordInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.PasswordInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.PasswordInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** NumberInput ****/
+
+  export class WAT_NumberInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'NumberInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:number = acceptableNumber(
+        ValueIsString(Value) ? parseFloat(Value as string) : Value, 0
+      )
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = parseFloat(Event.target.value)
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const Minimum     = acceptableOptionalNumber  ((this as Indexable).Minimum)
+      const Stepping    = acceptableOptionalNumberInRange((this as Indexable).Stepping,undefined, 0)
+      const Maximum     = acceptableOptionalNumber  ((this as Indexable).Maximum)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsNumber
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:number) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="number" class="WAT Content NumberInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} placeholder=${Placeholder}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['NumberInput'] = WAT_NumberInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.NumberInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.NumberInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** PhoneNumberInput ****/
+
+  export class WAT_PhoneNumberInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'PhoneNumberInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptablePhoneNumber(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength   = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength   = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const Pattern     = acceptableOptionalTextline((this as Indexable).Pattern)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsPhoneNumber
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="tel" class="WAT Content PhoneNumberInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['PhoneNumberInput'] = WAT_PhoneNumberInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.PhoneNumberInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.PhoneNumberInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** EMailAddressInput ****/
+
+  export class WAT_EMailAddressInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'EMailAddressInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableEMailAddress(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength   = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength   = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const Pattern     = acceptableOptionalTextline((this as Indexable).Pattern)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsEMailAddress
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="email" class="WAT Content EMailAddressInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['EMailAddressInput'] = WAT_EMailAddressInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.EMailAddressInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.EMailAddressInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** URLInput ****/
+
+  export class WAT_URLInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'URLInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableURL(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength   = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength   = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const Pattern     = acceptableOptionalTextline((this as Indexable).Pattern)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsURL
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="url" class="WAT Content URLInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['URLInput'] = WAT_URLInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.URLInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.URLInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** TimeInput ****/
+
+  const TimePattern = '\\d{2}:\\d{2}'
+  const TimeRegExp  = /\d{2}:\d{2}/
+
+  function TimeMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,TimeRegExp)
+  }
+
+  export class WAT_TimeInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'TimeInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
+      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, TimeRegExp)
+      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, TimeRegExp)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, TimeMatcher
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="time" class="WAT Content TimeInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} pattern=${TimePattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['TimeInput'] = WAT_TimeInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.TimeInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.TimeInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** DateTimeInput ****/
+
+  const DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}'
+  const DateTimeRegExp  = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
+
+  function DateTimeMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,DateTimeRegExp)
+  }
+
+  export class WAT_DateTimeInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'DateTimeInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
+      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, DateTimeRegExp)
+      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, DateTimeRegExp)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, DateTimeMatcher
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="datetime-local" class="WAT Content DateTimeInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} pattern=${DateTimePattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['DateTimeInput'] = WAT_DateTimeInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.DateTimeInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.DateTimeInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** DateInput ****/
+
+  const DatePattern = '\\d{4}-\\d{2}-\\d{2}'
+  const DateRegExp  = /\d{4}-\d{2}-\d{2}/
+
+  function DateMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,DateRegExp)
+  }
+
+  export class WAT_DateInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'DateInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
+      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, DateRegExp)
+      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, DateRegExp)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, DateMatcher
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="date" class="WAT Content DateInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} pattern=${DatePattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['DateInput'] = WAT_DateInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.DateInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.DateInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** WeekInput ****/
+
+  const WeekPattern = '\\d{4}-W\\d{2}'
+  const WeekRegExp  = /\d{4}-W\d{2}/
+
+  function WeekMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,WeekRegExp)
+  }
+
+  export class WAT_WeekInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'WeekInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
+      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, WeekRegExp)
+      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, WeekRegExp)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, WeekMatcher
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="week" class="WAT Content WeekInput"
+        value=${Value} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} pattern=${WeekPattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['WeekInput'] = WAT_WeekInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.WeekInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.WeekInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** MonthInput ****/
+
+  const MonthPattern = '\\d{4}-\\d{2}'
+  const MonthRegExp  = /\d{4}-\d{2}/
+
+  function MonthMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,MonthRegExp)
+  }
+
+  export class WAT_MonthInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'MonthInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
+      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, MonthRegExp)
+      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, MonthRegExp)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, MonthMatcher
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="month" class="WAT Content MonthInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} pattern=${MonthPattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['MonthInput'] = WAT_MonthInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.MonthInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.MonthInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** FileInput ****/
+
+  export class WAT_FileInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'FileInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const Value           = acceptableText            (this.Value,'').trim().replace(/[\n\r]+/g,',')
+      const Placeholder     = acceptableTextline        ((this as Indexable).Placeholder,'').trim()
+      const acceptableTypes = acceptableOptionalTextline((this as Indexable).acceptableTypes,'*')
+      const multiple        = acceptableOptionalBoolean ((this as Indexable).multiple)
+
+      const _onInput = useCallback((Event:any):void => {
+        if (this.Enabling === false) { return consumingEvent(Event) }
+
+        this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
+// @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
+        if (this._onInput != null) { this._onInput(Event) }
+      })
+
+      const _onDragEnter = useCallback((Event:Event):void => { return consumingEvent(Event) })
+      const _onDragOver  = useCallback((Event:Event):void => { return consumingEvent(Event) })
+
+      const _onDrop = useCallback((Event:any):void => {
+        consumeEvent(Event)
+        if (this.Enabling === false) { return }
+
+        this.Value = Array.from(Event.dataTransfer.files).map((File:any) => File.name).join('\n')
+// @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
+        if (this.onDrop != null) { this.onDrop(Event,Event.dataTransfer.files) }
+      })              // nota bene: "files" is now in "Event.dataTransfer.files"
+
+    /**** actual rendering ****/
+
+      return html`<label class="WAT Content FileInput"
+        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
+      >
+        ${Value === ''
+          ? Placeholder === '' ? '' : html`<span style="
+              font-size:${Math.round((this.FontSize || 14)*0.95)}px; line-height:${this.Height}px
+            ">${Placeholder}</span>`
+          : html`<span style="line-height:${this.Height}px">${Value}</span>`
+        }
+        <input type="file" style="display:none"
+          multiple=${multiple} accept=${acceptableTypes}
+          disabled=${this.Enabling === false} onInput=${_onInput}
+        />
+      </label>`
+    }
+  }
+  builtInWidgetTypes['FileInput'] = WAT_FileInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.FileInput {
+  .WAT.Widget > .WAT.FileInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+  .WAT.Widget > .WAT.FileInput > span {
+    display:block; position:absolute; overflow:hidden;
+    left:0px; top:0px; width:100%; height:100%;
+    color:gray;
+    padding:0px 2px 0px 2px; white-space:pre; text-overflow:ellipsis;
+  }
+  }
+  `)
+
+/**** PseudoFileInput ****/
+
+  export class WAT_PseudoFileInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'PseudoFileInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const Icon            = acceptableURL             ((this as Indexable).Icon,`${IconFolder}/arrow-up-from-bracket.png`)
+      const Color           = acceptableColor           ((this as Indexable).Color,'black')
+      const acceptableTypes = acceptableOptionalTextline((this as Indexable).acceptableTypes,'*')
+      const multiple        = acceptableOptionalBoolean ((this as Indexable).multiple)
+
+      const _onInput = useCallback((Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+
+        this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
+// @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
+        if (this._onInput != null) { this._onInput(Event) }
+      })
+
+      return html`<label class="WAT Content PseudoFileInput">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        "></div>
+        <input type="file" style="display:none"
+          multiple=${multiple} accept=${acceptableTypes}
+          disabled=${this.Enabling === false} onInput=${_onInput}
+        />
+      </label>`
+    }
+  }
+  builtInWidgetTypes['PseudoFileInput'] = WAT_PseudoFileInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.PseudoFileInput > div {
+    display:block; position:absolute;
+    left:0px; top:0px; right:0px; bottom:0px;
+    -webkit-mask-size:contain;           mask-size:contain;
+    -webkit-mask-position:center center; mask-position:center center;
+  }
+  `)
+
+/**** FileDropArea ****/
+
+  export class WAT_FileDropArea extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'FileDropArea' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const Placeholder     = acceptableTextline        ((this as Indexable).Placeholder,'').trim()
+      const acceptableTypes = acceptableOptionalTextline((this as Indexable).acceptableTypes,'*')
+      const multiple        = acceptableOptionalBoolean ((this as Indexable).multiple)
+
+      const _onInput = useCallback((Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+
+        this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
+// @ts-ignore TS2445 well, this object *is* a subinstance of SNS_Sticker
+        if (this._onInput != null) { this._onInput(Event) }
+      })
+
+      const _onDragEnter = useCallback((Event:Event) => { return consumingEvent(Event) })
+      const _onDragOver  = useCallback((Event:Event) => { return consumingEvent(Event) })
+
+      const _onDrop = useCallback((Event:any) => {
+        consumeEvent(Event)
+        if (this.Enabling == false) { return }
+
+        this.Value = Array.from(Event.dataTransfer.files).map((File:any) => File.name).join('\n')
+// @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
+        if (this.onDrop != null) { this.onDrop(Event,Event.dataTransfer.files) }
+      })              // nota bene: "files" is now in "Event.dataTransfer.files"
+
+      return html`<label class="WAT Content FileDropArea"
+        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
+        <span>${Placeholder}</span>
+        <input type="file"
+          multiple=${multiple} accept=${acceptableTypes}
+          disabled=${this.Enabling === false} onInput=${_onInput}
+        />
+      </label>`
+    }
+  }
+  builtInWidgetTypes['FileDropArea'] = WAT_FileDropArea
+
+  appendStyle(`
+  .WAT.Widget > .WAT.FileDropArea {
+    display:flex; flex-flow:column nowrap;
+      justify-content:center; align-items:center;
+    border:dashed 4px #DDDDDD; border-radius:4px;
+    color:#DDDDDD; background:white;
+  }
+
+  .WAT.Widget > .WAT.FileDropArea * { pointer-events:none }
+
+  .WAT.Widget > .WAT.FileDropArea > input[type="file"] {
+    display:block; position:absolute; appearance:none;
+    left:0px; top:0px; right:0px; bottom:0px;
+    opacity:0.01;
+  }
+  `)
+
+/**** SearchInput ****/
+
+  export class WAT_SearchInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'SearchInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this as Indexable
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableTextline(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder   = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly      = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength     = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength     = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const Pattern       = acceptableOptionalTextline((this as Indexable).Pattern)
+      const SpellChecking = acceptableOptionalBoolean ((this as Indexable).SpellChecking)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsTextline
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="search" class="WAT Content SearchInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['SearchInput'] = WAT_SearchInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.SearchInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+
+  .WAT.Widget > .WAT.SearchInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** ColorInput ****/
+
+  export class WAT_ColorInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'ColorInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      let Value = acceptableOptionalColor(this.Value)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        (this as Indexable).Suggestions, undefined, ValueIsColor
+      )
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="color" class="WAT Content ColorInput"
+        value=${Value}
+        disabled=${this.Enabling == false} onInput=${this.onInput}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    }
+  }
+  builtInWidgetTypes['ColorInput'] = WAT_ColorInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.ColorInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+  `)
+
+/**** DropDown ****/
+
+  export class WAT_DropDown extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'DropDown' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      let Value = acceptableTextline(this.Value,'')
+
+      const Options = acceptableListSatisfying(
+        (this as Indexable).Options, [], ValueIsTextline
+      )
+
+      return html`<select class="WAT Content DropDown"
+        disabled=${this.Enabling == false} onInput=${this.onInput}
+      >${Options.map((Option:string) => {
+          const OptionValue = Option.replace(/:.*$/,'').trim()
+          let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
+          const disabled    = (OptionLabel[0] === '-')
+            if (/^-[^-]+$/.test(OptionLabel)) {
+              OptionLabel = OptionLabel.slice(1)
+            }
+          return html`<option value=${OptionValue} selected=${OptionValue === Value}
+            disabled=${disabled}
+          >
+            ${OptionLabel}
+          </option>`
+        }
+      )}</select>`
+    }
+  }
+  builtInWidgetTypes['DropDown'] = WAT_DropDown
+
+  appendStyle(`
+  .WAT.Widget > .WAT.DropDown {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:0px 2px 0px 2px;
+  }
+  `)
+
+/**** PseudoDropDown ****/
+
+  export class WAT_PseudoDropDown extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'PseudoDropDown' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      let   Value = acceptableTextline(this.Value,'')
+      const Icon  = acceptableURL     ((this as Indexable).Icon,`${IconFolder}/menu.png`)
+      const Color = acceptableColor   ((this as Indexable).Color,'black')
+
+      const Options = acceptableListSatisfying(
+        (this as Indexable).Options, [], ValueIsTextline
+      )
+
+      return html`<div class="WAT Content PseudoDropDown">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        "></div>
+        <select disabled=${this.Enabling == false} onInput=${this.onInput}>
+          ${Options.map((Option:string) => {
+            const OptionValue = Option.replace(/:.*\$/,'').trim()
+            let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
+            const disabled    = (OptionLabel[0] === '-')
+              if (/^-[^-]+$/.test(OptionLabel)) {
+                OptionLabel = OptionLabel.slice(1)
+              }
+            return html`<option value=${OptionValue} selected=${OptionValue === Value}
+              disabled=${disabled}
+            >
+              ${OptionLabel}
+            </option>`
+          })}
+        </select>
+      </div>`
+    }
+  }
+  builtInWidgetTypes['PseudoDropDown'] = WAT_PseudoDropDown
+
+  appendStyle(`
+  .WAT.Widget > .WAT.PseudoDropDown > div {
+    display:block; position:absolute;
+    left:0px; top:0px; right:0px; bottom:0px;
+    -webkit-mask-size:contain;           mask-size:contain;
+    -webkit-mask-position:center center; mask-position:center center;
+  }
+
+  .WAT.Widget > .WAT.PseudoDropDown > select {
+    display:block; position:absolute;
+    left:0px; top:0px; right:0px; bottom:0px;
+    opacity:0.01;
+  }
+  `)
+
+/**** TextInput ****/
+
+  export class WAT_TextInput extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'TextInput' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      const shownValue   = useRef('')
+      const InputElement = useRef(null)
+
+      let ValueToShow:string = acceptableText(Value,'')
+      if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current
+      } else {
+        shownValue.current = ValueToShow
+      }
+
+      const _onInput = useCallback((Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        shownValue.current = this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[ Enabling ])
+
+      const _onBlur = useCallback((Event:any) => {
+        this.rerender()
+        if (this._onBlur != null) { this._onBlur(Event) }
+      })
+
+    /**** process any other parameters ****/
+
+      const Placeholder   = acceptableOptionalTextline((this as Indexable).Placeholder)
+      const readonly      = acceptableOptionalBoolean ((this as Indexable).readonly)
+      const minLength     = acceptableOptionalOrdinal ((this as Indexable).minLength)
+      const maxLength     = acceptableOptionalOrdinal ((this as Indexable).maxLength)
+      const LineWrapping  = acceptableOptionalBoolean ((this as Indexable).LineWrapping)
+      const SpellChecking = acceptableOptionalBoolean ((this as Indexable).SpellChecking)
+
+    /**** actual rendering ****/
+
+      return html`<textarea class="WAT Content TextInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        spellcheck=${SpellChecking} style="resize:none; ${
+          LineWrapping == true
+          ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
+          : undefined
+        }"
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+      />`
+    }
+  }
+  builtInWidgetTypes['TextInput'] = WAT_TextInput
+
+  appendStyle(`
+  .WAT.Widget > .WAT.TextInput {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff;
+    padding:2px 2px 2px 2px;
+  }
+
+  .WAT.Widget > .WAT.TextInput:read-only {
+    border:solid 1px #DDDDDD; border-radius:2px;
+    background:#F0F0F0;
+  }
+  `)
+
+/**** TextTab ****/
+
+  export class WAT_TextTab extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'TextTab' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const _onClick = (Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+        if (this._onInput != null) { this._onInput(Event) }
+      }
+
+      return html`<div class="WAT Content TextTab" onClick=${_onClick}>${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['TextTab'] = WAT_TextTab
+
+  appendStyle(`
+  .WAT.Widget > .WAT.TextTab {
+    border:none; border-bottom:solid 2px transparent;
+  }
+  .WAT.Widget > .WAT.TextTab.active {
+    border:none; border-bottom:solid 2px black;
+  }
+  `)
+
+/**** IconTab ****/
+
+  export class WAT_IconTab extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'IconTab' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      const _onClick = (Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+        if (this._onClick != null) { this._onClick(Event) }
+      }
+
+      const Value = acceptableURL  (this.Value,`${IconFolder}/pencil.png`)
+      const Color = acceptableColor(this.Color,'black')
+
+      return html`<div class="WAT Content IconTab" style="
+        -webkit-mask-image:url(${Value}); mask-image:url(${Value});
+        background-color:${Color};
+      " disabled=${this.Enabling == false} onClick=${_onClick}
+      />`
+    }
+  }
+  builtInWidgetTypes['IconTab'] = WAT_IconTab
+
+  appendStyle(`
+  .WAT.Widget > .WAT.IconTab {
+    border:none; border-bottom:solid 2px transparent;
+
+    -webkit-mask-size:contain;           mask-size:contain;
+    -webkit-mask-position:center center; mask-position:center center;
+  }
+  .WAT.Widget > .WAT.IconTab.active {
+    border:none; border-bottom:solid 2px black;
+  }
+  `)
+
+/**** WidgetPane ****/
+
+  export class WAT_WidgetPane extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'WidgetPane' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      return html`<div class="WAT Content WidgetPane">${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['WidgetPane'] = WAT_WidgetPane
+
+  appendStyle(`
+  .WAT.Widget > .WAT.WidgetPane {
+  }
+  `)
+
+/**** Accordion ****/
+
+  export class WAT_Accordion extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'Accordion' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      return html`<div class="WAT Content Accordion">${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['Accordion'] = WAT_Accordion
+
+  appendStyle(`
+  .WAT.Widget > .WAT.Accordion {
+  }
+  `)
+
+/**** AccordionFold ****/
+
+  export class WAT_AccordionFold extends WAT_Widget {
+    public get Type ():string  { return 'AccordionFold' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      return html`<div class="WAT Content AccordionFold">${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['AccordionFold'] = WAT_AccordionFold
+
+  appendStyle(`
+  .WAT.Widget > .WAT.AccordionFold {
+  }
+  `)
+
+/**** flatListView ****/
+
+  export class WAT_flatListView extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'flatListView' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      return html`<div class="WAT Content flatListView">${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['flatListView'] = WAT_flatListView
+
+  appendStyle(`
+  .WAT.Widget > .WAT.flatListView {
+  }
+  `)
+
+/**** nestedListView ****/
+
+  export class WAT_nestedListView extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'nestedListView' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+    protected _Renderer = () => {
+      return html`<div class="WAT Content nestedListView">${this.Value}</div>`
+    }
+  }
+  builtInWidgetTypes['nestedListView'] = WAT_nestedListView
+
+  appendStyle(`
+  .WAT.Widget > .WAT.nestedListView {
+  }
+  `)
+
 /**** CSSStyleOfVisual ****/
 
   export function CSSStyleOfVisual (Visual:WAT_Visual):string {
@@ -4026,24 +5825,97 @@
 
     let CSSStyleList:string[] = []
       const {
-        BackgroundColor, BackgroundTexture, ForegroundColor,
-        FontFamily, FontSize, FontWeight, FontStyle, LineHeight
+        FontFamily, FontSize, FontWeight, FontStyle,
+        TextDecoration, TextShadow, TextAlignment, LineHeight,
+        ForegroundColor, BackgroundColor, BackgroundTexture,
+        BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow,
+        Opacity, OverflowVisibility, Cursor,
       } = Visual
-
-      if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
-      if (BackgroundTexture != null) {
-        CSSStyleList.push(
-          `background-image:${BackgroundTexture}; background-repeat:repeat`
-        )
-      }
-      if (ForegroundColor != null) { CSSStyleList.push(`color:${ForegroundColor}`) }
 
       if (FontFamily != null) { CSSStyleList.push(`font-family:${FontFamily}`) }
       if (FontSize   != null) { CSSStyleList.push(`font-size:${FontSize}px`) }
       if (FontWeight != null) { CSSStyleList.push(`font-weight:${FontWeight}`) }
       if (FontStyle  != null) { CSSStyleList.push(`font-style:${FontStyle}`) }
-      if (LineHeight != null) { CSSStyleList.push(`line-height:${LineHeight}px`) }
-    return CSSStyleList.join(';')
+
+      if (TextDecoration != null) {
+        CSSStyleList.push('text-decoration:' + TextDecoration.Line +
+          (TextDecoration.Color     == null ? '' : ' ' + TextDecoration.Color) +
+          (TextDecoration.Style     == null ? '' : ' ' + TextDecoration.Style) +
+          (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px')
+        )
+      }
+      if (TextShadow != null) {
+        CSSStyleList.push('text-shadow:' +
+          TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
+          TextShadow.BlurRadius + 'px ' + TextShadow.Color
+        )
+      }
+      if (TextAlignment != null) { CSSStyleList.push(`text-align:${TextAlignment}`) }
+      if (LineHeight    != null) { CSSStyleList.push(`line-height:${LineHeight}px`) }
+
+      if (ForegroundColor != null) { CSSStyleList.push(`color:${ForegroundColor}`) }
+      if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
+      if (BackgroundTexture != null) {
+        const { ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
+        let BackgroundSize = 'auto auto'
+          switch (Mode) {
+            case 'normal':  break
+            case 'contain':
+            case 'cover':   BackgroundSize = BackgroundTexture.Mode; break
+            case 'fill':    BackgroundSize = '100% 100%';  break
+            case 'tile':    BackgroundSize = 'auto auto';  break
+          }
+        let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat')
+
+        CSSStyleList.push(
+          `background-image:${ImageURL}`,
+          `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+          `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
+        )
+      }
+
+      if (BorderWidths != null) {
+        CSSStyleList.push('border-width:' +
+          BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
+          BorderWidths[2] + 'px ' + BorderWidths[3] + 'px'
+        )
+      }
+      if (BorderStyles != null) {
+        CSSStyleList.push('border-style:' +
+          BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
+          BorderStyles[2] + ' ' + BorderStyles[3]
+        )
+      }
+      if (BorderColors != null) {
+        CSSStyleList.push('border-color:' +
+          BorderColors[0] + ' ' + BorderColors[1] + ' ' +
+          BorderColors[2] + ' ' + BorderColors[3]
+        )
+      }
+      if (BorderRadii != null) {
+        CSSStyleList.push('border-radius:' +
+          BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
+          BorderRadii[2] + 'px ' + BorderRadii[3] + 'px'
+        )
+      }
+      if (BoxShadow != null) {
+        if (BoxShadow === 'none') {
+          CSSStyleList.push('box-shadow:none')
+        } else {
+          CSSStyleList.push('box-shadow:' +
+            BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
+            BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
+            BoxShadow.Color
+          )
+        }
+      }
+
+      if (Opacity != null) { CSSStyleList.push(`opacity:${Opacity/100}`) }
+      if (OverflowVisibility != null) {
+        CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden')
+      }
+      if (Cursor != null) { CSSStyleList.push(`cursor:${Cursor}`) }
+    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';')
   }
 
 /**** consume/consumingEvent ****/
@@ -4131,7 +6003,7 @@
       const visitedPage = Applet.visitedPage
 
       return html`<div class="WAT Applet" style="
-        ${CSSStyleOfVisual(Applet) || ''}
+        ${CSSStyleOfVisual(Applet)}
         left:0px; top:0px; right:0px; bottom:0px
       ">
         ${Applet.isAttached ? html`
@@ -4180,7 +6052,7 @@
       const Page = this._Page = PropSet.Page as WAT_Page
 
       return html`<div class="WAT Page" style="
-        ${CSSStyleOfVisual(Page) || ''}
+        ${CSSStyleOfVisual(Page)}
         left:0px; top:0px; right:0px; bottom:0px
       ">
         ${Page.Rendering()}
@@ -4235,8 +6107,7 @@
       )
 
       return html`<div class="WAT Widget" style="
-        ${CSSStyleOfVisual(Widget) || ''}
-        ${CSSGeometry};
+        ${CSSStyleOfVisual(Widget)} ${CSSGeometry}
       ">
         ${Widget.Rendering()}
       </div>`
@@ -4332,8 +6203,12 @@
 
     render(html`<${WAT_combinedView} Applet=${Applet}/>`,AppletElement)
 
+;(window as Indexable).Applet = Applet // for testing and debugging purposes only
+
     console.log('WebApp Tinkerer Runtime is operational')
-  }/**** IdOfWidget ****/
+  }
+
+/**** IdOfWidget ****/
 
   const IdForWidget:WeakMap<WAT_Widget,string> = new WeakMap()
 
