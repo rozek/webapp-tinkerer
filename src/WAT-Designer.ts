@@ -411,16 +411,16 @@
     cursor:nwse-resize; pointer-events:auto;
   }
 
-/**** MessageView ****/
+/**** ScriptErrorView ****/
 
-  .WAD.MessageView {
+  .WAD.ScriptErrorView {
     display:block; position:relative;
     width:auto; height:30px; overflow:hidden; text-overflow:ellipsis;
     padding:4px 0px 0px 0px;
     font-size:14px; font-weight:normal; text-align:left; line-height:28px;
   }
 
-  .WAD.MessageView.withError {
+  .WAD.ScriptErrorView.withError {
     color:red;
   }
 
@@ -1045,13 +1045,13 @@
 
 /**** WAD_MessageView ****/
 
-  function WAD_MessageView (PropSet:Indexable) {
-    const { ScriptError } = DesignerState
+  function WAD_ScriptErrorView (PropSet:Indexable) {
+    const { ScriptError } = DesignerState.Applet
 
-    const SourceIsOk    = (ScriptError === '')
+    const SourceIsOk    = ((ScriptError || '').trim() === '')
     const MessageToShow = (SourceIsOk ? '(no error found)' : ScriptError)
 
-    return html`<div class="WAD MessageView ${SourceIsOk ? '' : 'withError'}"
+    return html`<div class="WAD ScriptErrorView ${SourceIsOk ? '' : 'withError'}"
       style=${PropSet.style}
     >${MessageToShow}</>`
   }
@@ -3549,12 +3549,28 @@ console.error(Signal)
             'horizontalSeparator:horizontal Separator',
             'verticalSeparator:vertical Separator',
             '----',
-            'Button', 'Checkbox', 'Radiobutton:Radio Button',
+            'Button', 'Checkbox', 'Radiobutton',
             '----',
             'Gauge','Slider','Progressbar',
             '----',
             'TextlineInput:Textline Input', 'PasswordInput:Password Input',
-            'NumberInput:Number Input',
+            'NumberInput:Number Input', 'PhoneNumberInput:Phone Number Input',
+            'EMailAddressInput:EMail Address Input', 'URLInput:URL Input',
+            'SearchInput:Search Input', 'TextInput:Text Input',
+            'ColorInput:Color Input',
+            '----',
+            'DropDown','PseudoDropDown:Pseudo DropDown',
+            '----',
+            'TimeInput:Time Input','DateTimeInput:Date and Time Input',
+            'DateInput:Date Input','WeekInput:Week Input','MonthInput:Month Input',
+            '----',
+            'FileInput:File Input', 'PseudoFileInput:pseudo File Input',
+            'FileDropArea:File Drop Area',
+            '----',
+            'TextTab:Text Tab', 'IconTab:Icon Tab', 'WidgetPane:Widget Pane',
+            'Accordion','AccordionFold:Accordion Fold',
+            'flatListView:flat List View','nestedListView:nested List View'
+
           ]}
           onInput=${(Event:Indexable) => doCreateWidget(Event.target.value)}
         />
@@ -3832,13 +3848,11 @@ console.error(Signal)
       />
 
       <${WAD_horizontally}>
-        <${WAD_MessageView} style="flex:1 0 auto"
-          Value=${ScriptError || ''}
-        />
+        <${WAD_ScriptErrorView} style="flex:1 1 auto"/>
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
           display:${(ScriptError || '').trim() === '' ? 'none' : 'block'};
           padding-top:6px;
-        " onClick=${() => window.alert(`Script Compilation Error\n\n${ScriptError || ''}`)}/>
+        " onClick=${() => window.alert(DesignerState.Applet.ScriptError || '')}/>
       </>
      </>
     </>`
