@@ -53,6 +53,7 @@ appendStyle(`
 *******************************************************************************/
 
   .WAD.DesignerLayer {
+    box-sizing:border-box;
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px;
     padding:0px; overflow:hidden;
@@ -63,6 +64,8 @@ appendStyle(`
     z-index:1000000;
     pointer-events:none;
   }
+
+  .WAD.DesignerLayer * { box-sizing:border-box }
 
   .WAD.Content {
     display:block; position:absolute;
@@ -320,16 +323,16 @@ appendStyle(`
 
   .WAD.Dialog > .Titlebar > .Title {
     display:block; position:absolute;
-    left:6px; top:3px; right:30px; height:18px;
+    left:6px; top:3px; right:30px; height:24px;
     border:none;
-    font-weight:bold; color:black;
+    font-weight:bold; color:black; line-height:24px;
     user-select:none; pointer-events:none;
   }
 
   .WAD.Dialog > .Titlebar > .CloseButton {
     display:block; position:absolute;
     top:0px; right:0px; width:30px; height:30px;
-    border:none; padding:3px;
+    border:none; padding:0px 3px 0px 0px;
     user-select:none; pointer-events:auto;
   }
 
@@ -1513,7 +1516,7 @@ function generateStandaloneWebApp(withDesigner = false) {
   ${'<'}/script>
   ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/download.min.js">${'<'}/script>
   ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>
-  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js" type="module">${'<'}/script>
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js"  type="module">${'<'}/script>
   ${withDesigner ? `${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js" type="module">${'<'}/script>` : ''}
 
   ${'<'}script type="wat/applet">${JSON.stringify(Serialization)}${'<'}/script>
