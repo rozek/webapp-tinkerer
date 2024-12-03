@@ -645,10 +645,13 @@
 /**** all WAT elements are absolutely positioned ****/
 
   .WAT {
+    box-sizing:border-box;
     display:block; position:absolute;
     margin:0px; padding:0px;
     background:none; border:none; border-radius:0px; outline:none;
   }
+
+  .WAT * { box-sizing:border-box }
 
 /**** elements of class "WAT Content" cover their whole container ****/
 
