@@ -4,6 +4,8 @@
 *                                                                              *
 *******************************************************************************/
 
+  const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons'
+
   declare const download:Function
   declare const localforage:any
 
@@ -45,7 +47,7 @@
     ValueIsWidgetType,
     allowPage,
     useDesigner, rerender as WAT_rerender,
-  } from "/js/WAT-Runtime.esm.js"
+  } from "./WAT-Runtime.esm.js"
 
 /**** make some existing types indexable ****/
 
@@ -1006,7 +1008,7 @@
         <div class="Title">${Title}</div>
 
         ${(onClose != null) && html`
-          <img class="CloseButton" src="/icons/xmark.png" onClick=${onClose}/>
+          <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
         `}
       </div>
 
@@ -1384,6 +1386,7 @@
   function WAD_FlatListView (PropSet:Indexable) {
     let {
       List, ItemRenderer, Placeholder, selectedIndices, SelectionLimit,
+      onClick, onDblClick,
       onSelectionChange, onItemSelected, onItemDeselected,
       ...otherProps
     } = PropSet
@@ -1393,6 +1396,8 @@
     allowTextline              ('list placeholder',Placeholder)
     allowListSatisfying('list of selected indices',selectedIndices, ValueIsOrdinal)
     allowOrdinal                ('selection limit',SelectionLimit)
+    allowFunction                ('click callback',onClick)
+    allowFunction         ('double-click callback',onDblClick)
     allowFunction     ('selection change callback',onSelectionChange)
     allowFunction       ('item selection callback',onItemSelected)
     allowFunction     ('item deselection callback',onItemDeselected)
@@ -1430,7 +1435,7 @@
       }
     }
 
-    function onClick (Event:MouseEvent, Index:number):void {
+    function _onClick (Event:PointerEvent, Index:number):void {
       Event.stopImmediatePropagation()
       Event.preventDefault()
 
@@ -1478,6 +1483,12 @@
           onItemSelected(List[selectedIndex],selectedIndex)
         })
       }
+
+      if (onClick != null) { onClick(Event,Index) }
+    }
+
+    function _onDblClick (Event:PointerEvent, Index:number):void {
+      if (onDblClick != null) { onDblClick(Event,Index) }
     }
 
     function ItemIsSelected (Index:number):boolean {
@@ -1495,7 +1506,8 @@
             dangerouslySetInnerHTML=${{
               __html:ItemRenderer(Item, Index, ItemIsSelected(Index))
             }}
-            onClick=${(Event:MouseEvent) => onClick(Event,Index)}
+            onClick=${(Event:PointerEvent) => _onClick(Event,Index)}
+            onDblClick=${(Event:PointerEvent) => _onDblClick(Event,Index)}
           />`)
       }
     </>`
@@ -1584,7 +1596,7 @@
 
 /**** generateStandaloneWebApp - with separate script and without designer ****/
 
-  function generateStandaloneWebApp ():void {
+  function generateStandaloneWebApp (withDesigner:boolean = false):void {
     const { Applet } = DesignerState
 
     const AppletName    = Applet.Name || 'WAT-Applet'
@@ -1616,13 +1628,15 @@
       "nanoid":                      "https://rozek.github.io/nanoid/dist/nanoid.esm.js",
       "nanoid-dictionary":           "https://rozek.github.io/nanoid-dictionary/dist/nanoid-dictionary.esm.js",
       "svelte-coordinate-conversion":"https://rozek.github.io/svelte-coordinate-conversion/dist/svelte-coordinate-conversion.esm.js",
-      "wat-runtime":                 "https://rozek.github.io/webapp-tinkerer/js/wat-runtime.esm.js"
+      "wat-runtime":                 "https://rozek.github.io/webapp-tinkerer/js/wat-runtime.esm.js",
       "wat-designer":                "https://rozek.github.io/webapp-tinkerer/js/wat-designer.esm.js"
     }
   }
   ${'<'}/script>
-  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/download.min.js">${'<'}/script>""
-  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>""
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/download.min.js">${'<'}/script>
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js" type="module">${'<'}/script>
+  ${withDesigner ? `${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js" type="module">${'<'}/script>` : ''}
 
   ${'<'}script type="wat/applet">${JSON.stringify(Serialization)}${'<'}/script>
   ${(AppletScript || '').trim() === ''
@@ -3069,8 +3083,8 @@ console.error(Signal)
 
   function doGenerateApplet (Variant:string):void {
     switch (Variant) {
-      case 'embeddable Applet': generateEmbeddableApplet(); break
-      case 'standalone WebApp': generateStandaloneWebApp(); break
+      case 'without Designer': generateStandaloneWebApp(false); break
+      case 'with Designer':    generateStandaloneWebApp(true); break
       default: console.error('InvalidArgument: invalid generation variant ' + quoted(Variant))
     }
    }
@@ -3223,7 +3237,7 @@ console.error(Signal)
       cursor:${isDragging ? 'grabbing' : 'grab'}
     " onPointerDown=${Recognizer} onPointerMove=${Recognizer}
       onPointerUp=${Recognizer} onPointerCancel=${Recognizer}
-    ><img src="/icons/pen.png"/></>`
+    ><img src="${IconFolder}/pen.png"/></>`
   }
 
 //------------------------------------------------------------------------------
@@ -3244,77 +3258,77 @@ console.error(Signal)
       <div style="
         display:flex; flex-flow:row wrap; padding:2px; gap:2px;
       ">
-        <${WAD_Icon} Icon="/icons/draw-square.png"
+        <${WAD_Icon} Icon="${IconFolder}/draw-square.png"
           active=${isLayouting}
           onClick=${toggleLayouting}
         />
-        <${WAD_Icon} Icon="/icons/book-open.png"
+        <${WAD_Icon} Icon="${IconFolder}/book-open.png"
           active=${DialogIsOpen('PageBrowser')}
           onClick=${(Event:PointerEvent) => toggleDialog('PageBrowser',Event)}
         />
-        <${WAD_Icon} Icon="/icons/rectangles-mixed.png"
+        <${WAD_Icon} Icon="${IconFolder}/rectangles-mixed.png"
           active=${DialogIsOpen('WidgetBrowser')}
           onClick=${(Event:PointerEvent) => toggleDialog('WidgetBrowser',Event)}
         />
-        <${WAD_Icon} Icon="/icons/square-code.png"
+        <${WAD_Icon} Icon="${IconFolder}/square-code.png"
           active=${DialogIsOpen('ScriptEditor')}
           onClick=${(Event:PointerEvent) => toggleDialog('ScriptEditor',Event)}
         />
 
-        <${WAD_Icon} Icon="/icons/scissors.png"
+        <${WAD_Icon} Icon="${IconFolder}/scissors.png"
           enabled=${selectedWidgets.length > 0}
           onClick=${doCutSelectedWidgets}
         />
-        <${WAD_Icon} Icon="/icons/clone.png"
+        <${WAD_Icon} Icon="${IconFolder}/clipboard-arrow-up.png"
           enabled=${selectedWidgets.length > 0}
           onClick=${doCopySelectedWidgets}
         />
-        <${WAD_Icon} Icon="/icons/clipboard-arrow-down.png"
+        <${WAD_Icon} Icon="${IconFolder}/clipboard-arrow-down.png"
           enabled=${shelvedWidgets.length > 0}
           onClick=${doPasteShelvedWidgets}
         />
-        <${WAD_Icon} Icon="/icons/minus.png"
+        <${WAD_Icon} Icon="${IconFolder}/minus.png"
           enabled=${selectedWidgets.length > 0}
           onClick=${doDeleteSelectedWidgets}
         />
 
-        <${WAD_Icon} Icon="/icons/rotate-ccw.png"
+        <${WAD_Icon} Icon="${IconFolder}/rotate-ccw.png"
           enabled=${mayUndo()} onClick=${undoOperation}
         />
-        <${WAD_Icon} Icon="/icons/rotate-cw.png"
+        <${WAD_Icon} Icon="${IconFolder}/rotate-cw.png"
           enabled=${mayRedo()} onClick=${redoOperation}
         />
-        <${WAD_PseudoFileInput} Icon="/icons/arrow-up-from-bracket.png"
+        <${WAD_PseudoFileInput} Icon="${IconFolder}/arrow-up-from-bracket.png"
           onChange=${doImportFromFile}
         />
-        <${WAD_PseudoDropDown} Icon="/icons/arrow-down-to-bracket.png"
+        <${WAD_PseudoDropDown} Icon="${IconFolder}/arrow-down-to-bracket.png"
           Placeholder="(please choose)" Value=${null}
           OptionList=${['Applet','active Page','selected Pages','selected Widgets']}
           onInput=${(Event:Indexable) => doExport(Event.target.value)}
         />
 
-        <${WAD_Icon} Icon="/icons/chevron-left.png"
+        <${WAD_Icon} Icon="${IconFolder}/chevron-left.png"
           enabled=${mayVisitPrevPage()}   onClick=${doVisitPrevPage}
         />
-        <${WAD_Icon} Icon="/icons/chevron-right.png"
+        <${WAD_Icon} Icon="${IconFolder}/chevron-right.png"
           enabled=${mayVisitNextPage()}   onClick=${doVisitNextPage}
         />
-        <${WAD_Icon} Icon="/icons/house-line.png"
+        <${WAD_Icon} Icon="${IconFolder}/house-line.png"
           enabled=${(Applet.PageCount > 0) && (Applet.visitedPage !== Applet.Page(0))}
           onClick=${doVisitHomePage}
         />
         <${WAD_Icon} Icon="" enabled=${false}/>
 
-        <${WAD_Icon} Icon="/icons/terminal.png" enabled=${false}/>
-        <${WAD_Icon} Icon="/icons/clapperboard.png"
+        <${WAD_Icon} Icon="${IconFolder}/terminal.png" enabled=${false}/>
+        <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
           onClick=${doCreateScreenshot}
         />
-        <${WAD_PseudoDropDown} Icon="/icons/clapperboard-play.png"
+        <${WAD_PseudoDropDown} Icon="${IconFolder}/clapperboard-play.png"
           Placeholder="(please choose)" Value=${null}
-          OptionList=${['embeddable Applet','standalone WebApp']}
+          OptionList=${['without Designer','with Designer']}
           onInput=${(Event:Indexable) => doGenerateApplet(Event.target.value)}
         />
-        <${WAD_Icon} Icon="/icons/printer.png" onClick=${doPrintApplet} />
+        <${WAD_Icon} Icon="${IconFolder}/printer.png" onClick=${doPrintApplet} />
       </>
     </>`
   }
@@ -3364,35 +3378,35 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
-        <${WAD_Icon} Icon="/icons/plus.png" onClick=${doCreatePage}/>
-        <${WAD_Icon} Icon="/icons/clone.png"
+        <${WAD_Icon} Icon="${IconFolder}/plus.png" onClick=${doCreatePage}/>
+        <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedPages.length > 0}
           onClick=${doDuplicateSelectedPages}
         />
           <${WAD_Gap}/>
-        <${WAD_Icon} Icon="/icons/arrow-sm-to-top.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-to-top.png"
           enabled=${selectedPagesMayBeShiftedUp()}
           onClick=${doShiftSelectedPagesToTop}
         />
-        <${WAD_Icon} Icon="/icons/arrow-sm-up.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-up.png"
           enabled=${selectedPagesMayBeShiftedUp()}
           onClick=${doShiftSelectedPagesUp}
         />
-        <${WAD_Icon} Icon="/icons/arrow-sm-down.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-down.png"
           enabled=${selectedPagesMayBeShiftedDown()}
           onClick=${doShiftSelectedPagesDown}
         />
-        <${WAD_Icon} Icon="/icons/arrow-sm-to-bottom.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-to-bottom.png"
           enabled=${selectedPagesMayBeShiftedDown()}
           onClick=${doShiftSelectedPagesToBottom}
         />
           <${WAD_Gap}/>
-        <${WAD_Icon} Icon="/icons/arrow-up-right-from-square.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-up-right-from-square.png"
           enabled=${selectedPages.length === 1}
           onClick=${doVisitSelectedPage}
         />
           <${WAD_Gap}/>
-        <${WAD_Icon} Icon="/icons/minus.png"
+        <${WAD_Icon} Icon="${IconFolder}/minus.png"
           enabled=${selectedPages.length > 0}
           onClick=${doDeleteSelectedPages}
         />
@@ -3404,6 +3418,7 @@ console.error(Signal)
         selectedIndices=${selectedPageIndices}
         SelectionLimit=${Number.MAX_SAFE_INTEGER}
         onSelectionChange=${updatePageSelection}
+        onDblClick=${(Event:any,Index:number) => visitPage(Applet.Page(Index))}
       />
 
       <${WAD_horizontally} style="padding-top:4px">
@@ -3506,7 +3521,7 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
-        <${WAD_PseudoDropDown} Icon="/icons/plus.png"
+        <${WAD_PseudoDropDown} Icon="${IconFolder}/plus.png"
           enabled=${visitedPage != null}
           OptionList=${[
             'plainWidget:plain Widget', 'Outline:Widget Outline',
@@ -3528,29 +3543,29 @@ console.error(Signal)
           ]}
           onInput=${(Event:Indexable) => doCreateWidget(Event.target.value)}
         />
-        <${WAD_Icon} Icon="/icons/clone.png"
+        <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedWidgets.length > 0}
           onClick=${doDuplicateSelectedWidgets}
         />
           <${WAD_Gap}/>
-        <${WAD_Icon} Icon="/icons/arrow-sm-to-top.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-to-top.png"
           enabled=${selectedWidgetsMayBeShiftedUp()}
           onClick=${doShiftSelectedWidgetsToTop}
         />
-        <${WAD_Icon} Icon="/icons/arrow-sm-up.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-up.png"
           enabled=${selectedWidgetsMayBeShiftedUp()}
           onClick=${doShiftSelectedWidgetsUp}
         />
-        <${WAD_Icon} Icon="/icons/arrow-sm-down.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-down.png"
           enabled=${selectedWidgetsMayBeShiftedDown()}
           onClick=${doShiftSelectedWidgetsDown}
         />
-        <${WAD_Icon} Icon="/icons/arrow-sm-to-bottom.png"
+        <${WAD_Icon} Icon="${IconFolder}/arrow-sm-to-bottom.png"
           enabled=${selectedWidgetsMayBeShiftedDown()}
           onClick=${doShiftSelectedWidgetsToBottom}
         />
           <${WAD_Gap}/>
-        <${WAD_Icon} Icon="/icons/minus.png"
+        <${WAD_Icon} Icon="${IconFolder}/minus.png"
           enabled=${selectedWidgets.length > 0}
           onClick=${doDeleteSelectedWidgets}
         />
@@ -3633,7 +3648,7 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally} style="padding-top:4px">
-        <${WAD_Icon} Icon="/icons/arrows-left-right.png" style="width:24px"/>
+        <${WAD_Icon} Icon="${IconFolder}/arrows-left-right.png" style="width:24px"/>
         <${WAD_Gap}/>
         <${WAD_DropDown} style="width:104px"
           OptionList=${['left-width','left-right','width-right']}
@@ -3656,7 +3671,7 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally}>
-        <${WAD_Icon} Icon="/icons/arrows-up-down.png" style="width:24px"/>
+        <${WAD_Icon} Icon="${IconFolder}/arrows-up-down.png" style="width:24px"/>
         <${WAD_Gap}/>
         <${WAD_DropDown} style="width:104px"
           OptionList=${['top-height','top-bottom','height-bottom']}
@@ -3691,7 +3706,7 @@ console.error(Signal)
       <${WAD_horizontally}>
         <${WAD_Label}>Value</>
         <${WAD_Gap}/>
-        <${WAD_Icon} Icon="/icons/clapperboard.png"
+        <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
           active=${DialogIsOpen('ValueEditor')}
           onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
         />
@@ -3784,12 +3799,12 @@ console.error(Signal)
           onInput=${(Event:Indexable) => doConfigureApplet('Name',Event.target.value)}
         />
           <div style="width:8px"/>
-        <${WAD_Icon} Icon="/icons/check.png"
+        <${WAD_Icon} Icon="${IconFolder}/check.png"
           enabled=${(pendingScript != null) && (pendingScript !== activeScript)}
           onClick=${doActivateAppletScript}
         />
           <div style="width:8px"/>
-        <${WAD_Icon} Icon="/icons/xmark.png" style="width:24px"
+        <${WAD_Icon} Icon="${IconFolder}/xmark.png" style="width:24px"
           enabled=${(pendingScript != null) && (pendingScript !== activeScript)}
           onClick=${() => doConfigureApplet('pendingScript','')}
         />
@@ -3806,7 +3821,7 @@ console.error(Signal)
         <${WAD_MessageView} style="flex:1 0 auto"
           Value=${ScriptError || ''}
         />
-        <${WAD_Icon} Icon="/icons/triangle-exclamation.png" style="
+        <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
           display:${(ScriptError || '').trim() === '' ? 'none' : 'block'};
           padding-top:6px;
         " onClick=${() => window.alert(`Script Compilation Error\n\n${ScriptError || ''}`)}/>
