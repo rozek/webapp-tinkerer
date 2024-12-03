@@ -325,7 +325,6 @@ appendStyle(`
 /**** WAT Applet ****/
 
   .WAT.Applet {
-    padding:0px; overflow:hidden;
     background:white; color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size:14px; font-weight:normal; line-height:1.4; color:black;
@@ -778,22 +777,7 @@ export class WAT_Visual {
         expectPlainObject('options set', OptionSet);
         for (const Key in OptionSet) {
             if (OptionSet.hasOwnProperty(Key)) {
-                switch (Key) {
-                    case 'onMount':
-                        this.onMount(OptionSet[Key]);
-                        break;
-                    case 'onUnmount':
-                        this.onUnmount(OptionSet[Key]);
-                        break;
-                    case 'onRender':
-                        this.onRender(OptionSet[Key]);
-                        break;
-                    case 'onValueChange':
-                        this.onValueChange(OptionSet[Key]);
-                        break;
-                    // @ts-ignore TS7053 allow "Visual" to be indexed
-                    default: this[Key] = OptionSet[Key];
-                }
+                this[Key] = OptionSet[Key];
             }
         }
     }
@@ -1187,7 +1171,8 @@ export class WAT_Visual {
             this.rerender();
         }
     }
-    onValueChange(newCallback) {
+    get onValueChange() { return this._onValueChange; }
+    set onValueChange(newCallback) {
         allowFunction('"onValueChange" callback', newCallback);
         if (newCallback == null) {
             this._onValueChange = undefined;
@@ -1255,7 +1240,8 @@ export class WAT_Visual {
     /**** isMounted ****/
     get isMounted() { return (this._View != null); }
     set isMounted(_) { throwReadOnlyError('isMounted'); }
-    onMount(newCallback) {
+    get onMount() { return this._onMount; }
+    set onMount(newCallback) {
         allowFunction('"onMount" callback', newCallback);
         if (newCallback == null) {
             this._onMount = undefined;
@@ -1271,7 +1257,8 @@ export class WAT_Visual {
             };
         }
     }
-    onUnmount(newCallback) {
+    get onUnmount() { return this._onUnmount; }
+    set onUnmount(newCallback) {
         allowFunction('"onUnmount" callback', newCallback);
         if (newCallback == null) {
             this._onUnmount = undefined;
@@ -1445,7 +1432,7 @@ export class WAT_Applet extends WAT_Visual {
         }
     }
     /**** activateScript - even if Applet is not (yet) attached ****/
-    activateScript() {
+    activateScript(Mode = 'catch-exception') {
         let activeScript = (this._activeScript || '').trim();
         this._Renderer = undefined;
         unregisterAllReactiveFunctionsFrom(this);
@@ -1476,8 +1463,14 @@ export class WAT_Applet extends WAT_Visual {
             compiledScript.call(this, this, this, html, reactively);
         }
         catch (Signal) {
-            console.error('WAT: script execution failure', Signal);
-            return;
+            if (Mode === 'catch-exception') {
+                console.error('WAT: script execution failure', Signal);
+                return;
+            }
+            else {
+                console.warn('WAT: script execution failure', Signal);
+                throw Signal;
+            }
         }
         this.rerender();
     }
@@ -1497,15 +1490,23 @@ export class WAT_Applet extends WAT_Visual {
                 compiledScript = new Function('me,my, html,reactively', pendingScript);
             }
             catch (Signal) {
-                console.error('WAT: script compilation failure', Signal);
-                this.ScriptError = '' + Signal;
+                console.warn('WAT: script compilation failure - ', Signal);
+                this.ScriptError = 'Script Compilation Failure: ' + Signal;
+                this.rerender();
                 return;
             }
         }
         this._activeScript = pendingScript.trim();
         this._pendingScript = undefined;
         this._ScriptError = undefined;
-        this.activateScript(); // may still fail
+        try {
+            this.activateScript('rethrow-exception');
+        }
+        catch (Signal) {
+            this.ScriptError = 'Script Execution Failure: ' + Signal;
+            this.rerender();
+            return;
+        }
         this.rerender();
     }
     get ScriptError() {
@@ -2375,25 +2376,30 @@ export class WAT_Widget extends WAT_Visual {
     /**** isDisabled ****/
     get isDisabled() { return !this.Enabling; }
     set isDisabled(newDisabling) { this.Enabling = !newDisabling; }
-    onFocus(newHandler) {
-        expectFunction('"focus" event handler', newHandler);
-        this._onFocus = newHandler;
+    get onFocus() { return this._onFocus; }
+    set onFocus(newCallback) {
+        expectFunction('"focus" event handler', newCallback);
+        this._onFocus = newCallback;
     }
-    onBlur(newHandler) {
-        expectFunction('"blur" event handler', newHandler);
-        this._onBlur = newHandler;
+    get onBlur() { return this._onBlur; }
+    set onBlur(newCallback) {
+        expectFunction('"blur" event handler', newCallback);
+        this._onBlur = newCallback;
     }
-    onClick(newHandler) {
-        expectFunction('"click" event handler', newHandler);
-        this._onClick = newHandler;
+    get onClick() { return this._onClick; }
+    set onClick(newCallback) {
+        expectFunction('"click" event handler', newCallback);
+        this._onClick = newCallback;
     }
-    onInput(newHandler) {
-        expectFunction('"input" event handler', newHandler);
-        this._onInput = newHandler;
+    get onInput() { return this._onInput; }
+    set onInput(newCallback) {
+        expectFunction('"input" event handler', newCallback);
+        this._onInput = newCallback;
     }
-    onDrop(newHandler) {
-        expectFunction('"drop" event handler', newHandler);
-        this._onDrop = newHandler;
+    get onDrop() { return this._onDrop; }
+    set onDrop(newCallback) {
+        expectFunction('"drop" event handler', newCallback);
+        this._onDrop = newCallback;
     }
     /**** rerender ****/
     rerender() {
@@ -3000,6 +3006,7 @@ builtInWidgetTypes['Title'] = WAT_Title;
 appendStyle(`
   .WAT.Widget > .WAT.Title {
     font-size:22px; font-weight:bold; line-height:32px;
+    text-overflow:ellipsis;
   }
   `);
 /**** Subtitle ****/
@@ -3022,6 +3029,7 @@ builtInWidgetTypes['Subtitle'] = WAT_Subtitle;
 appendStyle(`
   .WAT.Widget > .WAT.Subtitle {
     font-size:18px; font-weight:bold; line-height:27px;
+    text-overflow:ellipsis;
   }
   `);
 /**** Label ****/
@@ -3045,6 +3053,7 @@ appendStyle(`
   .WAT.Widget > .WAT.Label {
     font-size:14px; font-weight:bold; line-height:21px;
     top:4px;
+    text-overflow:ellipsis;
   }
   `);
 /**** Text ****/
@@ -3068,6 +3077,7 @@ appendStyle(`
   .WAT.Widget > .WAT.Text {
     font-size:14px; font-weight:normal; line-height:21px;
     top:4px;
+    text-overflow:ellipsis;
   }
   `);
 /**** Fineprint ****/
@@ -3090,6 +3100,7 @@ builtInWidgetTypes['Fineprint'] = WAT_Fineprint;
 appendStyle(`
   .WAT.Widget > .WAT.FinePrint {
     font-size:12px; font-weight:normal; line-height:18px;
+    text-overflow:ellipsis;
   }
   `);
 /**** HTMLView ****/
@@ -3373,6 +3384,8 @@ export class WAT_Checkbox extends WAT_Widget {
 builtInWidgetTypes['Checkbox'] = WAT_Checkbox;
 appendStyle(`
   .WAT.Widget > .WAT.Checkbox {
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
   }
   `);
 /**** Radiobutton ****/
@@ -3407,6 +3420,8 @@ export class WAT_Radiobutton extends WAT_Widget {
 builtInWidgetTypes['Radiobutton'] = WAT_Radiobutton;
 appendStyle(`
   .WAT.Widget > .WAT.Radiobutton {
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
   }
   `);
 /**** Gauge ****/
@@ -4682,9 +4697,15 @@ export class WAT_ColorInput extends WAT_Widget {
         </datalist>`;
                 }
                 /**** actual rendering ****/
+                const _onInput = useCallback((Event) => {
+                    this.Value = Event.target.value;
+                    if (this._onInput != null) {
+                        this._onInput(Event);
+                    }
+                }, []);
                 return html `<input type="color" class="WAT Content ColorInput"
         value=${Value}
-        disabled=${this.Enabling == false} onInput=${this.onInput}
+        disabled=${this.Enabling == false} onInput=${_onInput}
         list=${SuggestionId}
       />${SuggestionList}`;
             }
@@ -4713,8 +4734,14 @@ export class WAT_DropDown extends WAT_Widget {
             value: () => {
                 let Value = acceptableTextline(this.Value, '');
                 const Options = acceptableListSatisfying(this.Options, [], ValueIsTextline);
+                const _onInput = useCallback((Event) => {
+                    this.Value = Event.target.value;
+                    if (this._onInput != null) {
+                        this._onInput(Event);
+                    }
+                }, []);
                 return html `<select class="WAT Content DropDown"
-        disabled=${this.Enabling == false} onInput=${this.onInput}
+        disabled=${this.Enabling == false} onInput=${_onInput}
       >${Options.map((Option) => {
                     const OptionValue = Option.replace(/:.*$/, '').trim();
                     let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
@@ -4756,12 +4783,18 @@ export class WAT_PseudoDropDown extends WAT_Widget {
                 const Icon = acceptableURL(this.Icon, `${IconFolder}/menu.png`);
                 const Color = acceptableColor(this.Color, 'black');
                 const Options = acceptableListSatisfying(this.Options, [], ValueIsTextline);
+                const _onInput = useCallback((Event) => {
+                    this.Value = Event.target.value;
+                    if (this._onInput != null) {
+                        this._onInput(Event);
+                    }
+                }, []);
                 return html `<div class="WAT Content PseudoDropDown">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
           background-color:${Color};
         "></div>
-        <select disabled=${this.Enabling == false} onInput=${this.onInput}>
+        <select disabled=${this.Enabling == false} onInput=${_onInput}>
           ${Options.map((Option) => {
                     const OptionValue = Option.replace(/:.*\$/, '').trim();
                     let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
@@ -5130,15 +5163,10 @@ export function CSSStyleOfVisual(Visual) {
             BorderRadii[2] + 'px ' + BorderRadii[3] + 'px');
     }
     if (BoxShadow != null) {
-        if (BoxShadow === 'none') {
-            CSSStyleList.push('box-shadow:none');
-        }
-        else {
-            CSSStyleList.push('box-shadow:' +
-                BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
-                BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
-                BoxShadow.Color);
-        }
+        CSSStyleList.push('box-shadow:' +
+            BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
+            BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
+            BoxShadow.Color);
     }
     if (Opacity != null) {
         CSSStyleList.push(`opacity:${Opacity / 100}`);
