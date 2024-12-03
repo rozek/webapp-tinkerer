@@ -370,8 +370,8 @@
 
   .WAD.Dialog > .Titlebar > .CloseButton {
     display:block; position:absolute;
-    top:0px; right:0px; width:30px; height:30px;
-    border:none; padding:0px 3px 0px 0px;
+    top:3px; right:4px; width:24px; height:24px;
+    border:none;
     user-select:none; pointer-events:auto;
   }
 
