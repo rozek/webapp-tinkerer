@@ -94,6 +94,11 @@
   .WAD.DesignerLayer {
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px;
+    padding:0px; overflow:hidden;
+    background:white; color:black;
+    font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+    font-size:14px; font-weight:normal; line-height:1.4; color:black;
+    text-align:left; text-shadow:none;
     z-index:1000000;
     pointer-events:none;
   }
