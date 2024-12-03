@@ -95,7 +95,7 @@
     box-sizing:border-box;
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px;
-    padding:0px; overflow:hidden;
+    padding:0px;
     background:none; color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size:14px; font-weight:normal; line-height:1.4; color:black;
@@ -1343,7 +1343,10 @@
 //------------------------------------------------------------------------------
 
   function WAD_TextInput (PropSet:Indexable) {
-    let { enabled, Value,Placeholder, onInput,onBlur, style,...otherProps } = PropSet
+    let {
+      enabled, Value,Placeholder, onInput,onBlur,
+      LineWrapping, style,...otherProps
+    } = PropSet
 
     const shownValue   = useRef('')
     const InputElement = useRef(null)
@@ -1380,7 +1383,11 @@
 
     return html`<div class="WAD TextInput ${wrong}" style=${style}>
       <textarea
-        disabled=${enabled === false}
+        disabled=${enabled === false} style="${
+          LineWrapping == true
+          ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
+          : undefined
+        }"
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       ></textarea>
@@ -3818,9 +3825,8 @@ console.error(Signal)
         />
       </>
 
-      <${WAD_TextInput} Placeholder="(enter script)" style="
+      <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
         flex:1 0 auto; padding-top:4px;
-        white-space:pre;
       " Value=${pendingScript == null ? activeScript : pendingScript}
         onInput=${(Event:Indexable) => doConfigureApplet('pendingScript',Event.target.value)}
       />
