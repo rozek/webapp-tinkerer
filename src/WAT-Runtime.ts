@@ -663,7 +663,6 @@
 /**** WAT Applet ****/
 
   .WAT.Applet {
-    padding:0px; overflow:hidden;
     background:white; color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size:14px; font-weight:normal; line-height:1.4; color:black;
@@ -1047,14 +1046,7 @@
 
       for (const Key in OptionSet) {
         if (OptionSet.hasOwnProperty(Key)) {
-          switch (Key) {
-            case 'onMount':       this.onMount      (OptionSet[Key]); break
-            case 'onUnmount':     this.onUnmount    (OptionSet[Key]); break
-            case 'onRender':      this.onRender     (OptionSet[Key]); break
-            case 'onValueChange': this.onValueChange(OptionSet[Key]); break
-// @ts-ignore TS7053 allow "Visual" to be indexed
-            default:              this[Key] = OptionSet[Key]
-          }
+          (this as Indexable)[Key] = OptionSet[Key]
         }
       }
     }
@@ -1592,7 +1584,8 @@
 
     protected _onValueChange:Function|undefined
 
-    public onValueChange (newCallback:Function|undefined):void {
+    public get onValueChange ():Function|undefined  { return this._onValueChange }
+    public set onValueChange (newCallback:Function|undefined) {
       allowFunction('"onValueChange" callback',newCallback)
       if (newCallback == null) {
         this._onValueChange = undefined
@@ -1699,7 +1692,8 @@
 
     protected _onMount:Function|undefined
 
-    public onMount (newCallback:Function|undefined):void {
+    public get onMount ():Function|undefined  { return this._onMount }
+    public set onMount (newCallback:Function|undefined) {
       allowFunction('"onMount" callback',newCallback)
       if (newCallback == null) {
         this._onMount = undefined
@@ -1718,7 +1712,8 @@
 
     protected _onUnmount:Function|undefined
 
-    public onUnmount (newCallback:Function|undefined):void {
+    public get onUnmount ():Function|undefined  { return this._onUnmount }
+    public set onUnmount (newCallback:Function|undefined) {
       allowFunction('"onUnmount" callback',newCallback)
       if (newCallback == null) {
         this._onUnmount = undefined
@@ -1865,7 +1860,7 @@
 
   /**** activateScript - even if Applet is not (yet) attached ****/
 
-    public activateScript ():void {
+    public activateScript (Mode:string = 'catch-exception'):void {
       let activeScript:string = (this._activeScript || '').trim()
 
       this._Renderer = undefined
@@ -1898,9 +1893,14 @@
 
         try {
           compiledScript.call(this, this,this, html,reactively)
-        } catch (Signal) {
-          console.error('WAT: script execution failure',Signal)
-          return
+        } catch (Signal:any) {
+          if (Mode === 'catch-exception') {
+            console.error('WAT: script execution failure',Signal)
+            return
+          } else {
+            console.warn('WAT: script execution failure',Signal)
+            throw Signal
+          }
         }
       this.rerender()
     }
@@ -1921,8 +1921,9 @@
             'me,my, html,reactively', pendingScript
           )
         } catch (Signal:any) {
-          console.error('WAT: script compilation failure',Signal)
-          this.ScriptError = '' + Signal
+          console.warn('WAT: script compilation failure - ',Signal)
+          this.ScriptError = 'Script Compilation Failure: ' + Signal
+          this.rerender()
           return
         }
       }
@@ -1931,7 +1932,13 @@
       this._pendingScript = undefined
       this._ScriptError   = undefined
 
-      this.activateScript()                                    // may still fail
+      try {
+        this.activateScript('rethrow-exception')
+      } catch (Signal:any) {
+        this.ScriptError = 'Script Execution Failure: ' + Signal
+        this.rerender()
+        return
+      }
       this.rerender()
     }
 
@@ -2988,45 +2995,50 @@
 
     protected _onFocus:Function|undefined
 
-    public onFocus (newHandler:Function):void {
-      expectFunction('"focus" event handler',newHandler)
-      this._onFocus = newHandler
+    public get onFocus ():Function|undefined  { return this._onFocus }
+    public set onFocus (newCallback:Function|undefined) {
+      expectFunction('"focus" event handler',newCallback)
+      this._onFocus = newCallback
     }
 
   /**** onBlur ****/
 
     protected _onBlur:Function|undefined
 
-    public onBlur (newHandler:Function):void {
-      expectFunction('"blur" event handler',newHandler)
-      this._onBlur = newHandler
+    public get onBlur ():Function|undefined  { return this._onBlur }
+    public set onBlur (newCallback:Function|undefined) {
+      expectFunction('"blur" event handler',newCallback)
+      this._onBlur = newCallback
     }
 
   /**** onClick ****/
 
     protected _onClick:Function|undefined
 
-    public onClick (newHandler:Function):void {
-      expectFunction('"click" event handler',newHandler)
-      this._onClick = newHandler
+    public get onClick ():Function|undefined  { return this._onClick }
+    public set onClick (newCallback:Function|undefined) {
+      expectFunction('"click" event handler',newCallback)
+      this._onClick = newCallback
     }
 
   /**** onInput ****/
 
     protected _onInput:Function|undefined
 
-    public onInput (newHandler:Function):void {
-      expectFunction('"input" event handler',newHandler)
-      this._onInput = newHandler
+    public get onInput ():Function|undefined  { return this._onInput }
+    public set onInput (newCallback:Function|undefined) {
+      expectFunction('"input" event handler',newCallback)
+      this._onInput = newCallback
     }
 
   /**** onDrop ****/
 
     protected _onDrop:Function|undefined
 
-    public onDrop (newHandler:Function):void {
-      expectFunction('"drop" event handler',newHandler)
-      this._onDrop = newHandler
+    public get onDrop ():Function|undefined  { return this._onDrop }
+    public set onDrop (newCallback:Function|undefined) {
+      expectFunction('"drop" event handler',newCallback)
+      this._onDrop = newCallback
     }
 
   /**** rerender ****/
@@ -3724,6 +3736,7 @@
   appendStyle(`
   .WAT.Widget > .WAT.Title {
     font-size:22px; font-weight:bold; line-height:32px;
+    text-overflow:ellipsis;
   }
   `)
 
@@ -3744,6 +3757,7 @@
   appendStyle(`
   .WAT.Widget > .WAT.Subtitle {
     font-size:18px; font-weight:bold; line-height:27px;
+    text-overflow:ellipsis;
   }
   `)
 
@@ -3765,6 +3779,7 @@
   .WAT.Widget > .WAT.Label {
     font-size:14px; font-weight:bold; line-height:21px;
     top:4px;
+    text-overflow:ellipsis;
   }
   `)
 
@@ -3786,6 +3801,7 @@
   .WAT.Widget > .WAT.Text {
     font-size:14px; font-weight:normal; line-height:21px;
     top:4px;
+    text-overflow:ellipsis;
   }
   `)
 
@@ -3806,6 +3822,7 @@
   appendStyle(`
   .WAT.Widget > .WAT.FinePrint {
     font-size:12px; font-weight:normal; line-height:18px;
+    text-overflow:ellipsis;
   }
   `)
 
@@ -4069,6 +4086,8 @@
 
   appendStyle(`
   .WAT.Widget > .WAT.Checkbox {
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
   }
   `)
 
@@ -4100,6 +4119,8 @@
 
   appendStyle(`
   .WAT.Widget > .WAT.Radiobutton {
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
   }
   `)
 
@@ -5469,9 +5490,14 @@
 
     /**** actual rendering ****/
 
+      const _onInput = useCallback((Event:any) => {
+        this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[])
+
       return html`<input type="color" class="WAT Content ColorInput"
         value=${Value}
-        disabled=${this.Enabling == false} onInput=${this.onInput}
+        disabled=${this.Enabling == false} onInput=${_onInput}
         list=${SuggestionId}
       />${SuggestionList}`
     }
@@ -5502,8 +5528,13 @@
         (this as Indexable).Options, [], ValueIsTextline
       )
 
+      const _onInput = useCallback((Event:any) => {
+        this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[])
+
       return html`<select class="WAT Content DropDown"
-        disabled=${this.Enabling == false} onInput=${this.onInput}
+        disabled=${this.Enabling == false} onInput=${_onInput}
       >${Options.map((Option:string) => {
           const OptionValue = Option.replace(/:.*$/,'').trim()
           let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
@@ -5548,12 +5579,17 @@
         (this as Indexable).Options, [], ValueIsTextline
       )
 
+      const _onInput = useCallback((Event:any) => {
+        this.Value = Event.target.value
+        if (this._onInput != null) { this._onInput(Event) }
+      },[])
+
       return html`<div class="WAT Content PseudoDropDown">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
           background-color:${Color};
         "></div>
-        <select disabled=${this.Enabling == false} onInput=${this.onInput}>
+        <select disabled=${this.Enabling == false} onInput=${_onInput}>
           ${Options.map((Option:string) => {
             const OptionValue = Option.replace(/:.*\$/,'').trim()
             let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
@@ -5902,15 +5938,11 @@
         )
       }
       if (BoxShadow != null) {
-        if (BoxShadow === 'none') {
-          CSSStyleList.push('box-shadow:none')
-        } else {
-          CSSStyleList.push('box-shadow:' +
-            BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
-            BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
-            BoxShadow.Color
-          )
-        }
+        CSSStyleList.push('box-shadow:' +
+          BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
+          BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
+          BoxShadow.Color
+        )
       }
 
       if (Opacity != null) { CSSStyleList.push(`opacity:${Opacity/100}`) }
