@@ -14,6 +14,8 @@ const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
+/**** generic constructor for asynchronous functions ****/
+export const AsyncFunction = (async () => { }).constructor;
 /**** provide "toReversed" polyfill ****/
 // @ts-ignore TS2550 allow polyfilling
 if (!Array.prototype.toReversed) {
@@ -1429,7 +1431,7 @@ export class WAT_Applet extends WAT_Visual {
         }
     }
     /**** activateScript - even if Applet is not (yet) attached ****/
-    activateScript(Mode = 'catch-exception') {
+    async activateScript(Mode = 'catch-exception') {
         let activeScript = (this._activeScript || '').trim();
         this._Renderer = undefined;
         unregisterAllReactiveFunctionsFrom(this);
@@ -1450,14 +1452,14 @@ export class WAT_Applet extends WAT_Visual {
         this.ScriptError = undefined; // only to be set by "applyPendingScript"
         let compiledScript;
         try {
-            compiledScript = new Function('Applet,me,my, html,reactively', activeScript);
+            compiledScript = new AsyncFunction('Applet,me,my, html,reactively', activeScript);
         }
         catch (Signal) {
             console.error('WAT: script compilation failure', Signal);
             return;
         }
         try {
-            compiledScript.call(this, this, this, this, html, reactively);
+            await compiledScript.call(this, this, this, this, html, reactively);
         }
         catch (Signal) {
             if (Mode === 'catch-exception') {
@@ -1472,7 +1474,7 @@ export class WAT_Applet extends WAT_Visual {
         this.rerender();
     }
     /**** applyPendingScript - but only if it can be compiled ****/
-    applyPendingScript() {
+    async applyPendingScript() {
         if (!this.isAttached) {
             return;
         } // consider attached applets only
@@ -1484,7 +1486,7 @@ export class WAT_Applet extends WAT_Visual {
         if (pendingScript.trim() !== '') {
             let compiledScript; // try compiling pending script first
             try {
-                compiledScript = new Function('Applet,me,my, html,reactively', pendingScript);
+                compiledScript = new AsyncFunction('Applet,me,my, html,reactively', pendingScript);
             }
             catch (Signal) {
                 console.warn('WAT: script compilation failure - ', Signal);
@@ -1497,7 +1499,7 @@ export class WAT_Applet extends WAT_Visual {
         this._pendingScript = undefined;
         this._ScriptError = undefined;
         try {
-            this.activateScript('rethrow-exception');
+            await this.activateScript('rethrow-exception');
         }
         catch (Signal) {
             this.ScriptError = 'Script Execution Failure: ' + Signal;
@@ -2602,7 +2604,7 @@ export class WAT_Widget extends WAT_Visual {
         /**** if need be, calculate container dimensions ****/
         let outerWidth = 0, outerHeight = 0;
         if ((Anchors[0] !== 'left-width') || (Anchors[1] !== 'top-height')) {
-            const Container = this._Pane || this._Container;
+            const Container = this._Container;
             if (Container == null)
                 throwError('NotAttached: relative geometries can only be calculated for attached widgets');
             ({ Width: outerWidth, Height: outerHeight } = Container.Geometry);
@@ -2711,7 +2713,7 @@ export class WAT_Widget extends WAT_Visual {
         /**** if need be, calculate container dimensions ****/
         let outerWidth = 0, outerHeight = 0;
         if ((curAnchors[0] !== 'left-width') || (curAnchors[1] !== 'top-height')) {
-            const Container = this._Pane || this._Container;
+            const Container = this._Container;
             if (Container == null)
                 throwError('NotAttached: relative geometries can only be changed for attached widgets');
             ({ Width: outerWidth, Height: outerHeight } = Container.Geometry);
@@ -2778,7 +2780,7 @@ export class WAT_Widget extends WAT_Visual {
         let outerWidth = 0, outerHeight = 0;
         if ((newAnchors[0] !== curAnchors[0]) && (newAnchors[0] !== 'left-width') ||
             (newAnchors[1] !== curAnchors[1]) && (newAnchors[1] !== 'top-height')) {
-            const Container = this._Pane || this._Container;
+            const Container = this._Container;
             if (Container == null)
                 throwError('NotAttached: relative geometries can only be calculated for attached widgets');
             ({ Width: outerWidth, Height: outerHeight } = Container.Geometry);
@@ -2999,6 +3001,9 @@ export class WAT_Outline extends WAT_Widget {
         const { x, y, Width, Height } = this.Geometry;
         const [minX, maxX, minY, maxY] = [x, x + Width, y, y + Height];
         return Page.WidgetList.filter((Widget) => {
+            if (Widget === this) {
+                return false;
+            }
             const { x, y, Width, Height } = Widget.Geometry;
             return ((x >= minX) && (x + Width <= maxX) &&
                 (y >= minY) && (y + Height <= maxY));
@@ -5036,7 +5041,7 @@ export class WAT_WidgetPane extends WAT_Widget {
                 }
                 const WidgetsToShow = (SourceWidget.Type === 'Outline'
                     ? SourceWidget.bundledWidgets()
-                    : [SourceWidget]).filter((Widget) => (Widget._Pane == null) || (Widget._Pane === this));
+                    : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
                 WidgetsToShow.forEach((Widget) => Widget._Pane = this);
                 this._shownWidgets = WidgetsToShow;
                 useEffect(() => {
@@ -5117,8 +5122,8 @@ export class WAT_WidgetPane extends WAT_Widget {
                 Width = WidgetWidth;
                 break;
             case 'left-right':
-                Width = Math.max(minWidth || 0, Math.min(PaneX + PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - (WidgetX - BaseX), maxWidth || Infinity));
-                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - Width;
+                x = WidgetX - BaseX;
+                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
         }
         switch (WidgetAnchors[1]) {
             case 'top-height':
@@ -5130,12 +5135,9 @@ export class WAT_WidgetPane extends WAT_Widget {
                 Height = WidgetHeight;
                 break;
             case 'top-bottom':
-                Height = Math.max(minHeight || 0, Math.min(PaneY + PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - (WidgetY - BaseY), maxHeight || Infinity));
-                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - Height;
+                y = WidgetY - BaseY;
+                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
         }
-        console.log('Widget.Geometry', Widget.Geometry, 'BaseGeometry', BaseGeometry);
-        // @ts-ignore TS5905 all variables will be assigned by now
-        console.log('PaneGeometry', PaneGeometry, 'relative Geometry', { x, y, Width, Height });
         // @ts-ignore TS5905 all variables will be assigned by now
         return { x, y, Width, Height };
     }
