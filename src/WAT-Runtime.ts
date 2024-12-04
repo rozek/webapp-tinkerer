@@ -50,6 +50,10 @@
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
   import { nolookalikesSafe } from 'nanoid-dictionary'
 
+/**** generic constructor for asynchronous functions ****/
+
+  export const AsyncFunction = (async () => {}).constructor
+
 /**** make some existing types indexable ****/
 
   interface Indexable { [Key:string]:any }
@@ -1861,7 +1865,7 @@
 
   /**** activateScript - even if Applet is not (yet) attached ****/
 
-    public activateScript (Mode:string = 'catch-exception'):void {
+    public async activateScript (Mode:string = 'catch-exception'):Promise<void> {
       let activeScript:string = (this._activeScript || '').trim()
 
       this._Renderer = undefined
@@ -1886,14 +1890,16 @@
       this.ScriptError = undefined     // only to be set by "applyPendingScript"
         let compiledScript:Function
         try {
-          compiledScript = new Function('Applet,me,my, html,reactively', activeScript)
+          compiledScript = new AsyncFunction(
+            'Applet,me,my, html,reactively', activeScript
+          )
         } catch (Signal:any) {
           console.error('WAT: script compilation failure',Signal)
           return
         }
 
         try {
-          compiledScript.call(this, this,this,this, html,reactively)
+          await compiledScript.call(this, this,this,this, html,reactively)
         } catch (Signal:any) {
           if (Mode === 'catch-exception') {
             console.error('WAT: script execution failure',Signal)
@@ -1908,7 +1914,7 @@
 
   /**** applyPendingScript - but only if it can be compiled ****/
 
-    public applyPendingScript ():void {
+    public async applyPendingScript ():Promise<void> {
       if (! this.isAttached) { return }        // consider attached applets only
 
       let activeScript:string  = this._activeScript  || ''
@@ -1918,7 +1924,7 @@
       if (pendingScript.trim() !== '') {
         let compiledScript:Function        // try compiling pending script first
         try {
-          compiledScript = new Function(
+          compiledScript = new AsyncFunction(
             'Applet,me,my, html,reactively', pendingScript
           )
         } catch (Signal:any) {
@@ -1934,7 +1940,7 @@
       this._ScriptError   = undefined
 
       try {
-        this.activateScript('rethrow-exception')
+        await this.activateScript('rethrow-exception')
       } catch (Signal:any) {
         this.ScriptError = 'Script Execution Failure: ' + Signal
         this.rerender()
@@ -3291,7 +3297,7 @@
 
         let outerWidth:number = 0, outerHeight:number = 0
         if ((Anchors[0] !== 'left-width') || (Anchors[1] !== 'top-height')) {
-          const Container = (this._Pane as WAT_Widget) || (this._Container as WAT_Page)
+          const Container = this._Container as WAT_Page
           if (Container == null) throwError(
             'NotAttached: relative geometries can only be calculated for attached widgets'
           )
@@ -3399,7 +3405,7 @@
 
       let outerWidth:number = 0, outerHeight:number = 0
       if ((curAnchors[0] !== 'left-width') || (curAnchors[1] !== 'top-height')) {
-        const Container = (this._Pane as WAT_Widget) || (this._Container as WAT_Page)
+        const Container = this._Container as WAT_Page
         if (Container == null) throwError(
           'NotAttached: relative geometries can only be changed for attached widgets'
         )
@@ -3479,7 +3485,7 @@
         (newAnchors[0] !== curAnchors[0]) && (newAnchors[0] !== 'left-width') ||
         (newAnchors[1] !== curAnchors[1]) && (newAnchors[1] !== 'top-height')
       ) {
-        const Container = (this._Pane as WAT_Widget) || (this._Container as WAT_Page)
+        const Container = this._Container as WAT_Page
         if (Container == null) throwError(
           'NotAttached: relative geometries can only be calculated for attached widgets'
         )
@@ -3725,6 +3731,8 @@
       const [ minX,maxX, minY,maxY ] = [ x,x+Width, y,y+Height ]
 
       return Page.WidgetList.filter((Widget:WAT_Widget) => {
+        if (Widget === this) { return false }
+
         const { x,y, Width,Height } = Widget.Geometry
         return (
           (x >= minX) && (x+Width  <= maxX) &&
@@ -5876,11 +5884,8 @@
             Width = WidgetWidth
             break
           case 'left-right':
-            Width = Math.max(minWidth || 0, Math.min(
-              PaneX+PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - (WidgetX-BaseX),
-              maxWidth || Infinity
-            ))
-            x = PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - Width
+            x     = WidgetX-BaseX
+            Width = Math.max(minWidth || 0, Math.min(PaneWidth-BaseWidth+WidgetWidth, maxWidth || Infinity))
         }
 
         switch (WidgetAnchors[1]) {
@@ -5893,16 +5898,9 @@
             Height = WidgetHeight
             break
           case 'top-bottom':
-            Height = Math.max(minHeight || 0, Math.min(
-              PaneY+PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - (WidgetY-BaseY),
-              maxHeight || Infinity
-            ))
-            y = PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - Height
+            y      = WidgetY-BaseY
+            Height = Math.max(minHeight || 0, Math.min(PaneHeight-BaseHeight+WidgetHeight, maxHeight || Infinity))
         }
-console.log('Widget.Geometry',Widget.Geometry,'BaseGeometry',BaseGeometry)
-// @ts-ignore TS5905 all variables will be assigned by now
-console.log('PaneGeometry',PaneGeometry,'relative Geometry',{ x,y, Width,Height })
-
 // @ts-ignore TS5905 all variables will be assigned by now
       return { x,y, Width,Height }
     }
@@ -5930,7 +5928,9 @@ console.log('PaneGeometry',PaneGeometry,'relative Geometry',{ x,y, Width,Height 
         SourceWidget.Type === 'Outline'
         ? (SourceWidget as Indexable).bundledWidgets()
         : [SourceWidget]
-      ).filter((Widget:Indexable) => (Widget._Pane == null) || (Widget._Pane === this))
+      ).filter((Widget:Indexable) => (
+        Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))
+      ))
         WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
       this._shownWidgets = WidgetsToShow
 
