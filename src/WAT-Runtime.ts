@@ -1796,11 +1796,13 @@
 
       if (ValueIsPlainObject(Serialization.memoized)) {
         try {
-          this.memoized = structuredClone(Serialization.memoized) as Serializable
+          Object.assign(
+            this.memoized, structuredClone(Serialization.memoized) as Serializable
+          )
         } catch (Signal:any) {
           console.warn(
             'DeserializationError: invalid value for property "memoized" ' +
-            'in visual ' + quoted(this.Path)
+            'in visual ' + quoted(this.Path), Signal
           )
         }
       }
@@ -1885,14 +1887,14 @@
       this.ScriptError = undefined     // only to be set by "applyPendingScript"
         let compiledScript:Function
         try {
-          compiledScript = new Function('me,my, html,reactively', activeScript)
+          compiledScript = new Function('Applet,me,my, html,reactively', activeScript)
         } catch (Signal:any) {
           console.error('WAT: script compilation failure',Signal)
           return
         }
 
         try {
-          compiledScript.call(this, this,this, html,reactively)
+          compiledScript.call(this, this,this,this, html,reactively)
         } catch (Signal:any) {
           if (Mode === 'catch-exception') {
             console.error('WAT: script execution failure',Signal)
@@ -1918,7 +1920,7 @@
         let compiledScript:Function        // try compiling pending script first
         try {
           compiledScript = new Function(
-            'me,my, html,reactively', pendingScript
+            'Applet,me,my, html,reactively', pendingScript
           )
         } catch (Signal:any) {
           console.warn('WAT: script compilation failure - ',Signal)
@@ -2332,6 +2334,8 @@
   /**** _deserializePagesFrom ****/
 
     protected _deserializePagesFrom (Serialization:Serializable):void {
+      if (Serialization.PageList == null) { return }
+
       const PageList = this._PageList
       if (PageList.length > 0) { this.clear() }
 
@@ -2834,6 +2838,8 @@
   /**** _deserializeWidgetsFrom ****/
 
     protected _deserializeWidgetsFrom (Serialization:Serializable):void {
+      if (Serialization.WidgetList == null) { return }
+
       const WidgetList = this._WidgetList
       if (WidgetList.length > 0) { this.clear() }
 
@@ -3711,7 +3717,6 @@
   .WAT.Widget > .WAT.Outline {
     outline:dotted 1px blue;
     outline-offset:2px;
-    pointer-events:none;
   }
   `)
 
