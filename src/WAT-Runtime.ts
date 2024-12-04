@@ -40,7 +40,7 @@
 
   import {
     render, html, Component,
-    useRef, useMemo, useCallback
+    useRef, useEffect, useCallback
   } from 'htm/preact'
 
   import hyperactiv from 'hyperactiv'
@@ -1558,12 +1558,11 @@
 
   /**** Value ****/
 
-    protected _Value:serializableValue = null                // not "undefined"!
+    protected _Value:serializableValue|undefined
 
-    public get Value ():serializableValue { return this._Value }
-    public set Value (newValue:serializableValue) {
+    public get Value ():serializableValue|undefined { return this._Value }
+    public set Value (newValue:serializableValue|undefined) {
       allowSerializableValue('Value',newValue)
-      if (newValue === undefined) { newValue = null }
 
       if (ValuesDiffer(this._Value,newValue)) {
         this._Value = newValue // *C* a deep copy may be better
@@ -2310,6 +2309,32 @@
       }
     }
 
+  /**** WidgetAtPath ****/
+
+    public WidgetAtPath (Path:WAT_Path):WAT_Widget|undefined {
+      expectPath('widget path',Path)
+
+      const PathItemList:any[] = Path.replace(/\/\/+/g,'/').replace(/^\//,'')
+        .split('/').map((PathItem:string) => {
+          if (/^#\d+$/.test(PathItem.trim())) {
+            return parseInt(PathItem.slice(1),10)
+          } else {
+            return PathItem
+          }
+        })
+      switch (PathItemList.length) {
+        case 0:  throwError('InvalidArgument: empty widget path given')
+        case 1:  throwError('InvalidArgument: incomplete widget path given')
+        case 2:  break
+        default: throwError('InvalidArgument: invalid widget path given')
+      }
+
+      const Page = this.Page(PathItemList[0])
+      if (Page == null) { return undefined }
+
+      return Page.Widget(PathItemList[1])
+    }
+
   /**** Serialization ****/
 
     public get Serialization ():Serializable {
@@ -2881,6 +2906,8 @@
       super(Page)
     }
 
+    private _Pane:WAT_Page|WAT_WidgetPane|undefined // avoids multiple rendering
+
   /**** Type ****/
 
 // @ts-ignore TS2378 this getter throws
@@ -3264,7 +3291,7 @@
 
         let outerWidth:number = 0, outerHeight:number = 0
         if ((Anchors[0] !== 'left-width') || (Anchors[1] !== 'top-height')) {
-          const Container = this._Container as WAT_Page
+          const Container = (this._Pane as WAT_Widget) || (this._Container as WAT_Page)
           if (Container == null) throwError(
             'NotAttached: relative geometries can only be calculated for attached widgets'
           )
@@ -3371,11 +3398,8 @@
     /**** if need be, calculate container dimensions ****/
 
       let outerWidth:number = 0, outerHeight:number = 0
-      if (
-        (curAnchors[0] !== 'left-width') && (newWidth  != null) ||
-        (curAnchors[1] !== 'top-height') && (newHeight != null)
-      ) {
-        const Container = this._Container as WAT_Page
+      if ((curAnchors[0] !== 'left-width') || (curAnchors[1] !== 'top-height')) {
+        const Container = (this._Pane as WAT_Widget) || (this._Container as WAT_Page)
         if (Container == null) throwError(
           'NotAttached: relative geometries can only be changed for attached widgets'
         )
@@ -3455,7 +3479,7 @@
         (newAnchors[0] !== curAnchors[0]) && (newAnchors[0] !== 'left-width') ||
         (newAnchors[1] !== curAnchors[1]) && (newAnchors[1] !== 'top-height')
       ) {
-        const Container = this._Container as WAT_Page
+        const Container = (this._Pane as WAT_Widget) || (this._Container as WAT_Page)
         if (Container == null) throwError(
           'NotAttached: relative geometries can only be calculated for attached widgets'
         )
@@ -3693,7 +3717,7 @@
       return html`<div class="WAT Content Outline"/>`
     }
 
-    public WidgetsWithinOutline ():WAT_Widget[] {
+    public bundledWidgets ():WAT_Widget[] {
       const Page = this.Page
       if (Page == null) { return [] }
 
@@ -5777,14 +5801,159 @@
     public get Type ():string  { return 'WidgetPane' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Value ****/
+
+    public get Value ():WAT_Path|undefined { return this._Value as WAT_Path }
+    public set Value (newValue:WAT_Path|WAT_Widget|undefined) {
+      let SourceWidget:WAT_Widget|undefined, SourcePath:WAT_Path|undefined
+      if (ValueIsWidget(newValue)) {
+        SourceWidget = newValue as WAT_Widget
+        SourcePath   = SourceWidget.Path
+      } else {
+        allowPath('widget pane source path',newValue)
+        if ((newValue == null) || ((newValue as string).trim() === '')) {
+          SourceWidget = undefined
+          SourcePath   = undefined
+        } else {
+          SourceWidget = this.Applet?.WidgetAtPath(newValue as WAT_Path)
+          SourcePath   = newValue as WAT_Path
+        }
+      }
+
+      if (SourceWidget == null) {
+        if (this._Value != null) {
+          this._Value = undefined
+          this.rerender()
+        }
+        return
+      }
+
+      if (SourceWidget === this) throwError(
+        'Invalidargument: a WidgetPane can not show itself'
+      )
+
+      if (this._Value !== SourcePath) {
+        this._Value = SourcePath
+
+        if (this._onValueChange != null) {
+          try {
+            this._onValueChange.call(this)
+          } catch (Signal:any) {
+            console.error('"onValueChange" Callback Failure',Signal)
+          }
+        }
+
+        this.rerender()
+      }
+    }
+
+  /**** _GeometryRelativeTo  ****/
+
+    private _GeometryOfWidgetRelativeTo (
+      Widget:WAT_Widget, BaseGeometry:WAT_Geometry, PaneGeometry:WAT_Geometry
+    ):WAT_Geometry {
+      const WidgetAnchors = Widget.Anchors
+
+      const {
+        x:WidgetX, y:WidgetY, Width:WidgetWidth, Height:WidgetHeight
+      } = Widget.Geometry
+
+      const {
+        minWidth,minHeight, maxWidth,maxHeight
+      } = Widget
+
+      const { x:BaseX, y:BaseY, Width:BaseWidth, Height:BaseHeight } = BaseGeometry
+      const { x:PaneX, y:PaneY, Width:PaneWidth, Height:PaneHeight } = PaneGeometry
+
+      let x:number,y:number, Width:number,Height:number
+        switch (WidgetAnchors[0]) {
+          case 'left-width':
+            x     = WidgetX-BaseX
+            Width = WidgetWidth
+            break
+          case 'width-right':
+            x     = PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - WidgetWidth
+            Width = WidgetWidth
+            break
+          case 'left-right':
+            Width = Math.max(minWidth || 0, Math.min(
+              PaneX+PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - (WidgetX-BaseX),
+              maxWidth || Infinity
+            ))
+            x = PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - Width
+        }
+
+        switch (WidgetAnchors[1]) {
+          case 'top-height':
+            y      = WidgetY-BaseY
+            Height = WidgetHeight
+            break
+          case 'height-bottom':
+            y      = PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - WidgetHeight
+            Height = WidgetHeight
+            break
+          case 'top-bottom':
+            Height = Math.max(minHeight || 0, Math.min(
+              PaneY+PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - (WidgetY-BaseY),
+              maxHeight || Infinity
+            ))
+            y = PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - Height
+        }
+console.log('Widget.Geometry',Widget.Geometry,'BaseGeometry',BaseGeometry)
+// @ts-ignore TS5905 all variables will be assigned by now
+console.log('PaneGeometry',PaneGeometry,'relative Geometry',{ x,y, Width,Height })
+
+// @ts-ignore TS5905 all variables will be assigned by now
+      return { x,y, Width,Height }
+    }
+
+
+  /**** _releaseWidgets ****/
+
+    protected _shownWidgets:WAT_Widget[] = []
+
+    protected _releaseWidgets ():void {
+      this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
+    }
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
-      return html`<div class="WAT Content WidgetPane">${this.Value}</div>`
+      this._releaseWidgets()
+
+      if (this._Value == null) { return '' }
+
+      const SourceWidget = this.Applet?.WidgetAtPath(this._Value as WAT_Path)
+      if ((SourceWidget == null) || (SourceWidget === this)) { return '' }
+
+      const WidgetsToShow:WAT_Widget[] = (
+        SourceWidget.Type === 'Outline'
+        ? (SourceWidget as Indexable).bundledWidgets()
+        : [SourceWidget]
+      ).filter((Widget:Indexable) => (Widget._Pane == null) || (Widget._Pane === this))
+        WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
+      this._shownWidgets = WidgetsToShow
+
+      useEffect(() => { return () => {
+        this._releaseWidgets()
+      } },[])
+
+      const PaneGeometry = this.Geometry
+      const BaseGeometry = SourceWidget.Geometry
+
+      return html`<div class="WAT Content WidgetPane">
+        ${(WidgetsToShow as any).toReversed().map((Widget:WAT_Widget) => {
+          let Geometry = this._GeometryOfWidgetRelativeTo(Widget,BaseGeometry,PaneGeometry)
+          return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`
+        })}
+      </div>`
     }
   }
   builtInWidgetTypes['WidgetPane'] = WAT_WidgetPane
 
   appendStyle(`
   .WAT.Widget > .WAT.WidgetPane {
+    overflow:hidden;
   }
   `)
 
@@ -6063,6 +6232,7 @@
 
   class WAT_PageView extends Component {
     private _Page:WAT_Page|undefined
+    private _shownWidgets:WAT_Widget[] = []
 
   /**** componentDidMount ****/
 
@@ -6075,9 +6245,22 @@
       }
     }
 
+  /**** _releaseWidgets ****/
+
+    protected _releaseWidgets (WidgetList:WAT_Widget[]):void {
+      WidgetList.forEach((Widget:Indexable) => {
+        Widget._Pane = undefined
+        if (Widget instanceof WAT_WidgetPane) {
+          (Widget as Indexable)._releaseWidgets()
+        }
+      })
+    }
+
   /**** componentWillUnmount ****/
 
     public componentWillUnmount ():void {
+      this._releaseWidgets(this._shownWidgets)
+
       const Page = this._Page as WAT_Page
 
       Page['_View'] = undefined
@@ -6091,15 +6274,21 @@
     public render (PropSet:Indexable):any {
       const Page = this._Page = PropSet.Page as WAT_Page
 
+      this._releaseWidgets(this._shownWidgets)
+
+      const WidgetsToShow = (Page.WidgetList as any).filter((Widget:Indexable) => (
+        Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))
+      ))
+        WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = Page)
+      this._shownWidgets = WidgetsToShow
+
       return html`<div class="WAT Page" style="
         ${CSSStyleOfVisual(Page)}
         left:0px; top:0px; right:0px; bottom:0px
       ">
         ${Page.Rendering()}
-        ${(Page.WidgetList as any).toReversed().map((Widget:WAT_Widget) => {
-          if (Widget.isVisible) {
-            return html`<${WAT_WidgetView} Widget=${Widget}/>`
-          } else { return '' }
+        ${WidgetsToShow.toReversed().map((Widget:WAT_Widget) => {
+          return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Widget.Geometry}/>`
         })}
       </div>`
     }
@@ -6139,7 +6328,7 @@
     public render (PropSet:Indexable):any {
       const Widget = this._Widget = PropSet.Widget as WAT_Widget
 
-      let { x,y, Width,Height } = Widget.Geometry
+      let { x,y, Width,Height } = PropSet.Geometry
       const CSSGeometry = (
         (x != null) && (Width != null) && (y != null) && (Height != null)
         ? `left:${x}px; top:${y}px; width:${Width}px; height:${Height}px; right:auto; bottom:auto;`
