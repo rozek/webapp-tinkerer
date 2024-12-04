@@ -1289,14 +1289,6 @@
   function WAD_PseudoDropDown (PropSet:Indexable) {
     let { Icon, Color, enabled, Value,Placeholder, OptionList, ...otherProps } = PropSet
 
-    let ValueToShow:string = ''
-      switch (Value) {
-        case null:
-        case undefined:      ValueToShow = ''; break
-        case multipleValues: ValueToShow = ''; Placeholder = '(multiple values)'; break
-        case noSelection:    ValueToShow = ''; Placeholder = '(no selection)'; enabled = false; break
-        default:             ValueToShow = ''+Value
-      }
     return html`<div class="WAD PseudoDropDown ${enabled === false ? 'disabled' : ''}">
       <div style="
         -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
@@ -1305,7 +1297,7 @@
       <select disabled=${enabled === false} ...${otherProps}>
         ${Placeholder == null
           ? ''
-          : html`<option value="" disabled selected=${Value == null}>${Placeholder}</option>`
+          : html`<option value="" disabled selected=${Value === ''}>${Placeholder}</option>`
         }
         ${(OptionList || []).map((Option:string) => {
           const OptionValue = Option.replace(/:.*$/,'').trim()
@@ -2703,7 +2695,7 @@
 
   function doVisitSelectedPage ():void {
     const { Applet,selectedPages } = DesignerState
-    Applet.visitPage(selectedPages[selectedPages.length-1])
+    visitPage(selectedPages[selectedPages.length-1])
   }
 
 /**** doDeleteSelectedPages ****/
@@ -3173,8 +3165,14 @@ console.error(Signal)
   function WAD_DesignerLayer (PropSet:Indexable):any {
     if (DesignerState.DesignerDisabled) { return }
 
+  /**** if need be: initialize VisitHistory ****/
+
     const Applet = DesignerState.Applet = PropSet.Applet as WAT_Applet
     if (! Applet.isAttached) { return }
+
+    if (DesignerState.VisitHistory.length === 0) {
+      visitPage(Applet.visitedPage)
+    }
 
   /**** if necessary: position DesignerButton ****/
 
@@ -3317,16 +3315,19 @@ console.error(Signal)
           onChange=${doImportFromFile}
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/arrow-down-to-bracket.png"
-          Placeholder="(please choose)" Value=${null}
+          Placeholder="(please choose)" Value=""
           OptionList=${['Applet','active Page','selected Pages','selected Widgets']}
-          onInput=${(Event:Indexable) => doExport(Event.target.value)}
+          onInput=${(Event:Indexable) => {
+            doExport(Event.target.value)
+            Event.target.value = ''
+          }}
         />
 
         <${WAD_Icon} Icon="${IconFolder}/chevron-left.png"
-          enabled=${mayVisitPrevPage()}   onClick=${doVisitPrevPage}
+          enabled=${mayVisitPrevPage()} onClick=${doVisitPrevPage}
         />
         <${WAD_Icon} Icon="${IconFolder}/chevron-right.png"
-          enabled=${mayVisitNextPage()}   onClick=${doVisitNextPage}
+          enabled=${mayVisitNextPage()} onClick=${doVisitNextPage}
         />
         <${WAD_Icon} Icon="${IconFolder}/house-line.png"
           enabled=${(Applet.PageCount > 0) && (Applet.visitedPage !== Applet.Page(0))}
@@ -3339,9 +3340,12 @@ console.error(Signal)
           onClick=${doCreateScreenshot}
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/clapperboard-play.png"
-          Placeholder="(please choose)" Value=${null}
+          Placeholder="(please choose)" Value=""
           OptionList=${['without Designer','with Designer']}
-          onInput=${(Event:Indexable) => doGenerateApplet(Event.target.value)}
+          onInput=${(Event:Indexable) => {
+            doGenerateApplet(Event.target.value)
+            Event.target.value = ''
+          }}
         />
         <${WAD_Icon} Icon="${IconFolder}/printer.png" onClick=${doPrintApplet} />
       </>
@@ -3393,7 +3397,7 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
-        <${WAD_Icon} Icon="${IconFolder}/plus.png" onClick=${doCreatePage}/>
+        <${WAD_Icon} Icon="${IconFolder}/plus.png" onClick=${doCreatePage} />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedPages.length > 0}
           onClick=${doDuplicateSelectedPages}
@@ -3572,7 +3576,10 @@ console.error(Signal)
             'flatListView:flat List View','nestedListView:nested List View'
 
           ]}
-          onInput=${(Event:Indexable) => doCreateWidget(Event.target.value)}
+          onInput=${(Event:Indexable) => {
+            doCreateWidget(Event.target.value)
+            Event.target.value = ''
+          }}
         />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedWidgets.length > 0}
