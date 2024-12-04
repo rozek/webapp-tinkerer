@@ -1336,11 +1336,11 @@ export class WAT_Visual {
         ].forEach((Name) => deserializeProperty(Name));
         if (ValueIsPlainObject(Serialization.memoized)) {
             try {
-                this.memoized = structuredClone(Serialization.memoized);
+                Object.assign(this.memoized, structuredClone(Serialization.memoized));
             }
             catch (Signal) {
                 console.warn('DeserializationError: invalid value for property "memoized" ' +
-                    'in visual ' + quoted(this.Path));
+                    'in visual ' + quoted(this.Path), Signal);
             }
         }
     }
@@ -1453,14 +1453,14 @@ export class WAT_Applet extends WAT_Visual {
         this.ScriptError = undefined; // only to be set by "applyPendingScript"
         let compiledScript;
         try {
-            compiledScript = new Function('me,my, html,reactively', activeScript);
+            compiledScript = new Function('Applet,me,my, html,reactively', activeScript);
         }
         catch (Signal) {
             console.error('WAT: script compilation failure', Signal);
             return;
         }
         try {
-            compiledScript.call(this, this, this, html, reactively);
+            compiledScript.call(this, this, this, this, html, reactively);
         }
         catch (Signal) {
             if (Mode === 'catch-exception') {
@@ -1487,7 +1487,7 @@ export class WAT_Applet extends WAT_Visual {
         if (pendingScript.trim() !== '') {
             let compiledScript; // try compiling pending script first
             try {
-                compiledScript = new Function('me,my, html,reactively', pendingScript);
+                compiledScript = new Function('Applet,me,my, html,reactively', pendingScript);
             }
             catch (Signal) {
                 console.warn('WAT: script compilation failure - ', Signal);
@@ -1791,6 +1791,9 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** _deserializePagesFrom ****/
     _deserializePagesFrom(Serialization) {
+        if (Serialization.PageList == null) {
+            return;
+        }
         const PageList = this._PageList;
         if (PageList.length > 0) {
             this.clear();
@@ -2172,6 +2175,9 @@ export class WAT_Page extends WAT_Visual {
     }
     /**** _deserializeWidgetsFrom ****/
     _deserializeWidgetsFrom(Serialization) {
+        if (Serialization.WidgetList == null) {
+            return;
+        }
         const WidgetList = this._WidgetList;
         if (WidgetList.length > 0) {
             this.clear();
