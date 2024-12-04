@@ -1193,23 +1193,6 @@ function WAD_DropDown(PropSet) {
 //------------------------------------------------------------------------------
 function WAD_PseudoDropDown(PropSet) {
     let { Icon, Color, enabled, Value, Placeholder, OptionList } = PropSet, otherProps = __rest(PropSet, ["Icon", "Color", "enabled", "Value", "Placeholder", "OptionList"]);
-    let ValueToShow = '';
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = '';
-            break;
-        case multipleValues:
-            ValueToShow = '';
-            Placeholder = '(multiple values)';
-            break;
-        case noSelection:
-            ValueToShow = '';
-            Placeholder = '(no selection)';
-            enabled = false;
-            break;
-        default: ValueToShow = '' + Value;
-    }
     return html `<div class="WAD PseudoDropDown ${enabled === false ? 'disabled' : ''}">
       <div style="
         -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
@@ -1218,7 +1201,7 @@ function WAD_PseudoDropDown(PropSet) {
       <select disabled=${enabled === false} ...${otherProps}>
         ${Placeholder == null
         ? ''
-        : html `<option value="" disabled selected=${Value == null}>${Placeholder}</option>`}
+        : html `<option value="" disabled selected=${Value === ''}>${Placeholder}</option>`}
         ${(OptionList || []).map((Option) => {
         const OptionValue = Option.replace(/:.*$/, '').trim();
         let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
@@ -2457,7 +2440,7 @@ function doShiftSelectedPagesToBottom() {
 /**** doVisitSelectedPage ****/
 function doVisitSelectedPage() {
     const { Applet, selectedPages } = DesignerState;
-    Applet.visitPage(selectedPages[selectedPages.length - 1]);
+    visitPage(selectedPages[selectedPages.length - 1]);
 }
 /**** doDeleteSelectedPages ****/
 function doDeleteSelectedPages() {
@@ -2870,9 +2853,13 @@ function WAD_DesignerLayer(PropSet) {
     if (DesignerState.DesignerDisabled) {
         return;
     }
+    /**** if need be: initialize VisitHistory ****/
     const Applet = DesignerState.Applet = PropSet.Applet;
     if (!Applet.isAttached) {
         return;
+    }
+    if (DesignerState.VisitHistory.length === 0) {
+        visitPage(Applet.visitedPage);
     }
     /**** if necessary: position DesignerButton ****/
     const { isOpen, DesignerButton } = DesignerState;
@@ -2985,16 +2972,19 @@ function WAD_Toolbox() {
           onChange=${doImportFromFile}
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/arrow-down-to-bracket.png"
-          Placeholder="(please choose)" Value=${null}
+          Placeholder="(please choose)" Value=""
           OptionList=${['Applet', 'active Page', 'selected Pages', 'selected Widgets']}
-          onInput=${(Event) => doExport(Event.target.value)}
+          onInput=${(Event) => {
+        doExport(Event.target.value);
+        Event.target.value = '';
+    }}
         />
 
         <${WAD_Icon} Icon="${IconFolder}/chevron-left.png"
-          enabled=${mayVisitPrevPage()}   onClick=${doVisitPrevPage}
+          enabled=${mayVisitPrevPage()} onClick=${doVisitPrevPage}
         />
         <${WAD_Icon} Icon="${IconFolder}/chevron-right.png"
-          enabled=${mayVisitNextPage()}   onClick=${doVisitNextPage}
+          enabled=${mayVisitNextPage()} onClick=${doVisitNextPage}
         />
         <${WAD_Icon} Icon="${IconFolder}/house-line.png"
           enabled=${(Applet.PageCount > 0) && (Applet.visitedPage !== Applet.Page(0))}
@@ -3007,9 +2997,12 @@ function WAD_Toolbox() {
           onClick=${doCreateScreenshot}
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/clapperboard-play.png"
-          Placeholder="(please choose)" Value=${null}
+          Placeholder="(please choose)" Value=""
           OptionList=${['without Designer', 'with Designer']}
-          onInput=${(Event) => doGenerateApplet(Event.target.value)}
+          onInput=${(Event) => {
+        doGenerateApplet(Event.target.value);
+        Event.target.value = '';
+    }}
         />
         <${WAD_Icon} Icon="${IconFolder}/printer.png" onClick=${doPrintApplet} />
       </>
@@ -3053,7 +3046,7 @@ function WAD_PageBrowser() {
       </>
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
-        <${WAD_Icon} Icon="${IconFolder}/plus.png" onClick=${doCreatePage}/>
+        <${WAD_Icon} Icon="${IconFolder}/plus.png" onClick=${doCreatePage} />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedPages.length > 0}
           onClick=${doDuplicateSelectedPages}
@@ -3234,7 +3227,10 @@ function WAD_WidgetBrowser() {
         'Accordion', 'AccordionFold:Accordion Fold',
         'flatListView:flat List View', 'nestedListView:nested List View'
     ]}
-          onInput=${(Event) => doCreateWidget(Event.target.value)}
+          onInput=${(Event) => {
+        doCreateWidget(Event.target.value);
+        Event.target.value = '';
+    }}
         />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedWidgets.length > 0}
