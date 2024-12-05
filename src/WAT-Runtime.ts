@@ -200,7 +200,16 @@
     x:WAT_Location, y:WAT_Location, Width:WAT_Dimension, Height:WAT_Dimension,
     minWidth?:WAT_Dimension, minHeight?:WAT_Dimension,
     maxWidth?:WAT_Dimension, maxHeight?:WAT_Dimension,
-    onClose?:Function
+    onOpen?:Function, onClose?:Function
+  }
+
+  type WAT_Overlay = {
+    Name:WAT_Name, normalizedName:WAT_Name, SourceWidgetPath:WAT_Path,
+    isModal:boolean,
+    x:WAT_Location, y:WAT_Location, Width:WAT_Dimension, Height:WAT_Dimension,
+    minWidth?:WAT_Dimension, minHeight?:WAT_Dimension,
+    maxWidth?:WAT_Dimension, maxHeight?:WAT_Dimension,
+    onOpen?:Function, onClose?:Function
   }
 
 /**** throwError - simplifies construction of named errors ****/
@@ -2183,6 +2192,25 @@
     public get isAttached ():boolean  { return (this._View != null) }
     public set isAttached (_:boolean) { throwReadOnlyError('isAttached') }
 
+  /**** WidgetsNamed ****/
+
+    public WidgetsNamed (NameSet:Indexable):Indexable {
+      expectPlainObject('widget name set',NameSet)
+
+      const WidgetSet:Indexable = {}
+        for (const [PageName,NameList] of Object.entries(NameSet)) {
+          const Page:WAT_Page = this.existingPage(PageName)          // may fail
+          NameList.forEach((WidgetName:WAT_Name) => {
+            const Widget = Page.existingWidget(WidgetName)           // may fail
+            if (WidgetName in WidgetSet) throwError(
+              `NameCollision: a widget named ${quoted(WidgetName)} has already been picked`
+            )
+            WidgetSet[WidgetName] = Widget
+          })
+        }
+      return WidgetSet
+    }
+
   /**** Script ****/
 
     public get Script ():WAT_Text {
@@ -2744,11 +2772,12 @@
         allowDimension ('maximal dialog width',Descriptor.maxWidth)
         allowDimension('minimal dialog height',Descriptor.minHeight)
         allowDimension('maximal dialog height',Descriptor.maxHeight)
+        allowFunction     ('"onOpen" callback',Descriptor.onOpen)
         allowFunction    ('"onClose" callback',Descriptor.onClose)
       let {
         Name, Title, isModal, isClosable, isDraggable, isResizable,
         x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
-        onClose
+        onOpen,onClose
       } = Descriptor
 
       if (this.DialogIsOpen(Descriptor.Name)) throwError(
@@ -2809,11 +2838,13 @@
         Name, normalizedName:Name.toLowerCase(), SourceWidgetPath,
         Title, isModal, isClosable, isDraggable, isResizable,
         x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
-        onClose
+        onOpen,onClose
       }
 
       this._DialogList.push(Dialog)
       this.rerender()
+
+      if (Dialog.onOpen != null) { Dialog.onOpen(Dialog) }
     }
 
   /**** closeDialog ****/
@@ -3089,6 +3120,19 @@
 
     public get isAttached ():boolean  { return (this._Container?.isAttached == true) }
     public set isAttached (_:boolean) { throwReadOnlyError('isAttached') }
+
+  /**** WidgetsNamed ****/
+
+    public WidgetsNamed (NameList:WAT_Name[]):WAT_Widget[] {
+      expectListSatisfying('widget name list',NameList, ValueIsName)
+
+      const WidgetSet:Indexable = {}
+        NameList.forEach((WidgetName:WAT_Name) => {
+          const Widget = this.existingWidget(WidgetName)             // may fail
+          WidgetSet[WidgetName] = Widget           // even if multiply requested
+        })
+      return Array.from(Object.values(WidgetSet))
+    }
 
   /**** x/y ****/
 
@@ -3495,7 +3539,7 @@
       super(Page)
     }
 
-    private _Pane:WAT_Page|WAT_WidgetPane|WAT_Dialog|undefined
+    private _Pane:WAT_Page|WAT_WidgetPane|WAT_Dialog|WAT_Overlay|undefined
                                 // avoids multiple renderings atdifferent places
 
   /**** Type ****/
@@ -4176,6 +4220,209 @@
         if (newOffsets[2] != null) { this._Offsets[2] = newOffsets[2] }
         if (newOffsets[3] != null) { this._Offsets[3] = newOffsets[3] }
       }
+
+      this.rerender()
+    }
+
+  /**** OverlayNamed ****/
+
+    private _OverlayList:WAT_Overlay[] = []
+
+    public OverlayNamed (OverlayName:WAT_Name):WAT_Overlay|undefined {
+      const OverlayIndex = this.IndexOfOverlay(OverlayName)
+      return this._OverlayList[OverlayIndex]        // even if OverlayIndex = -1
+    }
+
+  /**** existingOverlayNamed ****/
+
+    public existingOverlayNamed (OverlayName:WAT_Name):WAT_Overlay {
+      const OverlayIndex = this.IndexOfOverlay(OverlayName)
+      if (OverlayIndex < 0) throwError(
+        `NotFound: no overlay named ${quoted(OverlayName)} found`
+      )
+
+      return this._OverlayList[OverlayIndex] as WAT_Overlay
+    }
+
+  /**** IndexOfOverlay ****/
+
+    public IndexOfOverlay (OverlayName:WAT_Name):number {
+      expectName('overlay name',OverlayName)
+      const normalizedName = OverlayName.toLowerCase()
+
+      return this._OverlayList.findIndex(
+        (Overlay:WAT_Overlay) => Overlay.normalizedName === normalizedName
+      )
+    }
+
+  /**** openOverlay ****/
+
+    public openOverlay (Descriptor:Indexable):void {
+      expectPlainObject('overlay descriptor',Descriptor)
+        expectName              ('overlay name',Descriptor.Name)
+        allowBoolean        ('overlay modality',Descriptor.isModal)
+        allowLocation   ('overlay x coordinate',Descriptor.x)
+        allowLocation   ('overlay y coordinate',Descriptor.y)
+        allowDimension         ('overlay width',Descriptor.Width)
+        allowDimension        ('overlay height',Descriptor.Height)
+        allowDimension ('minimal overlay width',Descriptor.minWidth)
+        allowDimension ('maximal overlay width',Descriptor.maxWidth)
+        allowDimension('minimal overlay height',Descriptor.minHeight)
+        allowDimension('maximal overlay height',Descriptor.maxHeight)
+        allowFunction     ('"onOpen" callback',Descriptor.onOpen)
+        allowFunction    ('"onClose" callback',Descriptor.onClose)
+      let {
+        Name, Title, isModal,
+        x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
+        onOpen,onClose
+      } = Descriptor
+
+      if (this.OverlayIsOpen(Descriptor.Name)) throwError(
+        `AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`
+      )
+
+      if (isModal == null) { isModal = false }
+
+      if (x == null) { x = 0 }
+      if (y == null) { y = 0 }
+
+      if (minWidth  == null) { minWidth  = 0 }
+      if (minHeight == null) { minHeight = 0 }
+
+      let SourceWidget:WAT_Widget, SourceWidgetPath:WAT_Path
+        switch (true) {
+          case null:
+          case undefined:
+            throwError('MissingArgument: no source widget path given')
+          case ValueIsPath(Descriptor.SourceWidget):
+            SourceWidgetPath = Descriptor.SourceWidget as WAT_Path
+
+            SourceWidget = this.Applet?.WidgetAtPath(SourceWidgetPath) as WAT_Widget
+            if (SourceWidget == null) throwError(
+              `NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`
+            )
+            break
+          case ValueIsWidget(Descriptor.SourceWidget):
+            SourceWidget     = Descriptor.SourceWidget as WAT_Widget
+            SourceWidgetPath = SourceWidget.Path
+          default:
+            throwError(
+              'InvalidArgument: the given source widget is neither a widget ' +
+              'nor a widget path'
+            )
+        }
+      if ((Width == null) || (Height == null)) {
+        let SourceGeometry = SourceWidget.Geometry
+
+        if (Width  == null) { Width  = SourceGeometry.Width }
+        if (Height == null) { Height = SourceGeometry.Height }
+      }
+      Width  = Math.max(minWidth  || 0, Math.min(Width, maxWidth  || Infinity))
+      Height = Math.max(minHeight || 0, Math.min(Height,maxHeight || Infinity))
+
+      const Overlay:WAT_Overlay = {
+        Name, normalizedName:Name.toLowerCase(), SourceWidgetPath,
+        isModal,
+        x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
+        onOpen,onClose
+      }
+
+      this._OverlayList.push(Overlay)
+      this.rerender()
+
+      if (Overlay.onOpen != null) { Overlay.onOpen(Overlay) }
+    }
+
+  /**** closeOverlay ****/
+
+    public closeOverlay (OverlayName:WAT_Name):void {
+      const OverlayIndex = this.IndexOfOverlay(OverlayName)
+      if (OverlayIndex < 0) { return }
+
+      const [ Overlay ] = this._OverlayList.splice(OverlayIndex,1)
+      this.rerender()
+
+      if (Overlay.onClose != null) { Overlay.onClose(Overlay) }
+    }
+
+  /**** closeAllOverlays ****/
+
+    public closeAllOverlays ():void {
+      if (this._OverlayList.length > 0) {
+        this._OverlayList.forEach(
+          (Overlay:WAT_Overlay) => this.closeOverlay(Overlay.Name)
+        )
+      }
+    }
+
+  /**** OverlayIsOpen ****/
+
+    public OverlayIsOpen (OverlayName:WAT_Name):boolean {
+      return (this.OverlayNamed(OverlayName) != null)
+    }
+
+  /**** openOverlays ****/
+
+    public openOverlays ():WAT_Name[] {
+      return this._OverlayList.map((Overlay:WAT_Overlay) => Overlay.Name)
+    }
+
+  /**** GeometryOfOverlay ****/
+
+    public GeometryOfOverlay (OverlayName:WAT_Name):WAT_Geometry {
+      const Overlay = this.existingOverlayNamed(OverlayName)
+      const { x,y, Width,Height } = Overlay
+      return { x,y, Width,Height }
+    }
+
+  /**** moveOverlayBy ****/
+
+    public moveOverlayBy (OverlayName:WAT_Name, dx:number,dy:number):void {
+      const Overlay = this.existingOverlayNamed(OverlayName)
+
+      expectNumber('dx',dx)
+      expectNumber('dy',dy)
+
+      this.moveOverlayTo(OverlayName, Overlay.x+dx,Overlay.y+dy)              // DRY
+    }
+
+  /**** moveOverlayTo ****/
+
+    public moveOverlayTo (OverlayName:WAT_Name, x:WAT_Location,y:WAT_Location):void {
+      const Overlay = this.existingOverlayNamed(OverlayName)
+
+      expectLocation('x coordinate',x)
+      expectLocation('y coordinate',y)
+
+      Overlay.x = x
+      Overlay.y = y
+
+      this.rerender()
+    }
+
+  /**** sizeOverlayBy ****/
+
+    public sizeOverlayBy (OverlayName:WAT_Name, dW:number,dH:number):void {
+      const Overlay = this.existingOverlayNamed(OverlayName)
+
+      expectNumber('dW',dW)
+      expectNumber('dH',dH)
+
+      this.sizeOverlayTo(OverlayName, Overlay.Width+dW,Overlay.Height+dH)     // DRY
+    }
+
+  /**** sizeOverlayTo ****/
+
+    public sizeOverlayTo (
+      OverlayName:WAT_Name, Width:WAT_Dimension,Height:WAT_Dimension
+    ):void {
+      const Overlay = this.existingOverlayNamed(OverlayName)
+
+      expectDimension ('Width',Width)
+      expectDimension('Height',Height)
+
+      Overlay.Width  = Math.max(Overlay.minWidth  || 0, Math.min(Width,  Overlay.maxWidth  || Infinity))
+      Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, Overlay.maxHeight || Infinity))
 
       this.rerender()
     }
@@ -6929,11 +7176,20 @@
         : ''
       )
 
+      const openOverlays = (Widget as Indexable)._OverlayList
+
       return html`<div class="WAT Widget" style="
         ${CSSStyleOfVisual(Widget)} ${CSSGeometry}
       ">
         ${Widget.Rendering()}
-      </div>`
+      </div>
+      ${openOverlays.length > 0 ? html`<div class="WAT OverlayLayer"
+        style="${CSSGeometry}"
+      >
+        ${openOverlays.map((Overlay:WAT_Overlay) => html`
+          <${WAT_OverlayView} Widget=${Widget} Overlay=${Overlay}/>
+        `)}
+      </div>`: ''}`
     }
   }
 
@@ -7036,7 +7292,7 @@
       const Dialog   = this._Dialog
       const DragInfo = this._DragInfo
 
-      const { minWidth,maxWidth, minHeight,maxHeight } = DragInfo
+      const { minWidth,maxWidth, minHeight,maxHeight } = Dialog
 
       let newWidth:number = DragInfo.initialGeometry.Width
       switch (DragInfo.Mode) {
@@ -7060,8 +7316,11 @@
   /**** generic GestureRecognizer ****/
 
     protected _Recognizer:any
-    protected _GestureRecognizer () {
-      return GestureRecognizer({
+
+    protected _installGestureRecognizer ():void {
+      if (this._Recognizer != null) { return }
+
+      this._Recognizer = GestureRecognizer({
         onlyFrom:   '.Titlebar,.leftResizer,.middleResizer,.rightResizer',
         neverFrom:  '.CloseButton',
         onDragStart:(dx:number,dy:number, _x:number,_y:number, Event:PointerEvent) => {
@@ -7078,9 +7337,9 @@
 
           this._handleDrag(dx,dy)
         },
-        onDragContinuation:() => this._handleDrag,
-        onDragFinish:      () => this._handleDrag,
-        onDragAbortion:    () => this._handleDrag,
+        onDragContinuation:(dx:number,dy:number) => this._handleDrag(dx,dy),
+        onDragFinish:      (dx:number,dy:number) => this._handleDrag(dx,dy),
+        onDragAbortion:    (dx:number,dy:number) => this._handleDrag(dx,dy),
       })
     }
 
@@ -7105,10 +7364,8 @@
 
     /**** Event Handlers ****/
 
+      this._installGestureRecognizer()
       let Recognizer = this._Recognizer
-      if (Recognizer == null) {
-        Recognizer = this._Recognizer = this._GestureRecognizer()
-      }
 
       const onClose = () => {
         Applet.closeDialog(Dialog.Name)
@@ -7175,6 +7432,126 @@
             onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
           />
         `}
+      </div>`
+    }
+  }
+
+//------------------------------------------------------------------------------
+//--                             WAT_OverlayView                              --
+//------------------------------------------------------------------------------
+
+  class WAT_OverlayView extends Component {
+    protected _shownWidgets:WAT_Widget[] = []
+
+  /**** _releaseWidgets ****/
+
+    protected _releaseWidgets ():void {
+      this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
+    }
+
+  /**** componentWillUnmount ****/
+
+    public componentWillUnmount ():void {
+      this._releaseWidgets()
+    }
+
+  /**** _GeometryRelativeTo  ****/
+
+    private _GeometryOfWidgetRelativeTo (
+      Widget:WAT_Widget, BaseGeometry:WAT_Geometry, PaneGeometry:WAT_Geometry
+    ):WAT_Geometry {
+      const WidgetAnchors = Widget.Anchors
+
+      const {
+        x:WidgetX, y:WidgetY, Width:WidgetWidth, Height:WidgetHeight
+      } = Widget.Geometry
+
+      const {
+        minWidth,minHeight, maxWidth,maxHeight
+      } = Widget
+
+      const { x:BaseX, y:BaseY, Width:BaseWidth, Height:BaseHeight } = BaseGeometry
+      const { x:PaneX, y:PaneY, Width:PaneWidth, Height:PaneHeight } = PaneGeometry
+
+      let x:number,y:number, Width:number,Height:number
+        switch (WidgetAnchors[0]) {
+          case 'left-width':
+            x     = WidgetX-BaseX
+            Width = WidgetWidth
+            break
+          case 'width-right':
+            x     = PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - WidgetWidth
+            Width = WidgetWidth
+            break
+          case 'left-right':
+            x     = WidgetX-BaseX
+            Width = Math.max(minWidth || 0, Math.min(PaneWidth-BaseWidth+WidgetWidth, maxWidth || Infinity))
+        }
+
+        switch (WidgetAnchors[1]) {
+          case 'top-height':
+            y      = WidgetY-BaseY
+            Height = WidgetHeight
+            break
+          case 'height-bottom':
+            y      = PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - WidgetHeight
+            Height = WidgetHeight
+            break
+          case 'top-bottom':
+            y      = WidgetY-BaseY
+            Height = Math.max(minHeight || 0, Math.min(PaneHeight-BaseHeight+WidgetHeight, maxHeight || Infinity))
+        }
+// @ts-ignore TS5905 all variables will be assigned by now
+      return { x,y, Width,Height }
+    }
+
+
+  /**** render ****/
+
+    public render (PropSet:Indexable):any {
+      this._releaseWidgets()
+
+      const { Widget, Overlay } = PropSet
+      const { SourceWidgetPath, x,y, Width,Height } = Overlay
+
+    /**** onClose ****/
+
+      const onClose = () => {
+        Widget.closeOverlay(Overlay.Name)
+      }
+
+    /**** ContentPane Rendering ****/
+
+      const SourceWidget = Widget.Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
+        if (SourceWidget == null) {
+          this._shownWidgets = []
+        } else {
+          const WidgetsToShow:WAT_Widget[] = (
+            SourceWidget.Type === 'Outline'
+            ? (SourceWidget as Indexable).bundledWidgets()
+            : [SourceWidget]
+          ).filter((Widget:Indexable) => (
+            Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))
+          ))
+            WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = Overlay)
+          this._shownWidgets = WidgetsToShow
+        }
+      const PaneGeometry = { x,y, Width,Height }
+      const BaseGeometry = SourceWidget.Geometry
+
+      let ContentPane:any[] = (this._shownWidgets as any).toReversed().map(
+        (Widget:WAT_Widget) => {
+          let Geometry = this._GeometryOfWidgetRelativeTo(Widget,BaseGeometry,PaneGeometry)
+          return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`
+        }
+      )
+
+    /**** actual overlay rendering ****/
+
+      return html`<div class="WAT Overlay" style="
+        left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
+      ">
+        ${ContentPane}
       </div>`
     }
   }
