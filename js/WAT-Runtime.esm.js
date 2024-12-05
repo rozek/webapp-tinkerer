@@ -1745,6 +1745,21 @@ export class WAT_Applet extends WAT_Visual {
     /**** isAttached ****/
     get isAttached() { return (this._View != null); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    /**** WidgetsNamed ****/
+    WidgetsNamed(NameSet) {
+        expectPlainObject('widget name set', NameSet);
+        const WidgetSet = {};
+        for (const [PageName, NameList] of Object.entries(NameSet)) {
+            const Page = this.existingPage(PageName); // may fail
+            NameList.forEach((WidgetName) => {
+                const Widget = Page.existingWidget(WidgetName); // may fail
+                if (WidgetName in WidgetSet)
+                    throwError(`NameCollision: a widget named ${quoted(WidgetName)} has already been picked`);
+                WidgetSet[WidgetName] = Widget;
+            });
+        }
+        return WidgetSet;
+    }
     /**** Script ****/
     get Script() {
         return (this._pendingScript == null
@@ -2165,8 +2180,9 @@ export class WAT_Applet extends WAT_Visual {
         allowDimension('maximal dialog width', Descriptor.maxWidth);
         allowDimension('minimal dialog height', Descriptor.minHeight);
         allowDimension('maximal dialog height', Descriptor.maxHeight);
+        allowFunction('"onOpen" callback', Descriptor.onOpen);
         allowFunction('"onClose" callback', Descriptor.onClose);
-        let { Name, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onClose } = Descriptor;
+        let { Name, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
         if (this.DialogIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: a dialog named ${quoted(Descriptor.Name)} is already open`);
         if (isModal == null) {
@@ -2244,10 +2260,13 @@ export class WAT_Applet extends WAT_Visual {
             Name, normalizedName: Name.toLowerCase(), SourceWidgetPath,
             Title, isModal, isClosable, isDraggable, isResizable,
             x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight,
-            onClose
+            onOpen, onClose
         };
         this._DialogList.push(Dialog);
         this.rerender();
+        if (Dialog.onOpen != null) {
+            Dialog.onOpen(Dialog);
+        }
     }
     /**** closeDialog ****/
     closeDialog(DialogName) {
@@ -2457,6 +2476,16 @@ export class WAT_Page extends WAT_Visual {
     /**** isAttached ****/
     get isAttached() { var _a; return (((_a = this._Container) === null || _a === void 0 ? void 0 : _a.isAttached) == true); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    /**** WidgetsNamed ****/
+    WidgetsNamed(NameList) {
+        expectListSatisfying('widget name list', NameList, ValueIsName);
+        const WidgetSet = {};
+        NameList.forEach((WidgetName) => {
+            const Widget = this.existingWidget(WidgetName); // may fail
+            WidgetSet[WidgetName] = Widget; // even if multiply requested
+        });
+        return Array.from(Object.values(WidgetSet));
+    }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
     set x(_) { throwReadOnlyError('x'); }
@@ -6175,7 +6204,7 @@ class WAT_DialogView extends Component {
     _resizeDialog(dx, dy) {
         const Dialog = this._Dialog;
         const DragInfo = this._DragInfo;
-        const { minWidth, maxWidth, minHeight, maxHeight } = DragInfo;
+        const { minWidth, maxWidth, minHeight, maxHeight } = Dialog;
         let newWidth = DragInfo.initialGeometry.Width;
         switch (DragInfo.Mode) {
             case 'resize-sw':
@@ -6189,8 +6218,11 @@ class WAT_DialogView extends Component {
         }
         Dialog.Height = Math.max(minHeight || 0, Math.min(DragInfo.initialGeometry.Height + dy, maxHeight || Infinity));
     }
-    _GestureRecognizer() {
-        return GestureRecognizer({
+    _installGestureRecognizer() {
+        if (this._Recognizer != null) {
+            return;
+        }
+        this._Recognizer = GestureRecognizer({
             onlyFrom: '.Titlebar,.leftResizer,.middleResizer,.rightResizer',
             neverFrom: '.CloseButton',
             onDragStart: (dx, dy, _x, _y, Event) => {
@@ -6211,9 +6243,9 @@ class WAT_DialogView extends Component {
                 this._DragInfo.initialGeometry = { x, y, Width, Height };
                 this._handleDrag(dx, dy);
             },
-            onDragContinuation: () => this._handleDrag,
-            onDragFinish: () => this._handleDrag,
-            onDragAbortion: () => this._handleDrag,
+            onDragContinuation: (dx, dy) => this._handleDrag(dx, dy),
+            onDragFinish: (dx, dy) => this._handleDrag(dx, dy),
+            onDragAbortion: (dx, dy) => this._handleDrag(dx, dy),
         });
     }
     /**** render ****/
@@ -6227,10 +6259,8 @@ class WAT_DialogView extends Component {
         const resizable = (isResizable ? 'resizable' : '');
         const withTitlebar = (hasTitlebar ? 'withTitlebar' : '');
         /**** Event Handlers ****/
+        this._installGestureRecognizer();
         let Recognizer = this._Recognizer;
-        if (Recognizer == null) {
-            Recognizer = this._Recognizer = this._GestureRecognizer();
-        }
         const onClose = () => {
             Applet.closeDialog(Dialog.Name);
         };
