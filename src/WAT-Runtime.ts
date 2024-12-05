@@ -799,7 +799,6 @@
     display:block; position:absolute;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
-    z-index:2000000;
     pointer-events:auto;
   }
 
@@ -2229,6 +2228,17 @@
       return WidgetSet
     }
 
+  /**** namedWidgets ****/
+
+    public namedWidgets ():Indexable {
+      const WidgetSet:Indexable = {}
+        this.PageList.forEach((Page:WAT_Page) => {
+          const namedWidgets = Page.namedWidgets
+          Object.assign(WidgetSet,namedWidgets)
+        })
+      return WidgetSet
+    }
+
   /**** Script ****/
 
     public get Script ():WAT_Text {
@@ -3150,6 +3160,18 @@
           WidgetSet[WidgetName] = Widget           // even if multiply requested
         })
       return Array.from(Object.values(WidgetSet))
+    }
+
+  /**** namedWidgets ****/
+
+    public namedWidgets ():Indexable {
+      const WidgetSet:Indexable = {}
+        this.WidgetList.forEach((Widget:WAT_Widget) => {
+          if (Widget.Name != null) {
+            WidgetSet[Widget.Name] = Widget
+          }
+        })
+      return WidgetSet
     }
 
   /**** x/y ****/
