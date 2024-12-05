@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, allowString, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, allowString, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -338,6 +338,94 @@ appendStyle(`
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
 
+/**** WAT DialogLayer ****/
+
+  .WAT.DialogLayer {
+    display:block; position:absolute; overflow:visible;
+    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
+    pointer-events:none;
+  }
+
+/**** Dialog ****/
+
+  .WAT.Dialog {
+    display:block; position:absolute;
+    border:solid 1px #000000; border-radius:4px;
+    background:white; color:black;
+    box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
+    z-index:1000000;
+    pointer-events:auto;
+  }
+
+  .WAT.Dialog.withTitlebar > .Titlebar {
+    display:block; position:absolute; overflow:hidden;
+    left:0px; top:0px; right:0px; height:30px;
+    background:#EEEEEE; border:none; border-radius:3px 3px 0px 0px;
+    user-select:none; pointer-events:auto;
+  }
+
+  .WAT.Dialog.withTitlebar > .Titlebar > .Title {
+    display:block; position:absolute;
+    left:6px; top:3px; right:30px; height:24px;
+    border:none;
+    font-weight:bold; color:black; line-height:24px;
+    user-select:none; pointer-events:none;
+  }
+
+  .WAT.Dialog.withTitlebar > .Titlebar > .CloseButton {
+    display:block; position:absolute;
+    top:3px; right:4px; width:24px; height:24px;
+    border:none;
+    user-select:none; pointer-events:auto;
+  }
+
+  .WAT.Dialog > .ContentPane {
+    display:block; position:absolute; overflow:auto;
+    left:0px; top:0px; right:0px; bottom:0px;
+    border:none;
+  }
+  .WAT.Dialog.withTitlebar > .ContentPane {
+    display:block; position:absolute;
+    left:0px; top:30px; right:0px; bottom:0px;
+    border:none;
+  }
+  .WAT.resizable.Dialog > .ContentPane {
+    display:block; position:absolute;
+    left:0px; top:0px; right:0px; bottom:10px;
+    border:none;
+  }
+  .WAT.resizable.Dialog.withTitlebar > .ContentPane {
+    display:block; position:absolute;
+    left:0px; top:30px; right:0px; bottom:10px;
+    border:none;
+  }
+
+  .WAT.resizable.Dialog > .leftResizer {
+    display:block; position:absolute;
+    left:0px; bottom:0px; width:30px; height:9px;
+    border:none; border-top:solid 1px black; border-right:solid 1px black;
+    border-radius:0px 0px 0px 3px;
+    cursor:nesw-resize; pointer-events:auto;
+  }
+
+  .WAT.resizable.Dialog > .middleResizer {
+    display:block; position:absolute;
+    left:30px; bottom:0px; right:30px; height:9px;
+    border:none; border-top:solid 1px black;
+    border-radius:0px;
+    cursor:ns-resize; pointer-events:auto;
+  }
+
+  .WAT.resizable.Dialog > .rightResizer {
+    display:block; position:absolute;
+    bottom:0px; right:0px; width:30px; height:9px;
+    border:none; border-left:solid 1px black; border-top:solid 1px black;
+    border-radius:0px 0px 3px 0px;
+    cursor:nwse-resize; pointer-events:auto;
+  }
+
+
+
 /**** common Settings ****/
 
   .disabled, [disabled] { opacity:0.3 }
@@ -527,6 +615,243 @@ function unregisterAllReactiveFunctionsFrom(Visual) {
     reactiveFunctions.forEach((reactiveFunction) => {
         dispose(reactiveFunction);
     });
+}
+//-------------------------------------------------------------------------------
+//--                            Gesture Recognizer                             --
+//-------------------------------------------------------------------------------
+// warning: coordinates are relative to the viewport!
+export function GestureRecognizer(OptionSet) {
+    expectPlainObject('recognizer option set', OptionSet);
+    /**** validate options ****/
+    let { onlyFrom, neverFrom, ClickRadius, MultiClickLimit, MultiClickTimeSpan, primaryLongPressDelay, secondaryLongPressDelay, onClick, onDblClick, onMultiClick, onLongPressIndication, onLongPress, onDragStart, onDragContinuation, onDragFinish, onDragAbortion, } = OptionSet;
+    if (!(onlyFrom instanceof Element)) {
+        allowTextline('"onlyFrom" selector', onlyFrom);
+    }
+    if (!(neverFrom instanceof Element)) {
+        allowTextline('"neverFrom" selector', neverFrom);
+    }
+    allowOrdinal('click radius', ClickRadius);
+    allowOrdinal('multi-click limit', MultiClickLimit);
+    allowOrdinal('multi-click time span', MultiClickTimeSpan);
+    allowOrdinal('primary long-press delay', primaryLongPressDelay);
+    allowOrdinal('secondary long-press delay', secondaryLongPressDelay);
+    allowFunction('"onClick" callback', onClick);
+    allowFunction('"onDblClick" callback', onDblClick);
+    allowFunction('"onMultiClick" callback', onMultiClick);
+    allowFunction('"onLongPressIndication" callback', onLongPressIndication);
+    allowFunction('"onLongPress" callback', onLongPress);
+    allowFunction('"onDragStart" callback', onDragStart);
+    allowFunction('"onDragContinuation" callback', onDragContinuation);
+    allowFunction('"onDragFinish" callback', onDragFinish);
+    allowFunction('"onDragAbortion" callback', onDragAbortion);
+    /**** detect configured features and apply defaults ****/
+    if (ClickRadius == null) {
+        ClickRadius = 4;
+    }
+    if (MultiClickTimeSpan == null) {
+        MultiClickTimeSpan = 300;
+    }
+    if (MultiClickLimit == null) {
+        MultiClickLimit = 0;
+        if (onClick != null) {
+            MultiClickLimit = 1;
+        }
+        if (onDblClick != null) {
+            MultiClickLimit = 2;
+        }
+        if (onMultiClick != null) {
+            MultiClickLimit = 3;
+        }
+    }
+    const RecognizerMayClick = (MultiClickLimit > 0);
+    const RecognizerMayLongPress = (onLongPress != null);
+    if (RecognizerMayLongPress) {
+        if (primaryLongPressDelay == null) {
+            primaryLongPressDelay = 500;
+        }
+        if (secondaryLongPressDelay == null) {
+            secondaryLongPressDelay = 1000;
+        }
+    }
+    const RecognizerMayDrag = ((onDragStart != null) && (onDragContinuation != null) &&
+        (onDragFinish != null) && (onDragAbortion != null));
+    /**** Working Variables ****/
+    let Status = '', StartX = 0, StartY = 0;
+    let curEvent, curX, curY;
+    let lastClickCount = 0, lastClickTime = 0;
+    let LongPressTimer, LongPressState = '';
+    /**** actual recognizer ****/
+    return (Event) => {
+        switch (Event.type) {
+            case 'pointerdown': return onPointerDown(Event);
+            case 'pointermove': return onPointerMove(Event);
+            case 'pointerup': return onPointerUp(Event);
+            case 'pointercancel': return onPointerCancel(Event);
+            default: return; // ignore any other events
+        }
+    };
+    /**** onPointerDown ****/
+    function onPointerDown(Event) {
+        if (Event.buttons !== 1) { // only handle events for primary button
+            if (Status !== '') {
+                onPointerCancel(Event);
+            }
+            return;
+        }
+        // @ts-ignore TS18047,TS2339 allow "Event.target.setPointerCapture"
+        Event.target.setPointerCapture(Event.pointerId);
+        Event.stopPropagation(); // consume event
+        Event.preventDefault();
+        Status = 'observing'; // i.e., before choice between "click" and "drag"
+        StartX = curX = Event.clientX;
+        curEvent = Event;
+        StartY = curY = Event.clientY;
+        if (RecognizerMayLongPress) { // prepare for a long press
+            LongPressState = 'preparing';
+            LongPressTimer = setTimeout(handleLongPressTimeout, primaryLongPressDelay);
+        }
+    }
+    /**** onPointerMove ****/
+    function onPointerMove(Event) {
+        if (Status === '') {
+            return;
+        } // recognizer is not active yet
+        if (Event.buttons !== 1) { // only handle events for primary button
+            if (Status !== '') {
+                onPointerCancel(Event);
+            }
+            return;
+        }
+        Event.stopPropagation(); // consume event
+        Event.preventDefault();
+        ({ clientX: curX, clientY: curY } = curEvent = Event);
+        if (Status === 'observing') {
+            if (RecognizerMayDrag &&
+                ((curX - StartX) ** 2 + (curY - StartY) ** 2 >= ClickRadius ** 2)) { // ok, no "click" any longer, but "drag"
+                Status = 'moving';
+                call(onDragStart, [curX - StartX, curY - StartY, StartX, StartY, Event]);
+                /**** cancel any long-press preparations ****/
+                if (LongPressTimer != null) {
+                    clearTimeout(LongPressTimer);
+                }
+                if (LongPressState !== 'preparing') {
+                    call(onLongPressIndication, [false, Event, curX, curY, StartX, StartY]);
+                }
+                LongPressState = '';
+                LongPressTimer = undefined;
+            }
+        }
+        else { // Status === 'moving'
+            call(onDragContinuation, [curX - StartX, curY - StartY, StartX, StartY, Event]);
+        }
+    }
+    /**** onPointerUp ****/
+    function onPointerUp(Event) {
+        if (Status === '') {
+            return;
+        } // recognizer is not active yet
+        if (Event.buttons !== 0) { // only handle events for primary button
+            if (Status !== '') {
+                onPointerCancel(Event);
+            }
+            return;
+        }
+        Event.stopPropagation(); // consume event
+        Event.preventDefault();
+        ({ clientX: curX, clientY: curY } = curEvent = Event);
+        if (Status === 'observing') {
+            if (LongPressState === 'ready') {
+                lastClickCount = lastClickTime = 0;
+                call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
+                call(onLongPress, [curX, curY, StartX, StartY, Event]);
+                LongPressState = '';
+            }
+            else {
+                const now = Date.now();
+                if ((lastClickCount === MultiClickLimit) ||
+                    (now - lastClickTime > MultiClickTimeSpan)) {
+                    lastClickCount = 1;
+                }
+                else {
+                    lastClickCount++;
+                }
+                lastClickTime = now;
+                if (RecognizerMayClick) {
+                    switch (lastClickCount) {
+                        case 1:
+                            call(onClick, [curX, curY, StartX, StartY, Event]);
+                            break;
+                        case 2:
+                            call(onDblClick, [curX, curY, StartX, StartY, Event]);
+                            break;
+                    }
+                    call(onMultiClick, [lastClickCount, curX, curY, StartX, StartY, Event]);
+                }
+                /**** cancel any long-press preparations ****/
+                if (LongPressTimer != null) {
+                    clearTimeout(LongPressTimer);
+                }
+                if (LongPressState === 'waiting') {
+                    call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
+                }
+                LongPressState = '';
+                LongPressTimer = undefined;
+            }
+        }
+        else { // Status === 'moving'
+            lastClickCount = lastClickTime = 0;
+            call(onDragFinish, [curX - StartX, curY - StartY, StartX, StartY, Event]);
+        }
+        Status = '';
+    }
+    /**** onPointerCancel ****/
+    function onPointerCancel(Event) {
+        if (Status === '') {
+            return;
+        } // recognizer is not active yet
+        Event.stopPropagation(); // consume event
+        Event.preventDefault();
+        ({ clientX: curX, clientY: curY } = curEvent = Event);
+        if (Status === 'moving') {
+            call(onDragAbortion, [curX - StartX, curY - StartY, StartX, StartY, Event]);
+        }
+        Status = '';
+        lastClickCount = lastClickTime = 0;
+        /**** cancel any long-press preparations ****/
+        if (LongPressTimer != null) {
+            clearTimeout(LongPressTimer);
+        }
+        if (LongPressState !== 'preparing') {
+            call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
+        }
+        LongPressState = '';
+        LongPressTimer = undefined;
+    }
+    /**** long-press timeout handling ****/
+    function handleLongPressTimeout() {
+        switch (LongPressState) {
+            case 'preparing':
+                LongPressState = 'waiting';
+                LongPressTimer = setTimeout(handleLongPressTimeout, secondaryLongPressDelay);
+                call(onLongPressIndication, [true, curX, curY, StartX, StartY, curEvent]);
+                break;
+            case 'waiting':
+                LongPressState = 'ready';
+                LongPressTimer = undefined;
+        }
+    }
+    /**** callback invocation ****/
+    function call(Callback, ArgumentList) {
+        if (!ValueIsFunction(Callback)) {
+            return;
+        }
+        try {
+            Callback.apply(null, ArgumentList);
+        }
+        catch (Signal) {
+            console.warn('Callback failure', Signal);
+        }
+    }
 }
 //------------------------------------------------------------------------------
 //--                                WAT_Visual                                --
@@ -1406,6 +1731,13 @@ export class WAT_Applet extends WAT_Visual {
             writable: true,
             value: void 0
         });
+        /**** DialogNamed ****/
+        Object.defineProperty(this, "_DialogList", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
     }
     /**** Path - to be overwritten ****/
     get Path() { return '/'; }
@@ -1452,6 +1784,7 @@ export class WAT_Applet extends WAT_Visual {
         this.ScriptError = undefined; // only to be set by "applyPendingScript"
         let compiledScript;
         try {
+            // @ts-ignore TS2351 AsyncFunction *is* constructible
             compiledScript = new AsyncFunction('Applet,me,my, html,reactively', activeScript);
         }
         catch (Signal) {
@@ -1486,6 +1819,7 @@ export class WAT_Applet extends WAT_Visual {
         if (pendingScript.trim() !== '') {
             let compiledScript; // try compiling pending script first
             try {
+                // @ts-ignore TS2351 AsyncFunction *is* constructible
                 compiledScript = new AsyncFunction('Applet,me,my, html,reactively', pendingScript);
             }
             catch (Signal) {
@@ -1796,6 +2130,197 @@ export class WAT_Applet extends WAT_Visual {
             return undefined;
         }
         return Page.Widget(PathItemList[1]);
+    }
+    DialogNamed(DialogName) {
+        const DialogIndex = this.IndexOfDialog(DialogName);
+        return this._DialogList[DialogIndex]; // even if DialogIndex = -1
+    }
+    /**** existingDialogNamed ****/
+    existingDialogNamed(DialogName) {
+        const DialogIndex = this.IndexOfDialog(DialogName);
+        if (DialogIndex < 0)
+            throwError(`NotFound: no dialog named ${quoted(DialogName)} found`);
+        return this._DialogList[DialogIndex];
+    }
+    /**** IndexOfDialog ****/
+    IndexOfDialog(DialogName) {
+        expectName('dialog name', DialogName);
+        const normalizedName = DialogName.toLowerCase();
+        return this._DialogList.findIndex((Dialog) => Dialog.normalizedName === normalizedName);
+    }
+    /**** openDialog ****/
+    openDialog(Descriptor) {
+        expectPlainObject('dialog descriptor', Descriptor);
+        expectName('dialog name', Descriptor.Name);
+        allowTextline('dialog title', Descriptor.Title);
+        allowBoolean('dialog modality', Descriptor.isModal);
+        allowBoolean('dialog closability', Descriptor.isClosable);
+        allowBoolean('dialog draggability', Descriptor.isDraggable);
+        allowBoolean('dialog resizability', Descriptor.isResizable);
+        allowLocation('dialog x coordinate', Descriptor.x);
+        allowLocation('dialog y coordinate', Descriptor.y);
+        allowDimension('dialog width', Descriptor.Width);
+        allowDimension('dialog height', Descriptor.Height);
+        allowDimension('minimal dialog width', Descriptor.minWidth);
+        allowDimension('maximal dialog width', Descriptor.maxWidth);
+        allowDimension('minimal dialog height', Descriptor.minHeight);
+        allowDimension('maximal dialog height', Descriptor.maxHeight);
+        allowFunction('"onClose" callback', Descriptor.onClose);
+        let { Name, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onClose } = Descriptor;
+        if (this.DialogIsOpen(Descriptor.Name))
+            throwError(`AlreadyOpen: a dialog named ${quoted(Descriptor.Name)} is already open`);
+        if (isModal == null) {
+            isModal = false;
+        }
+        if (isClosable == null) {
+            isClosable = true;
+        }
+        if (isDraggable == null) {
+            isDraggable = true;
+        }
+        if (isResizable == null) {
+            isResizable = false;
+        }
+        if (Title == null) {
+            if (isClosable || isDraggable) {
+                Title = Name;
+            }
+        }
+        if (minWidth == null) {
+            minWidth = 0;
+        }
+        if (minHeight == null) {
+            minHeight = 0;
+        }
+        let SourceWidget, SourceWidgetPath;
+        switch (true) {
+            case null:
+            case undefined:
+                throwError('MissingArgument: no source widget path given');
+            case ValueIsPath(Descriptor.SourceWidget):
+                SourceWidgetPath = Descriptor.SourceWidget;
+                SourceWidget = this.WidgetAtPath(SourceWidgetPath);
+                if (SourceWidget == null)
+                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
+                break;
+            case ValueIsWidget(Descriptor.SourceWidget):
+                SourceWidget = Descriptor.SourceWidget;
+                SourceWidgetPath = SourceWidget.Path;
+            default:
+                throwError('InvalidArgument: the given source widget is neither a widget ' +
+                    'nor a widget path');
+        }
+        if ((Width == null) || (Height == null)) {
+            let SourceGeometry = SourceWidget.Geometry;
+            if (Width == null) {
+                Width = SourceGeometry.Width;
+            }
+            if (Height == null) {
+                Height = SourceGeometry.Height;
+            }
+        }
+        if (isClosable) {
+            minWidth = Math.max(30 + 10, minWidth);
+        }
+        if ((Title != null) || isClosable || isDraggable) {
+            Height += 30;
+            minHeight += 30;
+        }
+        if (isResizable) {
+            Height += 10;
+            minHeight += 10;
+        }
+        Width = Math.max(minWidth || 0, Math.min(Width, maxWidth || Infinity));
+        Height = Math.max(minHeight || 0, Math.min(Height, maxHeight || Infinity));
+        if (x == null) {
+            x = (this.Width - Width) / 2;
+        }
+        if (y == null) {
+            y = (this.Height - Height) / 2;
+        }
+        x = Math.max(0, Math.min(x, this.Width - Width));
+        y = Math.max(0, Math.min(y, this.Height - Height));
+        const Dialog = {
+            Name, normalizedName: Name.toLowerCase(), SourceWidgetPath,
+            Title, isModal, isClosable, isDraggable, isResizable,
+            x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight,
+            onClose
+        };
+        this._DialogList.push(Dialog);
+        this.rerender();
+    }
+    /**** closeDialog ****/
+    closeDialog(DialogName) {
+        const DialogIndex = this.IndexOfDialog(DialogName);
+        if (DialogIndex < 0) {
+            return;
+        }
+        const [Dialog] = this._DialogList.splice(DialogIndex, 1);
+        this.rerender();
+        if (Dialog.onClose != null) {
+            Dialog.onClose(Dialog);
+        }
+    }
+    /**** closeAllDialogs ****/
+    closeAllDialogs() {
+        if (this._DialogList.length > 0) {
+            this._DialogList.forEach((Dialog) => this.closeDialog(Dialog.Name));
+        }
+    }
+    /**** DialogIsOpen ****/
+    DialogIsOpen(DialogName) {
+        return (this.DialogNamed(DialogName) != null);
+    }
+    /**** openDialogs ****/
+    openDialogs() {
+        return this._DialogList.map((Dialog) => Dialog.Name);
+    }
+    /**** GeometryOfDialog ****/
+    GeometryOfDialog(DialogName) {
+        const Dialog = this.existingDialogNamed(DialogName);
+        const { x, y, Width, Height } = Dialog;
+        return { x, y, Width, Height };
+    }
+    /**** moveDialogBy ****/
+    moveDialogBy(DialogName, dx, dy) {
+        const Dialog = this.existingDialogNamed(DialogName);
+        expectNumber('dx', dx);
+        expectNumber('dy', dy);
+        this.moveDialogTo(DialogName, Dialog.x + dx, Dialog.y + dy); // DRY
+    }
+    /**** moveDialogTo ****/
+    moveDialogTo(DialogName, x, y) {
+        const Dialog = this.existingDialogNamed(DialogName);
+        expectLocation('x coordinate', x);
+        expectLocation('y coordinate', y);
+        Dialog.x = x;
+        Dialog.y = y;
+        this.rerender();
+    }
+    /**** sizeDialogBy ****/
+    sizeDialogBy(DialogName, dW, dH) {
+        const Dialog = this.existingDialogNamed(DialogName);
+        expectNumber('dW', dW);
+        expectNumber('dH', dH);
+        this.sizeDialogTo(DialogName, Dialog.Width + dW, Dialog.Height + dH); // DRY
+    }
+    /**** sizeDialogTo ****/
+    sizeDialogTo(DialogName, Width, Height) {
+        const Dialog = this.existingDialogNamed(DialogName);
+        expectDimension('Width', Width);
+        expectDimension('Height', Height);
+        Dialog.Width = Math.max(Dialog.minWidth || 0, Math.min(Width, Dialog.maxWidth || Infinity));
+        Dialog.Height = Math.max(Dialog.minHeight || 0, Math.min(Height, Dialog.maxHeight || Infinity));
+        this.rerender();
+    }
+    /**** bringDialogToFront ****/
+    bringDialogToFront(DialogName) {
+        const Index = this.IndexOfDialog(DialogName);
+        if (Index < 0)
+            throwError(`NotFound: no dialog named ${quoted(DialogName)} found`);
+        const [Dialog] = this._DialogList.splice(Index, 1);
+        this._DialogList.push(Dialog);
+        this.rerender();
     }
     /**** Serialization ****/
     get Serialization() {
@@ -2236,7 +2761,7 @@ export class WAT_Widget extends WAT_Visual {
             configurable: true,
             writable: true,
             value: void 0
-        }); // avoids multiple rendering
+        });
         /**** Lock ****/
         Object.defineProperty(this, "_Lock", {
             enumerable: true,
@@ -2336,6 +2861,7 @@ export class WAT_Widget extends WAT_Visual {
             value: [0, 20, 0, 20]
         });
     }
+    // avoids multiple renderings atdifferent places
     /**** Type ****/
     // @ts-ignore TS2378 this getter throws
     get Type() { throwError('InternalError: "Type" has to be overwritten'); }
@@ -5090,7 +5616,9 @@ export class WAT_WidgetPane extends WAT_Widget {
             return;
         }
         if (SourceWidget === this)
-            throwError('Invalidargument: a WidgetPane can not show itself');
+            throwError('InvalidArgument: a WidgetPane can not show itself');
+        if (SourceWidget.Page === this.Page)
+            throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
         if (this._Value !== SourcePath) {
             this._Value = SourcePath;
             if (this._onValueChange != null) {
@@ -5416,9 +5944,10 @@ class WAT_AppletView extends Component {
     render(PropSet) {
         const Applet = this._Applet = PropSet.Applet;
         const visitedPage = Applet.visitedPage;
+        const openDialogs = Applet._DialogList;
         return html `<div class="WAT Applet" style="
         ${CSSStyleOfVisual(Applet)}
-        left:0px; top:0px; right:0px; bottom:0px
+        left:0px; top:0px; right:0px; bottom:0px;
       ">
         ${Applet.isAttached ? html `
           ${Applet.Rendering()}
@@ -5426,7 +5955,12 @@ class WAT_AppletView extends Component {
             ? html `<div class="WAT centered"><div>(no page to show)</div></div>`
             : html `<${WAT_PageView} Page=${visitedPage}/>`}
         ` : ''}
-      </div>`;
+      </div>
+      ${Applet.isAttached && (openDialogs.length > 0) ? html `<div class="WAT DialogLayer">
+        ${openDialogs.map((Dialog) => html `
+          <${WAT_DialogView} Applet=${Applet} Dialog=${Dialog}/>
+        `)}
+      </div>` : ''}`;
     }
 }
 //------------------------------------------------------------------------------
@@ -5532,6 +6066,230 @@ class WAT_WidgetView extends Component {
         ${CSSStyleOfVisual(Widget)} ${CSSGeometry}
       ">
         ${Widget.Rendering()}
+      </div>`;
+    }
+}
+//------------------------------------------------------------------------------
+//--                              WAT_DialogView                              --
+//------------------------------------------------------------------------------
+class WAT_DialogView extends Component {
+    constructor() {
+        super(...arguments);
+        // @ts-ignore TS2564 will be initialized in renderer
+        Object.defineProperty(this, "_Applet", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        // @ts-ignore TS2564 will be initialized in renderer
+        Object.defineProperty(this, "_Dialog", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_DragInfo", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: {
+                Mode: undefined,
+                StartX: NaN, StartY: NaN, initialGeometry: undefined
+            }
+        });
+        Object.defineProperty(this, "_shownWidgets", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        /**** generic GestureRecognizer ****/
+        Object.defineProperty(this, "_Recognizer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+    }
+    /**** _releaseWidgets ****/
+    _releaseWidgets() {
+        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+    }
+    /**** componentWillUnmount ****/
+    componentWillUnmount() {
+        this._releaseWidgets();
+    }
+    /**** _GeometryRelativeTo  ****/
+    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
+        const WidgetAnchors = Widget.Anchors;
+        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
+        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
+        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
+        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
+        let x, y, Width, Height;
+        switch (WidgetAnchors[0]) {
+            case 'left-width':
+                x = WidgetX - BaseX;
+                Width = WidgetWidth;
+                break;
+            case 'width-right':
+                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
+                Width = WidgetWidth;
+                break;
+            case 'left-right':
+                x = WidgetX - BaseX;
+                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
+        }
+        switch (WidgetAnchors[1]) {
+            case 'top-height':
+                y = WidgetY - BaseY;
+                Height = WidgetHeight;
+                break;
+            case 'height-bottom':
+                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
+                Height = WidgetHeight;
+                break;
+            case 'top-bottom':
+                y = WidgetY - BaseY;
+                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
+        }
+        // @ts-ignore TS5905 all variables will be assigned by now
+        return { x, y, Width, Height };
+    }
+    /**** dialog dragging and resizing ****/
+    _handleDrag(dx, dy) {
+        if (this._DragInfo.Mode === 'drag') {
+            this._moveDialog(dx, dy);
+        }
+        else {
+            this._resizeDialog(dx, dy);
+        }
+        this._Applet.bringDialogToFront(this._Dialog.Name);
+        rerender();
+    }
+    _moveDialog(dx, dy) {
+        this._Dialog.x = this._DragInfo.initialGeometry.x + dx;
+        this._Dialog.y = this._DragInfo.initialGeometry.y + dy;
+    }
+    _resizeDialog(dx, dy) {
+        const Dialog = this._Dialog;
+        const DragInfo = this._DragInfo;
+        const { minWidth, maxWidth, minHeight, maxHeight } = DragInfo;
+        let newWidth = DragInfo.initialGeometry.Width;
+        switch (DragInfo.Mode) {
+            case 'resize-sw':
+                newWidth = Math.max(minWidth || 0, Math.min(newWidth - dx, maxWidth || Infinity));
+                dx = newWidth - DragInfo.initialGeometry.Width;
+                Dialog.x = DragInfo.initialGeometry.x - dx;
+                Dialog.Width = DragInfo.initialGeometry.Width + dx;
+                break;
+            case 'resize-se':
+                Dialog.Width = Math.max(minWidth || 0, Math.min(DragInfo.initialGeometry.Width + dx, maxWidth || Infinity));
+        }
+        Dialog.Height = Math.max(minHeight || 0, Math.min(DragInfo.initialGeometry.Height + dy, maxHeight || Infinity));
+    }
+    _GestureRecognizer() {
+        return GestureRecognizer({
+            onlyFrom: '.Titlebar,.leftResizer,.middleResizer,.rightResizer',
+            neverFrom: '.CloseButton',
+            onDragStart: (dx, dy, _x, _y, Event) => {
+                let ClassList = Event.target.classList;
+                switch (true) {
+                    case ClassList.contains('leftResizer'):
+                        this._DragInfo.Mode = 'resize-sw';
+                        break;
+                    case ClassList.contains('middleResizer'):
+                        this._DragInfo.Mode = 'resize-s';
+                        break;
+                    case ClassList.contains('rightResizer'):
+                        this._DragInfo.Mode = 'resize-se';
+                        break;
+                    default: this._DragInfo.Mode = 'drag';
+                }
+                const { x, y, Width, Height } = this._Dialog;
+                this._DragInfo.initialGeometry = { x, y, Width, Height };
+                this._handleDrag(dx, dy);
+            },
+            onDragContinuation: () => this._handleDrag,
+            onDragFinish: () => this._handleDrag,
+            onDragAbortion: () => this._handleDrag,
+        });
+    }
+    /**** render ****/
+    render(PropSet) {
+        this._releaseWidgets();
+        const { Applet, Dialog } = PropSet;
+        this._Applet = Applet;
+        this._Dialog = Dialog;
+        const { Name, SourceWidgetPath, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, } = Dialog;
+        const hasTitlebar = (Title != null) || isDraggable || isClosable;
+        const resizable = (isResizable ? 'resizable' : '');
+        const withTitlebar = (hasTitlebar ? 'withTitlebar' : '');
+        /**** Event Handlers ****/
+        let Recognizer = this._Recognizer;
+        if (Recognizer == null) {
+            Recognizer = this._Recognizer = this._GestureRecognizer();
+        }
+        const onClose = () => {
+            Applet.closeDialog(Dialog.Name);
+        };
+        /**** ContentPane Rendering ****/
+        const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath);
+        if (SourceWidget == null) {
+            this._shownWidgets = [];
+        }
+        else {
+            const WidgetsToShow = (SourceWidget.Type === 'Outline'
+                ? SourceWidget.bundledWidgets()
+                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))));
+            WidgetsToShow.forEach((Widget) => Widget._Pane = Dialog);
+            this._shownWidgets = WidgetsToShow;
+        }
+        const PaneGeometry = { x, y, Width, Height };
+        if (hasTitlebar) {
+            PaneGeometry.Height -= 30;
+        }
+        if (isResizable) {
+            PaneGeometry.Height -= 10;
+        }
+        PaneGeometry.Height = Math.max(0, PaneGeometry.Height);
+        const BaseGeometry = SourceWidget.Geometry;
+        let ContentPane = this._shownWidgets.toReversed().map((Widget) => {
+            let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
+            return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+        });
+        /**** actual dialog rendering ****/
+        return html `<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
+        left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
+      ">
+        ${hasTitlebar && html `<div class="Titlebar"
+          onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+          onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+        >
+          <div class="Title">${Title}</div>
+
+          ${(isClosable) && html `
+            <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
+          `}
+        </div>`}
+
+        <div class="ContentPane">${ContentPane}</div>
+
+        ${isResizable && html `
+          <div class="leftResizer"
+            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+          />
+          <div class="middleResizer"
+            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+          />
+          <div class="rightResizer"
+            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+          />
+        `}
       </div>`;
     }
 }
