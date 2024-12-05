@@ -17,16 +17,16 @@ var __rest = (this && this.__rest) || function (s, e) {
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, HTMLsafe, ValuesAreEqual, ValueIsOrdinal, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, allowOrdinal, allowTextline, expectPlainObject, expectList, allowListSatisfying, allowFunction, } from 'javascript-interface-library';
+quoted, HTMLsafe, ValuesAreEqual, ValueIsOrdinal, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, allowOrdinal, allowTextline, expectList, allowListSatisfying, allowFunction, } from 'javascript-interface-library';
 import Conversion from 'svelte-coordinate-conversion';
 const { fromViewportTo } = Conversion;
-import { html, useRef, useMemo, useCallback, } from 'htm/preact';
+import { html, useRef, useEffect, useMemo, useCallback, } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, ValueIsWidgetType, allowPage, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -61,7 +61,7 @@ appendStyle(`
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size:14px; font-weight:normal; line-height:1.4; color:black;
     text-align:left; text-shadow:none;
-    z-index:1000000;
+    z-index:2000000;
     pointer-events:none;
   }
 
@@ -311,7 +311,7 @@ appendStyle(`
     border:solid 1px #000000; border-radius:4px;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
-    z-index:2000000;
+    z-index:3000000;
   }
 
   .WAD.Dialog > .Titlebar {
@@ -403,6 +403,11 @@ appendStyle(`
 
   .WAD.Cover[selected] {
     outline:dotted 2px orangered;
+    cursor:grab;
+  }
+
+  .WAD.Cover.dragging[selected] {
+    cursor:grabbing;
   }
 
   .WAD.ShapeHandle {
@@ -553,243 +558,6 @@ function commonValueOf(ValueList) {
     }
     else {
         return multipleValues;
-    }
-}
-//-------------------------------------------------------------------------------
-//--                            Gesture Recognizer                             --
-//-------------------------------------------------------------------------------
-// warning: coordinates are relative to the viewport!
-function GestureRecognizer(OptionSet) {
-    expectPlainObject('recognizer option set', OptionSet);
-    /**** validate options ****/
-    let { onlyFrom, neverFrom, ClickRadius, MultiClickLimit, MultiClickTimeSpan, primaryLongPressDelay, secondaryLongPressDelay, onClick, onDblClick, onMultiClick, onLongPressIndication, onLongPress, onDragStart, onDragContinuation, onDragFinish, onDragAbortion, } = OptionSet;
-    if (!(onlyFrom instanceof Element)) {
-        allowTextline('"onlyFrom" selector', onlyFrom);
-    }
-    if (!(neverFrom instanceof Element)) {
-        allowTextline('"neverFrom" selector', neverFrom);
-    }
-    allowOrdinal('click radius', ClickRadius);
-    allowOrdinal('multi-click limit', MultiClickLimit);
-    allowOrdinal('multi-click time span', MultiClickTimeSpan);
-    allowOrdinal('primary long-press delay', primaryLongPressDelay);
-    allowOrdinal('secondary long-press delay', secondaryLongPressDelay);
-    allowFunction('"onClick" callback', onClick);
-    allowFunction('"onDblClick" callback', onDblClick);
-    allowFunction('"onMultiClick" callback', onMultiClick);
-    allowFunction('"onLongPressIndication" callback', onLongPressIndication);
-    allowFunction('"onLongPress" callback', onLongPress);
-    allowFunction('"onDragStart" callback', onDragStart);
-    allowFunction('"onDragContinuation" callback', onDragContinuation);
-    allowFunction('"onDragFinish" callback', onDragFinish);
-    allowFunction('"onDragAbortion" callback', onDragAbortion);
-    /**** detect configured features and apply defaults ****/
-    if (ClickRadius == null) {
-        ClickRadius = 4;
-    }
-    if (MultiClickTimeSpan == null) {
-        MultiClickTimeSpan = 300;
-    }
-    if (MultiClickLimit == null) {
-        MultiClickLimit = 0;
-        if (onClick != null) {
-            MultiClickLimit = 1;
-        }
-        if (onDblClick != null) {
-            MultiClickLimit = 2;
-        }
-        if (onMultiClick != null) {
-            MultiClickLimit = 3;
-        }
-    }
-    const RecognizerMayClick = (MultiClickLimit > 0);
-    const RecognizerMayLongPress = (onLongPress != null);
-    if (RecognizerMayLongPress) {
-        if (primaryLongPressDelay == null) {
-            primaryLongPressDelay = 500;
-        }
-        if (secondaryLongPressDelay == null) {
-            secondaryLongPressDelay = 1000;
-        }
-    }
-    const RecognizerMayDrag = ((onDragStart != null) && (onDragContinuation != null) &&
-        (onDragFinish != null) && (onDragAbortion != null));
-    /**** Working Variables ****/
-    let Status = '', StartX = 0, StartY = 0;
-    let curEvent, curX, curY;
-    let lastClickCount = 0, lastClickTime = 0;
-    let LongPressTimer, LongPressState = '';
-    /**** actual recognizer ****/
-    return (Event) => {
-        switch (Event.type) {
-            case 'pointerdown': return onPointerDown(Event);
-            case 'pointermove': return onPointerMove(Event);
-            case 'pointerup': return onPointerUp(Event);
-            case 'pointercancel': return onPointerCancel(Event);
-            default: return; // ignore any other events
-        }
-    };
-    /**** onPointerDown ****/
-    function onPointerDown(Event) {
-        if (Event.buttons !== 1) { // only handle events for primary button
-            if (Status !== '') {
-                onPointerCancel(Event);
-            }
-            return;
-        }
-        // @ts-ignore TS18047,TS2339 allow "Event.target.setPointerCapture"
-        Event.target.setPointerCapture(Event.pointerId);
-        Event.stopPropagation(); // consume event
-        Event.preventDefault();
-        Status = 'observing'; // i.e., before choice between "click" and "drag"
-        StartX = curX = Event.clientX;
-        curEvent = Event;
-        StartY = curY = Event.clientY;
-        if (RecognizerMayLongPress) { // prepare for a long press
-            LongPressState = 'preparing';
-            LongPressTimer = setTimeout(handleLongPressTimeout, primaryLongPressDelay);
-        }
-    }
-    /**** onPointerMove ****/
-    function onPointerMove(Event) {
-        if (Status === '') {
-            return;
-        } // recognizer is not active yet
-        if (Event.buttons !== 1) { // only handle events for primary button
-            if (Status !== '') {
-                onPointerCancel(Event);
-            }
-            return;
-        }
-        Event.stopPropagation(); // consume event
-        Event.preventDefault();
-        ({ clientX: curX, clientY: curY } = curEvent = Event);
-        if (Status === 'observing') {
-            if (RecognizerMayDrag &&
-                ((curX - StartX) ** 2 + (curY - StartY) ** 2 >= ClickRadius ** 2)) { // ok, no "click" any longer, but "drag"
-                Status = 'moving';
-                call(onDragStart, [curX - StartX, curY - StartY, StartX, StartY, Event]);
-                /**** cancel any long-press preparations ****/
-                if (LongPressTimer != null) {
-                    clearTimeout(LongPressTimer);
-                }
-                if (LongPressState !== 'preparing') {
-                    call(onLongPressIndication, [false, Event, curX, curY, StartX, StartY]);
-                }
-                LongPressState = '';
-                LongPressTimer = undefined;
-            }
-        }
-        else { // Status === 'moving'
-            call(onDragContinuation, [curX - StartX, curY - StartY, StartX, StartY, Event]);
-        }
-    }
-    /**** onPointerUp ****/
-    function onPointerUp(Event) {
-        if (Status === '') {
-            return;
-        } // recognizer is not active yet
-        if (Event.buttons !== 0) { // only handle events for primary button
-            if (Status !== '') {
-                onPointerCancel(Event);
-            }
-            return;
-        }
-        Event.stopPropagation(); // consume event
-        Event.preventDefault();
-        ({ clientX: curX, clientY: curY } = curEvent = Event);
-        if (Status === 'observing') {
-            if (LongPressState === 'ready') {
-                lastClickCount = lastClickTime = 0;
-                call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
-                call(onLongPress, [curX, curY, StartX, StartY, Event]);
-                LongPressState = '';
-            }
-            else {
-                const now = Date.now();
-                if ((lastClickCount === MultiClickLimit) ||
-                    (now - lastClickTime > MultiClickTimeSpan)) {
-                    lastClickCount = 1;
-                }
-                else {
-                    lastClickCount++;
-                }
-                lastClickTime = now;
-                if (RecognizerMayClick) {
-                    switch (lastClickCount) {
-                        case 1:
-                            call(onClick, [curX, curY, StartX, StartY, Event]);
-                            break;
-                        case 2:
-                            call(onDblClick, [curX, curY, StartX, StartY, Event]);
-                            break;
-                    }
-                    call(onMultiClick, [lastClickCount, curX, curY, StartX, StartY, Event]);
-                }
-                /**** cancel any long-press preparations ****/
-                if (LongPressTimer != null) {
-                    clearTimeout(LongPressTimer);
-                }
-                if (LongPressState === 'waiting') {
-                    call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
-                }
-                LongPressState = '';
-                LongPressTimer = undefined;
-            }
-        }
-        else { // Status === 'moving'
-            lastClickCount = lastClickTime = 0;
-            call(onDragFinish, [curX - StartX, curY - StartY, StartX, StartY, Event]);
-        }
-        Status = '';
-    }
-    /**** onPointerCancel ****/
-    function onPointerCancel(Event) {
-        if (Status === '') {
-            return;
-        } // recognizer is not active yet
-        Event.stopPropagation(); // consume event
-        Event.preventDefault();
-        ({ clientX: curX, clientY: curY } = curEvent = Event);
-        if (Status === 'moving') {
-            call(onDragAbortion, [curX - StartX, curY - StartY, StartX, StartY, Event]);
-        }
-        Status = '';
-        lastClickCount = lastClickTime = 0;
-        /**** cancel any long-press preparations ****/
-        if (LongPressTimer != null) {
-            clearTimeout(LongPressTimer);
-        }
-        if (LongPressState !== 'preparing') {
-            call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
-        }
-        LongPressState = '';
-        LongPressTimer = undefined;
-    }
-    /**** long-press timeout handling ****/
-    function handleLongPressTimeout() {
-        switch (LongPressState) {
-            case 'preparing':
-                LongPressState = 'waiting';
-                LongPressTimer = setTimeout(handleLongPressTimeout, secondaryLongPressDelay);
-                call(onLongPressIndication, [true, curX, curY, StartX, StartY, curEvent]);
-                break;
-            case 'waiting':
-                LongPressState = 'ready';
-                LongPressTimer = undefined;
-        }
-    }
-    /**** callback invocation ****/
-    function call(Callback, ArgumentList) {
-        if (!ValueIsFunction(Callback)) {
-            return;
-        }
-        try {
-            Callback.apply(null, ArgumentList);
-        }
-        catch (Signal) {
-            console.warn('Callback failure', Signal);
-        }
     }
 }
 //------------------------------------------------------------------------------
@@ -2449,14 +2217,19 @@ function doDeleteSelectedPages() {
 /**** doCreateWidget ****/
 function doCreateWidget(Type) {
     const { Applet, selectedWidgets } = DesignerState;
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     const visitedPage = Applet.visitedPage;
     doOperation(new WAD_WidgetDeserializationOperation([{ Type }], visitedPage, 0));
 }
 /**** doDuplicateSelectedWidgets ****/
 function doDuplicateSelectedWidgets() {
-    const visitedPage = DesignerState.Applet.visitedPage;
     const selectedWidgets = sortedWidgetSelection();
-    doOperation(new WAD_WidgetDeserializationOperation(selectedWidgets.map((Widget) => Widget.Serialization), visitedPage, 0));
+    if (selectedWidgets.length === 0) {
+        return;
+    }
+    doOperation(new WAD_WidgetDeserializationOperation(selectedWidgets.map((Widget) => Widget.Serialization), DesignerState.Applet.visitedPage, 0));
 }
 /**** doConfigureSelectedWidgets ****/
 function doConfigureSelectedWidgets(Property, Value) {
@@ -2509,7 +2282,7 @@ function doConfigureSelectedWidgets(Property, Value) {
     doOperation(new WAD_WidgetConfigurationOperation(selectedWidgets, Property, ValuesToSet));
 }
 /**** doChangeGeometriesBy ****/
-function doChangeGeometriesBy(WidgetList, Mode, dx, dy, initialGeometries) {
+function doChangeGeometriesBy(WidgetList, Mode, dx, dy, initialGeometries, withSnapToGrid = true) {
     let dX = 0, dY = 0, dW = 0, dH = 0;
     switch (Mode) {
         case 'nw':
@@ -2556,7 +2329,7 @@ function doChangeGeometriesBy(WidgetList, Mode, dx, dy, initialGeometries) {
         let Height = Math.max(0, Geometry.Height + dH);
         let xl = Geometry.x + dX, xr = xl + Width;
         let yt = Geometry.y + dY, yb = yt + Height;
-        if (SnapToGrid) {
+        if (withSnapToGrid && SnapToGrid) {
             let xl_ = GridWidth * Math.round(xl / GridWidth);
             let xr_ = GridWidth * Math.round(xr / GridWidth);
             let yt_ = GridHeight * Math.round(yt / GridHeight);
@@ -2632,22 +2405,36 @@ function doShiftSelectedWidgetsToBottom() {
 }
 /**** doDeleteSelectedWidgets ****/
 function doDeleteSelectedWidgets() {
-    doOperation(new WAD_WidgetDeletionOperation(DesignerState.selectedWidgets));
+    const selectedWidgets = DesignerState.selectedWidgets;
+    if (selectedWidgets.length === 0) {
+        return;
+    }
+    doOperation(new WAD_WidgetDeletionOperation(selectedWidgets));
 }
 /**** doCutSelectedWidgets ****/
 function doCutSelectedWidgets() {
     const selectedWidgets = sortedWidgetSelection();
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     DesignerState.shelvedWidgets = selectedWidgets.map((Widget) => Widget.Serialization);
     doDeleteSelectedWidgets();
+    //  WAT_rerender()
 }
 /**** doCopySelectedWidgets ****/
 function doCopySelectedWidgets() {
     const selectedWidgets = sortedWidgetSelection();
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     DesignerState.shelvedWidgets = selectedWidgets.map((Widget) => Widget.Serialization);
     WAT_rerender();
 }
 /**** doPasteShelvedWidgets ****/
 function doPasteShelvedWidgets() {
+    if (DesignerState.shelvedWidgets.length === 0) {
+        return;
+    }
     const visitedPage = DesignerState.Applet.visitedPage;
     doOperation(new WAD_WidgetDeserializationOperation(DesignerState.shelvedWidgets, visitedPage, 0));
 }
@@ -2666,9 +2453,13 @@ function doImportFromFile(Event) {
 function handleFileLoaded(Event) {
     Event.stopPropagation();
     Event.preventDefault();
+    doImport((new TextDecoder()).decode(Event.target.result));
+}
+/**** doImport ****/
+function doImport(FileContent) {
     let Serialization;
     try {
-        Serialization = JSON.parse((new TextDecoder()).decode(Event.target.result));
+        Serialization = JSON.parse(FileContent);
     }
     catch (Signal) {
         console.error(Signal);
@@ -3519,7 +3310,8 @@ DesignerState.ScriptEditor.View = WAD_ScriptEditor;
 //--                              Layouter State                              --
 //------------------------------------------------------------------------------
 const LayouterState = {
-    ShapeMode: '',
+    LayouterLayer: undefined,
+    ShapeMode: undefined,
     pointedWidget: undefined,
     shapedWidgets: [], // actually shaped widgets (as selection may change)
     initialGeometries: [], // initial geometries of "shapedWidgets"
@@ -3528,6 +3320,12 @@ const LayouterState = {
     LassoStart: { x: 0, y: 0 },
     LassoEnd: { x: 0, y: 0 },
 };
+/**** focusLayouterLayer ****/
+LayouterState.LayouterLayer = undefined;
+function focusLayouterLayer() {
+    var _a;
+    (_a = DesignerState.LayouterLayer) === null || _a === void 0 ? void 0 : _a.focus();
+}
 /**** Lasso Recognizer ****/
 LayouterState.LassoRecognizer = GestureRecognizer({
     onlyFrom: '.WAD.LayouterLayer',
@@ -3690,13 +3488,14 @@ function onPageClick() {
 }
 /**** finishDraggingAndShaping ****/
 function finishDraggingAndShaping() {
+    LayouterState.ShapeMode = undefined;
     LayouterState.pointedWidget = undefined;
-    LayouterState.shapedWidgets = undefined;
+    LayouterState.shapedWidgets = [];
     LayouterState.initialGeometries = undefined;
 }
 /**** abortDraggingAndShaping ****/
 function abortDraggingAndShaping() {
-    if (LayouterState.shapedWidgets != null) {
+    if (LayouterState.shapedWidgets.length > 0) {
         doOperation(new WAD_WidgetShapeOperation(LayouterState.shapedWidgets, LayouterState.initialGeometries));
     }
     finishDraggingAndShaping();
@@ -3719,11 +3518,117 @@ function WAD_LayouterLayer() {
         LayouterState.ShapeMode = Mode;
         LayouterState.ShapeHandleRecognizer(Event);
     }
-    /**** actual rendering ****/
+    /**** Event Handling ****/
     const LassoRecognizer = LayouterState.LassoRecognizer;
-    return html `<div class="WAD LayouterLayer"
-      onPointerDown=${LassoRecognizer} onPointerMove=${LassoRecognizer}
+    const DOMElement = useRef(null);
+    useEffect(() => {
+        DesignerState.LayouterLayer = DOMElement.current;
+    }, []);
+    const FocusAndLassoRecognizer = useCallback((Event) => {
+        focusLayouterLayer();
+        LassoRecognizer(Event);
+    }, []);
+    const onKeyDown = useCallback(async (Event) => {
+        if (Event.ctrlKey || Event.metaKey) {
+            switch (Event.key) {
+                case 'a':
+                    consumeEvent(Event);
+                    return selectWidgets(Event.shiftKey ? [] : DesignerState.Applet.visitedPage.WidgetList);
+                case 'o':
+                    consumeEvent(Event);
+                    if ('showOpenFilePicker' in window) {
+                        // @ts-ignore TS18046 allow "window.showOpenFilePicker"
+                        const FileList = await window.showOpenFilePicker();
+                        if (FileList.length === 0) {
+                            return;
+                        }
+                        try {
+                            const File = await FileList[0].getFile();
+                            doImport(await File.text());
+                        }
+                        catch (Signal) {
+                            window.alert('Could not import file\n\nReason: ' + Signal);
+                        }
+                    }
+                    else {
+                        window.alert('Your browser does not support opening files.\n\n' +
+                            'Try the "import" function from the Toolbox');
+                    }
+                    return;
+                case 'p':
+                    consumeEvent(Event);
+                    return doPrintApplet();
+                case 'v':
+                    consumeEvent(Event);
+                    return doPasteShelvedWidgets();
+                case 'y':
+                    consumeEvent(Event);
+                    return redoOperation();
+                case 'z':
+                    consumeEvent(Event);
+                    return (Event.shiftKey ? redoOperation() : undoOperation());
+            }
+        }
+        if (selectedWidgets.length === 0) {
+            return;
+        }
+        switch (Event.key) {
+            case 'ArrowLeft':
+                consumeEvent(Event);
+                if (Event.altKey) { // size
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 'e', (Event.shiftKey ? -10 : -1), 0, DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                else { // move
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 'c', (Event.shiftKey ? -10 : -1), 0, DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                return;
+            case 'ArrowUp':
+                consumeEvent(Event);
+                if (Event.altKey) { // size
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 's', 0, (Event.shiftKey ? -10 : -1), DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                else { // move
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 'c', 0, (Event.shiftKey ? -10 : -1), DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                return;
+            case 'ArrowRight':
+                consumeEvent(Event);
+                if (Event.altKey) { // size
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 'e', (Event.shiftKey ? 10 : 1), 0, DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                else { // move
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 'c', (Event.shiftKey ? 10 : 1), 0, DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                return;
+            case 'ArrowDown':
+                consumeEvent(Event);
+                if (Event.altKey) { // size
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 's', 0, (Event.shiftKey ? 10 : 1), DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                else { // move
+                    doChangeGeometriesBy(DesignerState.selectedWidgets, 'c', 0, (Event.shiftKey ? 10 : 1), DesignerState.selectedWidgets.map((Widget) => Widget.Geometry), false);
+                }
+                return;
+            case 'Backspace':
+            case 'Delete':
+                consumeEvent(Event);
+                return doDeleteSelectedWidgets();
+            case 'c':
+                consumeEvent(Event);
+                return doCopySelectedWidgets();
+            case 'd':
+                consumeEvent(Event);
+                return doDuplicateSelectedWidgets();
+            case 'x':
+                consumeEvent(Event);
+                return doCutSelectedWidgets();
+        }
+    });
+    /**** actual rendering ****/
+    return html `<div class="WAD LayouterLayer" ref=${DOMElement} tabindex="0"
+      onPointerDown=${FocusAndLassoRecognizer} onPointerMove=${LassoRecognizer}
       onPointerUp=${LassoRecognizer} onPointerCancel=${LassoRecognizer}
+      onKeyDown=${onKeyDown}
     >
       ${WidgetList.toReversed().map((Widget) => {
         if (!Widget.isVisible) {
@@ -3774,11 +3679,17 @@ function WAD_LayouterLayer() {
 function WAD_Cover(PropSet) {
     let { Widget, onPointerEvent } = PropSet, otherProps = __rest(PropSet, ["Widget", "onPointerEvent"]);
     let { x, y, Width, Height } = Widget.Geometry;
-    return html `<div class="WAD Cover" style="
+    const FocusAndCoverRecognizer = useCallback((Event) => {
+        focusLayouterLayer();
+        onPointerEvent(Event);
+    }, []);
+    const dragging = ((LayouterState.ShapeMode === 'c') && (LayouterState.shapedWidgets.length > 0)
+        ? 'dragging' : '');
+    return html `<div class="WAD Cover ${dragging}" style="
       left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
       ${Widget.isLocked ? 'pointer-events:none' : ''}
     " ...${otherProps}
-      onPointerDown=${onPointerEvent} onPointerMove=${onPointerEvent}
+      onPointerDown=${FocusAndCoverRecognizer} onPointerMove=${onPointerEvent}
       onPointerUp=${onPointerEvent} onPointerCancel=${onPointerEvent}
     />`;
 }
@@ -3826,8 +3737,12 @@ function WAD_ShapeHandle(PropSet) {
             break;
     }
     Cursor = 'cursor:' + Cursor + '-resize';
+    const FocusAndHandleRecognizer = useCallback((Event) => {
+        focusLayouterLayer();
+        onPointerEvent(Event);
+    }, []);
     return html `<div class="WAD ShapeHandle" style="${CSSGeometry} ${Cursor}" ...${otherProps}
-      onPointerDown=${onPointerEvent} onPointerMove=${onPointerEvent}
+      onPointerDown=${FocusAndHandleRecognizer} onPointerMove=${onPointerEvent}
       onPointerUp=${onPointerEvent} onPointerCancel=${onPointerEvent}
     />`;
 } /**** horizontal Guides ****/
@@ -3940,7 +3855,12 @@ function IdOfWidget(Widget) {
     }
 }
 /**** newId - uses nanoid with custom dictionary ****/
-export const newId = customAlphabet(nolookalikesSafe, 21);
+export const newId = customAlphabet(nolookalikesSafe, 21); /**** consume/consumingEvent ****/
+function consumeEvent(Event) {
+    Event.stopPropagation();
+    Event.preventDefault();
+}
+const consumingEvent = consumeEvent;
 /**** inform WAT about this designer ****/
 console.log('starting WebApp Tinkerer Designer...');
 useDesigner(WAD_DesignerLayer);
