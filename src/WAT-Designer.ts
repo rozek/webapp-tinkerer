@@ -2461,13 +2461,8 @@
 /**** doCreateWidget ****/
 
   function doCreateWidget (Type:string):void {
-    const { Applet, selectedWidgets } = DesignerState
-    if (selectedWidgets.length === 0) { return }
-
-    const visitedPage = Applet.visitedPage
-
     doOperation(new WAD_WidgetDeserializationOperation(
-      [{ Type }], visitedPage,0
+      [{ Type }], DesignerState.Applet.visitedPage,0
     ))
   }
 
