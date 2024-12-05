@@ -424,6 +424,24 @@ appendStyle(`
     cursor:nwse-resize; pointer-events:auto;
   }
 
+/**** WAT OverlayLayer ****/
+
+  .WAT.OverlayLayer {
+    display:block; position:absolute; overflow:visible;
+    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
+    pointer-events:none;
+  }
+
+/**** Overlay ****/
+
+  .WAT.Overlay {
+    display:block; position:absolute;
+    background:white; color:black;
+    box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
+    z-index:2000000;
+    pointer-events:auto;
+  }
+
 
 
 /**** common Settings ****/
@@ -2889,6 +2907,13 @@ export class WAT_Widget extends WAT_Visual {
             writable: true,
             value: [0, 20, 0, 20]
         });
+        /**** OverlayNamed ****/
+        Object.defineProperty(this, "_OverlayList", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
     }
     // avoids multiple renderings atdifferent places
     /**** Type ****/
@@ -3431,6 +3456,162 @@ export class WAT_Widget extends WAT_Visual {
                 this._Offsets[3] = newOffsets[3];
             }
         }
+        this.rerender();
+    }
+    OverlayNamed(OverlayName) {
+        const OverlayIndex = this.IndexOfOverlay(OverlayName);
+        return this._OverlayList[OverlayIndex]; // even if OverlayIndex = -1
+    }
+    /**** existingOverlayNamed ****/
+    existingOverlayNamed(OverlayName) {
+        const OverlayIndex = this.IndexOfOverlay(OverlayName);
+        if (OverlayIndex < 0)
+            throwError(`NotFound: no overlay named ${quoted(OverlayName)} found`);
+        return this._OverlayList[OverlayIndex];
+    }
+    /**** IndexOfOverlay ****/
+    IndexOfOverlay(OverlayName) {
+        expectName('overlay name', OverlayName);
+        const normalizedName = OverlayName.toLowerCase();
+        return this._OverlayList.findIndex((Overlay) => Overlay.normalizedName === normalizedName);
+    }
+    /**** openOverlay ****/
+    openOverlay(Descriptor) {
+        var _a;
+        expectPlainObject('overlay descriptor', Descriptor);
+        expectName('overlay name', Descriptor.Name);
+        allowBoolean('overlay modality', Descriptor.isModal);
+        allowLocation('overlay x coordinate', Descriptor.x);
+        allowLocation('overlay y coordinate', Descriptor.y);
+        allowDimension('overlay width', Descriptor.Width);
+        allowDimension('overlay height', Descriptor.Height);
+        allowDimension('minimal overlay width', Descriptor.minWidth);
+        allowDimension('maximal overlay width', Descriptor.maxWidth);
+        allowDimension('minimal overlay height', Descriptor.minHeight);
+        allowDimension('maximal overlay height', Descriptor.maxHeight);
+        allowFunction('"onOpen" callback', Descriptor.onOpen);
+        allowFunction('"onClose" callback', Descriptor.onClose);
+        let { Name, Title, isModal, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
+        if (this.OverlayIsOpen(Descriptor.Name))
+            throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
+        if (isModal == null) {
+            isModal = false;
+        }
+        if (x == null) {
+            x = 0;
+        }
+        if (y == null) {
+            y = 0;
+        }
+        if (minWidth == null) {
+            minWidth = 0;
+        }
+        if (minHeight == null) {
+            minHeight = 0;
+        }
+        let SourceWidget, SourceWidgetPath;
+        switch (true) {
+            case null:
+            case undefined:
+                throwError('MissingArgument: no source widget path given');
+            case ValueIsPath(Descriptor.SourceWidget):
+                SourceWidgetPath = Descriptor.SourceWidget;
+                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(SourceWidgetPath);
+                if (SourceWidget == null)
+                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
+                break;
+            case ValueIsWidget(Descriptor.SourceWidget):
+                SourceWidget = Descriptor.SourceWidget;
+                SourceWidgetPath = SourceWidget.Path;
+            default:
+                throwError('InvalidArgument: the given source widget is neither a widget ' +
+                    'nor a widget path');
+        }
+        if ((Width == null) || (Height == null)) {
+            let SourceGeometry = SourceWidget.Geometry;
+            if (Width == null) {
+                Width = SourceGeometry.Width;
+            }
+            if (Height == null) {
+                Height = SourceGeometry.Height;
+            }
+        }
+        Width = Math.max(minWidth || 0, Math.min(Width, maxWidth || Infinity));
+        Height = Math.max(minHeight || 0, Math.min(Height, maxHeight || Infinity));
+        const Overlay = {
+            Name, normalizedName: Name.toLowerCase(), SourceWidgetPath,
+            isModal,
+            x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight,
+            onOpen, onClose
+        };
+        this._OverlayList.push(Overlay);
+        this.rerender();
+        if (Overlay.onOpen != null) {
+            Overlay.onOpen(Overlay);
+        }
+    }
+    /**** closeOverlay ****/
+    closeOverlay(OverlayName) {
+        const OverlayIndex = this.IndexOfOverlay(OverlayName);
+        if (OverlayIndex < 0) {
+            return;
+        }
+        const [Overlay] = this._OverlayList.splice(OverlayIndex, 1);
+        this.rerender();
+        if (Overlay.onClose != null) {
+            Overlay.onClose(Overlay);
+        }
+    }
+    /**** closeAllOverlays ****/
+    closeAllOverlays() {
+        if (this._OverlayList.length > 0) {
+            this._OverlayList.forEach((Overlay) => this.closeOverlay(Overlay.Name));
+        }
+    }
+    /**** OverlayIsOpen ****/
+    OverlayIsOpen(OverlayName) {
+        return (this.OverlayNamed(OverlayName) != null);
+    }
+    /**** openOverlays ****/
+    openOverlays() {
+        return this._OverlayList.map((Overlay) => Overlay.Name);
+    }
+    /**** GeometryOfOverlay ****/
+    GeometryOfOverlay(OverlayName) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        const { x, y, Width, Height } = Overlay;
+        return { x, y, Width, Height };
+    }
+    /**** moveOverlayBy ****/
+    moveOverlayBy(OverlayName, dx, dy) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectNumber('dx', dx);
+        expectNumber('dy', dy);
+        this.moveOverlayTo(OverlayName, Overlay.x + dx, Overlay.y + dy); // DRY
+    }
+    /**** moveOverlayTo ****/
+    moveOverlayTo(OverlayName, x, y) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectLocation('x coordinate', x);
+        expectLocation('y coordinate', y);
+        Overlay.x = x;
+        Overlay.y = y;
+        this.rerender();
+    }
+    /**** sizeOverlayBy ****/
+    sizeOverlayBy(OverlayName, dW, dH) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectNumber('dW', dW);
+        expectNumber('dH', dH);
+        this.sizeOverlayTo(OverlayName, Overlay.Width + dW, Overlay.Height + dH); // DRY
+    }
+    /**** sizeOverlayTo ****/
+    sizeOverlayTo(OverlayName, Width, Height) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectDimension('Width', Width);
+        expectDimension('Height', Height);
+        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, Overlay.maxWidth || Infinity));
+        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, Overlay.maxHeight || Infinity));
         this.rerender();
     }
     /**** Serialization ****/
@@ -6091,11 +6272,19 @@ class WAT_WidgetView extends Component {
         const CSSGeometry = ((x != null) && (Width != null) && (y != null) && (Height != null)
             ? `left:${x}px; top:${y}px; width:${Width}px; height:${Height}px; right:auto; bottom:auto;`
             : '');
+        const openOverlays = Widget._OverlayList;
         return html `<div class="WAT Widget" style="
         ${CSSStyleOfVisual(Widget)} ${CSSGeometry}
       ">
         ${Widget.Rendering()}
-      </div>`;
+      </div>
+      ${openOverlays.length > 0 ? html `<div class="WAT OverlayLayer"
+        style="${CSSGeometry}"
+      >
+        ${openOverlays.map((Overlay) => html `
+          <${WAT_OverlayView} Widget=${Widget} Overlay=${Overlay}/>
+        `)}
+      </div>` : ''}`;
     }
 }
 //------------------------------------------------------------------------------
@@ -6320,6 +6509,99 @@ class WAT_DialogView extends Component {
             onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
           />
         `}
+      </div>`;
+    }
+}
+//------------------------------------------------------------------------------
+//--                             WAT_OverlayView                              --
+//------------------------------------------------------------------------------
+class WAT_OverlayView extends Component {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_shownWidgets", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+    }
+    /**** _releaseWidgets ****/
+    _releaseWidgets() {
+        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+    }
+    /**** componentWillUnmount ****/
+    componentWillUnmount() {
+        this._releaseWidgets();
+    }
+    /**** _GeometryRelativeTo  ****/
+    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
+        const WidgetAnchors = Widget.Anchors;
+        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
+        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
+        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
+        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
+        let x, y, Width, Height;
+        switch (WidgetAnchors[0]) {
+            case 'left-width':
+                x = WidgetX - BaseX;
+                Width = WidgetWidth;
+                break;
+            case 'width-right':
+                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
+                Width = WidgetWidth;
+                break;
+            case 'left-right':
+                x = WidgetX - BaseX;
+                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
+        }
+        switch (WidgetAnchors[1]) {
+            case 'top-height':
+                y = WidgetY - BaseY;
+                Height = WidgetHeight;
+                break;
+            case 'height-bottom':
+                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
+                Height = WidgetHeight;
+                break;
+            case 'top-bottom':
+                y = WidgetY - BaseY;
+                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
+        }
+        // @ts-ignore TS5905 all variables will be assigned by now
+        return { x, y, Width, Height };
+    }
+    /**** render ****/
+    render(PropSet) {
+        this._releaseWidgets();
+        const { Widget, Overlay } = PropSet;
+        const { SourceWidgetPath, x, y, Width, Height } = Overlay;
+        /**** onClose ****/
+        const onClose = () => {
+            Widget.closeOverlay(Overlay.Name);
+        };
+        /**** ContentPane Rendering ****/
+        const SourceWidget = Widget.Applet.WidgetAtPath(SourceWidgetPath);
+        if (SourceWidget == null) {
+            this._shownWidgets = [];
+        }
+        else {
+            const WidgetsToShow = (SourceWidget.Type === 'Outline'
+                ? SourceWidget.bundledWidgets()
+                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))));
+            WidgetsToShow.forEach((Widget) => Widget._Pane = Overlay);
+            this._shownWidgets = WidgetsToShow;
+        }
+        const PaneGeometry = { x, y, Width, Height };
+        const BaseGeometry = SourceWidget.Geometry;
+        let ContentPane = this._shownWidgets.toReversed().map((Widget) => {
+            let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
+            return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+        });
+        /**** actual overlay rendering ****/
+        return html `<div class="WAT Overlay" style="
+        left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
+      ">
+        ${ContentPane}
       </div>`;
     }
 }
