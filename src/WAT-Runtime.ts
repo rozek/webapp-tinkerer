@@ -785,6 +785,24 @@
     cursor:nwse-resize; pointer-events:auto;
   }
 
+/**** WAT OverlayLayer ****/
+
+  .WAT.OverlayLayer {
+    display:block; position:absolute; overflow:visible;
+    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
+    pointer-events:none;
+  }
+
+/**** Overlay ****/
+
+  .WAT.Overlay {
+    display:block; position:absolute;
+    background:white; color:black;
+    box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
+    z-index:2000000;
+    pointer-events:auto;
+  }
+
 
 
 /**** common Settings ****/
