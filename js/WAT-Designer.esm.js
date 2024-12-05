@@ -2216,12 +2216,7 @@ function doDeleteSelectedPages() {
 }
 /**** doCreateWidget ****/
 function doCreateWidget(Type) {
-    const { Applet, selectedWidgets } = DesignerState;
-    if (selectedWidgets.length === 0) {
-        return;
-    }
-    const visitedPage = Applet.visitedPage;
-    doOperation(new WAD_WidgetDeserializationOperation([{ Type }], visitedPage, 0));
+    doOperation(new WAD_WidgetDeserializationOperation([{ Type }], DesignerState.Applet.visitedPage, 0));
 }
 /**** doDuplicateSelectedWidgets ****/
 function doDuplicateSelectedWidgets() {
