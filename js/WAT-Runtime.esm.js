@@ -438,7 +438,6 @@ appendStyle(`
     display:block; position:absolute;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
-    z-index:2000000;
     pointer-events:auto;
   }
 
@@ -1778,6 +1777,15 @@ export class WAT_Applet extends WAT_Visual {
         }
         return WidgetSet;
     }
+    /**** namedWidgets ****/
+    namedWidgets() {
+        const WidgetSet = {};
+        this.PageList.forEach((Page) => {
+            const namedWidgets = Page.namedWidgets;
+            Object.assign(WidgetSet, namedWidgets);
+        });
+        return WidgetSet;
+    }
     /**** Script ****/
     get Script() {
         return (this._pendingScript == null
@@ -2503,6 +2511,16 @@ export class WAT_Page extends WAT_Visual {
             WidgetSet[WidgetName] = Widget; // even if multiply requested
         });
         return Array.from(Object.values(WidgetSet));
+    }
+    /**** namedWidgets ****/
+    namedWidgets() {
+        const WidgetSet = {};
+        this.WidgetList.forEach((Widget) => {
+            if (Widget.Name != null) {
+                WidgetSet[Widget.Name] = Widget;
+            }
+        });
+        return WidgetSet;
     }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
