@@ -50,6 +50,10 @@
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
   import { nolookalikesSafe } from 'nanoid-dictionary'
 
+  import Conversion from 'svelte-coordinate-conversion'
+  const  { fromLocalTo, fromViewportTo, fromDocumentTo } = Conversion
+  export { fromLocalTo, fromViewportTo, fromDocumentTo }
+
 /**** generic constructor for asynchronous functions ****/
 
   export const AsyncFunction = (async () => {}).constructor
@@ -731,7 +735,7 @@
 /**** Dialog ****/
 
   .WAT.Dialog {
-    display:block; position:absolute;
+    display:block; position:fixed;
     border:solid 1px #000000; border-radius:4px;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
@@ -2455,9 +2459,11 @@
         'NotAttached: this applet is not attached'
       )
 
+      const Bounds = View.getBoundingClientRect()
+
       return {
-        x:View.offsetLeft, Width:View.offsetWidth,
-        y:View.offsetTop, Height:View.offsetHeight
+        x:Bounds.left + window.scrollX,  Width:View.offsetWidth,
+        y:Bounds.top  + window.scrollY, Height:View.offsetHeight
       }
     }
 
@@ -7500,6 +7506,15 @@
       const resizable    = (isResizable ? 'resizable'    : '')
       const withTitlebar = (hasTitlebar ? 'withTitlebar' : '')
 
+    /**** repositioning on viewport ****/
+
+      const { x:AppletX, y:AppletY } = Applet.Geometry
+      let { left,top } = fromDocumentTo('viewport',{
+        left:x + AppletX, top:y + AppletY
+      })
+      left = Math.max(0,Math.min(left,document.documentElement.clientWidth-30))
+      top  = Math.max(0,Math.min(top,document.documentElement.clientHeight-30))
+
     /**** Event Handlers ****/
 
       this._installGestureRecognizer()
@@ -7541,7 +7556,7 @@
     /**** actual dialog rendering ****/
 
       return html`<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
-        left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
+        left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
       ">
         ${hasTitlebar && html`<div class="Titlebar"
           onPointerDown=${Recognizer} onPointerUp=${Recognizer}
@@ -7828,6 +7843,10 @@
     AppletElement.innerHTML = ''
 
     render(html`<${WAT_combinedView} Applet=${Applet}/>`,AppletElement)
+
+  /**** rerender whenever window is changed ****/
+
+    window.addEventListener('resize', rerender)
 
 ;(window as Indexable).Applet = Applet // for testing and debugging purposes only
 
