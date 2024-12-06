@@ -26,7 +26,7 @@ const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -75,7 +75,7 @@ appendStyle(`
 /**** DesignerButton ****/
 
   .WAD.DesignerButton {
-    display:block; position:absolute;
+    display:block; position:fixed;
     width:32px; height:32px;
     background:white;
     border:solid 2px black; border-radius:50%;
@@ -307,7 +307,7 @@ appendStyle(`
 /**** Dialog ****/
 
   .WAD.Dialog {
-    display:block; position:absolute;
+    display:block; position:fixed;
     border:solid 1px #000000; border-radius:4px;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
@@ -676,9 +676,16 @@ function WAD_Dialog(PropSet) {
         onDragFinish: handleDrag,
         onDragAbortion: handleDrag,
     }), []);
+    /**** repositioning on viewport ****/
+    const { x: AppletX, y: AppletY } = DesignerState.Applet.Geometry;
+    let { left, top } = fromDocumentTo('viewport', {
+        left: x + AppletX, top: y + AppletY
+    });
+    left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 30));
+    top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 30));
     /**** actual rendering ****/
     return html `<div class="WAD Dialog ${resizable ? 'resizable' : ''}" style="
-      left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
+      left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
     ">
       <div class="Titlebar"
         onPointerDown=${Recognizer} onPointerUp=${Recognizer}
@@ -2694,8 +2701,17 @@ function WAD_DesignerButton() {
         onDragFinish: Dragger, onDragAbortion: Dragger,
     }), []);
     const { x, y, isDragging } = DesignerState.DesignerButton;
+    /**** repositioning on viewport ****/
+    const { x: AppletX, y: AppletY } = DesignerState.Applet.Geometry;
+    console.log('AppletX,AppletY', AppletX, AppletY);
+    let { left, top } = fromDocumentTo('viewport', {
+        left: x + AppletX, top: y + AppletY
+    });
+    left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 32));
+    top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 32));
+    /**** actual rendering ****/
     return html `<div class="WAD DesignerButton" style="
-      left:${x}px; top:${y}px;
+      left:${left}px; top:${top}px;
       cursor:${isDragging ? 'grabbing' : 'grab'}
     " onPointerDown=${Recognizer} onPointerMove=${Recognizer}
       onPointerUp=${Recognizer} onPointerCancel=${Recognizer}
