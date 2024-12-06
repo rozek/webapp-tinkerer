@@ -699,6 +699,16 @@
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
 
+/**** WAT ModalLayer ****/
+
+  .WAT.ModalLayer {
+    display:block; position:fixed;
+    left:0px; top:0px; right:auto; bottom:auto; width:100%; height:100%;
+    background:black; opacity:0.1;
+    z-index:1000000;
+    pointer-events:auto;
+  }
+
 /**** WAT DialogLayer ****/
 
   .WAT.DialogLayer {
@@ -7117,9 +7127,12 @@
   /**** render ****/
 
     public render (PropSet:Indexable):any {
-      const Applet      = this._Applet = PropSet.Applet as WAT_Applet
-      const visitedPage = Applet.visitedPage
-      const openDialogs = (Applet as Indexable)._DialogList
+      const Applet          = this._Applet = PropSet.Applet as WAT_Applet
+      const visitedPage     = Applet.visitedPage
+      const openDialogs     = (Applet as Indexable)._DialogList
+      const lastDialogIndex = openDialogs.length-1
+      const needsModalLayer = (openDialogs.length > 0) &&
+                              openDialogs[lastDialogIndex].isModal
 
       return html`<div class="WAT Applet" style="
         ${CSSStyleOfVisual(Applet)}
@@ -7134,7 +7147,8 @@
         ` : '' }
       </div>
       ${Applet.isAttached && (openDialogs.length > 0) ? html`<div class="WAT DialogLayer">
-        ${openDialogs.map((Dialog:WAT_Dialog) => html`
+        ${openDialogs.map((Dialog:WAT_Dialog, Index:number) => html`
+          ${(Index === lastDialogIndex) && needsModalLayer ? html`<${WAT_ModalLayer}/>` : ''}
           <${WAT_DialogView} Applet=${Applet} Dialog=${Dialog}/>
         `)}
       </div>`: ''}`
@@ -7264,6 +7278,40 @@
           <${WAT_OverlayView} Widget=${Widget} Overlay=${Overlay}/>
         `)}
       </div>`: ''}`
+    }
+  }
+
+//------------------------------------------------------------------------------
+//--                              WAT_ModalLayer                              --
+//------------------------------------------------------------------------------
+
+  class WAT_ModalLayer extends Component {
+    public render (PropSet:Indexable):any {
+      const EventTypes = [
+        'click', 'dblclick',
+        'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout',
+        'mouseenter', 'mouseleave',
+        'touchstart', 'touchend', 'touchmove', 'touchcancel',
+        'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+        'pointerenter', 'pointerleave', 'pointercancel',
+        'keydown', 'keyup', 'keypress',
+        'wheel', 'contextmenu', 'focus', 'blur'
+      ]
+
+      const DOMElement = useRef(null)
+
+      useEffect(() => {
+        EventTypes.forEach((EventType:string) => {
+          DOMElement.current.addEventListener(EventType,consumeEvent)
+        })
+        return () => {
+          EventTypes.forEach((EventType:string) => {
+            DOMElement.current.removeEventListener(EventType,consumeEvent)
+          })
+        }
+      })
+
+      return html`<div class="WAT ModalLayer" ref=${DOMElement}/>`
     }
   }
 
