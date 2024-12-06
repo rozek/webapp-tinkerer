@@ -592,7 +592,7 @@
       case ValueIsString(Value):
       case ValueIsListSatisfying(Value,ValueIsSerializableValue):
         return true
-      case ValueIsPlainObject(Value):
+      case ValueIsPlainObject(Value): // *C* check for recursion
         for (let Property in Value) {
           if (
             Value.hasOwnProperty(Property) &&
@@ -2239,6 +2239,23 @@
       return WidgetSet
     }
 
+  /**** configureWidgets ****/
+
+    public configureWidgets (OptionSet:Indexable):void {
+      expectPlainObject('options set',OptionSet)
+
+      for (const PageName in OptionSet) {
+        if (OptionSet.hasOwnProperty(PageName)) {
+          if (ValueIsName(PageName)) {
+            let Page = this.existingPage(PageName)
+            Page.configureWidgets(OptionSet[PageName])
+          } else {
+            throwError(`InvalidArgument: invalid page name ${quoted(PageName)}`)
+          }
+        }
+      }
+    }
+
   /**** Script ****/
 
     public get Script ():WAT_Text {
@@ -3172,6 +3189,23 @@
           }
         })
       return WidgetSet
+    }
+
+  /**** configureWidgets ****/
+
+    public configureWidgets (OptionSet:Indexable):void {
+      expectPlainObject('options set',OptionSet)
+
+      for (const WidgetName in OptionSet) {
+        if (OptionSet.hasOwnProperty(WidgetName)) {
+          if (ValueIsName(WidgetName)) {
+            let Widget = this.existingWidget(WidgetName)
+            Widget.configure(OptionSet[WidgetName])
+          } else {
+            throwError(`InvalidArgument: invalid widget name ${quoted(WidgetName)}`)
+          }
+        }
+      }
     }
 
   /**** x/y ****/
