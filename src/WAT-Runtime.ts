@@ -709,6 +709,17 @@
     pointer-events:auto;
   }
 
+/**** WAT Underlay ****/
+
+  .WAT.Underlay {
+    display:block; position:fixed;
+    left:0px; top:0px; right:auto; bottom:auto; width:100%; height:100%;
+    pointer-events:auto;
+  }
+  .WAT.modal.Underlay {
+    background:black; opacity:0.1;
+  }
+
 /**** WAT DialogLayer ****/
 
   .WAT.DialogLayer {
@@ -7264,7 +7275,8 @@
         : ''
       )
 
-      const openOverlays = (Widget as Indexable)._OverlayList
+      const openOverlays     = (Widget as Indexable)._OverlayList
+      const lastOverlayIndex = openOverlays.length-1
 
       return html`<div class="WAT Widget" style="
         ${CSSStyleOfVisual(Widget)} ${CSSGeometry}
@@ -7274,7 +7286,11 @@
       ${openOverlays.length > 0 ? html`<div class="WAT OverlayLayer"
         style="${CSSGeometry}"
       >
-        ${openOverlays.map((Overlay:WAT_Overlay) => html`
+        ${openOverlays.map((Overlay:WAT_Overlay, Index:number) => html`
+          ${(Index === lastOverlayIndex)
+            ? html`<${WAT_Underlay} Widget=${Widget} Overlay=${Overlay}/>`
+            : ''
+          }
           <${WAT_OverlayView} Widget=${Widget} Overlay=${Overlay}/>
         `)}
       </div>`: ''}`
@@ -7555,6 +7571,52 @@
           />
         `}
       </div>`
+    }
+  }
+
+//------------------------------------------------------------------------------
+//--                               WAT_Underlay                               --
+//------------------------------------------------------------------------------
+
+  class WAT_Underlay extends Component {
+    public render (PropSet:Indexable):any {
+      const { Widget, Overlay } = PropSet
+
+      const EventTypes = [
+        'click', 'dblclick',
+        /*'mousedown',*/ 'mouseup', 'mousemove', 'mouseover', 'mouseout',
+        'mouseenter', 'mouseleave',
+        /*'touchstart',*/ 'touchend', 'touchmove', 'touchcancel',
+        /*'pointerdown',*/ 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+        'pointerenter', 'pointerleave', 'pointercancel',
+        'keydown', 'keyup', 'keypress',
+        'wheel', 'contextmenu', 'focus', 'blur'
+      ]
+
+      const DOMElement = useRef(null)
+
+      useEffect(() => {
+        EventTypes.forEach((EventType:string) => {
+          DOMElement.current.addEventListener(EventType,consumeEvent)
+        })
+        return () => {
+          EventTypes.forEach((EventType:string) => {
+            DOMElement.current.removeEventListener(EventType,consumeEvent)
+          })
+        }
+      })
+
+      const handleEvent = useCallback((Event:Event) => {
+        consumeEvent(Event)
+        if (! Overlay.isModal) { Widget.closeOverlay(Overlay.Name) }
+      })
+
+      const modal = (Overlay.isModal ? 'modal' : '')
+
+      return html`<div class="WAT ${modal} Underlay" ref=${DOMElement}
+        onMouseDown=${handleEvent} onPointerDown=${handleEvent}
+        onTouchStart=${handleEvent}
+      />`
     }
   }
 
