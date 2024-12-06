@@ -459,7 +459,7 @@ appendStyle(`
 /**** Overlay ****/
 
   .WAT.Overlay {
-    display:block; position:absolute;
+    display:block; position:fixed;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
     pointer-events:auto;
@@ -6732,6 +6732,14 @@ class WAT_OverlayView extends Component {
         this._releaseWidgets();
         const { Widget, Overlay } = PropSet;
         const { SourceWidgetPath, x, y, Width, Height } = Overlay;
+        /**** repositioning on viewport ****/
+        const { x: AppletX, y: AppletY } = Widget.Applet.Geometry;
+        const { x: WidgetX, y: WidgetY } = Widget.Geometry;
+        let { left, top } = fromDocumentTo('viewport', {
+            left: x + WidgetX + AppletX, top: y + WidgetY + AppletY
+        });
+        left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 30));
+        top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 30));
         /**** onClose ****/
         const onClose = () => {
             Widget.closeOverlay(Overlay.Name);
@@ -6756,7 +6764,7 @@ class WAT_OverlayView extends Component {
         });
         /**** actual overlay rendering ****/
         return html `<div class="WAT Overlay" style="
-        left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
+        left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
       ">
         ${ContentPane}
       </div>`;
