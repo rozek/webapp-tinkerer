@@ -2703,7 +2703,6 @@ function WAD_DesignerButton() {
     const { x, y, isDragging } = DesignerState.DesignerButton;
     /**** repositioning on viewport ****/
     const { x: AppletX, y: AppletY } = DesignerState.Applet.Geometry;
-    console.log('AppletX,AppletY', AppletX, AppletY);
     let { left, top } = fromDocumentTo('viewport', {
         left: x + AppletX, top: y + AppletY
     });
