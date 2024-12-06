@@ -250,7 +250,7 @@ export function ValueIsSerializableValue(Value) {
         case ValueIsString(Value):
         case ValueIsListSatisfying(Value, ValueIsSerializableValue):
             return true;
-        case ValueIsPlainObject(Value):
+        case ValueIsPlainObject(Value): // *C* check for recursion
             for (let Property in Value) {
                 if (Value.hasOwnProperty(Property) &&
                     !ValueIsSerializableValue(Value[Property])) {
@@ -1786,6 +1786,21 @@ export class WAT_Applet extends WAT_Visual {
         });
         return WidgetSet;
     }
+    /**** configureWidgets ****/
+    configureWidgets(OptionSet) {
+        expectPlainObject('options set', OptionSet);
+        for (const PageName in OptionSet) {
+            if (OptionSet.hasOwnProperty(PageName)) {
+                if (ValueIsName(PageName)) {
+                    let Page = this.existingPage(PageName);
+                    Page.configureWidgets(OptionSet[PageName]);
+                }
+                else {
+                    throwError(`InvalidArgument: invalid page name ${quoted(PageName)}`);
+                }
+            }
+        }
+    }
     /**** Script ****/
     get Script() {
         return (this._pendingScript == null
@@ -2521,6 +2536,21 @@ export class WAT_Page extends WAT_Visual {
             }
         });
         return WidgetSet;
+    }
+    /**** configureWidgets ****/
+    configureWidgets(OptionSet) {
+        expectPlainObject('options set', OptionSet);
+        for (const WidgetName in OptionSet) {
+            if (OptionSet.hasOwnProperty(WidgetName)) {
+                if (ValueIsName(WidgetName)) {
+                    let Widget = this.existingWidget(WidgetName);
+                    Widget.configure(OptionSet[WidgetName]);
+                }
+                else {
+                    throwError(`InvalidArgument: invalid widget name ${quoted(WidgetName)}`);
+                }
+            }
+        }
     }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
