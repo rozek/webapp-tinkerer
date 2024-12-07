@@ -1786,6 +1786,74 @@ export class WAT_Applet extends WAT_Visual {
     /**** isAttached ****/
     get isAttached() { return (this._View != null); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    /**** VisualWithElement ****/
+    VisualWithElement(DOMElement) {
+        let Candidate = undefined;
+        if (this._View == null) {
+            return undefined;
+        }
+        if (this._View.contains(DOMElement)) {
+            Candidate = this;
+        }
+        const visitedPage = this._visitedPage;
+        if (visitedPage != null) {
+            if (visitedPage._View == null) {
+                return undefined;
+            }
+            if (visitedPage._View.contains(DOMElement)) {
+                Candidate = visitedPage;
+            }
+            /**** scan all visible widgets on this page ****/
+            visitedPage._WidgetList.filter((Widget) => Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === visitedPage))).forEach((Widget) => {
+                if (Widget._View == null) {
+                    return;
+                }
+                if (Widget._View.contains(DOMElement)) {
+                    Candidate = Widget;
+                }
+                Widget._OverlayList.forEach((Overlay) => {
+                    const SourceWidget = this.WidgetAtPath(Overlay.SourceWidgetPath);
+                    if (SourceWidget == null) {
+                        return;
+                    }
+                    /**** scan all widgets shown on this one's overlays ****/
+                    const WidgetsToShow = (SourceWidget.Type === 'Outline'
+                        ? SourceWidget.bundledWidgets()
+                        : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))));
+                    WidgetsToShow.forEach((Widget) => {
+                        if (Widget._View == null) {
+                            return;
+                        }
+                        if (Widget._View.contains(DOMElement)) {
+                            Candidate = Widget;
+                        }
+                    });
+                });
+            });
+        }
+        /**** scan all shown widgets on all currently open dialogs ****/
+        this._DialogList.forEach((Dialog) => {
+            if (Dialog._View == null) {
+                return undefined;
+            }
+            const SourceWidget = this.WidgetAtPath(Dialog.SourceWidgetPath);
+            if (SourceWidget == null) {
+                return;
+            }
+            const WidgetsToShow = (SourceWidget.Type === 'Outline'
+                ? SourceWidget.bundledWidgets()
+                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))));
+            WidgetsToShow.forEach((Widget) => {
+                if (Widget._View == null) {
+                    return;
+                }
+                if (Widget._View.contains(DOMElement)) {
+                    Candidate = Widget;
+                }
+            });
+        });
+        return Candidate;
+    }
     /**** WidgetsNamed ****/
     WidgetsNamed(NameSet) {
         expectPlainObject('widget name set', NameSet);
@@ -1802,14 +1870,15 @@ export class WAT_Applet extends WAT_Visual {
         return WidgetSet;
     }
     /**** namedWidgets ****/
-    namedWidgets() {
+    get namedWidgets() {
         const WidgetSet = {};
-        this.PageList.forEach((Page) => {
+        this._PageList.forEach((Page) => {
             const namedWidgets = Page.namedWidgets;
             Object.assign(WidgetSet, namedWidgets);
         });
         return WidgetSet;
     }
+    set namedWidgets(_) { throwReadOnlyError('namedWidgets'); }
     /**** configureWidgets ****/
     configureWidgets(OptionSet) {
         expectPlainObject('options set', OptionSet);
@@ -2553,15 +2622,16 @@ export class WAT_Page extends WAT_Visual {
         return Array.from(Object.values(WidgetSet));
     }
     /**** namedWidgets ****/
-    namedWidgets() {
+    get namedWidgets() {
         const WidgetSet = {};
-        this.WidgetList.forEach((Widget) => {
+        this._WidgetList.forEach((Widget) => {
             if (Widget.Name != null) {
                 WidgetSet[Widget.Name] = Widget;
             }
         });
         return WidgetSet;
     }
+    set namedWidgets(_) { throwReadOnlyError('namedWidgets'); }
     /**** configureWidgets ****/
     configureWidgets(OptionSet) {
         expectPlainObject('options set', OptionSet);
@@ -5751,30 +5821,58 @@ appendStyle(`
 export class WAT_TextTab extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Activation ****/
+        Object.defineProperty(this, "_Activation", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
+                const active = (this.isActive ? 'active' : '');
                 const _onClick = (Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
                     }
-                    if (this._onInput != null) {
-                        this._onInput(Event);
+                    if (this._onClick != null) {
+                        this._onClick(Event);
                     }
                 };
-                return html `<div class="WAT Content TextTab" onClick=${_onClick}>${this.Value}</div>`;
+                return html `<div class="WAT ${active} TextTab"
+        onClick=${_onClick}>${this.Value}</div>`;
             }
         });
     }
     get Type() { return 'TextTab'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Activation() {
+        return this._Activation;
+    }
+    set Activation(newActivation) {
+        expectBoolean('tab activation', newActivation);
+        if (this._Activation !== newActivation) {
+            this._Activation = newActivation;
+            this.rerender();
+        }
+    }
+    /**** activate/deactivate ****/
+    activate() { this.Activation = true; }
+    deactivate() { this.Activation = false; }
+    /**** isActive ****/
+    get isActive() { return this.Activation; }
+    set isActive(newActivation) { this.Activation = newActivation; }
 }
 builtInWidgetTypes['TextTab'] = WAT_TextTab;
 appendStyle(`
   .WAT.Widget > .WAT.TextTab {
+    display:block; position:absolute;
+    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
+    font-weight:bold;
   }
   .WAT.Widget > .WAT.TextTab.active {
     border:none; border-bottom:solid 2px black;
@@ -5784,11 +5882,19 @@ appendStyle(`
 export class WAT_IconTab extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Activation ****/
+        Object.defineProperty(this, "_Activation", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
+                const active = (this.isActive ? 'active' : '');
                 const _onClick = (Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
@@ -5799,7 +5905,7 @@ export class WAT_IconTab extends WAT_Widget {
                 };
                 const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
                 const Color = acceptableColor(this.Color, 'black');
-                return html `<div class="WAT Content IconTab" style="
+                return html `<div class="WAT ${active} IconTab" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
         background-color:${Color};
       " disabled=${this.Enabling == false} onClick=${_onClick}
@@ -5809,10 +5915,27 @@ export class WAT_IconTab extends WAT_Widget {
     }
     get Type() { return 'IconTab'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Activation() {
+        return this._Activation;
+    }
+    set Activation(newActivation) {
+        expectBoolean('tab activation', newActivation);
+        if (this._Activation !== newActivation) {
+            this._Activation = newActivation;
+            this.rerender();
+        }
+    }
+    /**** activate/deactivate ****/
+    activate() { this.Activation = true; }
+    deactivate() { this.Activation = false; }
+    /**** isActive ****/
+    get isActive() { return this.Activation; }
+    set isActive(newActivation) { this.Activation = newActivation; }
 }
 builtInWidgetTypes['IconTab'] = WAT_IconTab;
 appendStyle(`
   .WAT.Widget > .WAT.IconTab {
+    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
 
     -webkit-mask-size:contain;           mask-size:contain;
@@ -6046,116 +6169,7 @@ appendStyle(`
   .WAT.Widget > .WAT.nestedListView {
   }
   `);
-/**** CSSStyleOfVisual ****/
-export function CSSStyleOfVisual(Visual) {
-    expectVisual('widget', Visual);
-    let CSSStyleList = [];
-    const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, BackgroundColor, BackgroundTexture, BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow, Opacity, OverflowVisibility, Cursor, } = Visual;
-    if (FontFamily != null) {
-        CSSStyleList.push(`font-family:${FontFamily}`);
-    }
-    if (FontSize != null) {
-        CSSStyleList.push(`font-size:${FontSize}px`);
-    }
-    if (FontWeight != null) {
-        CSSStyleList.push(`font-weight:${FontWeight}`);
-    }
-    if (FontStyle != null) {
-        CSSStyleList.push(`font-style:${FontStyle}`);
-    }
-    if (TextDecoration != null) {
-        CSSStyleList.push('text-decoration:' + TextDecoration.Line +
-            (TextDecoration.Color == null ? '' : ' ' + TextDecoration.Color) +
-            (TextDecoration.Style == null ? '' : ' ' + TextDecoration.Style) +
-            (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
-    }
-    if (TextShadow != null) {
-        CSSStyleList.push('text-shadow:' +
-            TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
-            TextShadow.BlurRadius + 'px ' + TextShadow.Color);
-    }
-    if (TextAlignment != null) {
-        CSSStyleList.push(`text-align:${TextAlignment}`);
-    }
-    if (LineHeight != null) {
-        CSSStyleList.push(`line-height:${LineHeight}px`);
-    }
-    if (ForegroundColor != null) {
-        CSSStyleList.push(`color:${ForegroundColor}`);
-    }
-    if (BackgroundColor != null) {
-        CSSStyleList.push(`background-color:${BackgroundColor}`);
-    }
-    if (BackgroundTexture != null) {
-        const { ImageURL, Mode, xOffset, yOffset } = BackgroundTexture;
-        let BackgroundSize = 'auto auto';
-        switch (Mode) {
-            case 'normal': break;
-            case 'contain':
-            case 'cover':
-                BackgroundSize = BackgroundTexture.Mode;
-                break;
-            case 'fill':
-                BackgroundSize = '100% 100%';
-                break;
-            case 'tile':
-                BackgroundSize = 'auto auto';
-                break;
-        }
-        let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
-        CSSStyleList.push(`background-image:${ImageURL}`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
-            `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
-    }
-    if (BorderWidths != null) {
-        CSSStyleList.push('border-width:' +
-            BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
-            BorderWidths[2] + 'px ' + BorderWidths[3] + 'px');
-    }
-    if (BorderStyles != null) {
-        CSSStyleList.push('border-style:' +
-            BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
-            BorderStyles[2] + ' ' + BorderStyles[3]);
-    }
-    if (BorderColors != null) {
-        CSSStyleList.push('border-color:' +
-            BorderColors[0] + ' ' + BorderColors[1] + ' ' +
-            BorderColors[2] + ' ' + BorderColors[3]);
-    }
-    if (BorderRadii != null) {
-        CSSStyleList.push('border-radius:' +
-            BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
-            BorderRadii[2] + 'px ' + BorderRadii[3] + 'px');
-    }
-    if (BoxShadow != null) {
-        CSSStyleList.push('box-shadow:' +
-            BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
-            BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
-            BoxShadow.Color);
-    }
-    if (Opacity != null) {
-        CSSStyleList.push(`opacity:${Opacity / 100}`);
-    }
-    if (OverflowVisibility != null) {
-        CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden');
-    }
-    if (Cursor != null) {
-        CSSStyleList.push(`cursor:${Cursor}`);
-    }
-    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';');
-}
-/**** consume/consumingEvent ****/
-function consumeEvent(Event) {
-    Event.stopPropagation();
-    Event.preventDefault();
-}
-const consumingEvent = consumeEvent;
-/**** rerender ****/
-let combinedView = undefined;
-export function rerender() {
-    if (combinedView != null) {
-        combinedView.rerender();
-    }
-} //------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //--                WAT_combinedView (for Applet and Designer)                --
 //------------------------------------------------------------------------------
 class WAT_combinedView extends Component {
@@ -6770,7 +6784,116 @@ class WAT_OverlayView extends Component {
       </div>`;
     }
 }
-/**** useDesigner ****/
+/**** CSSStyleOfVisual ****/
+export function CSSStyleOfVisual(Visual) {
+    expectVisual('widget', Visual);
+    let CSSStyleList = [];
+    const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, BackgroundColor, BackgroundTexture, BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow, Opacity, OverflowVisibility, Cursor, } = Visual;
+    if (FontFamily != null) {
+        CSSStyleList.push(`font-family:${FontFamily}`);
+    }
+    if (FontSize != null) {
+        CSSStyleList.push(`font-size:${FontSize}px`);
+    }
+    if (FontWeight != null) {
+        CSSStyleList.push(`font-weight:${FontWeight}`);
+    }
+    if (FontStyle != null) {
+        CSSStyleList.push(`font-style:${FontStyle}`);
+    }
+    if (TextDecoration != null) {
+        CSSStyleList.push('text-decoration:' + TextDecoration.Line +
+            (TextDecoration.Color == null ? '' : ' ' + TextDecoration.Color) +
+            (TextDecoration.Style == null ? '' : ' ' + TextDecoration.Style) +
+            (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
+    }
+    if (TextShadow != null) {
+        CSSStyleList.push('text-shadow:' +
+            TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
+            TextShadow.BlurRadius + 'px ' + TextShadow.Color);
+    }
+    if (TextAlignment != null) {
+        CSSStyleList.push(`text-align:${TextAlignment}`);
+    }
+    if (LineHeight != null) {
+        CSSStyleList.push(`line-height:${LineHeight}px`);
+    }
+    if (ForegroundColor != null) {
+        CSSStyleList.push(`color:${ForegroundColor}`);
+    }
+    if (BackgroundColor != null) {
+        CSSStyleList.push(`background-color:${BackgroundColor}`);
+    }
+    if (BackgroundTexture != null) {
+        const { ImageURL, Mode, xOffset, yOffset } = BackgroundTexture;
+        let BackgroundSize = 'auto auto';
+        switch (Mode) {
+            case 'normal': break;
+            case 'contain':
+            case 'cover':
+                BackgroundSize = BackgroundTexture.Mode;
+                break;
+            case 'fill':
+                BackgroundSize = '100% 100%';
+                break;
+            case 'tile':
+                BackgroundSize = 'auto auto';
+                break;
+        }
+        let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
+        CSSStyleList.push(`background-image:${ImageURL}`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+            `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
+    }
+    if (BorderWidths != null) {
+        CSSStyleList.push('border-width:' +
+            BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
+            BorderWidths[2] + 'px ' + BorderWidths[3] + 'px');
+    }
+    if (BorderStyles != null) {
+        CSSStyleList.push('border-style:' +
+            BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
+            BorderStyles[2] + ' ' + BorderStyles[3]);
+    }
+    if (BorderColors != null) {
+        CSSStyleList.push('border-color:' +
+            BorderColors[0] + ' ' + BorderColors[1] + ' ' +
+            BorderColors[2] + ' ' + BorderColors[3]);
+    }
+    if (BorderRadii != null) {
+        CSSStyleList.push('border-radius:' +
+            BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
+            BorderRadii[2] + 'px ' + BorderRadii[3] + 'px');
+    }
+    if (BoxShadow != null) {
+        CSSStyleList.push('box-shadow:' +
+            BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
+            BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
+            BoxShadow.Color);
+    }
+    if (Opacity != null) {
+        CSSStyleList.push(`opacity:${Opacity / 100}`);
+    }
+    if (OverflowVisibility != null) {
+        CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden');
+    }
+    if (Cursor != null) {
+        CSSStyleList.push(`cursor:${Cursor}`);
+    }
+    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';');
+}
+/**** consume/consumingEvent ****/
+function consumeEvent(Event) {
+    Event.stopPropagation();
+    Event.preventDefault();
+}
+const consumingEvent = consumeEvent;
+/**** rerender ****/
+let combinedView = undefined;
+export function rerender() {
+    if (combinedView != null) {
+        combinedView.rerender();
+    }
+} /**** useDesigner ****/
 let DesignerLayer = undefined;
 export function useDesigner(newDesigner) {
     allowFunction('WAT designer', newDesigner);
