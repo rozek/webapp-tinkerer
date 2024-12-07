@@ -30,7 +30,7 @@
 
   import {
     render, html, Component,
-    useRef, useEffect, useMemo, useCallback,
+    useState, useRef, useEffect, useMemo, useCallback,
   } from 'htm/preact'
 
   import hyperactiv from 'hyperactiv'
@@ -201,21 +201,21 @@
   }
 /**** Name/IntegerInput ****/
 
-  .WAD.NameInput, .WAD.IntegerInput {
+  .WAD.TextLineInput, .WAD.IntegerInput {
     display:block; position:relative;
     width:auto; height:30px;
   }
-  .WAD.NameInput > input, .WAD.IntegerInput > input {
+  .WAD.TextLineInput > input, .WAD.IntegerInput > input {
     display:block; position:relative;
     left:0px; top:0px; width:100%; height:100%;
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:0px 2px 0px 4px;
     pointer-events:auto;
   }
-  .WAD.NameInput.wrong > input, .WAD.IntegerInput.wrong > input {
+  .WAD.TextLineInput.wrong > input, .WAD.IntegerInput.wrong > input {
     color:red;
   }
-  .WAD.NameInput > input:read-only, .WAD.IntegerInput > input:read-only {
+  .WAD.TextLineInput > input:read-only, .WAD.IntegerInput > input:read-only {
     background:transparent;
   }
 
@@ -334,6 +334,42 @@
     background:dodgerblue; color:white;
   }
 
+/**** Accordion ****/
+
+  .WAD.Accordion {
+    display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
+    flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
+    margin-top:4px;
+  }
+
+/**** Accordion Fold ****/
+
+  .WAD.Fold {
+    display:block; position:relative;
+    left:0px; top:0px; width:100%; bottom:auto;
+  }
+
+  .WAD.Fold-Header {
+    display:block; position:relative;
+    width:100%; height:30px; background:#EEEEEE; border:none;
+  }
+
+  .WAD.Fold-Expander {
+    display:block; position:absolute;
+    left:2px; top:2px; width:24px; height:24px;
+  }
+
+  .WAD.Fold-Title {
+    display:block; position:absolute;
+    left:30px; top:-1px; bottom:0px; right:0px;
+    font-size:14px; font-weight:bold; color:black; line-height:30px;
+  }
+
+  .WAD.Fold-Content {
+    display:block; position:relative;
+    left:0px; top:0px; width:100%; height:auto;
+    padding:8px 0px 8px 4px;
+  }
 /**** horizontal/verticalSeparator ****/
 
   .WAD.horizontalSeparator {
@@ -353,6 +389,7 @@
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
     z-index:3000000;
+    pointer-events:auto;
   }
 
   .WAD.Dialog > .Titlebar {
@@ -426,7 +463,16 @@
     color:red;
   }
 
-/**** Layouter Layer ****/
+
+
+/**** InspectorPane ****/
+
+  .WAD.InspectorPane {
+    display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
+    flex: 1 1 auto;
+    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
+    overflow:hidden;
+  }/**** Layouter Layer ****/
 
   .WAD.LayouterLayer {
     display:block; position:absolute; overflow:visible;
@@ -517,15 +563,10 @@
       Title:'Toolbox',        View:undefined,
       x:NaN, y:NaN, Width:132, Height:194,
     },
-    PageBrowser: {                           // only visible if Designer is open
-      Title:'Page Browser',   View:undefined,
-      x:NaN, y:NaN, Width:280, Height:320,
-      minWidth:280, minHeight:320,
-    },
-    WidgetBrowser: {                         // only visible if Designer is open
-      Title:'Widget Browser', View:undefined,
-      x:NaN, y:NaN, Width:300, Height:550,
-      minWidth:300, minHeight:550,
+    Inspector: {                             // only visible if Designer is open
+      Title:'Inspector',      View:undefined,
+      x:NaN, y:NaN, Width:320, Height:550,
+      minWidth:320, minHeight:550,
     },
     ValueEditor: {                           // only visible if Designer is open
       Title:'Value Editor',   View:undefined,
@@ -921,10 +962,10 @@
   }
 
 //------------------------------------------------------------------------------
-//--                              WAD_NameInput                               --
+//--                            WAD_TextlineInput                             --
 //------------------------------------------------------------------------------
 
-  function WAD_NameInput (PropSet:Indexable) {
+  function WAD_TextlineInput (PropSet:Indexable) {
     let { enabled, Value,Placeholder, onInput,onBlur, style,...otherProps } = PropSet
 
     const shownValue   = useRef('')
@@ -960,7 +1001,7 @@
       if (typeof onBlur === 'function') { onBlur(Event) }
     })
 
-    return html`<div class="WAD NameInput ${wrong}" style=${style}>
+    return html`<div class="WAD TextLineInput ${wrong}" style=${style}>
       <input type="text"
         disabled=${enabled === false}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
@@ -974,7 +1015,10 @@
 //------------------------------------------------------------------------------
 
   function WAD_IntegerInput (PropSet:Indexable) {
-    let { enabled, Value,Placeholder, onInput,onBlur, style,...otherProps } = PropSet
+    let {
+      enabled, Value,Placeholder, Minimum,Maximum,
+      onInput,onBlur, style,...otherProps
+    } = PropSet
 
     const shownValue   = useRef('')
     const InputElement = useRef(null)
@@ -1010,7 +1054,7 @@
     })
 
     return html`<div class="WAD IntegerInput ${wrong}" style=${style}>
-      <input type="number" step="1"
+      <input type="number" min=${Minimum || 0} step="1" max=${Maximum}
         disabled=${enabled === false}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
@@ -1280,6 +1324,33 @@
             onClick=${(Event:PointerEvent) => _onClick(Event,Index)}
             onDblClick=${(Event:PointerEvent) => _onDblClick(Event,Index)}
           />`)
+      }
+    </>`
+  }
+
+//------------------------------------------------------------------------------
+//--                                 WAD_Fold                                 --
+//------------------------------------------------------------------------------
+
+  function WAD_Fold (PropSet:Indexable) {
+    let { Label } = PropSet
+
+    const [ Expansion,setExpansion ] = useState(true)
+
+    const onClick = useCallback(() => setExpansion(! Expansion))
+
+    return html`<div class="WAD Fold">
+      <div class="WAD Fold-Header" onClick=${onClick}>
+        <img class="WAD Fold-Expander" src=${Expansion
+          ? `${IconFolder}/caret-down.png`
+          : `${IconFolder}/caret-right.png`
+        }/>
+        <div class="WAD Fold-Title">${Label}</>
+      </div>
+
+      ${Expansion
+        ? html`<div class="WAD Fold-Content">${PropSet.children}</>`
+        : ''
       }
     </>`
   }
@@ -3061,18 +3132,15 @@ console.error(Signal)
           active=${isLayouting}
           onClick=${toggleLayouting}
         />
-        <${WAD_Icon} Icon="${IconFolder}/book-open.png"
-          active=${DialogIsOpen('PageBrowser')}
-          onClick=${(Event:PointerEvent) => toggleDialog('PageBrowser',Event)}
-        />
-        <${WAD_Icon} Icon="${IconFolder}/rectangles-mixed.png"
-          active=${DialogIsOpen('WidgetBrowser')}
-          onClick=${(Event:PointerEvent) => toggleDialog('WidgetBrowser',Event)}
+        <${WAD_Icon} Icon="${IconFolder}/pen-ruler.png"
+          active=${DialogIsOpen('Inspector')}
+          onClick=${(Event:PointerEvent) => toggleDialog('Inspector',Event)}
         />
         <${WAD_Icon} Icon="${IconFolder}/square-code.png"
           active=${DialogIsOpen('ScriptEditor')}
           onClick=${(Event:PointerEvent) => toggleDialog('ScriptEditor',Event)}
         />
+        <${WAD_Icon} />
 
         <${WAD_Icon} Icon="${IconFolder}/scissors.png"
           enabled=${selectedWidgets.length > 0}
@@ -3119,7 +3187,7 @@ console.error(Signal)
           enabled=${(Applet.PageCount > 0) && (Applet.visitedPage !== Applet.Page(0))}
           onClick=${doVisitHomePage}
         />
-        <${WAD_Icon} Icon="" enabled=${false}/>
+        <${WAD_Icon} />
 
         <${WAD_Icon} Icon="${IconFolder}/terminal.png" enabled=${false}/>
         <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
@@ -3142,12 +3210,267 @@ console.error(Signal)
   DialogList.push('Toolbox')     // "Toolbox" is always part of the "DialogList"
 
 //------------------------------------------------------------------------------
-//--                             WAD_PageBrowser                              --
+//--                              WAD_Inspector                               --
 //------------------------------------------------------------------------------
 
-  function WAD_PageBrowser () {
-    const onClose = useCallback(() => closeDialog('PageBrowser'))
+  function WAD_Inspector () {
+    const onClose = useCallback(() => closeDialog('Inspector'))
 
+    const [ activeTab,activateTab ] = useState('AppletConfiguration')
+
+    return html`<${WAD_Dialog} Name="Inspector" resizable=${true}
+      onClose=${onClose}
+    >
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+      <${WAD_horizontally}>
+        <${WAD_Icon} Icon="${IconFolder}/book-open.png"
+          active=${activeTab === 'AppletConfiguration'}
+          onClick=${() => activateTab('AppletConfiguration')}
+        />
+        <div style="width:10px"/>
+        <${WAD_Icon} Icon="${IconFolder}/files.png"
+          active=${activeTab === 'PageBrowser'}
+          onClick=${() => activateTab('PageBrowser')}
+        />
+        <div style="width:10px"/>
+        <${WAD_Icon} Icon="${IconFolder}/file-pencil-alt-1.png"
+          active=${activeTab === 'PageConfiguration'}
+          onClick=${() => activateTab('PageConfiguration')}
+        />
+        <div style="width:10px"/>
+        <${WAD_Icon} Icon="${IconFolder}/rectangles-mixed.png"
+          active=${activeTab === 'WidgetBrowser'}
+          onClick=${() => activateTab('WidgetBrowser')}
+        />
+        <div style="width:10px"/>
+        <${WAD_Icon} Icon="${IconFolder}/money-check-pen.png"
+          active=${activeTab === 'WidgetConfiguration'}
+          onClick=${() => activateTab('WidgetConfiguration')}
+        />
+      </>
+
+      <${WAD_horizontally} style="
+        margin-top:4px; margin-bottom:4px; padding-left:4px;
+        background:#EEEEEE;
+        border-top:solid 1px #888888; border-bottom:solid 1px #888888;
+      ">
+        ${(activeTab === 'AppletConfiguration') && html`<${WAD_Label}>Applet Configuration</>`}
+        ${(activeTab === 'PageBrowser')         && html`<${WAD_Label}>Page Browser</>`}
+        ${(activeTab === 'PageConfiguration')   && html`<${WAD_Label}>Page Configuration</>`}
+        ${(activeTab === 'WidgetBrowser')       && html`<${WAD_Label}>Widget Browser</>`}
+        ${(activeTab === 'WidgetConfiguration') && html`<${WAD_Label}>Widget Configuration</>`}
+      </>
+
+      ${(activeTab === 'AppletConfiguration') && html`<${WAD_AppletConfigurationPane}/>`}
+      ${(activeTab === 'PageBrowser')         && html`<${WAD_PageBrowserPane}/>`}
+      ${(activeTab === 'PageConfiguration')   && html`<${WAD_PageConfigurationPane}/>`}
+      ${(activeTab === 'WidgetBrowser')       && html`<${WAD_WidgetBrowserPane}/>`}
+      ${(activeTab === 'WidgetConfiguration') && html`<${WAD_WidgetConfigurationPane}/>`}
+     </>
+    </>`
+  }
+  DesignerState.Inspector.View = WAD_Inspector
+
+/**** WAD_AppletConfigurationPane ****/
+
+  function WAD_AppletConfigurationPane () {
+    const { Applet } = DesignerState
+
+    return html`<div class="WAD InspectorPane">
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+      <${WAD_horizontally}>
+        <${WAD_Label} style="width:56px">Applet</>
+        <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
+          Value=${Applet.Name}
+          onInput=${(Event:Indexable) => doConfigureApplet('Name',Event.target.value)}
+        />
+      </>
+
+      <${WAD_vertically} style="
+        flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
+        margin-top:6px;
+      ">
+        <${WAD_Fold} Label="Visibility">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Opacity [%]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.Opacity} Minimum=${0} Maximum=${100}
+              onInput=${(Event:Indexable) => doConfigureApplet('Opacity',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Geometry">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Position (x,y) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.x}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.y}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.Width}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.Height}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Typography">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Font Family</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Typesetting</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Size [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.FontSize} Minimum=${0} Maximum=${1000}
+              onInput=${(Event:Indexable) => doConfigureApplet('FontSize',parseFloat(Event.target.value))}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Weight</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Style</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Text Decoration</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Decoration</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Shadow</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Text Layout</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Text Alignment</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Line Height [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.LineHeight} Minimum=${0} Maximum=${1000}
+              onInput=${(Event:Indexable) => doConfigureApplet('LineHeight',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Background">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Color</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Texture</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Mode</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Image URL</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Border">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Border Lines</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">top</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">left</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bottom</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">right</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Border Radii [px]</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">tl,tr</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bl,br</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Layout Settings">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Snap-to-Grid</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.SnapToGrid}
+              onInput=${(Event:Indexable) => doConfigureApplet('SnapToGrid',Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Grid Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridWidth}
+              onInput=${(Event:Indexable) => doConfigureApplet('GridWidth',parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridHeight}
+              onInput=${(Event:Indexable) => doConfigureApplet('GridHeight',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
+      </>
+     </>
+    </>`
+  }
+
+/**** WAD_PageBrowserPane ****/
+
+  function WAD_PageBrowserPane () {
     const { Applet, selectedPages } = DesignerState
 
     const PageListItemRenderer = useCallback((Page:WAT_Page, Index:number, selected:boolean) => {
@@ -3170,13 +3493,11 @@ console.error(Signal)
       WAT_rerender()
     })
 
-    return html`<${WAD_Dialog} Name="PageBrowser" resizable=${true}
-      onClose=${onClose}
-    >
+    return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
-        <${WAD_Label} style="width:52px">Applet</>
-        <${WAD_NameInput} Placeholder="(applet name)" style="flex:1 0 auto"
+        <${WAD_Label} style="width:56px">Applet</>
+        <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
           Value=${Applet.Name}
           onInput=${(Event:Indexable) => doConfigureApplet('Name',Event.target.value)}
         />
@@ -3206,7 +3527,7 @@ console.error(Signal)
           onClick=${doShiftSelectedPagesToBottom}
         />
           <${WAD_Gap}/>
-        <${WAD_Icon} Icon="${IconFolder}/arrow-up-right-from-square.png"
+        <${WAD_Icon} Icon="${IconFolder}/file-arrow-left.png"
           enabled=${selectedPages.length === 1}
           onClick=${doVisitSelectedPage}
         />
@@ -3227,48 +3548,195 @@ console.error(Signal)
       />
 
       <${WAD_horizontally} style="padding-top:4px">
-        <${WAD_Label} style="width:52px">Page</>
-        <${WAD_NameInput} Placeholder="(page name)" style="flex:1 0 auto"
+        <${WAD_Label} style="width:56px">Page</>
+        <${WAD_TextlineInput} Placeholder="(page name)" style="flex:1 0 auto"
           enabled=${selectedPages.length > 0}
           Value=${commonValueOf(selectedPages.map((Page:WAT_Page) => Page.Name))}
           onInput=${(Event:Indexable) => doConfigureSelectedPages('Name',Event.target.value)}
         />
       </>
+     </>
+    </>`
+  }
 
+/**** WAD_PageConfigurationPane ****/
+
+  function WAD_PageConfigurationPane () {
+    const { Applet } = DesignerState
+
+    const { visitedPage } = Applet
+
+    return html`<div class="WAD InspectorPane">
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
-        <${WAD_Label}>Snap-to-Grid</>
-        <${WAD_Gap}/>
-        <${WAD_Checkbox}
-          Value=${Applet.SnapToGrid}
-          onInput=${(Event:Indexable) => doConfigureApplet('SnapToGrid',Event.target.checked)}
+        <${WAD_Label} style="width:56px">Page</>
+        <${WAD_TextlineInput} Placeholder="(page name)" style="flex:1 0 auto"
+          enabled=${visitedPage != null}
+          Value=${visitedPage?.Name}
+          onInput=${(Event:Indexable) => doConfigureVisitedPage('Name',Event.target.value)}
         />
       </>
 
-      <${WAD_horizontally}>
-        <${WAD_Label}>Grid Size [px]</>
-        <${WAD_Gap}/>
-        <${WAD_IntegerInput} style="width:60px" Placeholder="W"
-          Value=${Applet.GridWidth}
-          onInput=${(Event:Indexable) => doConfigureApplet('GridWidth',parseFloat(Event.target.value))}
-        />
-          <div style="width:20px; padding-top:4px; text-align:center">x</div>
-        <${WAD_IntegerInput} style="width:60px" Placeholder="H"
-          Value=${Applet.GridHeight}
-          onInput=${(Event:Indexable) => doConfigureApplet('GridHeight',parseFloat(Event.target.value))}
-        />
+      <${WAD_vertically} style="
+        flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
+        margin-top:6px;
+      ">
+        <${WAD_Fold} Label="Visibility">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Opacity</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${visitedPage.Opacity} Minimum=${0} Maximum=${100}
+              onInput=${(Event:Indexable) => doConfigureVisitedPage('Opacity',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Geometry">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Position (x,y) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${visitedPage.x}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${visitedPage.y}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${visitedPage.Width}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${visitedPage.Height}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Typography">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Font Family</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Typesetting</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Size [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${visitedPage.FontSize} Minimum=${0} Maximum=${1000}
+              onInput=${(Event:Indexable) => doConfigureVisitedPage('FontSize',parseFloat(Event.target.value))}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Weight</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Style</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Text Decoration</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Decoration</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Shadow</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Text Layout</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Text Alignment</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Line Height [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${visitedPage.LineHeight} Minimum=${0} Maximum=${1000}
+              onInput=${(Event:Indexable) => doConfigureVisitedPage('LineHeight',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Background">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Color</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Texture</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Mode</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Image URL</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Border">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Border Lines</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">top</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">left</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bottom</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">right</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Border Radii [px]</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">tl,tr</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bl,br</>
+            <${WAD_Gap}/>
+          </>
+        </>
       </>
      </>
     </>`
   }
-  DesignerState.PageBrowser.View = WAD_PageBrowser
 
-//------------------------------------------------------------------------------
-//--                            WAD_WidgetBrowser                             --
-//------------------------------------------------------------------------------
+/**** WAD_WidgetBrowserPane ****/
 
-  function WAD_WidgetBrowser () {
-    const onClose = useCallback(() => closeDialog('WidgetBrowser'))
-
+  function WAD_WidgetBrowserPane () {
     const { Applet, selectedWidgets } = DesignerState
     const visitedPage = Applet.visitedPage
 
@@ -3286,39 +3754,11 @@ console.error(Signal)
       selectWidgets(selectedIndices.map((Index:number) => WidgetList[Index]))
     })
 
-    let ValueType:string = 'string'
-    let ValueToEdit = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Value))
-      switch (true) {
-        case (ValueToEdit ==  null):
-        case (ValueToEdit === multipleValues):
-        case (ValueToEdit === noSelection):
-          break
-        default:
-          ValueType = typeof ValueToEdit
-          if (ValueType === 'object') {
-            ValueToEdit = JSON.stringify(ValueToEdit,null,2)
-          } else {
-            ValueToEdit = '' + ValueToEdit
-          }
-      }
-    function _onValueInput (Event:Indexable) {
-      const editedValue = Event.target.value; let Value:any = undefined
-        switch (ValueType) {
-          case 'boolean': Value = Boolean(editedValue); break
-          case 'number':  Value = Number(editedValue);  break
-          case 'string':  Value = editedValue;          break
-          default:        Value = JSON.parse(editedValue)           // may fail!
-        }
-      doConfigureSelectedWidgets('Value',Value)
-    }
-
-    return html`<${WAD_Dialog} Name="WidgetBrowser" resizable=${true}
-      onClose=${onClose}
-    >
+    return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
-        <${WAD_Label} style="width:52px">Page</>
-        <${WAD_NameInput} Placeholder="(page name)" style="flex:1 0 auto"
+        <${WAD_Label} style="width:56px">Page</>
+        <${WAD_TextlineInput} Placeholder="(page name)" style="flex:1 0 auto"
           enabled=${visitedPage != null}
           Value=${visitedPage?.Name}
           onInput=${(Event:Indexable) => doConfigureVisitedPage('Name',Event.target.value)}
@@ -3404,8 +3844,54 @@ console.error(Signal)
       />
 
       <${WAD_horizontally} style="padding-top:4px">
+        <${WAD_Label} style="width:56px">Widget</>
+        <${WAD_TextlineInput} Placeholder="(widget name)" style="flex:1 0 auto"
+          enabled=${selectedWidgets.length > 0}
+          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Name))}
+          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Name',Event.target.value)}
+        />
+      </>
+     </>
+    </>`
+  }
+
+/**** WAD_WidgetConfigurationPane ****/
+
+  function WAD_WidgetConfigurationPane () {
+    const { Applet, selectedWidgets } = DesignerState
+    const visitedPage = Applet.visitedPage
+
+    let ValueType:string = 'string'
+    let ValueToEdit = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Value))
+      switch (true) {
+        case (ValueToEdit ==  null):
+        case (ValueToEdit === multipleValues):
+        case (ValueToEdit === noSelection):
+          break
+        default:
+          ValueType = typeof ValueToEdit
+          if (ValueType === 'object') {
+            ValueToEdit = JSON.stringify(ValueToEdit,null,2)
+          } else {
+            ValueToEdit = '' + ValueToEdit
+          }
+      }
+    function _onValueInput (Event:Indexable) {
+      const editedValue = Event.target.value; let Value:any = undefined
+        switch (ValueType) {
+          case 'boolean': Value = Boolean(editedValue); break
+          case 'number':  Value = Number(editedValue);  break
+          case 'string':  Value = editedValue;          break
+          default:        Value = JSON.parse(editedValue)           // may fail!
+        }
+      doConfigureSelectedWidgets('Value',Value)
+    }
+
+    return html`<div class="WAD InspectorPane">
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+      <${WAD_horizontally} style="padding-top:4px">
         <${WAD_Label} style="width:52px">Name</>
-        <${WAD_NameInput} Placeholder="(widget name)" style="flex:1 0 auto"
+        <${WAD_TextlineInput} Placeholder="(widget name)" style="flex:1 0 auto"
           enabled=${selectedWidgets.length > 0}
           Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Name))}
           onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Name',Event.target.value)}
@@ -3414,136 +3900,294 @@ console.error(Signal)
 
       <${WAD_horizontally} style="padding-top:4px">
         <${WAD_Label} style="width:52px">Type</>
-        <${WAD_NameInput} readonly style="flex:1 0 auto"
+        <${WAD_TextlineInput} readonly style="flex:1 0 auto"
           Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Type))}
         />
       </>
 
-      <${WAD_horizontally}>
-        <${WAD_Label}>Lock</>
-        <${WAD_Gap}/>
-        <${WAD_Checkbox}
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Lock))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Lock',Event.target.checked)}
-        />
-      </>
+      <${WAD_vertically} style="
+        flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
+        margin-top:6px;
+      ">
+        <${WAD_Fold} Label="Visibility and Enabling">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Visibility</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Visibility))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Visibility',Event.target.checked)}
+            />
+          </>
 
-      <${WAD_horizontally}>
-        <${WAD_Label}>Visibility</>
-        <${WAD_Gap}/>
-        <${WAD_Checkbox}
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Visibility))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Visibility',Event.target.checked)}
-        />
-      </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Opacity [%]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Opacity))}
+              Minimum=${0} Maximum=${100}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Opacity',parseFloat(Event.target.value))}
+            />
+          </>
 
-      <${WAD_horizontally}>
-        <${WAD_Label}>Position</>
-        <${WAD_Gap}/>
-        <${WAD_IntegerInput} style="width:60px" Placeholder="x"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.x))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('x',parseFloat(Event.target.value))}
-        />
-          <div style="width:20px; padding-top:4px; text-align:center">x</div>
-        <${WAD_IntegerInput} style="width:60px" Placeholder="y"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.y))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('y',parseFloat(Event.target.value))}
-        />
-      </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Overflow [h,v]</>
+            <${WAD_Gap}/>
+          </>
 
-      <${WAD_horizontally}>
-        <${WAD_Label}>Size</>
-        <${WAD_Gap}/>
-        <${WAD_IntegerInput} style="width:60px" Placeholder="W"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Width))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Width',parseFloat(Event.target.value))}
-        />
-          <div style="width:20px; padding-top:4px; text-align:center">x</div>
-        <${WAD_IntegerInput} style="width:60px" Placeholder="H"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Height))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Height',parseFloat(Event.target.value))}
-        />
-      </>
+          <${WAD_horizontally} style="padding-top:4px">
+            <${WAD_Label}>Enabling</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Enabling))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Enabling',Event.target.checked)}
+            />
+          </>
+        </>
 
-      <${WAD_horizontally} style="padding-top:4px">
-        <${WAD_Icon} Icon="${IconFolder}/arrows-left-right.png" style="width:24px"/>
-        <${WAD_Gap}/>
-        <${WAD_DropDown} style="width:104px"
-          OptionList=${['left-width','left-right','width-right']}
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Anchors[0]))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Anchors_0',Event.target.value)}
-        />
-          <div style="width:8px"/>
-        <${WAD_IntegerInput} style="width:60px"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[0]))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_0',parseFloat(Event.target.value))}
-        />
-          <div style="width:20px; padding-top:4px; text-align:center">x</div>
-        <${WAD_IntegerInput} style="width:60px"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[1]))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_1',parseFloat(Event.target.value))}
-        />
-      </>
+        <${WAD_Fold} Label="Geometry">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Position (x,y) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.x))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('x',parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.y))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('y',parseFloat(Event.target.value))}
+            />
+          </>
 
-      <${WAD_horizontally}>
-        <${WAD_Icon} Icon="${IconFolder}/arrows-up-down.png" style="width:24px"/>
-        <${WAD_Gap}/>
-        <${WAD_DropDown} style="width:104px"
-          OptionList=${['top-height','top-bottom','height-bottom']}
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Anchors[1]))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Anchors_1',Event.target.value)}
-        />
-          <div style="width:8px"/>
-        <${WAD_IntegerInput} style="width:60px"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[2]))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_2',parseFloat(Event.target.value))}
-        />
-          <div style="width:20px; padding-top:4px; text-align:center">x</div>
-        <${WAD_IntegerInput} style="width:60px"
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[3]))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_3',parseFloat(Event.target.value))}
-        />
-      </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Width))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Width',parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Height))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Height',parseFloat(Event.target.value))}
+            />
+          </>
 
-      <${WAD_horizontally} style="padding-top:4px">
-        <${WAD_Label}>Enabling</>
-        <${WAD_Gap}/>
-        <${WAD_Checkbox}
-          enabled=${selectedWidgets.length > 0}
-          Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Enabling))}
-          onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Enabling',Event.target.checked)}
-        />
-      </>
+          <${WAD_horizontally} style="padding-top:4px">
+            <${WAD_Icon} Icon="${IconFolder}/arrows-left-right.png" style="width:24px"/>
+            <${WAD_Gap}/>
+            <${WAD_DropDown} style="width:104px"
+              OptionList=${['left-width','left-right','width-right']}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Anchors[0]))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Anchors_0',Event.target.value)}
+            />
+              <div style="width:8px"/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[0]))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_0',parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[1]))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_1',parseFloat(Event.target.value))}
+            />
+          </>
 
-      <${WAD_horizontally}>
-        <${WAD_Label}>Value</>
-        <${WAD_Gap}/>
-        <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
-          active=${DialogIsOpen('ValueEditor')}
-          onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
-        />
-      </>
+          <${WAD_horizontally}>
+            <${WAD_Icon} Icon="${IconFolder}/arrows-up-down.png" style="width:24px"/>
+            <${WAD_Gap}/>
+            <${WAD_DropDown} style="width:104px"
+              OptionList=${['top-height','top-bottom','height-bottom']}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Anchors[1]))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Anchors_1',Event.target.value)}
+            />
+              <div style="width:8px"/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[2]))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_2',parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Offsets[3]))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Offsets_3',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
 
-      <${WAD_TextInput} Placeholder="(enter value)" style="min-height:60px"
-        enabled=${selectedWidgets.length > 0}
-        Value=${ValueToEdit} onInput=${_onValueInput}
-      />
+        <${WAD_Fold} Label="Typography">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Font Family</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Typesetting</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Size [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.FontSize))}
+              Minimum=${0} Maximum=${1000}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('FontSize',parseFloat(Event.target.value))}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Weight</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Style</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Text Decoration</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Decoration</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Shadow</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Text Layout</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Text Alignment</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Line Height [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.LineHeight))}
+              Minimum=${0} Maximum=${1000}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('LineHeight',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Background">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Color</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Texture</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Mode</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Image URL</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Border">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Border Lines</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">top</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">left</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bottom</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">right</>
+            <${WAD_Gap}/>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Border Radii [px]</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">tl,tr</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bl,br</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Box Shadow">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Color</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Offset (dx,dy) [px]</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Blur Radius [px]</>
+            <${WAD_Gap}/>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Spread Radius [px]</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Cursor">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Standard</>
+            <${WAD_Gap}/>
+          </>
+        </>
+
+        <${WAD_Fold} Label="Type-specific Settings">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Value</>
+            <${WAD_Gap}/>
+            <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+              active=${DialogIsOpen('ValueEditor')}
+              onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
+            />
+          </>
+
+          <${WAD_TextInput} Placeholder="(enter value)" style="min-height:60px"
+            enabled=${selectedWidgets.length > 0}
+            Value=${ValueToEdit} onInput=${_onValueInput}
+          />
+        </>
+      </>
      </>
     </>`
   }
-  DesignerState.WidgetBrowser.View = WAD_WidgetBrowser
 
 //------------------------------------------------------------------------------
 //--                             WAD_ValueEditor                              --
@@ -3586,7 +4230,7 @@ console.error(Signal)
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
         <${WAD_Label} style="width:52px">Visual</>
-        <${WAD_NameInput} Placeholder="(visual name)" style="flex:1 0 auto"
+        <${WAD_TextlineInput} Placeholder="(visual name)" style="flex:1 0 auto"
           enabled=${selectedWidgets.length > 0}
           Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Name))}
           onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Name',Event.target.value)}
@@ -3618,7 +4262,7 @@ console.error(Signal)
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
         <${WAD_Label} style="width:52px">Applet</>
-        <${WAD_NameInput} Placeholder="(applet name)" style="flex:1 0 auto"
+        <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
           Value=${Applet.Name}
           onInput=${(Event:Indexable) => doConfigureApplet('Name',Event.target.value)}
         />
