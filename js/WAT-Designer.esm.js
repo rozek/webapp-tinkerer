@@ -26,7 +26,7 @@ const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -249,6 +249,26 @@ appendStyle(`
     pointer-events:auto; resize:none;
   }
   .WAD.TextInput > textarea:read-only {
+    background:transparent;
+  }
+
+/**** ColorInput ****/
+
+  .WAD.ColorInput {
+    display:block; position:relative;
+    width:60px; height:30px;
+  }
+  .WAD.ColorInput > input {
+    display:block; position:relative;
+    left:0px; top:0px; width:100%; height:100%;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff; padding:0px;
+    pointer-events:auto;
+  }
+  .WAD.ColorInput.wrong > input {
+    color:red;
+  }
+  .WAD.ColorInput > input:read-only {
     background:transparent;
   }
 
@@ -867,7 +887,10 @@ function WAD_Checkbox(PropSet) {
 //--                            WAD_TextlineInput                             --
 //------------------------------------------------------------------------------
 function WAD_TextlineInput(PropSet) {
-    let { enabled, Value, Placeholder, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "onInput", "onBlur", "style"]);
+    let { enabled, Value, Placeholder, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    /**** Value Handling ****/
+    , ["enabled", "Value", "Placeholder", "Suggestions", "onInput", "onBlur", "style"]);
+    /**** Value Handling ****/
     const shownValue = useRef('');
     const InputElement = useRef(null);
     let ValueToShow = '';
@@ -894,6 +917,15 @@ function WAD_TextlineInput(PropSet) {
         shownValue.current = ValueToShow;
     }
     const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
+    /**** Suggestion Handling ****/
+    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    let SuggestionList = '';
+    if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionList = html `<datalist id=${SuggestionId}>
+        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+      </datalist>`;
+    }
+    /**** Event Handling ****/
     const _onInput = useCallback((Event) => {
         Event.stopPropagation();
         //    Event.preventDefault() // NO!
@@ -910,12 +942,14 @@ function WAD_TextlineInput(PropSet) {
             onBlur(Event);
         }
     });
+    /**** actual Rendering ****/
     return html `<div class="WAD TextLineInput ${wrong}" style=${style}>
       <input type="text"
         disabled=${enabled === false}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
+        list=${SuggestionId}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
-      />
+      />${SuggestionList}
     </>`;
 }
 //------------------------------------------------------------------------------
@@ -977,7 +1011,7 @@ function WAD_IntegerInput(PropSet) {
 //--                               WAD_DropDown                               --
 //------------------------------------------------------------------------------
 function WAD_DropDown(PropSet) {
-    let { enabled, Value, Placeholder, OptionList, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "OptionList", "style"]);
+    let { enabled, Value, Placeholder, Options, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "Options", "style"]);
     let ValueToShow = '';
     switch (Value) {
         case null:
@@ -1000,7 +1034,8 @@ function WAD_DropDown(PropSet) {
         ${Placeholder == null
         ? ''
         : html `<option value="" disabled>${Placeholder}</option>`}
-        ${(OptionList || []).map((Option) => html `<option selected=${Option === Value}>${Option}</>`)}
+        <option disabled selected=${(Value || '') === ''}>(please select)</>
+        ${(Options || []).map((Option) => html `<option selected=${Option === Value}>${Option}</>`)}
       </select>
     </>`;
 }
@@ -1043,6 +1078,73 @@ function WAD_PseudoFileInput(PropSet) {
         background-color:${Color || 'black'};
       "></>
       <input type="file" style="display:none" ...${otherProps}/>
+    </>`;
+}
+//------------------------------------------------------------------------------
+//--                              WAD_ColorInput                              --
+//------------------------------------------------------------------------------
+function WAD_ColorInput(PropSet) {
+    let { enabled, Value, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    /**** Value Handling ****/
+    , ["enabled", "Value", "Suggestions", "onInput", "onBlur", "style"]);
+    /**** Value Handling ****/
+    const shownValue = useRef('');
+    const InputElement = useRef(null);
+    let ValueToShow = '';
+    switch (Value) {
+        case null:
+        case undefined:
+            ValueToShow = '';
+            break;
+        case multipleValues:
+            ValueToShow = '';
+            break;
+        case noSelection:
+            ValueToShow = '';
+            enabled = false;
+            break;
+        default: ValueToShow = Value;
+    }
+    if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current;
+    }
+    else {
+        shownValue.current = ValueToShow;
+    }
+    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
+    /**** Suggestion Handling ****/
+    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    let SuggestionList = '';
+    if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionList = html `<datalist id=${SuggestionId}>
+        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+      </datalist>`;
+    }
+    /**** Event Handling ****/
+    const _onInput = useCallback((Event) => {
+        Event.stopPropagation();
+        //    Event.preventDefault() // NO!
+        if (enabled !== false) {
+            shownValue.current = Event.target.value;
+            if (typeof onInput === 'function') {
+                onInput(Event);
+            }
+        }
+    }, [enabled]);
+    const _onBlur = useCallback((Event) => {
+        WAT_rerender();
+        if (typeof onBlur === 'function') {
+            onBlur(Event);
+        }
+    });
+    /**** actual Rendering ****/
+    return html `<div class="WAD ColorInput ${wrong}" style=${style}>
+      <input type="color"
+        disabled=${enabled === false}
+        ref=${InputElement} value=${ValueToShow}
+        list=${SuggestionId}
+        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
+      />${SuggestionList}
     </>`;
 }
 //------------------------------------------------------------------------------
@@ -2929,6 +3031,7 @@ function WAD_Inspector() {
 DesignerState.Inspector.View = WAD_Inspector;
 /**** WAD_AppletConfigurationPane ****/
 function WAD_AppletConfigurationPane() {
+    var _a, _b;
     const { Applet } = DesignerState;
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -2981,10 +3084,42 @@ function WAD_AppletConfigurationPane() {
           </>
         </>
 
+        <${WAD_Fold} Label="Layout Settings">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Snap-to-Grid</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.SnapToGrid}
+              onInput=${(Event) => doConfigureApplet('SnapToGrid', Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Grid Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridWidth}
+              onInput=${(Event) => doConfigureApplet('GridWidth', parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridHeight}
+              onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
+            />
+          </>
+        </>
         <${WAD_Fold} Label="Typography">
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
             <${WAD_Gap}/>
+            <${WAD_TextlineInput} style="flex:1 0 auto"
+              Suggestions=${[
+        "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif",
+        "'Lucida Console', 'Courier New', Courier, monospace"
+    ]}
+              Value=${Applet.FontFamily}
+              onInput=${(Event) => doConfigureApplet('FontFamily', Event.target.value)}
+            />
           </>
 
           <${WAD_horizontally}>
@@ -3001,21 +3136,60 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Weight</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${Applet.FontWeight} Options=${WAT_FontWeights}
+              onInput=${(Event) => doConfigureApplet('FontWeight', Event.target.value)}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Style</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${Applet.FontStyle} Options=${WAT_FontStyles}
+              onInput=${(Event) => doConfigureApplet('FontStyle', Event.target.value)}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Color</>
+            <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              Value=${Applet.Color}
+              onInput=${(Event) => doConfigureApplet('Color', Event.target.value)}
+            />
           </>
 
           <${WAD_horizontally}>
-            <${WAD_Label}>Text Decoration</>
+            <${WAD_Label}>Text Shadow</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${((_a = Applet.TextShadow) === null || _a === void 0 ? void 0 : _a.active) === true}
+              onInput=${(Event) => {
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        doConfigureApplet('TextShadow', {
+            isActive: Event.target.checked, xOffset, yOffset, BlurRadius, Color
+        });
+    }}
+            />
           </>
           <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">Decoration</>
+            <${WAD_Label} style="padding-left:10px">Color</>
+            <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              Value=${(_b = Applet.TextShadow) === null || _b === void 0 ? void 0 : _b.Color}
+              onInput=${(Event) => {
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        doConfigureApplet('TextShadow', {
+            isActive, xOffset, yOffset, BlurRadius, Color: Event.target.value
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
           </>
           <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">Shadow</>
+            <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
           </>
 
@@ -3093,30 +3267,6 @@ function WAD_AppletConfigurationPane() {
           </>
         </>
 
-        <${WAD_Fold} Label="Layout Settings">
-          <${WAD_horizontally}>
-            <${WAD_Label}>Snap-to-Grid</>
-            <${WAD_Gap}/>
-            <${WAD_Checkbox}
-              Value=${Applet.SnapToGrid}
-              onInput=${(Event) => doConfigureApplet('SnapToGrid', Event.target.checked)}
-            />
-          </>
-
-          <${WAD_horizontally}>
-            <${WAD_Label}>Grid Size (w,h) [px]</>
-            <${WAD_Gap}/>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridWidth}
-              onInput=${(Event) => doConfigureApplet('GridWidth', parseFloat(Event.target.value))}
-            />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridHeight}
-              onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
-            />
-          </>
-        </>
       </>
      </>
     </>`;
@@ -3289,14 +3439,7 @@ function WAD_PageConfigurationPane() {
           </>
 
           <${WAD_horizontally}>
-            <${WAD_Label}>Text Decoration</>
-          </>
-          <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">Decoration</>
-            <${WAD_Gap}/>
-          </>
-          <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">Shadow</>
+            <${WAD_Label}>Text Shadow</>
             <${WAD_Gap}/>
           </>
 
@@ -3496,6 +3639,7 @@ function WAD_WidgetBrowserPane() {
 }
 /**** WAD_WidgetConfigurationPane ****/
 function WAD_WidgetConfigurationPane() {
+    var _a, _b, _c, _d;
     const { Applet, selectedWidgets } = DesignerState;
     const visitedPage = Applet.visitedPage;
     let ValueType = 'string';
@@ -3703,12 +3847,63 @@ function WAD_WidgetConfigurationPane() {
             <${WAD_Label}>Text Decoration</>
           </>
           <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">Decoration</>
+            <${WAD_Label} style="padding-left:10px">Color</>
             <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              Value=${(_a = commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))) === null || _a === void 0 ? void 0 : _a.Color}
+              onInput=${(Event) => {
+        const { Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))
+            || { Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 });
+        doConfigureSelectedWidgets('TextDecoration', {
+            Line, Color: Event.target.value, Style, Thickness
+        });
+    }}
+            />
           </>
           <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">Shadow</>
+            <${WAD_Label} style="padding-left:10px">Line</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_b = commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))) === null || _b === void 0 ? void 0 : _b.Line}
+              Options=${WAT_TextDecorationLines}
+              onInput=${(Event) => {
+        const { Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))
+            || { Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 });
+        doConfigureSelectedWidgets('TextDecoration', {
+            Line: Event.target.value, Color, Style, Thickness
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Style</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_c = commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))) === null || _c === void 0 ? void 0 : _c.Style}
+              Options=${WAT_TextDecorationStyles}
+              onInput=${(Event) => {
+        const { Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))
+            || { Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 });
+        doConfigureSelectedWidgets('TextDecoration', {
+            Line, Color, Style: Event.target.value, Thickness
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Thickness [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_d = commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))) === null || _d === void 0 ? void 0 : _d.Thickness}
+              Minimum=${0}
+              onInput=${(Event) => {
+        const { Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration))
+            || { Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 });
+        doConfigureSelectedWidgets('TextDecoration', {
+            Line, Color, Style, Thickness: parseFloat(Event.target.value)
+        });
+    }}
+            />
           </>
 
           <${WAD_horizontally}>
