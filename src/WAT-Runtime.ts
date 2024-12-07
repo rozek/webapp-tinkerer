@@ -2234,6 +2234,72 @@
     public get isAttached ():boolean  { return (this._View != null) }
     public set isAttached (_:boolean) { throwReadOnlyError('isAttached') }
 
+  /**** VisualWithElement ****/
+
+    public VisualWithElement (DOMElement:HTMLElement):WAT_Visual|undefined {
+      let Candidate:WAT_Visual|undefined = undefined
+        if (this._View == null) { return undefined }
+        if (this._View.contains(DOMElement)) { Candidate = this }
+
+        const visitedPage = this._visitedPage as Indexable
+        if (visitedPage != null) {
+          if (visitedPage._View == null) { return undefined }
+          if (visitedPage._View.contains(DOMElement)) { Candidate = visitedPage as WAT_Page }
+
+        /**** scan all visible widgets on this page ****/
+
+          visitedPage._WidgetList.filter((Widget:Indexable) =>
+            Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === visitedPage))
+          ).forEach((Widget:Indexable) => {
+            if (Widget._View == null) { return }
+            if (Widget._View.contains(DOMElement)) { Candidate = Widget as WAT_Widget }
+
+            Widget._OverlayList.forEach((Overlay:WAT_Overlay) => {
+              const SourceWidget = this.WidgetAtPath(Overlay.SourceWidgetPath as WAT_Path)
+              if (SourceWidget == null) { return }
+
+            /**** scan all widgets shown on this one's overlays ****/
+
+              const WidgetsToShow:WAT_Widget[] = (
+                SourceWidget.Type === 'Outline'
+                ? (SourceWidget as Indexable).bundledWidgets()
+                : [SourceWidget]
+              ).filter((Widget:Indexable) => (
+                Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))
+              ))
+
+              WidgetsToShow.forEach((Widget:Indexable) => {
+                if (Widget._View == null) { return }
+                if (Widget._View.contains(DOMElement)) { Candidate = Widget as WAT_Widget }
+              })
+            })
+          })
+        }
+
+      /**** scan all shown widgets on all currently open dialogs ****/
+
+        this._DialogList.forEach((Dialog:Indexable) => {
+          if (Dialog._View == null) { return undefined }
+
+          const SourceWidget = this.WidgetAtPath(Dialog.SourceWidgetPath as WAT_Path)
+          if (SourceWidget == null) { return }
+
+          const WidgetsToShow:WAT_Widget[] = (
+            SourceWidget.Type === 'Outline'
+            ? (SourceWidget as Indexable).bundledWidgets()
+            : [SourceWidget]
+          ).filter((Widget:Indexable) => (
+            Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))
+          ))
+
+          WidgetsToShow.forEach((Widget:Indexable) => {
+            if (Widget._View == null) { return }
+            if (Widget._View.contains(DOMElement)) { Candidate = Widget as WAT_Widget }
+          })
+        })
+      return Candidate
+    }
+
   /**** WidgetsNamed ****/
 
     public WidgetsNamed (NameSet:Indexable):Indexable {
@@ -2255,14 +2321,15 @@
 
   /**** namedWidgets ****/
 
-    public namedWidgets ():Indexable {
+    public get namedWidgets ():Indexable {
       const WidgetSet:Indexable = {}
-        this.PageList.forEach((Page:WAT_Page) => {
+        this._PageList.forEach((Page:WAT_Page) => {
           const namedWidgets = Page.namedWidgets
           Object.assign(WidgetSet,namedWidgets)
         })
       return WidgetSet
     }
+    public set namedWidgets (_:Indexable) { throwReadOnlyError('namedWidgets') }
 
   /**** configureWidgets ****/
 
@@ -3208,15 +3275,16 @@
 
   /**** namedWidgets ****/
 
-    public namedWidgets ():Indexable {
+    public get namedWidgets ():Indexable {
       const WidgetSet:Indexable = {}
-        this.WidgetList.forEach((Widget:WAT_Widget) => {
+        this._WidgetList.forEach((Widget:WAT_Widget) => {
           if (Widget.Name != null) {
             WidgetSet[Widget.Name] = Widget
           }
         })
       return WidgetSet
     }
+    public set namedWidgets (_:Indexable) { throwReadOnlyError('namedWidgets') }
 
   /**** configureWidgets ****/
 
@@ -6675,20 +6743,54 @@
     public get Type ():string  { return 'TextTab' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Activation ****/
+
+    protected _Activation:boolean = false
+
+    public get Activation ():boolean {
+      return this._Activation
+    }
+
+    public set Activation (newActivation:boolean) {
+      expectBoolean('tab activation',newActivation)
+      if (this._Activation !== newActivation) {
+        this._Activation = newActivation
+        this.rerender()
+      }
+    }
+
+  /**** activate/deactivate ****/
+
+    public activate ():void   { this.Activation = true }
+    public deactivate ():void { this.Activation = false }
+
+  /**** isActive ****/
+
+    public get isActive ():boolean              { return this.Activation }
+    public set isActive (newActivation:boolean) { this.Activation = newActivation }
+
+
+
     protected _Renderer = () => {
+      const active = (this.isActive ? 'active' : '')
+
       const _onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onClick != null) { this._onClick(Event) }
       }
 
-      return html`<div class="WAT Content TextTab" onClick=${_onClick}>${this.Value}</div>`
+      return html`<div class="WAT ${active} TextTab"
+        onClick=${_onClick}>${this.Value}</div>`
     }
   }
   builtInWidgetTypes['TextTab'] = WAT_TextTab
 
   appendStyle(`
   .WAT.Widget > .WAT.TextTab {
+    display:block; position:absolute;
+    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
+    font-weight:bold;
   }
   .WAT.Widget > .WAT.TextTab.active {
     border:none; border-bottom:solid 2px black;
@@ -6703,7 +6805,37 @@
     public get Type ():string  { return 'IconTab' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Activation ****/
+
+    protected _Activation:boolean = false
+
+    public get Activation ():boolean {
+      return this._Activation
+    }
+
+    public set Activation (newActivation:boolean) {
+      expectBoolean('tab activation',newActivation)
+      if (this._Activation !== newActivation) {
+        this._Activation = newActivation
+        this.rerender()
+      }
+    }
+
+  /**** activate/deactivate ****/
+
+    public activate ():void   { this.Activation = true }
+    public deactivate ():void { this.Activation = false }
+
+  /**** isActive ****/
+
+    public get isActive ():boolean              { return this.Activation }
+    public set isActive (newActivation:boolean) { this.Activation = newActivation }
+
+
+
     protected _Renderer = () => {
+      const active = (this.isActive ? 'active' : '')
+
       const _onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
         if (this._onClick != null) { this._onClick(Event) }
@@ -6712,7 +6844,7 @@
       const Value = acceptableURL  (this.Value,`${IconFolder}/pencil.png`)
       const Color = acceptableColor(this.Color,'black')
 
-      return html`<div class="WAT Content IconTab" style="
+      return html`<div class="WAT ${active} IconTab" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
         background-color:${Color};
       " disabled=${this.Enabling == false} onClick=${_onClick}
@@ -6723,6 +6855,7 @@
 
   appendStyle(`
   .WAT.Widget > .WAT.IconTab {
+    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
 
     -webkit-mask-size:contain;           mask-size:contain;
@@ -6967,117 +7100,7 @@
   }
   `)
 
-/**** CSSStyleOfVisual ****/
-
-  export function CSSStyleOfVisual (Visual:WAT_Visual):string {
-    expectVisual('widget',Visual)
-
-    let CSSStyleList:string[] = []
-      const {
-        FontFamily, FontSize, FontWeight, FontStyle,
-        TextDecoration, TextShadow, TextAlignment, LineHeight,
-        ForegroundColor, BackgroundColor, BackgroundTexture,
-        BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow,
-        Opacity, OverflowVisibility, Cursor,
-      } = Visual
-
-      if (FontFamily != null) { CSSStyleList.push(`font-family:${FontFamily}`) }
-      if (FontSize   != null) { CSSStyleList.push(`font-size:${FontSize}px`) }
-      if (FontWeight != null) { CSSStyleList.push(`font-weight:${FontWeight}`) }
-      if (FontStyle  != null) { CSSStyleList.push(`font-style:${FontStyle}`) }
-
-      if (TextDecoration != null) {
-        CSSStyleList.push('text-decoration:' + TextDecoration.Line +
-          (TextDecoration.Color     == null ? '' : ' ' + TextDecoration.Color) +
-          (TextDecoration.Style     == null ? '' : ' ' + TextDecoration.Style) +
-          (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px')
-        )
-      }
-      if (TextShadow != null) {
-        CSSStyleList.push('text-shadow:' +
-          TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
-          TextShadow.BlurRadius + 'px ' + TextShadow.Color
-        )
-      }
-      if (TextAlignment != null) { CSSStyleList.push(`text-align:${TextAlignment}`) }
-      if (LineHeight    != null) { CSSStyleList.push(`line-height:${LineHeight}px`) }
-
-      if (ForegroundColor != null) { CSSStyleList.push(`color:${ForegroundColor}`) }
-      if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
-      if (BackgroundTexture != null) {
-        const { ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
-        let BackgroundSize = 'auto auto'
-          switch (Mode) {
-            case 'normal':  break
-            case 'contain':
-            case 'cover':   BackgroundSize = BackgroundTexture.Mode; break
-            case 'fill':    BackgroundSize = '100% 100%';  break
-            case 'tile':    BackgroundSize = 'auto auto';  break
-          }
-        let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat')
-
-        CSSStyleList.push(
-          `background-image:${ImageURL}`,
-          `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
-          `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
-        )
-      }
-
-      if (BorderWidths != null) {
-        CSSStyleList.push('border-width:' +
-          BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
-          BorderWidths[2] + 'px ' + BorderWidths[3] + 'px'
-        )
-      }
-      if (BorderStyles != null) {
-        CSSStyleList.push('border-style:' +
-          BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
-          BorderStyles[2] + ' ' + BorderStyles[3]
-        )
-      }
-      if (BorderColors != null) {
-        CSSStyleList.push('border-color:' +
-          BorderColors[0] + ' ' + BorderColors[1] + ' ' +
-          BorderColors[2] + ' ' + BorderColors[3]
-        )
-      }
-      if (BorderRadii != null) {
-        CSSStyleList.push('border-radius:' +
-          BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
-          BorderRadii[2] + 'px ' + BorderRadii[3] + 'px'
-        )
-      }
-      if (BoxShadow != null) {
-        CSSStyleList.push('box-shadow:' +
-          BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
-          BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
-          BoxShadow.Color
-        )
-      }
-
-      if (Opacity != null) { CSSStyleList.push(`opacity:${Opacity/100}`) }
-      if (OverflowVisibility != null) {
-        CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden')
-      }
-      if (Cursor != null) { CSSStyleList.push(`cursor:${Cursor}`) }
-    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';')
-  }
-
-/**** consume/consumingEvent ****/
-
-  function consumeEvent (Event:Event):void {
-    Event.stopPropagation()
-    Event.preventDefault()
-  }
-  const consumingEvent = consumeEvent
-
-/**** rerender ****/
-
-  let combinedView:WAT_combinedView|undefined = undefined
-
-  export function rerender ():void {
-    if (combinedView != null) { combinedView.rerender() }
-  }//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 //--                WAT_combinedView (for Applet and Designer)                --
 //------------------------------------------------------------------------------
 
@@ -7765,7 +7788,117 @@
     }
   }
 
-/**** useDesigner ****/
+/**** CSSStyleOfVisual ****/
+
+  export function CSSStyleOfVisual (Visual:WAT_Visual):string {
+    expectVisual('widget',Visual)
+
+    let CSSStyleList:string[] = []
+      const {
+        FontFamily, FontSize, FontWeight, FontStyle,
+        TextDecoration, TextShadow, TextAlignment, LineHeight,
+        ForegroundColor, BackgroundColor, BackgroundTexture,
+        BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow,
+        Opacity, OverflowVisibility, Cursor,
+      } = Visual
+
+      if (FontFamily != null) { CSSStyleList.push(`font-family:${FontFamily}`) }
+      if (FontSize   != null) { CSSStyleList.push(`font-size:${FontSize}px`) }
+      if (FontWeight != null) { CSSStyleList.push(`font-weight:${FontWeight}`) }
+      if (FontStyle  != null) { CSSStyleList.push(`font-style:${FontStyle}`) }
+
+      if (TextDecoration != null) {
+        CSSStyleList.push('text-decoration:' + TextDecoration.Line +
+          (TextDecoration.Color     == null ? '' : ' ' + TextDecoration.Color) +
+          (TextDecoration.Style     == null ? '' : ' ' + TextDecoration.Style) +
+          (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px')
+        )
+      }
+      if (TextShadow != null) {
+        CSSStyleList.push('text-shadow:' +
+          TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
+          TextShadow.BlurRadius + 'px ' + TextShadow.Color
+        )
+      }
+      if (TextAlignment != null) { CSSStyleList.push(`text-align:${TextAlignment}`) }
+      if (LineHeight    != null) { CSSStyleList.push(`line-height:${LineHeight}px`) }
+
+      if (ForegroundColor != null) { CSSStyleList.push(`color:${ForegroundColor}`) }
+      if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
+      if (BackgroundTexture != null) {
+        const { ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
+        let BackgroundSize = 'auto auto'
+          switch (Mode) {
+            case 'normal':  break
+            case 'contain':
+            case 'cover':   BackgroundSize = BackgroundTexture.Mode; break
+            case 'fill':    BackgroundSize = '100% 100%';  break
+            case 'tile':    BackgroundSize = 'auto auto';  break
+          }
+        let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat')
+
+        CSSStyleList.push(
+          `background-image:${ImageURL}`,
+          `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+          `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
+        )
+      }
+
+      if (BorderWidths != null) {
+        CSSStyleList.push('border-width:' +
+          BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
+          BorderWidths[2] + 'px ' + BorderWidths[3] + 'px'
+        )
+      }
+      if (BorderStyles != null) {
+        CSSStyleList.push('border-style:' +
+          BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
+          BorderStyles[2] + ' ' + BorderStyles[3]
+        )
+      }
+      if (BorderColors != null) {
+        CSSStyleList.push('border-color:' +
+          BorderColors[0] + ' ' + BorderColors[1] + ' ' +
+          BorderColors[2] + ' ' + BorderColors[3]
+        )
+      }
+      if (BorderRadii != null) {
+        CSSStyleList.push('border-radius:' +
+          BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
+          BorderRadii[2] + 'px ' + BorderRadii[3] + 'px'
+        )
+      }
+      if (BoxShadow != null) {
+        CSSStyleList.push('box-shadow:' +
+          BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
+          BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
+          BoxShadow.Color
+        )
+      }
+
+      if (Opacity != null) { CSSStyleList.push(`opacity:${Opacity/100}`) }
+      if (OverflowVisibility != null) {
+        CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden')
+      }
+      if (Cursor != null) { CSSStyleList.push(`cursor:${Cursor}`) }
+    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';')
+  }
+
+/**** consume/consumingEvent ****/
+
+  function consumeEvent (Event:Event):void {
+    Event.stopPropagation()
+    Event.preventDefault()
+  }
+  const consumingEvent = consumeEvent
+
+/**** rerender ****/
+
+  let combinedView:WAT_combinedView|undefined = undefined
+
+  export function rerender ():void {
+    if (combinedView != null) { combinedView.rerender() }
+  }/**** useDesigner ****/
 
   let DesignerLayer:Function|undefined = undefined
 
