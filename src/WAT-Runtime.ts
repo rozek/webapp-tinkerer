@@ -152,6 +152,7 @@
   }
 
   export type WAT_TextShadow = {
+    isActive:  boolean,
     xOffset:   WAT_Location,
     yOffset:   WAT_Location,
     BlurRadius:WAT_Dimension,
@@ -178,6 +179,7 @@
   export type WAT_BorderStyle = typeof WAT_BorderStyles[number]
 
   export type WAT_BoxShadow = {
+    isActive:  boolean,
     xOffset:     WAT_Location,
     yOffset:     WAT_Location,
     BlurRadius:  WAT_Dimension,
@@ -529,6 +531,7 @@
   export function ValueIsTextShadow (Value:any):boolean {
     return (Value === 'none') || (
       ValueIsObject(Value) &&
+      ValueIsBoolean(Value.active) &&
       ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset) &&
       ValueIsDimension(Value.BlurRadius) && ValueIsColor(Value.Color)
     )
@@ -570,6 +573,7 @@
   export function ValueIsBoxShadow (Value:any):boolean {
     return (Value === 'none') || (
       ValueIsObject(Value) &&
+      ValueIsBoolean(Value.active) &&
       ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset) &&
       ValueIsDimension(Value.BlurRadius) && ValueIsDimension(Value.SpreadRadius) &&
       ValueIsColor(Value.Color)
@@ -1500,9 +1504,9 @@
 
   /**** FontWeight - inheritable ****/
 
-    protected _FontWeight:WAT_Ordinal|undefined
+    protected _FontWeight:WAT_FontWeight|undefined
 
-    public get FontWeight ():WAT_Ordinal|undefined {
+    public get FontWeight ():WAT_FontWeight|undefined {
       return (
         this._FontWeight == null
         ? this._Container == null ? undefined : this._Container.FontWeight
@@ -1510,8 +1514,8 @@
       )
     }
 
-    public set FontWeight (newFontWeight:WAT_Ordinal|undefined) {
-      allowIntegerInRange('widget font weight',newFontWeight, 1,1000)
+    public set FontWeight (newFontWeight:WAT_FontWeight|undefined) {
+      allowOneOf('widget font weight',newFontWeight, WAT_FontWeights)
       if (this._FontWeight !== newFontWeight) {
         this._FontWeight = newFontWeight
         this.rerender()
@@ -1577,8 +1581,8 @@
         if (newTextShadow == null) {
           this._TextShadow = undefined
         } else {
-          const { xOffset,yOffset, BlurRadius, Color } = newTextShadow
-          this._TextShadow = { xOffset,yOffset, BlurRadius, Color }
+          const { isActive, xOffset,yOffset, BlurRadius, Color } = newTextShadow
+          this._TextShadow = { isActive, xOffset,yOffset, BlurRadius, Color }
         }
         this.rerender()
       }
@@ -1904,8 +1908,8 @@
         if (newBoxShadow == null) {
           this._BoxShadow = undefined
         } else {
-          const { xOffset,yOffset, BlurRadius,SpreadRadius, Color } = newBoxShadow
-          this._BoxShadow = { xOffset,yOffset, BlurRadius,SpreadRadius, Color }
+          const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = newBoxShadow
+          this._BoxShadow = { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color }
         }
         this.rerender()
       }
@@ -7815,10 +7819,14 @@
         )
       }
       if (TextShadow != null) {
-        CSSStyleList.push('text-shadow:' +
-          TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
-          TextShadow.BlurRadius + 'px ' + TextShadow.Color
-        )
+        if (TextShadow.isActive) {
+          CSSStyleList.push('text-shadow:' +
+            TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
+            TextShadow.BlurRadius + 'px ' + TextShadow.Color
+          )
+        } else {
+          CSSStyleList.push('text-shadow:none')
+        }
       }
       if (TextAlignment != null) { CSSStyleList.push(`text-align:${TextAlignment}`) }
       if (LineHeight    != null) { CSSStyleList.push(`line-height:${LineHeight}px`) }
