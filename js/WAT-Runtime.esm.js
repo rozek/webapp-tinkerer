@@ -218,6 +218,7 @@ export const expectTextDecoration = ValidatorForClassifier(ValueIsTextDecoration
 /**** ValueIsTextShadow ****/
 export function ValueIsTextShadow(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
+        ValueIsBoolean(Value.active) &&
         ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset) &&
         ValueIsDimension(Value.BlurRadius) && ValueIsColor(Value.Color));
 }
@@ -237,6 +238,7 @@ export const expectBackgroundTexture = ValidatorForClassifier(ValueIsBackgroundT
 /**** ValueIsBoxShadow ****/
 export function ValueIsBoxShadow(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
+        ValueIsBoolean(Value.active) &&
         ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset) &&
         ValueIsDimension(Value.BlurRadius) && ValueIsDimension(Value.SpreadRadius) &&
         ValueIsColor(Value.Color));
@@ -1179,7 +1181,7 @@ export class WAT_Visual {
             : this._FontWeight);
     }
     set FontWeight(newFontWeight) {
-        allowIntegerInRange('widget font weight', newFontWeight, 1, 1000);
+        allowOneOf('widget font weight', newFontWeight, WAT_FontWeights);
         if (this._FontWeight !== newFontWeight) {
             this._FontWeight = newFontWeight;
             this.rerender();
@@ -1225,8 +1227,8 @@ export class WAT_Visual {
                 this._TextShadow = undefined;
             }
             else {
-                const { xOffset, yOffset, BlurRadius, Color } = newTextShadow;
-                this._TextShadow = { xOffset, yOffset, BlurRadius, Color };
+                const { isActive, xOffset, yOffset, BlurRadius, Color } = newTextShadow;
+                this._TextShadow = { isActive, xOffset, yOffset, BlurRadius, Color };
             }
             this.rerender();
         }
@@ -1482,8 +1484,8 @@ export class WAT_Visual {
                 this._BoxShadow = undefined;
             }
             else {
-                const { xOffset, yOffset, BlurRadius, SpreadRadius, Color } = newBoxShadow;
-                this._BoxShadow = { xOffset, yOffset, BlurRadius, SpreadRadius, Color };
+                const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = newBoxShadow;
+                this._BoxShadow = { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color };
             }
             this.rerender();
         }
@@ -6808,9 +6810,14 @@ export function CSSStyleOfVisual(Visual) {
             (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
     }
     if (TextShadow != null) {
-        CSSStyleList.push('text-shadow:' +
-            TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
-            TextShadow.BlurRadius + 'px ' + TextShadow.Color);
+        if (TextShadow.isActive) {
+            CSSStyleList.push('text-shadow:' +
+                TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
+                TextShadow.BlurRadius + 'px ' + TextShadow.Color);
+        }
+        else {
+            CSSStyleList.push('text-shadow:none');
+        }
     }
     if (TextAlignment != null) {
         CSSStyleList.push(`text-align:${TextAlignment}`);
