@@ -163,6 +163,7 @@
   export type  WAT_TextAlignment  = typeof WAT_TextAlignments[number]
 
   export type WAT_BackgroundTexture = {
+    isActive:boolean,
     ImageURL:WAT_URL,
     Mode:    WAT_BackgroundMode,
     xOffset: WAT_Location,
@@ -179,7 +180,7 @@
   export type WAT_BorderStyle = typeof WAT_BorderStyles[number]
 
   export type WAT_BoxShadow = {
-    isActive:  boolean,
+    isActive:    boolean,
     xOffset:     WAT_Location,
     yOffset:     WAT_Location,
     BlurRadius:  WAT_Dimension,
@@ -531,7 +532,7 @@
   export function ValueIsTextShadow (Value:any):boolean {
     return (Value === 'none') || (
       ValueIsObject(Value) &&
-      ValueIsBoolean(Value.active) &&
+      ValueIsBoolean(Value.isActive) &&
       ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset) &&
       ValueIsDimension(Value.BlurRadius) && ValueIsColor(Value.Color)
     )
@@ -552,6 +553,7 @@
   export function ValueIsBackgroundTexture (Value:any):boolean {
     return (Value === 'none') || (
       ValueIsObject(Value) &&
+      ValueIsBoolean(Value.isActive) &&
       ValueIsURL(Value.ImageURL) &&
       ValueIsOneOf(Value.Mode, WAT_BackgroundModes) &&
       ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset)
@@ -573,7 +575,7 @@
   export function ValueIsBoxShadow (Value:any):boolean {
     return (Value === 'none') || (
       ValueIsObject(Value) &&
-      ValueIsBoolean(Value.active) &&
+      ValueIsBoolean(Value.isActive) &&
       ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset) &&
       ValueIsDimension(Value.BlurRadius) && ValueIsDimension(Value.SpreadRadius) &&
       ValueIsColor(Value.Color)
@@ -1691,8 +1693,8 @@
         if (newTexture == null) {
           this._BackgroundTexture = undefined
         } else {
-          const { ImageURL, Mode, xOffset,yOffset } = newTexture
-          this._BackgroundTexture = { ImageURL, Mode, xOffset,yOffset }
+          const { isActive, ImageURL, Mode, xOffset,yOffset } = newTexture
+          this._BackgroundTexture = { isActive, ImageURL, Mode, xOffset,yOffset }
         }
         this.rerender()
       }
@@ -7834,7 +7836,7 @@
       if (ForegroundColor != null) { CSSStyleList.push(`color:${ForegroundColor}`) }
       if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
       if (BackgroundTexture != null) {
-        const { ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
+        const { isActive, ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
         let BackgroundSize = 'auto auto'
           switch (Mode) {
             case 'normal':  break
@@ -7845,11 +7847,15 @@
           }
         let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat')
 
-        CSSStyleList.push(
-          `background-image:${ImageURL}`,
-          `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
-          `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
-        )
+        if (isActive) {
+          CSSStyleList.push(
+            `background-image:url(${ImageURL})`,
+            `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+            `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
+          )
+        } else {
+          CSSStyleList.push('background-image:none')
+        }
       }
 
       if (BorderWidths != null) {
