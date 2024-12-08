@@ -185,7 +185,7 @@
     yOffset:     WAT_Location,
     BlurRadius:  WAT_Dimension,
     SpreadRadius:WAT_Dimension,
-    Color:       WAT_Color                 // Color = "transparent" means "none"
+    Color:       WAT_Color
   }
 
   export const WAT_Cursors = [
