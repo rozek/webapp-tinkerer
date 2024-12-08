@@ -4625,8 +4625,9 @@ function WAD_WidgetConfigurationPane() {
           </>
         </>
 
-
         <${WAD_Fold} Label="Type-specific Settings">
+
+
           <${WAD_horizontally}>
             <${WAD_Label}>Value</>
             <${WAD_Gap}/>
@@ -4641,6 +4642,7 @@ function WAD_WidgetConfigurationPane() {
             Value=${ValueToEdit} onInput=${_onValueInput}
           />
         </>
+
       </>
      </>
     </>`;
