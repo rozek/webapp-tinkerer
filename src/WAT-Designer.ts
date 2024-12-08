@@ -4983,6 +4983,106 @@ console.error(Signal)
             />
           </>
         </>
+          <${WAD_horizontally}>
+            <${WAD_Label}>Box Shadow</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))?.isActive === true}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))
+                    || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5,SpreadRadius:0, Color:'black' }
+                )
+                doConfigureSelectedWidgets('BoxShadow',{
+                  isActive:Event.target.checked, xOffset,yOffset, BlurRadius,SpreadRadius, Color
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Color</>
+            <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))?.Color}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))
+                    || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5,SpreadRadius:0, Color:'black' }
+                )
+                doConfigureSelectedWidgets('BoxShadow',{
+                  isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color:Event.target.value
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))?.xOffset}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))
+                    || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5,SpreadRadius:0, Color:'black' }
+                )
+                doConfigureSelectedWidgets('BoxShadow',{
+                  isActive, xOffset:parseFloat(Event.target.value),yOffset, BlurRadius,SpreadRadius, Color
+                })
+              }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">,</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))?.yOffset}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))
+                   || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5,SpreadRadius:0, Color:'black' }
+                )
+                doConfigureSelectedWidgets('BoxShadow',{
+                  isActive, xOffset,yOffset:parseFloat(Event.target.value), BlurRadius,SpreadRadius, Color
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))?.BlurRadius}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))
+                    || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5,SpreadRadius:0, Color:'black' }
+                )
+                doConfigureSelectedWidgets('BoxShadow',{
+                  isActive, xOffset,yOffset, BlurRadius:parseFloat(Event.target.value),SpreadRadius, Color
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Spread Radius [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))?.BlurRadius}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius,SpreadRadius, Color } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BoxShadow))
+                    || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5,SpreadRadius:0, Color:'black' }
+                )
+                doConfigureSelectedWidgets('BoxShadow',{
+                  isActive, xOffset,yOffset, BlurRadius,SpreadRadius:parseFloat(Event.target.value), Color
+                })
+              }}
+            />
+          </>
+
         <${WAD_Fold} Label="Cursor">
           <${WAD_horizontally}>
             <${WAD_Label}>Standard</>
@@ -4996,26 +5096,6 @@ console.error(Signal)
           </>
         </>
 
-
-
-        <${WAD_Fold} Label="Box Shadow">
-          <${WAD_horizontally}>
-            <${WAD_Label}>Color</>
-            <${WAD_Gap}/>
-          </>
-          <${WAD_horizontally}>
-            <${WAD_Label}>Offset (dx,dy) [px]</>
-            <${WAD_Gap}/>
-          </>
-          <${WAD_horizontally}>
-            <${WAD_Label}>Blur Radius [px]</>
-            <${WAD_Gap}/>
-          </>
-          <${WAD_horizontally}>
-            <${WAD_Label}>Spread Radius [px]</>
-            <${WAD_Gap}/>
-          </>
-        </>
 
         <${WAD_Fold} Label="Type-specific Settings">
           <${WAD_horizontally}>
