@@ -1700,54 +1700,6 @@
       }
     }
 
-  /**** BorderWidths - in "t,r,b,l" order, not inheritable ****/
-
-    protected _BorderWidths:WAT_Dimension[]|undefined
-
-    public get BorderWidths ():WAT_Dimension[]|undefined {
-      return ( this._BorderWidths == null ? undefined : this._BorderWidths.slice())
-    }
-
-    public set BorderWidths (newBorderWidths:WAT_Dimension|WAT_Dimension[]|undefined) {
-      let newSettings:WAT_Dimension[]|undefined = undefined
-      switch (true) {
-        case (newBorderWidths == null):
-          break
-        case ValueIsDimension(newBorderWidths):
-          newSettings = new Array(4).fill(newBorderWidths as any)// satisfies TS
-          break
-        case ValueIsListSatisfying(newBorderWidths,ValueIsDimension):
-          switch ((newBorderWidths as any).length) {    // "as any" satisfies TS
-            case 0: break
-            case 1:
-              newSettings = new Array(4).fill((newBorderWidths as any)[0])
-              break
-            case 2:                                                   // t/b,l/r
-              newSettings = [
-                (newBorderWidths as any)[0],(newBorderWidths as any)[1],
-                (newBorderWidths as any)[0],(newBorderWidths as any)[1],
-              ]; break
-            case 3:                                                   // t,l/r,b
-              newSettings = [
-                (newBorderWidths as any)[0],(newBorderWidths as any)[1],
-                (newBorderWidths as any)[2],(newBorderWidths as any)[1],
-              ]; break
-            case 4:                                                   // t,r,b,l
-              newSettings = (newBorderWidths as any).slice()
-              break
-            default:
-              throwError('InvalidArgument: given "BorderWidths" list has an invalid length')
-          }
-          break
-        default: throwError('InvalidArgument: invalid "BorderWidths" given')
-      }
-
-      if (ValuesDiffer(this._BorderWidths,newSettings)) {
-        this._BorderWidths = newSettings
-        this.rerender()
-      }
-    }
-
   /**** BorderStyles - in "t,r,b,l" order, not inheritable ****/
 
     protected _BorderStyles:WAT_BorderStyle[]|undefined
@@ -1794,6 +1746,54 @@
 
       if (ValuesDiffer(this._BorderStyles,newSettings)) {
         this._BorderStyles = newSettings
+        this.rerender()
+      }
+    }
+
+  /**** BorderWidths - in "t,r,b,l" order, not inheritable ****/
+
+    protected _BorderWidths:WAT_Dimension[]|undefined
+
+    public get BorderWidths ():WAT_Dimension[]|undefined {
+      return ( this._BorderWidths == null ? undefined : this._BorderWidths.slice())
+    }
+
+    public set BorderWidths (newBorderWidths:WAT_Dimension|WAT_Dimension[]|undefined) {
+      let newSettings:WAT_Dimension[]|undefined = undefined
+      switch (true) {
+        case (newBorderWidths == null):
+          break
+        case ValueIsDimension(newBorderWidths):
+          newSettings = new Array(4).fill(newBorderWidths as any)// satisfies TS
+          break
+        case ValueIsListSatisfying(newBorderWidths,ValueIsDimension):
+          switch ((newBorderWidths as any).length) {    // "as any" satisfies TS
+            case 0: break
+            case 1:
+              newSettings = new Array(4).fill((newBorderWidths as any)[0])
+              break
+            case 2:                                                   // t/b,l/r
+              newSettings = [
+                (newBorderWidths as any)[0],(newBorderWidths as any)[1],
+                (newBorderWidths as any)[0],(newBorderWidths as any)[1],
+              ]; break
+            case 3:                                                   // t,l/r,b
+              newSettings = [
+                (newBorderWidths as any)[0],(newBorderWidths as any)[1],
+                (newBorderWidths as any)[2],(newBorderWidths as any)[1],
+              ]; break
+            case 4:                                                   // t,r,b,l
+              newSettings = (newBorderWidths as any).slice()
+              break
+            default:
+              throwError('InvalidArgument: given "BorderWidths" list has an invalid length')
+          }
+          break
+        default: throwError('InvalidArgument: invalid "BorderWidths" given')
+      }
+
+      if (ValuesDiffer(this._BorderWidths,newSettings)) {
+        this._BorderWidths = newSettings
         this.rerender()
       }
     }
