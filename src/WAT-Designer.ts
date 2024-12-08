@@ -46,7 +46,8 @@
     WAT_Text, WAT_Geometry, WAT_Position, WAT_Location,
     WAT_Visual, WAT_Applet, WAT_Page, WAT_Widget,
     WAT_FontWeights, WAT_FontStyles,
-    WAT_TextDecorationLines, WAT_TextDecorationStyles,
+    WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments,
+    WAT_BackgroundModes,
     ValueIsWidgetType,
     allowPage,
     GestureRecognizer,
@@ -135,6 +136,7 @@
 
   .WAD.horizontally {
     display:flex; position:relative; flex-flow:row nowrap; align-items:stretch;
+    margin:2px 0px 2px 0px;
   }
 
   .WAD.vertically {
@@ -201,23 +203,25 @@
     background:transparent; color:inherit;
     pointer-events:auto;
   }
-/**** Name/IntegerInput ****/
+/**** Name/Integerr/URLInput ****/
 
-  .WAD.TextLineInput, .WAD.IntegerInput {
+  .WAD.TextLineInput, .WAD.IntegerInput, .WAD.URLInput {
     display:block; position:relative;
     width:auto; height:30px;
   }
-  .WAD.TextLineInput > input, .WAD.IntegerInput > input {
+  .WAD.TextLineInput > input, .WAD.IntegerInput > input, .WAD.URLInput > input {
     display:block; position:relative;
     left:0px; top:0px; width:100%; height:100%;
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:0px 2px 0px 4px;
     pointer-events:auto;
   }
-  .WAD.TextLineInput.wrong > input, .WAD.IntegerInput.wrong > input {
+  .WAD.TextLineInput.wrong > input, .WAD.IntegerInput.wrong > input,
+  .WAD.URLInput.wrong > input {
     color:red;
   }
-  .WAD.TextLineInput > input:read-only, .WAD.IntegerInput > input:read-only {
+  .WAD.TextLineInput > input:read-only, .WAD.IntegerInput > input:read-only,
+  .WAD.URLInput > input:read-only {
     background:transparent;
   }
 
@@ -1102,6 +1106,76 @@
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       />
+    </>`
+  }
+
+//------------------------------------------------------------------------------
+//--                               WAD_URLInput                               --
+//------------------------------------------------------------------------------
+
+  function WAD_URLInput (PropSet:Indexable) {
+    let {
+      enabled, Value,Placeholder, Suggestions,
+      onInput,onBlur, style,...otherProps
+    } = PropSet
+
+  /**** Value Handling ****/
+
+    const shownValue   = useRef('')
+    const InputElement = useRef(null)
+
+    let ValueToShow:string = ''
+      switch (Value) {
+        case null:
+        case undefined:      ValueToShow = ''; break
+        case multipleValues: ValueToShow = ''; Placeholder = '(multiple values)'; break
+        case noSelection:    ValueToShow = ''; Placeholder = '(no selection)'; enabled = false; break
+        default:             ValueToShow = Value as string
+      }
+    if (document.activeElement === InputElement.current) {
+      ValueToShow = shownValue.current
+    } else {
+      shownValue.current = ValueToShow
+    }
+    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '')
+
+  /**** Suggestion Handling ****/
+
+    const SuggestionId = useMemo(() => newId() + '-Suggestions')
+
+    let SuggestionList = ''
+    if ((Suggestions != null) && (Suggestions.length > 0)) {
+      SuggestionList = html`<datalist id=${SuggestionId}>
+        ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+      </datalist>`
+    }
+
+  /**** Event Handling ****/
+
+    const _onInput = useCallback((Event:any) => {
+      Event.stopPropagation()
+//    Event.preventDefault() // NO!
+
+      if (enabled !== false) {
+        shownValue.current = Event.target.value
+        if (typeof onInput === 'function') { onInput(Event) }
+      }
+    },[ enabled ])
+
+    const _onBlur = useCallback((Event:any) => {
+      WAT_rerender()
+      if (typeof onBlur === 'function') { onBlur(Event) }
+    })
+
+  /**** actual Rendering ****/
+
+    return html`<div class="WAD URLInput ${wrong}" style=${style}>
+      <input type="url"
+        disabled=${enabled === false}
+        ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
+        list=${SuggestionId}
+        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
+      />${SuggestionList}
     </>`
   }
 
@@ -3441,30 +3515,6 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Layout Settings">
-          <${WAD_horizontally}>
-            <${WAD_Label}>Snap-to-Grid</>
-            <${WAD_Gap}/>
-            <${WAD_Checkbox}
-              Value=${Applet.SnapToGrid}
-              onInput=${(Event:Indexable) => doConfigureApplet('SnapToGrid',Event.target.checked)}
-            />
-          </>
-
-          <${WAD_horizontally}>
-            <${WAD_Label}>Grid Size (w,h) [px]</>
-            <${WAD_Gap}/>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridWidth}
-              onInput=${(Event:Indexable) => doConfigureApplet('GridWidth',parseFloat(Event.target.value))}
-            />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridHeight}
-              onInput=${(Event:Indexable) => doConfigureApplet('GridHeight',parseFloat(Event.target.value))}
-            />
-          </>
-        </>
         <${WAD_Fold} Label="Typography">
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
@@ -3519,7 +3569,7 @@ console.error(Signal)
             <${WAD_Label}>Text Shadow</>
             <${WAD_Gap}/>
             <${WAD_Checkbox}
-              Value=${Applet.TextShadow?.active === true}
+              Value=${Applet.TextShadow?.isActive === true}
               onInput=${(Event:Indexable) => {
                 const { isActive, xOffset,yOffset, BlurRadius, Color } = (
                   Applet.TextShadow || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
@@ -3548,10 +3598,44 @@ console.error(Signal)
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.TextShadow?.xOffset}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius, Color } = (
+                  Applet.TextShadow || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                )
+                doConfigureApplet('TextShadow',{
+                  isActive, xOffset:parseFloat(Event.target.value),yOffset, BlurRadius, Color
+                })
+              }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.TextShadow?.yOffset}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius, Color } = (
+                  Applet.TextShadow || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                )
+                doConfigureApplet('TextShadow',{
+                  isActive, xOffset,yOffset:parseFloat(Event.target.value), BlurRadius, Color
+                })
+              }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.TextShadow?.BlurRadius}
+              onInput=${(Event:Indexable) => {
+                const { isActive, xOffset,yOffset, BlurRadius, Color } = (
+                  Applet.TextShadow || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                )
+                doConfigureApplet('TextShadow',{
+                  isActive, xOffset,yOffset, BlurRadius:parseFloat(Event.target.value), Color
+                })
+              }}
+            />
           </>
 
           <${WAD_horizontally}>
@@ -3560,6 +3644,10 @@ console.error(Signal)
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Text Alignment</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${Applet.TextAlignment} Options=${WAT_TextAlignments}
+              onInput=${(Event:Indexable) => doConfigureApplet('TextAlignment',Event.target.value)}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Line Height [px]</>
@@ -3571,26 +3659,111 @@ console.error(Signal)
           </>
         </>
 
+        <${WAD_Fold} Label="Layout Settings">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Snap-to-Grid</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.SnapToGrid}
+              onInput=${(Event:Indexable) => doConfigureApplet('SnapToGrid',Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Grid Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridWidth}
+              onInput=${(Event:Indexable) => doConfigureApplet('GridWidth',parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridHeight}
+              onInput=${(Event:Indexable) => doConfigureApplet('GridHeight',parseFloat(Event.target.value))}
+            />
+          </>
+        </>
         <${WAD_Fold} Label="Background">
           <${WAD_horizontally}>
             <${WAD_Label}>Color</>
             <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              Value=${Applet.BackgroundColor}
+              onInput=${(Event:Indexable) => doConfigureApplet('BackgroundColor',Event.target.value)}
+            />
           </>
 
           <${WAD_horizontally}>
             <${WAD_Label}>Texture</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.BackgroundTexture?.isActive === true}
+              onInput=${(Event:Indexable) => {
+                const { isActive, ImageURL, Mode, xOffset,yOffset } = (
+                  Applet.BackgroundTexture || { isActive:false, ImageURL:'', Mode:'tile', xOffset:0,yOffset:0 }
+                )
+                doConfigureApplet('BackgroundTexture',{
+                  isActive:Event.target.checked, ImageURL, Mode, xOffset,yOffset
+                })
+              }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Mode</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${Applet.BackgroundTexture?.Mode} Options=${WAT_BackgroundModes}
+              onInput=${(Event:Indexable) => {
+                const { isActive, ImageURL, Mode, xOffset,yOffset } = (
+                  Applet.BackgroundTexture || { isActive:false, ImageURL:'', Mode:'tile', xOffset:0,yOffset:0 }
+                )
+                doConfigureApplet('BackgroundTexture',{
+                  isActive, ImageURL, Mode:Event.target.value, xOffset,yOffset
+                })
+              }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Image URL</>
             <${WAD_Gap}/>
+            <${WAD_URLInput} style="flex:1 0 auto"
+              Value=${Applet.BackgroundTexture?.ImageURL}
+              onInput=${(Event:Indexable) => {
+                const { isActive, ImageURL, Mode, xOffset,yOffset } = (
+                  Applet.BackgroundTexture || { isActive:false, ImageURL:'', Mode:'tile', xOffset:0,yOffset:0 }
+                )
+                doConfigureApplet('BackgroundTexture',{
+                  isActive, ImageURL:Event.target.value, Mode, xOffset,yOffset
+                })
+              }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.BackgroundTexture?.xOffset}
+              onInput=${(Event:Indexable) => {
+                const { isActive, ImageURL, Mode, xOffset,yOffset } = (
+                  Applet.BackgroundTexture || { isActive:false, ImageURL:'', Mode:'tile', xOffset:0,yOffset:0 }
+                )
+                doConfigureApplet('BackgroundTexture',{
+                  isActive, ImageURL, Mode, xOffset:Event.target.value,yOffset
+                })
+              }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.BackgroundTexture?.yOffset}
+              onInput=${(Event:Indexable) => {
+                const { isActive, ImageURL, Mode, xOffset,yOffset } = (
+                  Applet.BackgroundTexture || { isActive:false, ImageURL:'', Mode:'tile', xOffset:0,yOffset:0 }
+                )
+                doConfigureApplet('BackgroundTexture',{
+                  isActive, ImageURL, Mode, xOffset,yOffset:parseFloat(Event.target.value)
+                })
+              }}
+            />
           </>
         </>
 
