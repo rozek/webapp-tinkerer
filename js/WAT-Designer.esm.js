@@ -26,7 +26,7 @@ const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -92,6 +92,7 @@ appendStyle(`
 
   .WAD.horizontally {
     display:flex; position:relative; flex-flow:row nowrap; align-items:stretch;
+    margin:2px 0px 2px 0px;
   }
 
   .WAD.vertically {
@@ -158,23 +159,25 @@ appendStyle(`
     background:transparent; color:inherit;
     pointer-events:auto;
   }
-/**** Name/IntegerInput ****/
+/**** Name/Integerr/URLInput ****/
 
-  .WAD.TextLineInput, .WAD.IntegerInput {
+  .WAD.TextLineInput, .WAD.IntegerInput, .WAD.URLInput {
     display:block; position:relative;
     width:auto; height:30px;
   }
-  .WAD.TextLineInput > input, .WAD.IntegerInput > input {
+  .WAD.TextLineInput > input, .WAD.IntegerInput > input, .WAD.URLInput > input {
     display:block; position:relative;
     left:0px; top:0px; width:100%; height:100%;
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:0px 2px 0px 4px;
     pointer-events:auto;
   }
-  .WAD.TextLineInput.wrong > input, .WAD.IntegerInput.wrong > input {
+  .WAD.TextLineInput.wrong > input, .WAD.IntegerInput.wrong > input,
+  .WAD.URLInput.wrong > input {
     color:red;
   }
-  .WAD.TextLineInput > input:read-only, .WAD.IntegerInput > input:read-only {
+  .WAD.TextLineInput > input:read-only, .WAD.IntegerInput > input:read-only,
+  .WAD.URLInput > input:read-only {
     background:transparent;
   }
 
@@ -1005,6 +1008,75 @@ function WAD_IntegerInput(PropSet) {
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       />
+    </>`;
+}
+//------------------------------------------------------------------------------
+//--                               WAD_URLInput                               --
+//------------------------------------------------------------------------------
+function WAD_URLInput(PropSet) {
+    let { enabled, Value, Placeholder, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    /**** Value Handling ****/
+    , ["enabled", "Value", "Placeholder", "Suggestions", "onInput", "onBlur", "style"]);
+    /**** Value Handling ****/
+    const shownValue = useRef('');
+    const InputElement = useRef(null);
+    let ValueToShow = '';
+    switch (Value) {
+        case null:
+        case undefined:
+            ValueToShow = '';
+            break;
+        case multipleValues:
+            ValueToShow = '';
+            Placeholder = '(multiple values)';
+            break;
+        case noSelection:
+            ValueToShow = '';
+            Placeholder = '(no selection)';
+            enabled = false;
+            break;
+        default: ValueToShow = Value;
+    }
+    if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current;
+    }
+    else {
+        shownValue.current = ValueToShow;
+    }
+    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
+    /**** Suggestion Handling ****/
+    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    let SuggestionList = '';
+    if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionList = html `<datalist id=${SuggestionId}>
+        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+      </datalist>`;
+    }
+    /**** Event Handling ****/
+    const _onInput = useCallback((Event) => {
+        Event.stopPropagation();
+        //    Event.preventDefault() // NO!
+        if (enabled !== false) {
+            shownValue.current = Event.target.value;
+            if (typeof onInput === 'function') {
+                onInput(Event);
+            }
+        }
+    }, [enabled]);
+    const _onBlur = useCallback((Event) => {
+        WAT_rerender();
+        if (typeof onBlur === 'function') {
+            onBlur(Event);
+        }
+    });
+    /**** actual Rendering ****/
+    return html `<div class="WAD URLInput ${wrong}" style=${style}>
+      <input type="url"
+        disabled=${enabled === false}
+        ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
+        list=${SuggestionId}
+        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
+      />${SuggestionList}
     </>`;
 }
 //------------------------------------------------------------------------------
@@ -3031,7 +3103,7 @@ function WAD_Inspector() {
 DesignerState.Inspector.View = WAD_Inspector;
 /**** WAD_AppletConfigurationPane ****/
 function WAD_AppletConfigurationPane() {
-    var _a, _b;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const { Applet } = DesignerState;
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -3084,30 +3156,6 @@ function WAD_AppletConfigurationPane() {
           </>
         </>
 
-        <${WAD_Fold} Label="Layout Settings">
-          <${WAD_horizontally}>
-            <${WAD_Label}>Snap-to-Grid</>
-            <${WAD_Gap}/>
-            <${WAD_Checkbox}
-              Value=${Applet.SnapToGrid}
-              onInput=${(Event) => doConfigureApplet('SnapToGrid', Event.target.checked)}
-            />
-          </>
-
-          <${WAD_horizontally}>
-            <${WAD_Label}>Grid Size (w,h) [px]</>
-            <${WAD_Gap}/>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridWidth}
-              onInput=${(Event) => doConfigureApplet('GridWidth', parseFloat(Event.target.value))}
-            />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridHeight}
-              onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
-            />
-          </>
-        </>
         <${WAD_Fold} Label="Typography">
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
@@ -3162,7 +3210,7 @@ function WAD_AppletConfigurationPane() {
             <${WAD_Label}>Text Shadow</>
             <${WAD_Gap}/>
             <${WAD_Checkbox}
-              Value=${((_a = Applet.TextShadow) === null || _a === void 0 ? void 0 : _a.active) === true}
+              Value=${((_a = Applet.TextShadow) === null || _a === void 0 ? void 0 : _a.isActive) === true}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
         doConfigureApplet('TextShadow', {
@@ -3187,10 +3235,38 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${(_c = Applet.TextShadow) === null || _c === void 0 ? void 0 : _c.xOffset}
+              onInput=${(Event) => {
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        doConfigureApplet('TextShadow', {
+            isActive, xOffset: parseFloat(Event.target.value), yOffset, BlurRadius, Color
+        });
+    }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${(_d = Applet.TextShadow) === null || _d === void 0 ? void 0 : _d.yOffset}
+              onInput=${(Event) => {
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        doConfigureApplet('TextShadow', {
+            isActive, xOffset, yOffset: parseFloat(Event.target.value), BlurRadius, Color
+        });
+    }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${(_e = Applet.TextShadow) === null || _e === void 0 ? void 0 : _e.BlurRadius}
+              onInput=${(Event) => {
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        doConfigureApplet('TextShadow', {
+            isActive, xOffset, yOffset, BlurRadius: parseFloat(Event.target.value), Color
+        });
+    }}
+            />
           </>
 
           <${WAD_horizontally}>
@@ -3199,6 +3275,10 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Text Alignment</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${Applet.TextAlignment} Options=${WAT_TextAlignments}
+              onInput=${(Event) => doConfigureApplet('TextAlignment', Event.target.value)}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Line Height [px]</>
@@ -3210,26 +3290,101 @@ function WAD_AppletConfigurationPane() {
           </>
         </>
 
+        <${WAD_Fold} Label="Layout Settings">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Snap-to-Grid</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.SnapToGrid}
+              onInput=${(Event) => doConfigureApplet('SnapToGrid', Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Grid Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridWidth}
+              onInput=${(Event) => doConfigureApplet('GridWidth', parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridHeight}
+              onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
+            />
+          </>
+        </>
         <${WAD_Fold} Label="Background">
           <${WAD_horizontally}>
             <${WAD_Label}>Color</>
             <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              Value=${Applet.BackgroundColor}
+              onInput=${(Event) => doConfigureApplet('BackgroundColor', Event.target.value)}
+            />
           </>
 
           <${WAD_horizontally}>
             <${WAD_Label}>Texture</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${((_f = Applet.BackgroundTexture) === null || _f === void 0 ? void 0 : _f.isActive) === true}
+              onInput=${(Event) => {
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
+        doConfigureApplet('BackgroundTexture', {
+            isActive: Event.target.checked, ImageURL, Mode, xOffset, yOffset
+        });
+    }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Mode</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_g = Applet.BackgroundTexture) === null || _g === void 0 ? void 0 : _g.Mode} Options=${WAT_BackgroundModes}
+              onInput=${(Event) => {
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
+        doConfigureApplet('BackgroundTexture', {
+            isActive, ImageURL, Mode: Event.target.value, xOffset, yOffset
+        });
+    }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Image URL</>
             <${WAD_Gap}/>
+            <${WAD_URLInput} style="flex:1 0 auto"
+              Value=${(_h = Applet.BackgroundTexture) === null || _h === void 0 ? void 0 : _h.ImageURL}
+              onInput=${(Event) => {
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
+        doConfigureApplet('BackgroundTexture', {
+            isActive, ImageURL: Event.target.value, Mode, xOffset, yOffset
+        });
+    }}
+            />
           </>
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${(_j = Applet.BackgroundTexture) === null || _j === void 0 ? void 0 : _j.xOffset}
+              onInput=${(Event) => {
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
+        doConfigureApplet('BackgroundTexture', {
+            isActive, ImageURL, Mode, xOffset: Event.target.value, yOffset
+        });
+    }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${(_k = Applet.BackgroundTexture) === null || _k === void 0 ? void 0 : _k.yOffset}
+              onInput=${(Event) => {
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
+        doConfigureApplet('BackgroundTexture', {
+            isActive, ImageURL, Mode, xOffset, yOffset: parseFloat(Event.target.value)
+        });
+    }}
+            />
           </>
         </>
 
