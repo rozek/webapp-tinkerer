@@ -992,50 +992,8 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** BorderStyles - in "t,r,b,l" order, not inheritable ****/
-        Object.defineProperty(this, "_BorderStyles", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** BorderWidths - in "t,r,b,l" order, not inheritable ****/
-        Object.defineProperty(this, "_BorderWidths", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** BorderColors - in "t,r,b,l" order, not inheritable ****/
-        Object.defineProperty(this, "_BorderColors", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** BorderRadii - in "tl,tr,br,bl" order, not inheritable ****/
-        Object.defineProperty(this, "_BorderRadii", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** BoxShadow - not inheritable ****/
-        Object.defineProperty(this, "_BoxShadow", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
         /**** Opacity - 0...100%, not inheritable ****/
         Object.defineProperty(this, "_Opacity", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** OverflowVisibility - not inheritable ****/
-        Object.defineProperty(this, "_OverflowVisibility", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -1303,194 +1261,6 @@ export class WAT_Visual {
             this.rerender();
         }
     }
-    get BorderStyles() {
-        return (this._BorderStyles == null ? undefined : this._BorderStyles.slice());
-    }
-    set BorderStyles(newBorderStyles) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderStyles == null):
-                break;
-            case ValueIsOneOf(newBorderStyles, WAT_BorderStyles):
-                newSettings = new Array(4).fill(newBorderStyles); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderStyles, (Value) => (Value == null) || ValueIsOneOf(Value, WAT_BorderStyles)):
-                switch (newBorderStyles.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderStyles[0]);
-                        break;
-                    case 2: // t/b,l/r
-                        newSettings = [
-                            newBorderStyles[0], newBorderStyles[1],
-                            newBorderStyles[0], newBorderStyles[1],
-                        ];
-                        break;
-                    case 3: // t,l/r,b
-                        newSettings = [
-                            newBorderStyles[0], newBorderStyles[1],
-                            newBorderStyles[2], newBorderStyles[1],
-                        ];
-                        break;
-                    case 4: // t,r,b,l
-                        newSettings = newBorderStyles.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderStyles" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderStyles" given');
-        }
-        if (ValuesDiffer(this._BorderStyles, newSettings)) {
-            this._BorderStyles = newSettings;
-            this.rerender();
-        }
-    }
-    get BorderWidths() {
-        return (this._BorderWidths == null ? undefined : this._BorderWidths.slice());
-    }
-    set BorderWidths(newBorderWidths) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderWidths == null):
-                break;
-            case ValueIsDimension(newBorderWidths):
-                newSettings = new Array(4).fill(newBorderWidths); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderWidths, ValueIsDimension):
-                switch (newBorderWidths.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderWidths[0]);
-                        break;
-                    case 2: // t/b,l/r
-                        newSettings = [
-                            newBorderWidths[0], newBorderWidths[1],
-                            newBorderWidths[0], newBorderWidths[1],
-                        ];
-                        break;
-                    case 3: // t,l/r,b
-                        newSettings = [
-                            newBorderWidths[0], newBorderWidths[1],
-                            newBorderWidths[2], newBorderWidths[1],
-                        ];
-                        break;
-                    case 4: // t,r,b,l
-                        newSettings = newBorderWidths.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderWidths" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderWidths" given');
-        }
-        if (ValuesDiffer(this._BorderWidths, newSettings)) {
-            this._BorderWidths = newSettings;
-            this.rerender();
-        }
-    }
-    get BorderColors() {
-        return (this._BorderColors == null ? undefined : this._BorderColors.slice());
-    }
-    set BorderColors(newBorderColors) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderColors == null):
-                break;
-            case ValueIsColor(newBorderColors):
-                newSettings = new Array(4).fill(newBorderColors); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderColors, (Value) => (Value == null) || ValueIsColor(Value)):
-                switch (newBorderColors.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderColors[0]);
-                        break;
-                    case 2: // t/b,l/r
-                        newSettings = [
-                            newBorderColors[0], newBorderColors[1],
-                            newBorderColors[0], newBorderColors[1],
-                        ];
-                        break;
-                    case 3: // t,l/r,b
-                        newSettings = [
-                            newBorderColors[0], newBorderColors[1],
-                            newBorderColors[2], newBorderColors[1],
-                        ];
-                        break;
-                    case 4: // t,r,b,l
-                        newSettings = newBorderColors.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderColors" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderColors" given');
-        }
-        if (ValuesDiffer(this._BorderColors, newSettings)) {
-            this._BorderColors = newSettings;
-            this.rerender();
-        }
-    }
-    get BorderRadii() {
-        return (this._BorderRadii == null ? undefined : this._BorderRadii.slice());
-    }
-    set BorderRadii(newBorderRadii) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderRadii == null):
-                break;
-            case ValueIsDimension(newBorderRadii):
-                newSettings = new Array(4).fill(newBorderRadii); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderRadii, ValueIsDimension):
-                switch (newBorderRadii.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderRadii[0]);
-                        break;
-                    case 2: // tl/br,tr/bl
-                        newSettings = [
-                            newBorderRadii[0], newBorderRadii[1],
-                            newBorderRadii[0], newBorderRadii[1],
-                        ];
-                        break;
-                    case 3: // tl,tr/bl,br
-                        newSettings = [
-                            newBorderRadii[0], newBorderRadii[1],
-                            newBorderRadii[2], newBorderRadii[1],
-                        ];
-                        break;
-                    case 4: // tl,tr,br,bl
-                        newSettings = newBorderRadii.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderRadii" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderRadii" given');
-        }
-        if (ValuesDiffer(this._BorderRadii, newSettings)) {
-            this._BorderRadii = newSettings;
-            this.rerender();
-        }
-    }
-    get BoxShadow() {
-        return (this._BoxShadow == null ? undefined : Object.assign({}, this._BoxShadow));
-    }
-    set BoxShadow(newBoxShadow) {
-        allowBoxShadow('widget box shadow', newBoxShadow);
-        if (ValuesDiffer(this._BoxShadow, newBoxShadow)) {
-            if (newBoxShadow == null) {
-                this._BoxShadow = undefined;
-            }
-            else {
-                const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = newBoxShadow;
-                this._BoxShadow = { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color };
-            }
-            this.rerender();
-        }
-    }
     get Opacity() {
         return this._Opacity;
     }
@@ -1498,16 +1268,6 @@ export class WAT_Visual {
         allowIntegerInRange('widget opacity', newOpacity, 0, 100);
         if (this._Opacity !== newOpacity) {
             this._Opacity = newOpacity;
-            this.rerender();
-        }
-    }
-    get OverflowVisibility() {
-        return this._OverflowVisibility;
-    }
-    set OverflowVisibility(newOverflowVisibility) {
-        allowBoolean('widget overflow visibility', newOverflowVisibility);
-        if (this._OverflowVisibility !== newOverflowVisibility) {
-            this._OverflowVisibility = newOverflowVisibility;
             this.rerender();
         }
     }
@@ -1603,6 +1363,84 @@ export class WAT_Visual {
             console.error('Rendering Failure', Signal);
         }
     }
+    /**** CSSStyle ****/
+    get CSSStyle() {
+        let CSSStyleList = [];
+        const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, BackgroundColor, BackgroundTexture, Opacity, Cursor } = this;
+        if (FontFamily != null) {
+            CSSStyleList.push(`font-family:${FontFamily}`);
+        }
+        if (FontSize != null) {
+            CSSStyleList.push(`font-size:${FontSize}px`);
+        }
+        if (FontWeight != null) {
+            CSSStyleList.push(`font-weight:${FontWeight}`);
+        }
+        if (FontStyle != null) {
+            CSSStyleList.push(`font-style:${FontStyle}`);
+        }
+        if (TextDecoration != null) {
+            CSSStyleList.push('text-decoration:' + TextDecoration.Line +
+                (TextDecoration.Color == null ? '' : ' ' + TextDecoration.Color) +
+                (TextDecoration.Style == null ? '' : ' ' + TextDecoration.Style) +
+                (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
+        }
+        if (TextShadow != null) {
+            if (TextShadow.isActive) {
+                CSSStyleList.push('text-shadow:' +
+                    TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
+                    TextShadow.BlurRadius + 'px ' + TextShadow.Color);
+            }
+            else {
+                CSSStyleList.push('text-shadow:none');
+            }
+        }
+        if (TextAlignment != null) {
+            CSSStyleList.push(`text-align:${TextAlignment}`);
+        }
+        if (LineHeight != null) {
+            CSSStyleList.push(`line-height:${LineHeight}px`);
+        }
+        if (ForegroundColor != null) {
+            CSSStyleList.push(`color:${ForegroundColor}`);
+        }
+        if (BackgroundColor != null) {
+            CSSStyleList.push(`background-color:${BackgroundColor}`);
+        }
+        if (BackgroundTexture != null) {
+            const { isActive, ImageURL, Mode, xOffset, yOffset } = BackgroundTexture;
+            let BackgroundSize = 'auto auto';
+            switch (Mode) {
+                case 'normal': break;
+                case 'contain':
+                case 'cover':
+                    BackgroundSize = BackgroundTexture.Mode;
+                    break;
+                case 'fill':
+                    BackgroundSize = '100% 100%';
+                    break;
+                case 'tile':
+                    BackgroundSize = 'auto auto';
+                    break;
+            }
+            let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
+            if (isActive) {
+                CSSStyleList.push(`background-image:url(${ImageURL})`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+                    `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
+            }
+            else {
+                CSSStyleList.push('background-image:none');
+            }
+        }
+        if (Opacity != null) {
+            CSSStyleList.push(`opacity:${Opacity / 100}`);
+        }
+        if (Cursor != null) {
+            CSSStyleList.push(`cursor:${Cursor}`);
+        }
+        return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';');
+    }
+    set CSSStyle(_) { throwReadOnlyError('CSSStyle'); }
     get View() { return this._View; }
     set View(_) { throwReadOnlyError('View'); }
     /**** isMounted ****/
@@ -2976,6 +2814,48 @@ export class WAT_Widget extends WAT_Visual {
             writable: true,
             value: true
         });
+        /**** BorderStyles - in "t,r,b,l" order, not inheritable ****/
+        Object.defineProperty(this, "_BorderStyles", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** BorderWidths - in "t,r,b,l" order, not inheritable ****/
+        Object.defineProperty(this, "_BorderWidths", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** BorderColors - in "t,r,b,l" order, not inheritable ****/
+        Object.defineProperty(this, "_BorderColors", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** BorderRadii - in "tl,tr,br,bl" order, not inheritable ****/
+        Object.defineProperty(this, "_BorderRadii", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** BoxShadow - not inheritable ****/
+        Object.defineProperty(this, "_BoxShadow", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** OverflowVisibility - not inheritable ****/
+        Object.defineProperty(this, "_OverflowVisibility", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** onFocus ****/
         Object.defineProperty(this, "_onFocus", {
             enumerable: true,
@@ -3137,6 +3017,204 @@ export class WAT_Widget extends WAT_Visual {
     /**** isDisabled ****/
     get isDisabled() { return !this.Enabling; }
     set isDisabled(newDisabling) { this.Enabling = !newDisabling; }
+    get BorderStyles() {
+        return (this._BorderStyles == null ? undefined : this._BorderStyles.slice());
+    }
+    set BorderStyles(newBorderStyles) {
+        let newSettings = undefined;
+        switch (true) {
+            case (newBorderStyles == null):
+                break;
+            case ValueIsOneOf(newBorderStyles, WAT_BorderStyles):
+                newSettings = new Array(4).fill(newBorderStyles); // satisfies TS
+                break;
+            case ValueIsListSatisfying(newBorderStyles, (Value) => (Value == null) || ValueIsOneOf(Value, WAT_BorderStyles)):
+                switch (newBorderStyles.length) { // "as any" satisfies TS
+                    case 0: break;
+                    case 1:
+                        newSettings = new Array(4).fill(newBorderStyles[0]);
+                        break;
+                    case 2: // t/b,l/r
+                        newSettings = [
+                            newBorderStyles[0], newBorderStyles[1],
+                            newBorderStyles[0], newBorderStyles[1],
+                        ];
+                        break;
+                    case 3: // t,l/r,b
+                        newSettings = [
+                            newBorderStyles[0], newBorderStyles[1],
+                            newBorderStyles[2], newBorderStyles[1],
+                        ];
+                        break;
+                    case 4: // t,r,b,l
+                        newSettings = newBorderStyles.slice();
+                        break;
+                    default:
+                        throwError('InvalidArgument: given "BorderStyles" list has an invalid length');
+                }
+                break;
+            default: throwError('InvalidArgument: invalid "BorderStyles" given');
+        }
+        if (ValuesDiffer(this._BorderStyles, newSettings)) {
+            this._BorderStyles = newSettings;
+            this.rerender();
+        }
+    }
+    get BorderWidths() {
+        return (this._BorderWidths == null ? undefined : this._BorderWidths.slice());
+    }
+    set BorderWidths(newBorderWidths) {
+        let newSettings = undefined;
+        switch (true) {
+            case (newBorderWidths == null):
+                break;
+            case ValueIsDimension(newBorderWidths):
+                newSettings = new Array(4).fill(newBorderWidths); // satisfies TS
+                break;
+            case ValueIsListSatisfying(newBorderWidths, ValueIsDimension):
+                switch (newBorderWidths.length) { // "as any" satisfies TS
+                    case 0: break;
+                    case 1:
+                        newSettings = new Array(4).fill(newBorderWidths[0]);
+                        break;
+                    case 2: // t/b,l/r
+                        newSettings = [
+                            newBorderWidths[0], newBorderWidths[1],
+                            newBorderWidths[0], newBorderWidths[1],
+                        ];
+                        break;
+                    case 3: // t,l/r,b
+                        newSettings = [
+                            newBorderWidths[0], newBorderWidths[1],
+                            newBorderWidths[2], newBorderWidths[1],
+                        ];
+                        break;
+                    case 4: // t,r,b,l
+                        newSettings = newBorderWidths.slice();
+                        break;
+                    default:
+                        throwError('InvalidArgument: given "BorderWidths" list has an invalid length');
+                }
+                break;
+            default: throwError('InvalidArgument: invalid "BorderWidths" given');
+        }
+        if (ValuesDiffer(this._BorderWidths, newSettings)) {
+            this._BorderWidths = newSettings;
+            this.rerender();
+        }
+    }
+    get BorderColors() {
+        return (this._BorderColors == null ? undefined : this._BorderColors.slice());
+    }
+    set BorderColors(newBorderColors) {
+        let newSettings = undefined;
+        switch (true) {
+            case (newBorderColors == null):
+                break;
+            case ValueIsColor(newBorderColors):
+                newSettings = new Array(4).fill(newBorderColors); // satisfies TS
+                break;
+            case ValueIsListSatisfying(newBorderColors, (Value) => (Value == null) || ValueIsColor(Value)):
+                switch (newBorderColors.length) { // "as any" satisfies TS
+                    case 0: break;
+                    case 1:
+                        newSettings = new Array(4).fill(newBorderColors[0]);
+                        break;
+                    case 2: // t/b,l/r
+                        newSettings = [
+                            newBorderColors[0], newBorderColors[1],
+                            newBorderColors[0], newBorderColors[1],
+                        ];
+                        break;
+                    case 3: // t,l/r,b
+                        newSettings = [
+                            newBorderColors[0], newBorderColors[1],
+                            newBorderColors[2], newBorderColors[1],
+                        ];
+                        break;
+                    case 4: // t,r,b,l
+                        newSettings = newBorderColors.slice();
+                        break;
+                    default:
+                        throwError('InvalidArgument: given "BorderColors" list has an invalid length');
+                }
+                break;
+            default: throwError('InvalidArgument: invalid "BorderColors" given');
+        }
+        if (ValuesDiffer(this._BorderColors, newSettings)) {
+            this._BorderColors = newSettings;
+            this.rerender();
+        }
+    }
+    get BorderRadii() {
+        return (this._BorderRadii == null ? undefined : this._BorderRadii.slice());
+    }
+    set BorderRadii(newBorderRadii) {
+        let newSettings = undefined;
+        switch (true) {
+            case (newBorderRadii == null):
+                break;
+            case ValueIsDimension(newBorderRadii):
+                newSettings = new Array(4).fill(newBorderRadii); // satisfies TS
+                break;
+            case ValueIsListSatisfying(newBorderRadii, ValueIsDimension):
+                switch (newBorderRadii.length) { // "as any" satisfies TS
+                    case 0: break;
+                    case 1:
+                        newSettings = new Array(4).fill(newBorderRadii[0]);
+                        break;
+                    case 2: // tl/br,tr/bl
+                        newSettings = [
+                            newBorderRadii[0], newBorderRadii[1],
+                            newBorderRadii[0], newBorderRadii[1],
+                        ];
+                        break;
+                    case 3: // tl,tr/bl,br
+                        newSettings = [
+                            newBorderRadii[0], newBorderRadii[1],
+                            newBorderRadii[2], newBorderRadii[1],
+                        ];
+                        break;
+                    case 4: // tl,tr,br,bl
+                        newSettings = newBorderRadii.slice();
+                        break;
+                    default:
+                        throwError('InvalidArgument: given "BorderRadii" list has an invalid length');
+                }
+                break;
+            default: throwError('InvalidArgument: invalid "BorderRadii" given');
+        }
+        if (ValuesDiffer(this._BorderRadii, newSettings)) {
+            this._BorderRadii = newSettings;
+            this.rerender();
+        }
+    }
+    get BoxShadow() {
+        return (this._BoxShadow == null ? undefined : Object.assign({}, this._BoxShadow));
+    }
+    set BoxShadow(newBoxShadow) {
+        allowBoxShadow('widget box shadow', newBoxShadow);
+        if (ValuesDiffer(this._BoxShadow, newBoxShadow)) {
+            if (newBoxShadow == null) {
+                this._BoxShadow = undefined;
+            }
+            else {
+                const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = newBoxShadow;
+                this._BoxShadow = { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color };
+            }
+            this.rerender();
+        }
+    }
+    get OverflowVisibility() {
+        return this._OverflowVisibility;
+    }
+    set OverflowVisibility(newOverflowVisibility) {
+        allowBoolean('widget overflow visibility', newOverflowVisibility);
+        if (this._OverflowVisibility !== newOverflowVisibility) {
+            this._OverflowVisibility = newOverflowVisibility;
+            this.rerender();
+        }
+    }
     get onFocus() { return this._onFocus; }
     set onFocus(newCallback) {
         expectFunction('"focus" event handler', newCallback);
@@ -3169,6 +3247,43 @@ export class WAT_Widget extends WAT_Visual {
             Applet.rerender(this);
         }
     }
+    /**** CSSStyle ****/
+    get CSSStyle() {
+        let CSSStyleList = [];
+        const { BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow, OverflowVisibility, } = this;
+        if (BorderWidths != null) {
+            CSSStyleList.push('border-width:' +
+                BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
+                BorderWidths[2] + 'px ' + BorderWidths[3] + 'px');
+        }
+        if (BorderStyles != null) {
+            CSSStyleList.push('border-style:' +
+                BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
+                BorderStyles[2] + ' ' + BorderStyles[3]);
+        }
+        if (BorderColors != null) {
+            CSSStyleList.push('border-color:' +
+                BorderColors[0] + ' ' + BorderColors[1] + ' ' +
+                BorderColors[2] + ' ' + BorderColors[3]);
+        }
+        if (BorderRadii != null) {
+            CSSStyleList.push('border-radius:' +
+                BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
+                BorderRadii[2] + 'px ' + BorderRadii[3] + 'px');
+        }
+        if (BoxShadow != null) {
+            CSSStyleList.push('box-shadow:' +
+                BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
+                BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
+                BoxShadow.Color);
+        }
+        if (OverflowVisibility != null) {
+            CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden');
+        }
+        return (super.CSSStyle +
+            (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';'));
+    }
+    set CSSStyle(_) { throwReadOnlyError('CSSStyle'); }
     /**** Index ****/
     get Index() {
         const Page = this._Container;
@@ -6249,7 +6364,7 @@ class WAT_AppletView extends Component {
         const needsModalLayer = (openDialogs.length > 0) &&
             openDialogs[lastDialogIndex].isModal;
         return html `<div class="WAT Applet" style="
-        ${CSSStyleOfVisual(Applet)}
+        ${Applet.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px;
       ">
         ${Applet.isAttached ? html `
@@ -6320,7 +6435,7 @@ class WAT_PageView extends Component {
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
         this._shownWidgets = WidgetsToShow;
         return html `<div class="WAT Page" style="
-        ${CSSStyleOfVisual(Page)}
+        ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
       ">
         ${Page.Rendering()}
@@ -6369,7 +6484,7 @@ class WAT_WidgetView extends Component {
         const openOverlays = Widget._OverlayList;
         const lastOverlayIndex = openOverlays.length - 1;
         return html `<div class="WAT Widget" style="
-        ${CSSStyleOfVisual(Widget)} ${CSSGeometry}
+        ${Widget.CSSStyle} ${CSSGeometry}
       ">
         ${Widget.Rendering()}
       </div>
@@ -6786,113 +6901,6 @@ class WAT_OverlayView extends Component {
         ${ContentPane}
       </div>`;
     }
-}
-/**** CSSStyleOfVisual ****/
-export function CSSStyleOfVisual(Visual) {
-    expectVisual('widget', Visual);
-    let CSSStyleList = [];
-    const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, BackgroundColor, BackgroundTexture, BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow, Opacity, OverflowVisibility, Cursor, } = Visual;
-    if (FontFamily != null) {
-        CSSStyleList.push(`font-family:${FontFamily}`);
-    }
-    if (FontSize != null) {
-        CSSStyleList.push(`font-size:${FontSize}px`);
-    }
-    if (FontWeight != null) {
-        CSSStyleList.push(`font-weight:${FontWeight}`);
-    }
-    if (FontStyle != null) {
-        CSSStyleList.push(`font-style:${FontStyle}`);
-    }
-    if (TextDecoration != null) {
-        CSSStyleList.push('text-decoration:' + TextDecoration.Line +
-            (TextDecoration.Color == null ? '' : ' ' + TextDecoration.Color) +
-            (TextDecoration.Style == null ? '' : ' ' + TextDecoration.Style) +
-            (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
-    }
-    if (TextShadow != null) {
-        if (TextShadow.isActive) {
-            CSSStyleList.push('text-shadow:' +
-                TextShadow.xOffset + 'px ' + TextShadow.yOffset + 'px ' +
-                TextShadow.BlurRadius + 'px ' + TextShadow.Color);
-        }
-        else {
-            CSSStyleList.push('text-shadow:none');
-        }
-    }
-    if (TextAlignment != null) {
-        CSSStyleList.push(`text-align:${TextAlignment}`);
-    }
-    if (LineHeight != null) {
-        CSSStyleList.push(`line-height:${LineHeight}px`);
-    }
-    if (ForegroundColor != null) {
-        CSSStyleList.push(`color:${ForegroundColor}`);
-    }
-    if (BackgroundColor != null) {
-        CSSStyleList.push(`background-color:${BackgroundColor}`);
-    }
-    if (BackgroundTexture != null) {
-        const { isActive, ImageURL, Mode, xOffset, yOffset } = BackgroundTexture;
-        let BackgroundSize = 'auto auto';
-        switch (Mode) {
-            case 'normal': break;
-            case 'contain':
-            case 'cover':
-                BackgroundSize = BackgroundTexture.Mode;
-                break;
-            case 'fill':
-                BackgroundSize = '100% 100%';
-                break;
-            case 'tile':
-                BackgroundSize = 'auto auto';
-                break;
-        }
-        let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
-        if (isActive) {
-            CSSStyleList.push(`background-image:url(${ImageURL})`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
-                `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
-        }
-        else {
-            CSSStyleList.push('background-image:none');
-        }
-    }
-    if (BorderWidths != null) {
-        CSSStyleList.push('border-width:' +
-            BorderWidths[0] + 'px ' + BorderWidths[1] + 'px ' +
-            BorderWidths[2] + 'px ' + BorderWidths[3] + 'px');
-    }
-    if (BorderStyles != null) {
-        CSSStyleList.push('border-style:' +
-            BorderStyles[0] + ' ' + BorderStyles[1] + ' ' +
-            BorderStyles[2] + ' ' + BorderStyles[3]);
-    }
-    if (BorderColors != null) {
-        CSSStyleList.push('border-color:' +
-            BorderColors[0] + ' ' + BorderColors[1] + ' ' +
-            BorderColors[2] + ' ' + BorderColors[3]);
-    }
-    if (BorderRadii != null) {
-        CSSStyleList.push('border-radius:' +
-            BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
-            BorderRadii[2] + 'px ' + BorderRadii[3] + 'px');
-    }
-    if (BoxShadow != null) {
-        CSSStyleList.push('box-shadow:' +
-            BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
-            BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
-            BoxShadow.Color);
-    }
-    if (Opacity != null) {
-        CSSStyleList.push(`opacity:${Opacity / 100}`);
-    }
-    if (OverflowVisibility != null) {
-        CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden');
-    }
-    if (Cursor != null) {
-        CSSStyleList.push(`cursor:${Cursor}`);
-    }
-    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';');
 }
 /**** consume/consumingEvent ****/
 function consumeEvent(Event) {
