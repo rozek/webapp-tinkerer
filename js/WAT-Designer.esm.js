@@ -26,7 +26,7 @@ const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, ValueIsWidgetType, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -545,8 +545,8 @@ const DesignerState = {
     },
     Inspector: {
         Title: 'Inspector', View: undefined,
-        x: NaN, y: NaN, Width: 320, Height: 550,
-        minWidth: 320, minHeight: 550,
+        x: NaN, y: NaN, Width: 360, Height: 550,
+        minWidth: 360, minHeight: 550,
     },
     ValueEditor: {
         Title: 'Value Editor', View: undefined,
@@ -3103,7 +3103,7 @@ function WAD_Inspector() {
 DesignerState.Inspector.View = WAD_Inspector;
 /**** WAD_AppletConfigurationPane ****/
 function WAD_AppletConfigurationPane() {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u, _v, _w, _z, _0, _1, _2, _3;
     const { Applet } = DesignerState;
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -3137,7 +3137,7 @@ function WAD_AppletConfigurationPane() {
             <${WAD_IntegerInput} readonly style="width:60px"
               Value=${Applet.x}
             />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+              <div style="width:20px; padding-top:4px; text-align:center">,</div>
             <${WAD_IntegerInput} readonly style="width:60px"
               Value=${Applet.y}
             />
@@ -3244,7 +3244,7 @@ function WAD_AppletConfigurationPane() {
         });
     }}
             />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+              <div style="width:20px; padding-top:4px; text-align:center">,</div>
             <${WAD_IntegerInput} readonly style="width:60px"
               Value=${(_d = Applet.TextShadow) === null || _d === void 0 ? void 0 : _d.yOffset}
               onInput=${(Event) => {
@@ -3290,30 +3290,6 @@ function WAD_AppletConfigurationPane() {
           </>
         </>
 
-        <${WAD_Fold} Label="Layout Settings">
-          <${WAD_horizontally}>
-            <${WAD_Label}>Snap-to-Grid</>
-            <${WAD_Gap}/>
-            <${WAD_Checkbox}
-              Value=${Applet.SnapToGrid}
-              onInput=${(Event) => doConfigureApplet('SnapToGrid', Event.target.checked)}
-            />
-          </>
-
-          <${WAD_horizontally}>
-            <${WAD_Label}>Grid Size (w,h) [px]</>
-            <${WAD_Gap}/>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridWidth}
-              onInput=${(Event) => doConfigureApplet('GridWidth', parseFloat(Event.target.value))}
-            />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
-            <${WAD_IntegerInput} style="width:60px"
-              Value=${Applet.GridHeight}
-              onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
-            />
-          </>
-        </>
         <${WAD_Fold} Label="Background">
           <${WAD_horizontally}>
             <${WAD_Label}>Color</>
@@ -3375,7 +3351,7 @@ function WAD_AppletConfigurationPane() {
         });
     }}
             />
-              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+              <div style="width:20px; padding-top:4px; text-align:center">,</div>
             <${WAD_IntegerInput} readonly style="width:60px"
               Value=${(_k = Applet.BackgroundTexture) === null || _k === void 0 ? void 0 : _k.yOffset}
               onInput=${(Event) => {
@@ -3395,30 +3371,211 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">top</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_l = Applet.BorderStyles) === null || _l === void 0 ? void 0 : _l[0]} Options=${WAT_BorderStyles}
+              onInput=${(Event) => {
+        const [Style_0, Style_1, Style_2, Style_3] = (Applet.BorderStyles || ['none', 'none', 'none', 'none']);
+        doConfigureApplet('BorderStyles', [
+            Event.target.value, Style_1, Style_2, Style_3
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_m = Applet.BorderWidths) === null || _m === void 0 ? void 0 : _m[0]} Minimum=${0}
+              onInput=${(Event) => {
+        const [Width_0, Width_1, Width_2, Width_3] = (Applet.BorderWidths || [0, 0, 0, 0]);
+        doConfigureApplet('BorderWidths', [
+            parseFloat(Event.target.value), Width_1, Width_2, Width_3
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_ColorInput}
+              Value=${(_o = Applet.BorderColors) === null || _o === void 0 ? void 0 : _o[0]}
+              onInput=${(Event) => {
+        const [Color_0, Color_1, Color_2, Color_3] = (Applet.BorderColors || ['black', 'black', 'black', 'black']);
+        doConfigureApplet('BorderColors', [
+            Event.target.value, Color_1, Color_2, Color_3
+        ]);
+    }}
+            />
           </>
-          <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">left</>
-            <${WAD_Gap}/>
-          </>
-          <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">bottom</>
-            <${WAD_Gap}/>
-          </>
+
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">right</>
             <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_p = Applet.BorderStyles) === null || _p === void 0 ? void 0 : _p[1]} Options=${WAT_BorderStyles}
+              onInput=${(Event) => {
+        const [Style_0, Style_1, Style_2, Style_3] = (Applet.BorderStyles || ['none', 'none', 'none', 'none']);
+        doConfigureApplet('BorderStyles', [
+            Style_0, Event.target.value, Style_2, Style_3
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_q = Applet.BorderWidths) === null || _q === void 0 ? void 0 : _q[1]} Minimum=${0}
+              onInput=${(Event) => {
+        const [Width_0, Width_1, Width_2, Width_3] = (Applet.BorderWidths || [0, 0, 0, 0]);
+        doConfigureApplet('BorderWidths', [
+            Width_0, parseFloat(Event.target.value), Width_2, Width_3
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_ColorInput}
+              Value=${(_r = Applet.BorderColors) === null || _r === void 0 ? void 0 : _r[1]}
+              onInput=${(Event) => {
+        const [Color_0, Color_1, Color_2, Color_3] = (Applet.BorderColors || ['black', 'black', 'black', 'black']);
+        doConfigureApplet('BorderColors', [
+            Color_0, Event.target.value, Color_2, Color_3
+        ]);
+    }}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">bottom</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_s = Applet.BorderStyles) === null || _s === void 0 ? void 0 : _s[2]} Options=${WAT_BorderStyles}
+              onInput=${(Event) => {
+        const [Style_0, Style_1, Style_2, Style_3] = (Applet.BorderStyles || ['none', 'none', 'none', 'none']);
+        doConfigureApplet('BorderStyles', [
+            Style_0, Style_1, Event.target.value, Style_3
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_t = Applet.BorderWidths) === null || _t === void 0 ? void 0 : _t[2]} Minimum=${0}
+              onInput=${(Event) => {
+        const [Width_0, Width_1, Width_2, Width_3] = (Applet.BorderWidths || [0, 0, 0, 0]);
+        doConfigureApplet('BorderWidths', [
+            Width_0, Width_1, parseFloat(Event.target.value), Width_3
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_ColorInput}
+              Value=${(_u = Applet.BorderColors) === null || _u === void 0 ? void 0 : _u[2]}
+              onInput=${(Event) => {
+        const [Color_0, Color_1, Color_2, Color_3] = (Applet.BorderColors || ['black', 'black', 'black', 'black']);
+        doConfigureApplet('BorderColors', [
+            Color_0, Color_1, Event.target.value, Color_3
+        ]);
+    }}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">left</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${(_v = Applet.BorderStyles) === null || _v === void 0 ? void 0 : _v[3]} Options=${WAT_BorderStyles}
+              onInput=${(Event) => {
+        const [Style_0, Style_1, Style_2, Style_3] = (Applet.BorderStyles || ['none', 'none', 'none', 'none']);
+        doConfigureApplet('BorderStyles', [
+            Style_0, Style_1, Style_2, Event.target.value
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_w = Applet.BorderWidths) === null || _w === void 0 ? void 0 : _w[3]} Minimum=${0}
+              onInput=${(Event) => {
+        const [Width_0, Width_1, Width_2, Width_3] = (Applet.BorderWidths || [0, 0, 0, 0]);
+        doConfigureApplet('BorderWidths', [
+            Width_0, Width_1, Width_2, parseFloat(Event.target.value)
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_ColorInput}
+              Value=${(_z = Applet.BorderColors) === null || _z === void 0 ? void 0 : _z[3]}
+              onInput=${(Event) => {
+        const [Color_0, Color_1, Color_2, Color_3] = (Applet.BorderColors || ['black', 'black', 'black', 'black']);
+        doConfigureApplet('BorderColors', [
+            Color_0, Color_1, Color_2, Event.target.value
+        ]);
+    }}
+            />
           </>
 
           <${WAD_horizontally}>
             <${WAD_Label}>Border Radii [px]</>
           </>
           <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">tl,tr</>
+            <${WAD_Label} style="padding-left:10px">top-left/right</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_0 = Applet.BorderRadii) === null || _0 === void 0 ? void 0 : _0[0]} Minimum=${0}
+              onInput=${(Event) => {
+        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (Applet.BorderRadii || [0, 0, 0, 0]);
+        doConfigureApplet('BorderRadii', [
+            parseFloat(Event.target.value), Radius_1, Radius_2, Radius_3
+        ]);
+    }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">,</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_1 = Applet.BorderRadii) === null || _1 === void 0 ? void 0 : _1[1]} Minimum=${0}
+              onInput=${(Event) => {
+        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (Applet.BorderRadii || [0, 0, 0, 0]);
+        doConfigureApplet('BorderRadii', [
+            Radius_0, parseFloat(Event.target.value), Radius_2, Radius_3
+        ]);
+    }}
+            />
           </>
           <${WAD_horizontally}>
-            <${WAD_Label} style="padding-left:10px">bl,br</>
+            <${WAD_Label} style="padding-left:10px">bottom-left/right</>
             <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_2 = Applet.BorderRadii) === null || _2 === void 0 ? void 0 : _2[2]} Minimum=${0}
+              onInput=${(Event) => {
+        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (Applet.BorderRadii || [0, 0, 0, 0]);
+        doConfigureApplet('BorderRadii', [
+            Radius_0, Radius_1, parseFloat(Event.target.value), Radius_3
+        ]);
+    }}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">,</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${(_3 = Applet.BorderRadii) === null || _3 === void 0 ? void 0 : _3[3]} Minimum=${0}
+              onInput=${(Event) => {
+        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (Applet.BorderRadii || [0, 0, 0, 0]);
+        doConfigureApplet('BorderRadii', [
+            Radius_0, Radius_1, Radius_2, parseFloat(Event.target.value)
+        ]);
+    }}
+            />
+          </>
+        </>
+        <${WAD_Fold} Label="Layout Settings">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Snap-to-Grid</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.SnapToGrid}
+              onInput=${(Event) => doConfigureApplet('SnapToGrid', Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Grid Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridWidth}
+              onInput=${(Event) => doConfigureApplet('GridWidth', parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${Applet.GridHeight}
+              onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
+            />
           </>
         </>
 
@@ -4837,7 +4994,8 @@ function IdOfWidget(Widget) {
     }
 }
 /**** newId - uses nanoid with custom dictionary ****/
-export const newId = customAlphabet(nolookalikesSafe, 21); /**** consume/consumingEvent ****/
+export const newId = customAlphabet(nolookalikesSafe, 21);
+/**** consume/consumingEvent ****/
 function consumeEvent(Event) {
     Event.stopPropagation();
     Event.preventDefault();
