@@ -65,7 +65,6 @@ export const WAT_ErrorTypes = [
     '"onClick" Callback Failure', '"onInput" Callback Failure',
     '"onDrop" Callback Failure', '"onValueChange" Callback Failure'
 ];
-/**** throwError - simplifies construction of named errors ****/
 export function throwError(Message) {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
     if (Match == null) {
@@ -491,6 +490,7 @@ appendStyle(`
 /**** "broken" and Error Indicator ****/
 
   .WAT.broken {
+    overflow:visible;
     border:dotted 1px orange; background:rgba(255,0,0,0.1);
   }
 
@@ -691,6 +691,32 @@ function unregisterAllReactiveFunctionsFrom(Visual) {
     reactiveFunctions.forEach((reactiveFunction) => {
         dispose(reactiveFunction);
     });
+}
+//------------------------------------------------------------------------------
+//--                              Error Handling                              --
+//------------------------------------------------------------------------------
+/**** setError ****/
+function setError(Visual, ErrorReport) {
+    expectVisual('visual', Visual);
+    allowError('error report', ErrorReport);
+    if (ValuesDiffer(Visual.ErrorReport, ErrorReport)) {
+        Visual._ErrorReport = ErrorReport;
+        Visual.rerender();
+    }
+}
+/**** ErrorRenderingFor ****/
+function ErrorRenderingFor(Visual) {
+    const onClick = () => showErrorReport(Visual, Visual.ErrorReport);
+    return html `<div class="WAT ErrorIndicator" onClick=${onClick}/>`;
+}
+/**** showErrorReport ****/
+function showErrorReport(Visual, ErrorReport) {
+    if (typeof (DesignerLayer === null || DesignerLayer === void 0 ? void 0 : DesignerLayer.showErrorReport) === 'function') {
+        DesignerLayer.showErrorReport(Visual, ErrorReport);
+    }
+    else {
+        window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message);
+    }
 }
 //-------------------------------------------------------------------------------
 //--                            Gesture Recognizer                             --
@@ -1077,7 +1103,7 @@ export class WAT_Visual {
             value: void 0
         });
         /**** Error - for internal use only ****/
-        Object.defineProperty(this, "_Error", {
+        Object.defineProperty(this, "_ErrorReport", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -1376,31 +1402,15 @@ export class WAT_Visual {
         return this._memoized;
     }
     set memoized(_) { throwReadOnlyError('memoized'); }
-    get Error() {
-        return (this._Error == null ? undefined : Object.assign({}, this._Error));
+    get ErrorReport() {
+        return (this._ErrorReport == null ? undefined : Object.assign({}, this._ErrorReport));
     }
-    set Error(newError) {
-        if (newError != null)
-            throwError('InvalidArgument: an error can only be cleared');
-        if (this._Error != null) {
-            this._Error = undefined;
-            this.rerender();
-        }
+    set ErrorReport(_) {
+        throwReadOnlyError('ErrorReport');
     }
-    /**** hasError ****/
-    get hasError() { return (this._Error != null); }
-    set hasError(_) { throwReadOnlyError('hasError'); }
-    /**** ErrorRendering ****/
-    ErrorRendering() {
-        // @ts-ignore TS2532 "ErrorRenderer.call(this)" will define "this"
-        const Error = this.Error;
-        if (Error == null) {
-            return '';
-        } // should not happen
-        // @ts-ignore TS2532 "ErrorRenderer.call(this)" will define "this"
-        const onClick = () => this.Applet.showError(this, Error);
-        return html `<div class="WAT ErrorIndicator" onClick=${onClick}/>`;
-    }
+    /**** isBroken ****/
+    get isBroken() { return (this._ErrorReport != null); }
+    set isBroken(_) { throwReadOnlyError('isBroken'); }
     get Renderer() { return this._Renderer; }
     set Renderer(newRenderer) {
         allowFunction('WAT renderer', newRenderer);
@@ -1416,9 +1426,6 @@ export class WAT_Visual {
     }
     /**** Rendering - generates the rendering for this widget ****/
     Rendering() {
-        if (this.hasError) {
-            return this.ErrorRendering();
-        }
         let Renderer = this._Renderer;
         if (Renderer == null) {
             return '';
@@ -1973,9 +1980,6 @@ export class WAT_Applet extends WAT_Visual {
         if (this._View != null) {
             rerender();
         }
-    }
-    /**** showError ****/
-    showError(Visual, Error) {
     }
     get PageList() { return this._PageList.slice(); }
     set PageList(_) { throwReadOnlyError('PageList'); }
@@ -6558,13 +6562,13 @@ class WAT_AppletView extends Component {
         const lastDialogIndex = openDialogs.length - 1;
         const needsModalLayer = (openDialogs.length > 0) &&
             openDialogs[lastDialogIndex].isModal;
-        const broken = (Applet.hasError ? 'broken' : '');
+        const broken = (Applet.isBroken ? 'broken' : '');
         return html `<div class="WAT ${broken} Applet" style="
         ${Applet.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px;
       ">
         ${Applet.isAttached ? html `
-          ${Applet.Rendering()}
+          ${broken === '' ? Applet.Rendering() : ErrorRenderingFor(Applet)}
           ${visitedPage == null
             ? html `<div class="WAT centered"><div>(no page to show)</div></div>`
             : html `<${WAT_PageView} Page=${visitedPage}/>`}
@@ -6626,7 +6630,7 @@ class WAT_PageView extends Component {
     /**** render ****/
     render(PropSet) {
         const Page = this._Page = PropSet.Page;
-        const broken = (Page.hasError ? 'broken' : '');
+        const broken = (Page.isBroken ? 'broken' : '');
         this._releaseWidgets(this._shownWidgets);
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
@@ -6635,7 +6639,7 @@ class WAT_PageView extends Component {
         ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
       ">
-        ${Page.Rendering()}
+        ${broken === '' ? Page.Rendering() : ErrorRenderingFor(Page)}
         ${WidgetsToShow.toReversed().map((Widget) => {
             return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Widget.Geometry}/>`;
         })}
@@ -6678,13 +6682,13 @@ class WAT_WidgetView extends Component {
         const CSSGeometry = ((x != null) && (Width != null) && (y != null) && (Height != null)
             ? `left:${x}px; top:${y}px; width:${Width}px; height:${Height}px; right:auto; bottom:auto;`
             : '');
-        const broken = (Widget.hasError ? 'broken' : '');
+        const broken = (Widget.isBroken ? 'broken' : '');
         const openOverlays = Widget._OverlayList;
         const lastOverlayIndex = openOverlays.length - 1;
         return html `<div class="WAT ${broken} Widget" style="
         ${Widget.CSSStyle} ${CSSGeometry}
       ">
-        ${Widget.Rendering()}
+        ${broken === '' ? Widget.Rendering() : ErrorRenderingFor(Widget)}
       </div>
       ${(broken === '') && (openOverlays.length > 0) ? html `<div class="WAT OverlayLayer"
         style="${CSSGeometry}"
@@ -7115,7 +7119,7 @@ export function rerender() {
 } /**** useDesigner ****/
 let DesignerLayer = undefined;
 export function useDesigner(newDesigner) {
-    allowFunction('WAT designer', newDesigner);
+    allowFunction('WAT designer', newDesigner); // it's a preact function component
     console.log('installing WebApp Tinkerer Designer');
     DesignerLayer = newDesigner;
     rerender();
