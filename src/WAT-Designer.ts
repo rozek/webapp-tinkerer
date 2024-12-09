@@ -596,6 +596,7 @@
       Title:'Inspector',      View:undefined,
       x:NaN, y:NaN, Width:360, Height:550,
       minWidth:360, minHeight:550,
+      ReportToShow:undefined, // workaround for strange closure problem
     },
     ValueEditor: {                           // only visible if Designer is open
       Title:'Value Editor',   View:undefined,
@@ -3666,8 +3667,17 @@ console.error(Signal)
   function WAD_AppletConfigurationPane () {
     const { Applet } = DesignerState
 
-    const { ErrorReport, ScriptError } = Applet
-    const ReportToShow = ScriptError || ErrorReport
+    const { activeScript,pendingScript, ErrorReport,ScriptError } = Applet
+
+    const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript)
+    const ReportToShow    = ScriptError || ErrorReport
+      DesignerState.Inspector.ReportToShow = ReportToShow // *C* workaround
+
+    const setPendingScriptTo = useCallback((newScript:WAT_Text) => {
+      doConfigureApplet('pendingScript',newScript)
+    },[])
+
+    const applyPendingScript = useCallback(() => doApplyAppletScript(),[])
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -3971,15 +3981,49 @@ console.error(Signal)
               onInput=${(Event:Indexable) => doConfigureApplet('GridHeight',parseFloat(Event.target.value))}
             />
           </>
+        </>        <${WAD_Fold} Label="Scripting">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Script</>
+              <div style="width:8px"/>
+            <${WAD_Icon} Icon="${IconFolder}/square-code.png"
+              active=${DialogIsOpen('ScriptEditor')}
+              onClick=${(Event:PointerEvent) => {
+                if (! DialogIsOpen('ScriptEditor')) {
+                  DesignerState.ScriptEditor.Scope = 'Applet'
+                }
+                toggleDialog('ScriptEditor',Event)
+              }}
+            />
+            <${WAD_Gap}/>
+            <${WAD_Icon} Icon="${IconFolder}/check.png"
+              enabled=${ScriptIsPending}
+              onClick=${applyPendingScript}
+            />
+              <div style="width:8px"/>
+            <${WAD_Icon} Icon="${IconFolder}/xmark.png" style="width:24px"
+              enabled=${ScriptIsPending}
+              onClick=${() => setPendingScriptTo('')}
+            />
+          </>
+
+          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+            flex:1 0 auto; padding-top:4px; min-height:60px;
+          " Value=${pendingScript == null ? activeScript : pendingScript}
+            onInput=${(Event:Indexable) => setPendingScriptTo(Event.target.value)}
+          />
         </>
       </>
 
       <${WAD_horizontally}>
-        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ErrorReport}/>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ReportToShow}/>
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
-          display:${ErrorReport == null ? 'none' : 'block'};
+          display:${ReportToShow == null ? 'none' : 'block'};
           padding-top:6px;
-        " onClick=${() => window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message)}/>
+        " onClick=${() => {
+            const { ReportToShow } = DesignerState.Inspector
+            window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)
+          }}
+        />
       </>
      </>
     </>`
@@ -4081,9 +4125,18 @@ console.error(Signal)
   function WAD_PageConfigurationPane () {
     const { Applet } = DesignerState
 
-    const { visitedPage } = Applet
-    const { ErrorReport, ScriptError } = visitedPage || {}
-    const ReportToShow = ScriptError || ErrorReport
+    const { visitedPage }                                         = Applet
+    const { activeScript,pendingScript, ErrorReport,ScriptError } = visitedPage
+
+    const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript)
+    const ReportToShow    = ScriptError || ErrorReport
+      DesignerState.Inspector.ReportToShow = ReportToShow // *C* workaround
+
+    const setPendingScriptTo = useCallback((newScript:WAT_Text) => {
+      doConfigureVisitedPage('pendingScript',newScript)
+    },[])
+
+    const applyPendingScript = useCallback(() => doApplyVisitedPageScript(),[])
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4365,7 +4418,37 @@ console.error(Signal)
           </>
         </>
 
+        <${WAD_Fold} Label="Scripting">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Script</>
+              <div style="width:8px"/>
+            <${WAD_Icon} Icon="${IconFolder}/square-code.png"
+              active=${DialogIsOpen('ScriptEditor')}
+              onClick=${(Event:PointerEvent) => {
+                if (! DialogIsOpen('ScriptEditor')) {
+                  DesignerState.ScriptEditor.Scope = 'visitedPage'
+                }
+                toggleDialog('ScriptEditor',Event)
+              }}
+            />
+            <${WAD_Gap}/>
+            <${WAD_Icon} Icon="${IconFolder}/check.png"
+              enabled=${ScriptIsPending}
+              onClick=${applyPendingScript}
+            />
+              <div style="width:8px"/>
+            <${WAD_Icon} Icon="${IconFolder}/xmark.png" style="width:24px"
+              enabled=${ScriptIsPending}
+              onClick=${() => setPendingScriptTo('')}
+            />
+          </>
 
+          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+            flex:1 0 auto; padding-top:4px; min-height:60px;
+          " Value=${pendingScript == null ? activeScript : pendingScript}
+            onInput=${(Event:Indexable) => setPendingScriptTo(Event.target.value)}
+          />
+        </>
       </>
 
       <${WAD_horizontally}>
@@ -4373,7 +4456,11 @@ console.error(Signal)
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
           display:${ReportToShow == null ? 'none' : 'block'};
           padding-top:6px;
-        " onClick=${() => window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)}/>
+        " onClick=${() => {
+            const { ReportToShow } = DesignerState.Inspector
+            window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)
+          }}
+        />
       </>
      </>
     </>`
@@ -4532,9 +4619,20 @@ console.error(Signal)
       doConfigureSelectedWidgets('Value',Value)
     }
 
-    const ErrorReport  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport))
-    const ScriptError  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ScriptError))
-    const ReportToShow = ScriptError || ErrorReport
+    const activeScript  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.activeScript))
+    const pendingScript = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.pendingScript))
+    const ErrorReport   = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport))
+    const ScriptError   = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ScriptError))
+
+    const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript)
+    const ReportToShow    = ScriptError || ErrorReport
+      DesignerState.Inspector.ReportToShow = ReportToShow // *C* workaround
+
+    const setPendingScriptTo = useCallback((newScript:WAT_Text) => {
+      doConfigureSelectedWidgets('pendingScript',newScript)
+    },[])
+
+    const applyPendingScript = useCallback(() => doApplySelectedWidgetsScript(),[])
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -5324,7 +5422,37 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Type-specific Settings">
+        <${WAD_Fold} Label="Scripting">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Script</>
+              <div style="width:8px"/>
+            <${WAD_Icon} Icon="${IconFolder}/square-code.png"
+              active=${DialogIsOpen('ScriptEditor')}
+              onClick=${(Event:PointerEvent) => {
+                if (! DialogIsOpen('ScriptEditor')) {
+                  DesignerState.ScriptEditor.Scope = 'selectedWidgets'
+                }
+                toggleDialog('ScriptEditor',Event)
+              }}
+            />
+            <${WAD_Gap}/>
+            <${WAD_Icon} Icon="${IconFolder}/check.png"
+              enabled=${ScriptIsPending}
+              onClick=${applyPendingScript}
+            />
+              <div style="width:8px"/>
+            <${WAD_Icon} Icon="${IconFolder}/xmark.png" style="width:24px"
+              enabled=${ScriptIsPending}
+              onClick=${() => setPendingScriptTo('')}
+            />
+          </>
+
+          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+            flex:1 0 auto; padding-top:4px; min-height:60px;
+          " Value=${pendingScript == null ? activeScript : pendingScript}
+            onInput=${(Event:Indexable) => setPendingScriptTo(Event.target.value)}
+          />
+        </>        <${WAD_Fold} Label="Type-specific Settings">
 
 
           <${WAD_horizontally}>
@@ -5347,9 +5475,13 @@ console.error(Signal)
       <${WAD_horizontally}>
         <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ReportToShow}/>
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
-          display:${ValueIsErrorReport(ReportToShow) ? 'block' : 'none'};
+          display:${ReportToShow == null ? 'none' : 'block'};
           padding-top:6px;
-        " onClick=${() => window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)}/>
+        " onClick=${() => {
+            const { ReportToShow } = DesignerState.Inspector
+            window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)
+          }}
+        />
       </>
      </>
     </>`
