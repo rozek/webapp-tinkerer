@@ -1210,12 +1210,28 @@
 
 /**** setErrorReport ****/
 
-  function setErrorReport (Visual:WAT_Visual, ErrorReport:WAT_ErrorReport):void {
+  function setErrorReport (
+    Visual:WAT_Visual, ErrorReport:WAT_ErrorReport|undefined
+  ):void {
     expectVisual          ('visual',Visual)
     allowErrorReport('error report',ErrorReport)
 
     if (ValuesDiffer(Visual.ErrorReport,ErrorReport)) {
       (Visual as Indexable)._ErrorReport = ErrorReport
+      Visual.rerender()
+    }
+  }
+
+/**** setScriptError (used by Designer) ****/
+
+  export function setScriptError (
+    Visual:WAT_Visual, ScriptError:WAT_ErrorReport|undefined
+  ):void {
+    expectVisual          ('visual',Visual)
+    allowErrorReport('script error',ScriptError)
+
+    if (ValuesDiffer(Visual.ScriptError,ScriptError)) {
+      (Visual as Indexable)._ScriptError = ScriptError
       Visual.rerender()
     }
   }
@@ -1971,7 +1987,8 @@
 
     /**** compile and run the script ****/
 
-      this.ScriptError = undefined     // only to be set by "applyPendingScript"
+      this._ErrorReport = undefined
+      this._ScriptError = undefined    // only to be set by "applyPendingScript"
         let compiledScript:Function
         try {
 // @ts-ignore TS2351 AsyncFunction *is* constructible
@@ -1980,7 +1997,10 @@
             activeScript
           )
         } catch (Signal:any) {
-          console.error('WAT: script compilation failure',Signal)
+          setErrorReport(this,{
+            Type:'Script Compilation Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
           return
         }
 
@@ -1989,11 +2009,12 @@
             this,this, html,reactively, onRender,onMount,onUnmount,onValueChange
           )
         } catch (Signal:any) {
-          if (Mode === 'catch-exception') {
-            console.error('WAT: script execution failure',Signal)
-            return
-          } else {
-            console.warn('WAT: script execution failure',Signal)
+          setErrorReport(this,{
+            Type:'Script Execution Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+
+          if (Mode === 'rethrow-exception') {
             throw Signal
           }
         }
@@ -2018,8 +2039,10 @@
             pendingScript
           )
         } catch (Signal:any) {
-          console.warn('WAT: script compilation failure - ',Signal)
-          this.ScriptError = 'Script Compilation Failure: ' + Signal
+          setScriptError(this,{
+            Type:'Script Compilation Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
           this.rerender()
           return
         }
@@ -2032,23 +2055,25 @@
       try {
         await this.activateScript('rethrow-exception')
       } catch (Signal:any) {
-        this.ScriptError = 'Script Execution Failure: ' + Signal
+        setScriptError(this,{
+          Type:'Script Execution Failure',
+          Sufferer:this, Message:'' + Signal, Cause:Signal
+        })
         this.rerender()
         return
       }
       this.rerender()
     }
 
-  /**** ScriptError - script compilation errors, for internal use only ****/
+  /**** ScriptError (used by Designer) ****/
 
-    protected _ScriptError:string|undefined
+    protected _ScriptError:WAT_ErrorReport|undefined
 
-    public get ScriptError ():string|undefined {
-      return this._ScriptError
+    public get ScriptError ():WAT_ErrorReport|undefined {
+      return (this._ScriptError == null ? undefined : { ...this._ScriptError })
     }
-    public set ScriptError (newScriptError:string|undefined) {
-      allowString('script error',newScriptError)
-      this._ScriptError = newScriptError
+    public set ScriptError (_:WAT_ErrorReport|undefined) {
+      throwReadOnlyError('ScriptError')
     }
 
   /**** Error - for internal use only ****/
