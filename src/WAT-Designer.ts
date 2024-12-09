@@ -44,11 +44,12 @@
     throwError, throwReadOnlyError,
     fromDocumentTo,
     WAT_Text, WAT_Geometry, WAT_Position, WAT_Location,
-    WAT_Visual, WAT_Applet, WAT_Page, WAT_Widget,
+    WAT_Visual, WAT_Applet, WAT_Page, WAT_Widget, WAT_ErrorReport,
     WAT_FontWeights, WAT_FontStyles,
     WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments,
     WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors,
-    ValueIsWidgetType,
+    ValueIsApplet, ValueIsPage, ValueIsWidget,
+    ValueIsWidgetType, ValueIsErrorReport,
     allowPage,
     GestureRecognizer,
     useDesigner, rerender as WAT_rerender,
@@ -476,16 +477,16 @@
     cursor:nwse-resize; pointer-events:auto;
   }
 
-/**** ScriptErrorView ****/
+/**** [Script]ErrorView ****/
 
-  .WAD.ScriptErrorView {
+  .WAD.ScriptErrorView, .WAD.ScriptErrorView {
     display:block; position:relative;
     width:auto; height:30px; overflow:hidden; text-overflow:ellipsis;
     padding:4px 0px 0px 0px;
     font-size:14px; font-weight:normal; text-align:left; line-height:28px;
   }
 
-  .WAD.ScriptErrorView.withError {
+  .WAD.ScriptErrorView.withError, .WAD.ScriptErrorView.withError {
     color:red;
   }
 
@@ -603,6 +604,7 @@
       Title:'Script Editor',  View:undefined,
       x:NaN, y:NaN, Width:320, Height:240,
       minWidth:320, minHeight:240,
+      Scope:'Applet',
     },
     selectedPages:  [],
     selectedWidgets:[],
@@ -711,7 +713,7 @@
 
 /**** openDialog ****/
 
-  function openDialog (Name:string, firstX?:number, firstY?:number):void {
+  function openDialog (Name:string, firstX:number = 20, firstY:number = 20):void {
     if (DialogList.indexOf(Name) < 0) {
       let { x,y } = DesignerState[Name]
       if (isNaN(x) || isNaN(y)) {
@@ -888,18 +890,67 @@
   }
 
 //------------------------------------------------------------------------------
-//--                             Message Handling                             --
+//--                              Error Handling                              --
 //------------------------------------------------------------------------------
 
-/**** WAD_MessageView ****/
+/**** showErrorReport ****/
+
+  function showErrorReport (Visual:WAT_Visual, ErrorReport:WAT_ErrorReport):void {
+    if (window.confirm(
+      ErrorReport.Type + '\n\n' + ErrorReport.Message + '\n\n' +
+      'Do you want to proceed to the Designer?'
+    )) {
+      openDesigner()                                  // if not yet already done
+      openDialog('ScriptEditor')                                         // dto.
+
+      const { Sufferer } = ErrorReport
+      switch (true) {
+        case ValueIsApplet(Sufferer):
+          DesignerState.ScriptEditor.Scope = 'Applet'
+          break
+        case ValueIsPage(Sufferer):
+          visitPage(Sufferer as WAT_Page)
+          DesignerState.ScriptEditor.Scope = 'visitedPage'
+          break
+        case ValueIsWidget(Sufferer):
+          visitPage((Sufferer as WAT_Widget).Page)
+          selectWidgets([Sufferer as WAT_Widget])
+          DesignerState.ScriptEditor.Scope = 'selectedWidgets'
+          break
+      }
+    }
+  }
+
+/**** WAD_ErrorView ****/
+
+  function WAD_ErrorView (PropSet:Indexable) {
+    const { ErrorReport } = PropSet
+
+    switch (ErrorReport) {
+      case null:
+      case undefined:
+        return html`<div class="WAD ErrorView" style=${PropSet.style}><i>(no error)</i></>`
+      case noSelection:
+        return html`<div class="WAD ErrorView" style=${PropSet.style}></>`
+      case multipleValues:
+        return html`<div class="WAD ErrorView withError" style=${PropSet.style}><i>(multiple Errors)</i></>`
+      default:
+        return html`<div class="WAD ErrorView withError" style=${PropSet.style}
+          >${ErrorReport.Type}: ${ErrorReport.Message}</>`
+    }
+  }
+
+//------------------------------------------------------------------------------
+//--                           ScriptError Handling                           --
+//------------------------------------------------------------------------------
 
   function WAD_ScriptErrorView (PropSet:Indexable) {
-    const { ScriptError } = DesignerState.Applet
+    const { ScriptError } = PropSet
 
-    const SourceIsOk    = ((ScriptError || '').trim() === '')
-    const MessageToShow = (SourceIsOk ? '(no error found)' : ScriptError)
+    const ScriptIsOk    = ((ScriptError || '').trim() === '')
+    const MessageToShow = (ScriptIsOk ? '(no error found)' : ScriptError)
 
-    return html`<div class="WAD ScriptErrorView ${SourceIsOk ? '' : 'withError'}"
+    return html`<div class="WAD ScriptErrorView ${ScriptIsOk ? '' : 'withError'}"
       style=${PropSet.style}
     >${MessageToShow}</>`
   }
@@ -3481,6 +3532,8 @@ console.error(Signal)
   function WAD_AppletConfigurationPane () {
     const { Applet } = DesignerState
 
+    const { ErrorReport } = Applet
+
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
@@ -3784,7 +3837,14 @@ console.error(Signal)
             />
           </>
         </>
+      </>
 
+      <${WAD_horizontally}>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ErrorReport}/>
+        <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
+          display:${ErrorReport == null ? 'none' : 'block'};
+          padding-top:6px;
+        " onClick=${() => window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message)}/>
       </>
      </>
     </>`
@@ -3887,6 +3947,7 @@ console.error(Signal)
     const { Applet } = DesignerState
 
     const { visitedPage } = Applet
+    const { ErrorReport } = visitedPage || {}
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4170,6 +4231,14 @@ console.error(Signal)
 
 
       </>
+
+      <${WAD_horizontally}>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ErrorReport}/>
+        <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
+          display:${ErrorReport == null ? 'none' : 'block'};
+          padding-top:6px;
+        " onClick=${() => window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message)}/>
+      </>
      </>
     </>`
   }
@@ -4300,6 +4369,10 @@ console.error(Signal)
   function WAD_WidgetConfigurationPane () {
     const { Applet, selectedWidgets } = DesignerState
     const visitedPage = Applet.visitedPage
+
+    const ErrorReport = commonValueOf(
+      selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport)
+    )
 
     let ValueType:string = 'string'
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Value))
@@ -5134,6 +5207,14 @@ console.error(Signal)
         </>
 
       </>
+
+      <${WAD_horizontally}>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ErrorReport}/>
+        <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
+          display:${ValueIsErrorReport(ErrorReport) ? 'block' : 'none'};
+          padding-top:6px;
+        " onClick=${() => window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message)}/>
+      </>
      </>
     </>`
   }
@@ -5890,5 +5971,6 @@ console.error(Signal)
 /**** inform WAT about this designer ****/
 
   console.log('starting WebApp Tinkerer Designer...')
+    WAD_DesignerLayer.showErrorReport = showErrorReport
     useDesigner(WAD_DesignerLayer)
   console.log('WebApp Tinkerer Designer is operational')
