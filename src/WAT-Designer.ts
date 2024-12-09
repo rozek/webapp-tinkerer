@@ -291,7 +291,7 @@
     width:auto; height:auto; min-height:30px;
   }
   .WAD.TextInput > textarea {
-    display:block; position:relative;
+    display:block; position:absolute;
     left:0px; top:0px; width:100%; height:100%;
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:4px 2px 4px 4px;
@@ -482,7 +482,8 @@
 
   .WAD.ErrorView {
     display:block; position:relative;
-    width:auto; height:30px; overflow:hidden; text-overflow:ellipsis;
+    width:auto; height:30px; overflow:hidden;
+    white-space:nowrap; text-overflow:ellipsis;
     padding:4px 0px 0px 0px;
     font-size:14px; font-weight:normal; text-align:left; line-height:28px;
     border:none; border-top:solid 1px #888888;
@@ -709,6 +710,28 @@
     }
   }
 
+//----------------------------------------------------------------------------//
+//                           Confirmation Handling                            //
+//----------------------------------------------------------------------------//
+
+  function OperationWasConfirmed (Message?:string):boolean {
+    let ConfirmationCode = Math.round(Math.random()*10000).toString()
+      ConfirmationCode += '0000'.slice(ConfirmationCode.length)
+
+    Message = (Message || 'This operation can not be undone.') + '\n\n' +
+      'Please, enter the following number if you want to proceed:\n\n' +
+      '   ' + ConfirmationCode + '\n\n' +
+      'Otherwise, the operation will be cancelled'
+
+    let UserInput = window.prompt(Message,'')
+    if (UserInput === ConfirmationCode) {
+      return true
+    } else {
+      window.alert('Operation will be cancelled')
+      return false
+    }
+  }
+
 //------------------------------------------------------------------------------
 //--                             Dialog Handling                              --
 //------------------------------------------------------------------------------
@@ -905,23 +928,22 @@
       'Do you want to proceed to the Designer?'
     )) {
       openDesigner()                                  // if not yet already done
-      openDialog('ScriptEditor')                                         // dto.
-
-      const { Sufferer } = ErrorReport
-      switch (true) {
-        case ValueIsApplet(Sufferer):
-          DesignerState.ScriptEditor.Scope = 'Applet'
-          break
-        case ValueIsPage(Sufferer):
-          visitPage(Sufferer as WAT_Page)
-          DesignerState.ScriptEditor.Scope = 'visitedPage'
-          break
-        case ValueIsWidget(Sufferer):
-          visitPage((Sufferer as WAT_Widget).Page)
-          selectWidgets([Sufferer as WAT_Widget])
-          DesignerState.ScriptEditor.Scope = 'selectedWidgets'
-          break
-      }
+        const { Sufferer } = ErrorReport
+        switch (true) {
+          case ValueIsApplet(Sufferer):
+            DesignerState.ScriptEditor.Scope = 'Applet'
+            break
+          case ValueIsPage(Sufferer):
+            visitPage(Sufferer as WAT_Page)
+            DesignerState.ScriptEditor.Scope = 'visitedPage'
+            break
+          case ValueIsWidget(Sufferer):
+            visitPage((Sufferer as WAT_Widget).Page)
+            selectWidgets([Sufferer as WAT_Widget])
+            DesignerState.ScriptEditor.Scope = 'selectedWidgets'
+            break
+        }
+      openDialog('ScriptEditor')                      // ...or bring it to front
     }
   }
 
@@ -3160,20 +3182,45 @@
     if (File == null) { return }
 
     let Reader = new FileReader()
-      Reader.addEventListener('load', handleFileLoaded, false)
+      Reader.addEventListener('load', (Event:any) => handleFileLoaded(File,Event), false)
     Reader.readAsArrayBuffer(File)
   }
 
-  function handleFileLoaded (Event:Indexable):void {
+  function handleFileLoaded (File:Indexable, Event:Indexable):void {
     Event.stopPropagation()
     Event.preventDefault()
 
-    doImport((new TextDecoder()).decode(Event.target.result))
+    try {
+      doImport((new TextDecoder()).decode(Event.target.result),File.type)
+    } catch (Signal:any) {
+      window.alert('File Read Error\n\n' + Signal)
+    }
   }
 
 /**** doImport ****/
 
-  function doImport (FileContent:string):void {
+  function doImport (FileContent:string, Type:string):void {
+    switch (Type) {
+      case 'application/javascript':
+        if (
+          (DesignerState.Applet.pendingScript != null) &&
+          OperationWasConfirmed(
+            'Applet Script Import\n\n' +
+            'You are about to overwrite the script of this applet'
+          )
+        ) {
+          doConfigureApplet('pendingScript',FileContent)
+          DesignerState.ScriptEditor.Scope = 'Applet'
+          openDialog('ScriptEditor')                  // ...or bring it to front
+        }
+        return
+      case 'application/json':
+        break
+      default:
+        window.alert('JSON or JavaScript file expected')
+        return
+    }
+
     let Serialization
     try {
       Serialization = JSON.parse(FileContent)
@@ -3234,36 +3281,54 @@ console.error(Signal)
 /**** doExport ****/
 
   function doExport (Scope:string):void {
-    let Serialization:Serializable
+    const Applet = DesignerState.Applet
+
+    let Serialization:Serializable, suggestedFileName:string
     switch (Scope) {
       case 'Applet':
-        Serialization = DesignerState.Applet.Serialization
+        Serialization     = Applet.Serialization
+        suggestedFileName = (Applet.Name || 'WAT-Applet') + '.json'
         break
       case 'active Page':
-        Serialization = DesignerState.Applet.visitedPage.Serialization
+        Serialization     = Applet.visitedPage.Serialization
+        suggestedFileName = (Applet.visitedPage.Name || 'WAT-Page') + '.json'
         break
       case 'selected Pages':
-// @ts-ignore TS2352 allow assignment
-        Serialization = sortedPageSelection().map(
-          (Page:WAT_Page) => Page.Serialization
-        )
+        const Pages = sortedPageSelection()
+// @ts-ignore TS2322 allow assignment
+        Serialization     = Pages.map((Page:WAT_Page) => Page.Serialization)
+        suggestedFileName = (Pages[0]?.Name || 'WAT-Page') + '.json'
         break
       case 'selected Widgets':
-        Serialization = DesignerState.selectedWidgets.map(
-          (Widget:WAT_Widget) => Widget.Serialization
-        )
+        const Widgets = DesignerState.selectedWidgets
+        Serialization     = Widgets.map((Widget:WAT_Widget) => Widget.Serialization)
+        suggestedFileName = (Widgets[0]?.Name || 'WAT-Widgets') + '.json'
+        break
+      case 'Applet Design':
+        Serialization = Applet.Serialization
+          delete Serialization.activeScript
+          delete Serialization.pendingScript
+        suggestedFileName = (DesignerState.Applet.Name || 'WAT-Applet') + '.json'
+        break
+      case 'Applet Script':
+        Serialization     = Applet.activeScript || ''
+        suggestedFileName = (Applet.Name || 'WAT-Applet') + '.js'
         break
       default:
         console.error('InvalidArgument: invalid download scope ' + quoted(Scope))
         return
     }
 
-    const SerializationString = JSON.stringify(Serialization)
+    const SerializationString = (
+      Scope === 'Applet Script'
+      ? Serialization
+      : JSON.stringify(Serialization)
+    )
 
-    const encodedJSON = (new TextEncoder()).encode(SerializationString)
+    const encodedJSON = (new TextEncoder()).encode(SerializationString as string)
     const decodedJSON = (new TextDecoder()).decode(encodedJSON)
     if (SerializationString === decodedJSON) {
-      download(encodedJSON, 'WAT-Export.json', 'text/html;charset=utf-8')
+      download(encodedJSON, suggestedFileName, 'text/html;charset=utf-8')
     } else {
       window.alert('this export is not stable')
     }
@@ -3561,7 +3626,10 @@ console.error(Signal)
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/arrow-down-to-bracket.png"
           Placeholder="(please choose)" Value=""
-          OptionList=${['Applet','active Page','selected Pages','selected Widgets']}
+          OptionList=${[
+            'Applet','active Page','selected Pages','selected Widgets',
+            '----','Applet Design','Applet Script'
+          ]}
           onInput=${(Event:Indexable) => {
             doExport(Event.target.value)
             Event.target.value = ''
@@ -5964,7 +6032,12 @@ console.error(Signal)
 
               try {
                 const File = await FileList[0].getFile()
-                doImport(await File.text())
+                let FileType:string = ''
+                  switch (FileList[0].name.replace(/^.*[.]/,'')) {
+                    case 'js':   FileType = 'application/javascript'; break
+                    case 'json': FileType = 'application/json';       break
+                  }                  // "doImport" will fail on other file types
+                doImport(await File.text(),FileType)
               } catch (Signal:any) {
                 window.alert('Could not import file\n\nReason: ' + Signal)
               }
