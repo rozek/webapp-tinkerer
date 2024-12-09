@@ -256,15 +256,15 @@ export function ValueIsBoxShadow(Value) {
 /**** allow/expect[ed]BoxShadow ****/
 export const allowBoxShadow = ValidatorForClassifier(ValueIsBoxShadow, acceptNil, 'widget box shadow specification'), allowedBoxShadow = allowBoxShadow;
 export const expectBoxShadow = ValidatorForClassifier(ValueIsBoxShadow, rejectNil, 'widget box shadow specification'), expectedBoxShadow = expectBoxShadow;
-/**** ValueIsError ****/
-export function ValueIsError(Value) {
+/**** ValueIsErrorReport ****/
+export function ValueIsErrorReport(Value) {
     return (ValueIsPlainObject(Value) &&
         ValueIsOneOf(Value.Type, WAT_ErrorTypes) &&
         ValueIsText(Value.Message));
 }
-/**** allow/expect[ed]Error ****/
-export const allowError = ValidatorForClassifier(ValueIsError, acceptNil, 'WAT error descriptor'), allowedError = allowError;
-export const expectError = ValidatorForClassifier(ValueIsError, rejectNil, 'WAT error descriptor'), expectedError = expectError;
+/**** allow/expect[ed]ErrorReport ****/
+export const allowErrorReport = ValidatorForClassifier(ValueIsErrorReport, acceptNil, 'WAT error report'), allowedErrorReport = allowErrorReport;
+export const expectErrorReport = ValidatorForClassifier(ValueIsErrorReport, rejectNil, 'WAT error report'), expectedErrorReport = expectErrorReport;
 /**** ValueIsSerializableValue ****/
 export function ValueIsSerializableValue(Value) {
     switch (true) {
@@ -695,10 +695,10 @@ function unregisterAllReactiveFunctionsFrom(Visual) {
 //------------------------------------------------------------------------------
 //--                              Error Handling                              --
 //------------------------------------------------------------------------------
-/**** setError ****/
-function setError(Visual, ErrorReport) {
+/**** setErrorReport ****/
+function setErrorReport(Visual, ErrorReport) {
     expectVisual('visual', Visual);
-    allowError('error report', ErrorReport);
+    allowErrorReport('error report', ErrorReport);
     if (ValuesDiffer(Visual.ErrorReport, ErrorReport)) {
         Visual._ErrorReport = ErrorReport;
         Visual.rerender();
