@@ -14,6 +14,7 @@
     quoted, HTMLsafe,
     ValuesAreEqual,
     ValueIsOrdinal,
+    ValueIsText,
     ValueIsPlainObject,
     ValueIsList, ValueIsListSatisfying,
     ValueIsFunction,
@@ -52,7 +53,7 @@
     ValueIsWidgetType, ValueIsErrorReport,
     allowPage,
     GestureRecognizer,
-    useDesigner, rerender as WAT_rerender,
+    useDesigner, rerender as WAT_rerender, setScriptError,
   } from "./WAT-Runtime.esm.js"
 
 /**** make some existing types indexable ****/
@@ -477,16 +478,17 @@
     cursor:nwse-resize; pointer-events:auto;
   }
 
-/**** [Script]ErrorView ****/
+/**** ErrorView ****/
 
-  .WAD.ScriptErrorView, .WAD.ScriptErrorView {
+  .WAD.ErrorView {
     display:block; position:relative;
     width:auto; height:30px; overflow:hidden; text-overflow:ellipsis;
     padding:4px 0px 0px 0px;
     font-size:14px; font-weight:normal; text-align:left; line-height:28px;
+    border:none; border-top:solid 1px #888888;
   }
 
-  .WAD.ScriptErrorView.withError, .WAD.ScriptErrorView.withError {
+  .WAD.ErrorView.withError {
     color:red;
   }
 
@@ -605,6 +607,7 @@
       x:NaN, y:NaN, Width:320, Height:240,
       minWidth:320, minHeight:240,
       Scope:'Applet',
+      ReportToShow:undefined, // workaround for strange closure problem
     },
     selectedPages:  [],
     selectedWidgets:[],
@@ -931,29 +934,15 @@
       case undefined:
         return html`<div class="WAD ErrorView" style=${PropSet.style}><i>(no error)</i></>`
       case noSelection:
-        return html`<div class="WAD ErrorView" style=${PropSet.style}></>`
+        return html`<div class="WAD ErrorView" style=${PropSet.style}><i>(no selection)</i></>`
       case multipleValues:
-        return html`<div class="WAD ErrorView withError" style=${PropSet.style}><i>(multiple Errors)</i></>`
+        return html`<div class="WAD ErrorView withError" style=${PropSet.style}><i>(multiple errors)</i></>`
       default:
         return html`<div class="WAD ErrorView withError" style=${PropSet.style}
           >${ErrorReport.Type}: ${ErrorReport.Message}</>`
     }
   }
 
-//------------------------------------------------------------------------------
-//--                           ScriptError Handling                           --
-//------------------------------------------------------------------------------
-
-  function WAD_ScriptErrorView (PropSet:Indexable) {
-    const { ScriptError } = PropSet
-
-    const ScriptIsOk    = ((ScriptError || '').trim() === '')
-    const MessageToShow = (ScriptIsOk ? '(no error found)' : ScriptError)
-
-    return html`<div class="WAD ScriptErrorView ${ScriptIsOk ? '' : 'withError'}"
-      style=${PropSet.style}
-    >${MessageToShow}</>`
-  }
 
 //------------------------------------------------------------------------------
 //--                   WAD_horizontally/vertically/centered                   --
@@ -1979,10 +1968,10 @@
     }
   }
 //----------------------------------------------------------------------------//
-//                    WAD_AppletScriptActivationOperation                     //
+//                    WAD_AppletScriptApplicationOperation                    //
 //----------------------------------------------------------------------------//
 
-  class WAD_AppletScriptActivationOperation extends WAD_Operation {
+  class WAD_AppletScriptApplicationOperation extends WAD_Operation {
     private _oldScript:any
     private _newScript:any
 
@@ -2179,6 +2168,70 @@
         Page[this._PropertyName] = this._oldValues[i]
       })
       selectPages(this._Pages)
+    }
+  }
+
+//----------------------------------------------------------------------------//
+//                     WAD_PageScriptApplicationOperation                     //
+//----------------------------------------------------------------------------//
+
+  class WAD_PageScriptApplicationOperation extends WAD_Operation {
+    private _Pages:WAT_Page[]
+    private _oldScripts:any[]
+    private _newScripts:any[]
+
+  /**** constructor ****/
+
+    public constructor (Pages:WAT_Page[]) {
+      super()
+
+      this._Pages      = Pages.slice()
+      this._oldScripts = Pages.map((Page:WAT_Page) => Page.activeScript)
+      this._newScripts = Pages.map((Page:WAT_Page) => Page.pendingScript)
+    }
+
+  /**** canExtend ****/
+
+    public canExtend (otherOperation:WAD_Operation):boolean {
+      return false
+    }
+
+  /**** isIrrelevant ****/
+
+    public get isIrrelevant ():boolean {
+      return ValuesAreEqual(this._newScripts,this._oldScripts)
+    }
+    public set isIrrelevant (_:boolean) { throwReadOnlyError('isIrrelevant') }
+
+  /**** doNow ****/
+
+    public doNow ():void {
+      this._Pages.forEach((Page:WAT_Page) => Page.applyPendingScript())
+    }
+
+  /**** extend ****/
+
+    public extend (otherOperation:WAD_AppletConfigurationOperation):void {
+      throwError('NotExtensible: this operation can not be extended')
+    }
+
+  /**** redo ****/
+
+    public redo ():void {
+      this.doNow()
+    }
+
+  /**** undo ****/
+
+    public undo ():void {
+      this._Pages.forEach((Page:WAT_Page, i:number) => {
+        const pendingScript = Page.pendingScript
+        Page.pendingScript = this._oldScripts[i]
+          try {
+            Page.applyPendingScript()
+          } catch (Signal:any) { /* nop - will se an error anyway */ }
+        Page.pendingScript = pendingScript
+      })
     }
   }
 
@@ -2462,6 +2515,70 @@
   }
 
 //----------------------------------------------------------------------------//
+//                    WAD_WidgetScriptApplicationOperation                    //
+//----------------------------------------------------------------------------//
+
+  class WAD_WidgetScriptApplicationOperation extends WAD_Operation {
+    private _Widgets:WAT_Widget[]
+    private _oldScripts:any[]
+    private _newScripts:any[]
+
+  /**** constructor ****/
+
+    public constructor (Widgets:WAT_Widget[]) {
+      super()
+
+      this._Widgets    = Widgets.slice()
+      this._oldScripts = Widgets.map((Widget:WAT_Widget) => Widget.activeScript)
+      this._newScripts = Widgets.map((Widget:WAT_Widget) => Widget.pendingScript)
+    }
+
+  /**** canExtend ****/
+
+    public canExtend (otherOperation:WAD_Operation):boolean {
+      return false
+    }
+
+  /**** isIrrelevant ****/
+
+    public get isIrrelevant ():boolean {
+      return ValuesAreEqual(this._newScripts,this._oldScripts)
+    }
+    public set isIrrelevant (_:boolean) { throwReadOnlyError('isIrrelevant') }
+
+  /**** doNow ****/
+
+    public doNow ():void {
+      this._Widgets.forEach((Widget:WAT_Widget) => Widget.applyPendingScript())
+    }
+
+  /**** extend ****/
+
+    public extend (otherOperation:WAD_AppletConfigurationOperation):void {
+      throwError('NotExtensible: this operation can not be extended')
+    }
+
+  /**** redo ****/
+
+    public redo ():void {
+      this.doNow()
+    }
+
+  /**** undo ****/
+
+    public undo ():void {
+      this._Widgets.forEach((Widget:WAT_Widget, i:number) => {
+        const pendingScript = Widget.pendingScript
+        Widget.pendingScript = this._oldScripts[i]
+          try {
+            Widget.applyPendingScript()
+          } catch (Signal:any) { /* nop - will se an error anyway */ }
+        Widget.pendingScript = pendingScript
+      })
+    }
+  }
+
+//----------------------------------------------------------------------------//
 //                          WAD_WidgetShapeOperation                          //
 //----------------------------------------------------------------------------//
 
@@ -2688,10 +2805,10 @@
     doOperation(new WAD_AppletConfigurationOperation(Property,Value))
   }
 
-/**** doActivateAppletScript ****/
+/**** doApplyAppletScript ****/
 
-  function doActivateAppletScript ():void {
-    doOperation(new WAD_AppletScriptActivationOperation())
+  function doApplyAppletScript ():void {
+    doOperation(new WAD_AppletScriptApplicationOperation())
   }
 
 /**** doCreatePage ****/
@@ -2735,6 +2852,14 @@
     doOperation(new WAD_PageConfigurationOperation(
       DesignerState.selectedPages, Property,Value
     ))
+  }
+
+/**** doApplyVisitedPageScript ****/
+
+  function doApplyVisitedPageScript ():void {
+    doOperation(
+      new WAD_PageScriptApplicationOperation([DesignerState.Applet.visitedPage])
+    )
   }
 
 /**** doShiftSelectedPagesToTop ****/
@@ -2868,6 +2993,15 @@
     doOperation(new WAD_WidgetConfigurationOperation(
       selectedWidgets, Property,ValuesToSet
     ))
+  }
+
+/**** doApplySelectedWidgetsScript ****/
+
+  function doApplySelectedWidgetsScript ():void {
+    const { selectedWidgets } = DesignerState
+    doOperation(
+      new WAD_WidgetScriptApplicationOperation(selectedWidgets)
+    )
   }
 
 /**** doChangeGeometriesBy ****/
@@ -3532,7 +3666,8 @@ console.error(Signal)
   function WAD_AppletConfigurationPane () {
     const { Applet } = DesignerState
 
-    const { ErrorReport } = Applet
+    const { ErrorReport, ScriptError } = Applet
+    const ReportToShow = ScriptError || ErrorReport
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -3947,7 +4082,8 @@ console.error(Signal)
     const { Applet } = DesignerState
 
     const { visitedPage } = Applet
-    const { ErrorReport } = visitedPage || {}
+    const { ErrorReport, ScriptError } = visitedPage || {}
+    const ReportToShow = ScriptError || ErrorReport
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4233,11 +4369,11 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally}>
-        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ErrorReport}/>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ReportToShow}/>
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
-          display:${ErrorReport == null ? 'none' : 'block'};
+          display:${ReportToShow == null ? 'none' : 'block'};
           padding-top:6px;
-        " onClick=${() => window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message)}/>
+        " onClick=${() => window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)}/>
       </>
      </>
     </>`
@@ -4370,10 +4506,6 @@ console.error(Signal)
     const { Applet, selectedWidgets } = DesignerState
     const visitedPage = Applet.visitedPage
 
-    const ErrorReport = commonValueOf(
-      selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport)
-    )
-
     let ValueType:string = 'string'
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Value))
       switch (true) {
@@ -4399,6 +4531,10 @@ console.error(Signal)
         }
       doConfigureSelectedWidgets('Value',Value)
     }
+
+    const ErrorReport  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport))
+    const ScriptError  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ScriptError))
+    const ReportToShow = ScriptError || ErrorReport
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -5209,11 +5345,11 @@ console.error(Signal)
       </>
 
       <${WAD_horizontally}>
-        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ErrorReport}/>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ReportToShow}/>
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
-          display:${ValueIsErrorReport(ErrorReport) ? 'block' : 'none'};
+          display:${ValueIsErrorReport(ReportToShow) ? 'block' : 'none'};
           padding-top:6px;
-        " onClick=${() => window.alert(ErrorReport.Type + '\n\n' + ErrorReport.Message)}/>
+        " onClick=${() => window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)}/>
       </>
      </>
     </>`
@@ -5283,43 +5419,91 @@ console.error(Signal)
     const onClose = useCallback(() => closeDialog('ScriptEditor'))
 
     const { Applet } = DesignerState
-    const { activeScript,pendingScript, ScriptError } = Applet
+
+    let activeScript:WAT_Text|undefined, pendingScript:WAT_Text|undefined
+    let ErrorReport:WAT_ErrorReport|undefined, ScriptError:WAT_ErrorReport|undefined
                  // "activeScript" always exists, "pendingScript" may be missing
+
+    const { Scope } = DesignerState.ScriptEditor
+    switch (Scope) {
+      case 'Applet':
+        ;({ activeScript,pendingScript, ErrorReport,ScriptError } = Applet)
+        break
+      case 'visitedPage':
+        ;({ activeScript,pendingScript, ErrorReport,ScriptError } = Applet.visitedPage)
+        break
+      case 'selectedWidgets':
+        const { selectedWidgets } = DesignerState
+        activeScript  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.activeScript))
+        pendingScript = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.pendingScript))
+        ErrorReport   = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport))
+        ScriptError   = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ScriptError))
+        break
+    }
+
+    const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript)
+    const ReportToShow    = ScriptError || ErrorReport
+      DesignerState.ScriptEditor.ReportToShow = ReportToShow // *C* workaround
+
+    const setScopeTo = useCallback((newScope:string) => {
+      DesignerState.ScriptEditor.Scope = newScope
+      WAT_rerender()
+    },[])
+
+    const setPendingScriptTo = useCallback((newScript:WAT_Text) => {
+      switch (Scope) {
+        case 'Applet':          return doConfigureApplet         ('pendingScript',newScript)
+        case 'visitedPage':     return doConfigureVisitedPage    ('pendingScript',newScript)
+        case 'selectedWidgets': return doConfigureSelectedWidgets('pendingScript',newScript)
+      }
+    },[])
+
+    const applyPendingScript = useCallback(() => {
+      switch (DesignerState.ScriptEditor.Scope) {
+        case 'Applet':          return doApplyAppletScript()
+        case 'visitedPage':     return doApplyVisitedPageScript()
+        case 'selectedWidgets': return doApplySelectedWidgetsScript()
+      }
+    },[])
 
     return html`<${WAD_Dialog} Name="ScriptEditor" resizable=${true}
       onClose=${onClose}
     >
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
-        <${WAD_Label} style="width:52px">Applet</>
-        <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
-          Value=${Applet.Name}
-          onInput=${(Event:Indexable) => doConfigureApplet('Name',Event.target.value)}
-        />
+        <${WAD_Label}>Scope</>
           <div style="width:8px"/>
+        <${WAD_DropDown}
+          Value=${Scope} Options=${[ 'Applet','visitedPage','selectedWidgets' ]}
+          onInput=${(Event:Indexable) => setScopeTo(Event.target.value)}
+        />
+          <${WAD_Gap}/>
         <${WAD_Icon} Icon="${IconFolder}/check.png"
-          enabled=${(pendingScript != null) && (pendingScript !== activeScript)}
-          onClick=${doActivateAppletScript}
+          enabled=${ScriptIsPending}
+          onClick=${applyPendingScript}
         />
           <div style="width:8px"/>
         <${WAD_Icon} Icon="${IconFolder}/xmark.png" style="width:24px"
-          enabled=${(pendingScript != null) && (pendingScript !== activeScript)}
-          onClick=${() => doConfigureApplet('pendingScript','')}
+          enabled=${ScriptIsPending}
+          onClick=${() => setPendingScriptTo('')}
         />
       </>
 
       <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
         flex:1 0 auto; padding-top:4px;
       " Value=${pendingScript == null ? activeScript : pendingScript}
-        onInput=${(Event:Indexable) => doConfigureApplet('pendingScript',Event.target.value)}
+        onInput=${(Event:Indexable) => setPendingScriptTo(Event.target.value)}
       />
 
       <${WAD_horizontally}>
-        <${WAD_ScriptErrorView} style="flex:1 1 auto"/>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ReportToShow}/>
         <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
-          display:${(ScriptError || '').trim() === '' ? 'none' : 'block'};
+          display:${ValueIsErrorReport(ReportToShow) ? 'block' : 'none'};
           padding-top:6px;
-        " onClick=${() => window.alert(DesignerState.Applet.ScriptError || '')}/>
+        " onClick=${() => {
+          const { ReportToShow } = DesignerState.ScriptEditor
+          window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message)
+        }}/>
       </>
      </>
     </>`
