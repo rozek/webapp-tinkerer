@@ -55,6 +55,16 @@ export const WAT_Cursors = [
     's-resize', 'se-resize', 'sw-resize', 'text', 'vertical-text', 'w-resize', 'wait',
     'zoom-in', 'zoom-out'
 ];
+/**** Error Report ****/
+export const WAT_ErrorTypes = [
+    //  'missing Behaviour',         'Behaviour Execution Failure',
+    'Script Compilation Failure', 'Script Execution Failure',
+    'Rendering Failure', 'Event Handling Failure',
+    '"onMount" Callback Failure', '"onUnmount" Callback Failure',
+    '"onFocus" Callback Failure', '"onBlur" Callback Failure',
+    '"onClick" Callback Failure', '"onInput" Callback Failure',
+    '"onDrop" Callback Failure', '"onValueChange" Callback Failure'
+];
 /**** throwError - simplifies construction of named errors ****/
 export function throwError(Message) {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
@@ -247,6 +257,15 @@ export function ValueIsBoxShadow(Value) {
 /**** allow/expect[ed]BoxShadow ****/
 export const allowBoxShadow = ValidatorForClassifier(ValueIsBoxShadow, acceptNil, 'widget box shadow specification'), allowedBoxShadow = allowBoxShadow;
 export const expectBoxShadow = ValidatorForClassifier(ValueIsBoxShadow, rejectNil, 'widget box shadow specification'), expectedBoxShadow = expectBoxShadow;
+/**** ValueIsError ****/
+export function ValueIsError(Value) {
+    return (ValueIsPlainObject(Value) &&
+        ValueIsOneOf(Value.Type, WAT_ErrorTypes) &&
+        ValueIsText(Value.Message));
+}
+/**** allow/expect[ed]Error ****/
+export const allowError = ValidatorForClassifier(ValueIsError, acceptNil, 'WAT error descriptor'), allowedError = allowError;
+export const expectError = ValidatorForClassifier(ValueIsError, rejectNil, 'WAT error descriptor'), expectedError = expectError;
 /**** ValueIsSerializableValue ****/
 export function ValueIsSerializableValue(Value) {
     switch (true) {
@@ -468,6 +487,19 @@ appendStyle(`
     pointer-events:auto;
   }
 
+
+/**** "broken" and Error Indicator ****/
+
+  .WAT.broken {
+    border:dotted 1px orange; background:rgba(255,0,0,0.1);
+  }
+
+  .WAT.ErrorIndicator {
+    overflow:hidden;
+    left:0px; top:0px; width:24px; height:24px;
+    background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
+    pointer-events:auto;
+  }
 
 
 /**** common Settings ****/
@@ -1044,6 +1076,13 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
+        /**** Error - for internal use only ****/
+        Object.defineProperty(this, "_Error", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -1337,6 +1376,31 @@ export class WAT_Visual {
         return this._memoized;
     }
     set memoized(_) { throwReadOnlyError('memoized'); }
+    get Error() {
+        return (this._Error == null ? undefined : Object.assign({}, this._Error));
+    }
+    set Error(newError) {
+        if (newError != null)
+            throwError('InvalidArgument: an error can only be cleared');
+        if (this._Error != null) {
+            this._Error = undefined;
+            this.rerender();
+        }
+    }
+    /**** hasError ****/
+    get hasError() { return (this._Error != null); }
+    set hasError(_) { throwReadOnlyError('hasError'); }
+    /**** ErrorRendering ****/
+    ErrorRendering() {
+        // @ts-ignore TS2532 "ErrorRenderer.call(this)" will define "this"
+        const Error = this.Error;
+        if (Error == null) {
+            return '';
+        } // should not happen
+        // @ts-ignore TS2532 "ErrorRenderer.call(this)" will define "this"
+        const onClick = () => this.Applet.showError(this, Error);
+        return html `<div class="WAT ErrorIndicator" onClick=${onClick}/>`;
+    }
     get Renderer() { return this._Renderer; }
     set Renderer(newRenderer) {
         allowFunction('WAT renderer', newRenderer);
@@ -1352,6 +1416,9 @@ export class WAT_Visual {
     }
     /**** Rendering - generates the rendering for this widget ****/
     Rendering() {
+        if (this.hasError) {
+            return this.ErrorRendering();
+        }
         let Renderer = this._Renderer;
         if (Renderer == null) {
             return '';
@@ -1907,6 +1974,9 @@ export class WAT_Applet extends WAT_Visual {
             rerender();
         }
     }
+    /**** showError ****/
+    showError(Visual, Error) {
+    }
     get PageList() { return this._PageList.slice(); }
     set PageList(_) { throwReadOnlyError('PageList'); }
     /**** PageCount ****/
@@ -2428,6 +2498,27 @@ export class WAT_Applet extends WAT_Visual {
 export class WAT_Page extends WAT_Visual {
     constructor(Applet) {
         super(Applet);
+        /**** activeScript - is always treated as existing ****/
+        Object.defineProperty(this, "_activeScript", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** pendingScript - may be missing or consist of white-space only ****/
+        Object.defineProperty(this, "_pendingScript", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** ScriptError - script compilation errors, for internal use only ****/
+        Object.defineProperty(this, "_ScriptError", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** WidgetList ****/
         Object.defineProperty(this, "_WidgetList", {
             enumerable: true,
@@ -2487,6 +2578,110 @@ export class WAT_Page extends WAT_Visual {
                 }
             }
         }
+    }
+    /**** Script ****/
+    get Script() {
+        return (this._pendingScript == null
+            ? (this._activeScript || '')
+            : this._pendingScript);
+    }
+    set Script(_) { throwReadOnlyError('Script'); }
+    get activeScript() { return this._activeScript || ''; }
+    set activeScript(_) { throwReadOnlyError('activeScript'); }
+    get pendingScript() { return this._pendingScript; }
+    set pendingScript(newScript) {
+        allowText('applet script', newScript);
+        if (this._pendingScript !== newScript) {
+            this._pendingScript = newScript;
+            this.rerender();
+        }
+    }
+    /**** activateScript - even if Page is not (yet) attached ****/
+    async activateScript(Mode = 'catch-exception') {
+        let activeScript = (this._activeScript || '').trim();
+        this._Renderer = undefined;
+        unregisterAllReactiveFunctionsFrom(this);
+        /**** prepare for script execution ****/
+        const reactively = (reactiveFunction) => {
+            expectFunction('reactive function', reactiveFunction);
+            // @ts-ignore TS2345 do not care about the specific signature of "reactiveFunction"
+            registerReactiveFunctionIn(this, computed(() => {
+                try {
+                    reactiveFunction();
+                }
+                catch (Signal) {
+                    console.error('WAT: execution error in reactive function', Signal);
+                }
+            }));
+        };
+        /**** compile and run the applet script ****/
+        this.ScriptError = undefined; // only to be set by "applyPendingScript"
+        let compiledScript;
+        try {
+            // @ts-ignore TS2351 AsyncFunction *is* constructible
+            compiledScript = new AsyncFunction('Applet,me,my, html,reactively', activeScript);
+        }
+        catch (Signal) {
+            console.error('WAT: script compilation failure', Signal);
+            return;
+        }
+        try {
+            await compiledScript.call(this, this.Applet, this, this, html, reactively);
+        }
+        catch (Signal) {
+            if (Mode === 'catch-exception') {
+                console.error('WAT: script execution failure', Signal);
+                return;
+            }
+            else {
+                console.warn('WAT: script execution failure', Signal);
+                throw Signal;
+            }
+        }
+        this.rerender();
+    }
+    /**** applyPendingScript - but only if it can be compiled ****/
+    async applyPendingScript() {
+        if (!this.isAttached) {
+            return;
+        } // consider attached pages only
+        let activeScript = this._activeScript || '';
+        let pendingScript = this._pendingScript || '';
+        if (activeScript === pendingScript) {
+            return;
+        }
+        if (pendingScript.trim() !== '') {
+            let compiledScript; // try compiling pending script first
+            try {
+                // @ts-ignore TS2351 AsyncFunction *is* constructible
+                compiledScript = new AsyncFunction('Applet,me,my, html,reactively', pendingScript);
+            }
+            catch (Signal) {
+                console.warn('WAT: script compilation failure - ', Signal);
+                this.ScriptError = 'Script Compilation Failure: ' + Signal;
+                this.rerender();
+                return;
+            }
+        }
+        this._activeScript = pendingScript.trim();
+        this._pendingScript = undefined;
+        this._ScriptError = undefined;
+        try {
+            await this.activateScript('rethrow-exception');
+        }
+        catch (Signal) {
+            this.ScriptError = 'Script Execution Failure: ' + Signal;
+            this.rerender();
+            return;
+        }
+        this.rerender();
+    }
+    get ScriptError() {
+        return this._ScriptError;
+    }
+    set ScriptError(newScriptError) {
+        allowString('script error', newScriptError);
+        this._ScriptError = newScriptError;
     }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
@@ -6363,7 +6558,8 @@ class WAT_AppletView extends Component {
         const lastDialogIndex = openDialogs.length - 1;
         const needsModalLayer = (openDialogs.length > 0) &&
             openDialogs[lastDialogIndex].isModal;
-        return html `<div class="WAT Applet" style="
+        const broken = (Applet.hasError ? 'broken' : '');
+        return html `<div class="WAT ${broken} Applet" style="
         ${Applet.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px;
       ">
@@ -6430,11 +6626,12 @@ class WAT_PageView extends Component {
     /**** render ****/
     render(PropSet) {
         const Page = this._Page = PropSet.Page;
+        const broken = (Page.hasError ? 'broken' : '');
         this._releaseWidgets(this._shownWidgets);
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
         this._shownWidgets = WidgetsToShow;
-        return html `<div class="WAT Page" style="
+        return html `<div class="WAT ${broken} Page" style="
         ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
       ">
@@ -6481,14 +6678,15 @@ class WAT_WidgetView extends Component {
         const CSSGeometry = ((x != null) && (Width != null) && (y != null) && (Height != null)
             ? `left:${x}px; top:${y}px; width:${Width}px; height:${Height}px; right:auto; bottom:auto;`
             : '');
+        const broken = (Widget.hasError ? 'broken' : '');
         const openOverlays = Widget._OverlayList;
         const lastOverlayIndex = openOverlays.length - 1;
-        return html `<div class="WAT Widget" style="
+        return html `<div class="WAT ${broken} Widget" style="
         ${Widget.CSSStyle} ${CSSGeometry}
       ">
         ${Widget.Rendering()}
       </div>
-      ${openOverlays.length > 0 ? html `<div class="WAT OverlayLayer"
+      ${(broken === '') && (openOverlays.length > 0) ? html `<div class="WAT OverlayLayer"
         style="${CSSGeometry}"
       >
         ${openOverlays.map((Overlay, Index) => html `
