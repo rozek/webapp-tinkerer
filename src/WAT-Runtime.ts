@@ -213,6 +213,7 @@
 
   export type WAT_ErrorReport = {
     Type:WAT_ErrorType,          // also serves as a title for the error display
+    Sufferer:WAT_Visual,
     Message:WAT_Text,
     Cause:any
   }
@@ -609,9 +610,9 @@
     ValueIsBoxShadow, rejectNil, 'widget box shadow specification'
   ), expectedBoxShadow = expectBoxShadow
 
-/**** ValueIsError ****/
+/**** ValueIsErrorReport ****/
 
-  export function ValueIsError (Value:any):boolean {
+  export function ValueIsErrorReport (Value:any):boolean {
     return (
       ValueIsPlainObject(Value) &&
       ValueIsOneOf(Value.Type,WAT_ErrorTypes) &&
@@ -619,15 +620,15 @@
     )
   }
 
-/**** allow/expect[ed]Error ****/
+/**** allow/expect[ed]ErrorReport ****/
 
-  export const allowError = ValidatorForClassifier(
-    ValueIsError, acceptNil, 'WAT error descriptor'
-  ), allowedError = allowError
+  export const allowErrorReport = ValidatorForClassifier(
+    ValueIsErrorReport, acceptNil, 'WAT error report'
+  ), allowedErrorReport = allowErrorReport
 
-  export const expectError = ValidatorForClassifier(
-    ValueIsError, rejectNil, 'WAT error descriptor'
-  ), expectedError = expectError
+  export const expectErrorReport = ValidatorForClassifier(
+    ValueIsErrorReport, rejectNil, 'WAT error report'
+  ), expectedErrorReport = expectErrorReport
 
 /**** ValueIsSerializableValue ****/
 
@@ -1207,11 +1208,11 @@
 //--                              Error Handling                              --
 //------------------------------------------------------------------------------
 
-/**** setError ****/
+/**** setErrorReport ****/
 
-  function setError (Visual:WAT_Visual, ErrorReport:WAT_ErrorReport):void {
-    expectVisual    ('visual',Visual)
-    allowError('error report',ErrorReport)
+  function setErrorReport (Visual:WAT_Visual, ErrorReport:WAT_ErrorReport):void {
+    expectVisual          ('visual',Visual)
+    allowErrorReport('error report',ErrorReport)
 
     if (ValuesDiffer(Visual.ErrorReport,ErrorReport)) {
       (Visual as Indexable)._ErrorReport = ErrorReport
