@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, allowString, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -704,6 +704,15 @@ function setErrorReport(Visual, ErrorReport) {
         Visual.rerender();
     }
 }
+/**** setScriptError (used by Designer) ****/
+export function setScriptError(Visual, ScriptError) {
+    expectVisual('visual', Visual);
+    allowErrorReport('script error', ScriptError);
+    if (ValuesDiffer(Visual.ScriptError, ScriptError)) {
+        Visual._ScriptError = ScriptError;
+        Visual.rerender();
+    }
+}
 /**** ErrorRenderingFor ****/
 function ErrorRenderingFor(Visual) {
     const onClick = () => showErrorReport(Visual, Visual.ErrorReport);
@@ -1116,7 +1125,7 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** ScriptError - script compilation errors, for internal use only ****/
+        /**** ScriptError (used by Designer) ****/
         Object.defineProperty(this, "_ScriptError", {
             enumerable: true,
             configurable: true,
@@ -1469,26 +1478,29 @@ export class WAT_Visual {
         const onUnmount = this._onUnmount_.bind(this);
         const onValueChange = this._onValueChange_.bind(this);
         /**** compile and run the script ****/
-        this.ScriptError = undefined; // only to be set by "applyPendingScript"
+        this._ErrorReport = undefined;
+        this._ScriptError = undefined; // only to be set by "applyPendingScript"
         let compiledScript;
         try {
             // @ts-ignore TS2351 AsyncFunction *is* constructible
             compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange', activeScript);
         }
         catch (Signal) {
-            console.error('WAT: script compilation failure', Signal);
+            setErrorReport(this, {
+                Type: 'Script Compilation Failure',
+                Sufferer: this, Message: '' + Signal, Cause: Signal
+            });
             return;
         }
         try {
             await compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange);
         }
         catch (Signal) {
-            if (Mode === 'catch-exception') {
-                console.error('WAT: script execution failure', Signal);
-                return;
-            }
-            else {
-                console.warn('WAT: script execution failure', Signal);
+            setErrorReport(this, {
+                Type: 'Script Execution Failure',
+                Sufferer: this, Message: '' + Signal, Cause: Signal
+            });
+            if (Mode === 'rethrow-exception') {
                 throw Signal;
             }
         }
@@ -1511,8 +1523,10 @@ export class WAT_Visual {
                 compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange', pendingScript);
             }
             catch (Signal) {
-                console.warn('WAT: script compilation failure - ', Signal);
-                this.ScriptError = 'Script Compilation Failure: ' + Signal;
+                setScriptError(this, {
+                    Type: 'Script Compilation Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
                 this.rerender();
                 return;
             }
@@ -1524,18 +1538,20 @@ export class WAT_Visual {
             await this.activateScript('rethrow-exception');
         }
         catch (Signal) {
-            this.ScriptError = 'Script Execution Failure: ' + Signal;
+            setScriptError(this, {
+                Type: 'Script Execution Failure',
+                Sufferer: this, Message: '' + Signal, Cause: Signal
+            });
             this.rerender();
             return;
         }
         this.rerender();
     }
     get ScriptError() {
-        return this._ScriptError;
+        return (this._ScriptError == null ? undefined : Object.assign({}, this._ScriptError));
     }
-    set ScriptError(newScriptError) {
-        allowString('script error', newScriptError);
-        this._ScriptError = newScriptError;
+    set ScriptError(_) {
+        throwReadOnlyError('ScriptError');
     }
     get ErrorReport() {
         return (this._ErrorReport == null ? undefined : Object.assign({}, this._ErrorReport));
