@@ -145,10 +145,10 @@
   export type  WAT_TextDecorationStyle  = typeof WAT_TextDecorationStyles[number]
 
   export type WAT_TextDecoration = {
-    Line:       WAT_TextDecorationLine,
-    Color?:     WAT_Color,          // "null" or "undefined" mean "currentColor"
-    Style?:     WAT_TextDecorationStyle,
-    Thickness?: WAT_Dimension          // "null" or "undefined" mean "from-font"
+    Line:      WAT_TextDecorationLine,
+    Color?:    WAT_Color,           // "null" or "undefined" mean "currentColor"
+    Style?:    WAT_TextDecorationStyle,
+    Thickness?:WAT_Dimension           // "null" or "undefined" mean "from-font"
   }
 
   export type WAT_TextShadow = {
@@ -198,6 +198,25 @@
   ]
   export type WAT_Cursor = typeof WAT_Cursors[number]
 
+/**** Error Report ****/
+
+  export const WAT_ErrorTypes = [
+//  'missing Behaviour',         'Behaviour Execution Failure',
+    'Script Compilation Failure','Script Execution Failure',
+    'Rendering Failure',         'Event Handling Failure',
+    '"onMount" Callback Failure','"onUnmount" Callback Failure',
+    '"onFocus" Callback Failure','"onBlur" Callback Failure',
+    '"onClick" Callback Failure','"onInput" Callback Failure',
+    '"onDrop" Callback Failure', '"onValueChange" Callback Failure'
+  ]
+  export type WAT_ErrorType = typeof WAT_ErrorTypes[number]
+
+  export type WAT_ErrorReport = {
+    Type:WAT_ErrorType,          // also serves as a title for the error display
+    Message:WAT_Text,
+    Cause:any
+  }
+
 /**** Dialogs and Overlays ****/
 
   type WAT_Dialog = {
@@ -217,28 +236,7 @@
     minWidth?:WAT_Dimension, minHeight?:WAT_Dimension,
     maxWidth?:WAT_Dimension, maxHeight?:WAT_Dimension,
     onOpen?:Function, onClose?:Function
-  }
-
-/**** Error Report ****/
-
-  export const WAT_ErrorTypes = [
-//  'missing Behaviour',         'Behaviour Execution Failure',
-    'Script Compilation Failure','Script Execution Failure',
-    'Rendering Failure',         'Event Handling Failure',
-    '"onMount" Callback Failure','"onUnmount" Callback Failure',
-    '"onFocus" Callback Failure','"onBlur" Callback Failure',
-    '"onClick" Callback Failure','"onInput" Callback Failure',
-    '"onDrop" Callback Failure', '"onValueChange" Callback Failure'
-  ]
-  export type WAT_ErrorType = typeof WAT_ErrorTypes[number]
-
-  export type WAT_Error = {
-    Type:WAT_ErrorType,          // also serves as a title for the error display
-    Message:WAT_Text,
-    Cause:any
-  }
-
-/**** throwError - simplifies construction of named errors ****/
+  }/**** throwError - simplifies construction of named errors ****/
 
   export function throwError (Message:string):never {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message)
@@ -876,6 +874,7 @@
 /**** "broken" and Error Indicator ****/
 
   .WAT.broken {
+    overflow:visible;
     border:dotted 1px orange; background:rgba(255,0,0,0.1);
   }
 
@@ -1202,6 +1201,41 @@
     reactiveFunctions.forEach((reactiveFunction:Function) => {
       dispose(reactiveFunction)
     })
+  }
+
+//------------------------------------------------------------------------------
+//--                              Error Handling                              --
+//------------------------------------------------------------------------------
+
+/**** setError ****/
+
+  function setError (Visual:WAT_Visual, ErrorReport:WAT_ErrorReport):void {
+    expectVisual    ('visual',Visual)
+    allowError('error report',ErrorReport)
+
+    if (ValuesDiffer(Visual.ErrorReport,ErrorReport)) {
+      (Visual as Indexable)._ErrorReport = ErrorReport
+      Visual.rerender()
+    }
+  }
+
+/**** ErrorRenderingFor ****/
+
+  function ErrorRenderingFor (Visual:WAT_Visual):any {
+    const onClick = () => showErrorReport(Visual,Visual.ErrorReport as WAT_ErrorReport)
+    return html`<div class="WAT ErrorIndicator" onClick=${onClick}/>`
+  }
+
+/**** showErrorReport ****/
+
+  function showErrorReport (Visual:WAT_Visual, ErrorReport:WAT_ErrorReport):void {
+    if (typeof (DesignerLayer as Indexable)?.showErrorReport === 'function') {
+      (DesignerLayer as Indexable).showErrorReport(Visual,ErrorReport)
+    } else {
+      window.alert(
+        ErrorReport.Type + '\n\n' + ErrorReport.Message
+      )
+    }
   }
 
 //-------------------------------------------------------------------------------
@@ -1872,39 +1906,19 @@
 
   /**** Error - for internal use only ****/
 
-    protected _Error:WAT_Error|undefined
+    protected _ErrorReport:WAT_ErrorReport|undefined
 
-    public get Error ():WAT_Error|undefined {
-      return (this._Error == null ? undefined : { ...this._Error })
+    public get ErrorReport ():WAT_ErrorReport|undefined {
+      return (this._ErrorReport == null ? undefined : { ...this._ErrorReport })
     }
-    public set Error (newError:WAT_Error|undefined) {
-      if (newError != null) throwError(
-        'InvalidArgument: an error can only be cleared'
-      )
-
-      if (this._Error != null) {
-        this._Error = undefined
-        this.rerender()
-      }
+    public set ErrorReport (_:WAT_ErrorReport|undefined) {
+      throwReadOnlyError('ErrorReport')
     }
 
-  /**** hasError ****/
+  /**** isBroken ****/
 
-    public get hasError ():boolean  { return (this._Error != null) }
-    public set hasError (_:boolean) { throwReadOnlyError('hasError') }
-
-  /**** ErrorRendering ****/
-
-    public ErrorRendering ():any {
-// @ts-ignore TS2532 "ErrorRenderer.call(this)" will define "this"
-      const Error = this.Error
-      if (Error == null) { return '' }                      // should not happen
-
-// @ts-ignore TS2532 "ErrorRenderer.call(this)" will define "this"
-      const onClick = () => this.Applet.showError(this,Error)
-
-      return html`<div class="WAT ErrorIndicator" onClick=${onClick}/>`
-    }
+    public get isBroken ():boolean  { return (this._ErrorReport != null) }
+    public set isBroken (_:boolean) { throwReadOnlyError('isBroken') }
 
   /**** Renderer ****/
 
@@ -1929,10 +1943,6 @@
   /**** Rendering - generates the rendering for this widget ****/
 
     public Rendering ():any {
-      if (this.hasError) {
-        return this.ErrorRendering()
-      }
-
       let Renderer = this._Renderer
       if (Renderer == null) { return '' }
 
@@ -2511,11 +2521,6 @@
 
     public rerender (Visual?:WAT_Visual):void {
       if (this._View != null) { rerender() }
-    }
-
-  /**** showError ****/
-
-    public showError (Visual:WAT_Visual, Error:WAT_Error):void {
     }
 
   /**** PageList ****/
@@ -7527,14 +7532,14 @@
       const needsModalLayer = (openDialogs.length > 0) &&
                               openDialogs[lastDialogIndex].isModal
 
-      const broken = (Applet.hasError ? 'broken' : '')
+      const broken = (Applet.isBroken ? 'broken' : '')
 
       return html`<div class="WAT ${broken} Applet" style="
         ${Applet.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px;
       ">
         ${Applet.isAttached ? html`
-          ${Applet.Rendering()}
+          ${broken === '' ? Applet.Rendering() : ErrorRenderingFor(Applet)}
           ${visitedPage == null
             ? html`<div class="WAT centered"><div>(no page to show)</div></div>`
             : html`<${WAT_PageView} Page=${visitedPage}/>`
@@ -7598,7 +7603,7 @@
     public render (PropSet:Indexable):any {
       const Page = this._Page = PropSet.Page as WAT_Page
 
-      const broken = (Page.hasError ? 'broken' : '')
+      const broken = (Page.isBroken ? 'broken' : '')
 
       this._releaseWidgets(this._shownWidgets)
 
@@ -7612,7 +7617,7 @@
         ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
       ">
-        ${Page.Rendering()}
+        ${broken === '' ? Page.Rendering() : ErrorRenderingFor(Page)}
         ${WidgetsToShow.toReversed().map((Widget:WAT_Widget) => {
           return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Widget.Geometry}/>`
         })}
@@ -7661,7 +7666,7 @@
         : ''
       )
 
-      const broken = (Widget.hasError ? 'broken' : '')
+      const broken = (Widget.isBroken ? 'broken' : '')
 
       const openOverlays     = (Widget as Indexable)._OverlayList
       const lastOverlayIndex = openOverlays.length-1
@@ -7669,7 +7674,7 @@
       return html`<div class="WAT ${broken} Widget" style="
         ${Widget.CSSStyle} ${CSSGeometry}
       ">
-        ${Widget.Rendering()}
+        ${broken === '' ? Widget.Rendering() : ErrorRenderingFor(Widget)}
       </div>
       ${(broken === '') && (openOverlays.length > 0) ? html`<div class="WAT OverlayLayer"
         style="${CSSGeometry}"
@@ -8166,7 +8171,7 @@
   let DesignerLayer:Function|undefined = undefined
 
   export function useDesigner (newDesigner:Component):void {
-    allowFunction('WAT designer',newDesigner)
+    allowFunction('WAT designer',newDesigner)// it's a preact function component
 
     console.log('installing WebApp Tinkerer Designer')
 
