@@ -1846,23 +1846,28 @@
       }
     }
 
-  /**** onValueChange - will not be called upon deserialization ****/
+  /**** onValueChange ****/
 
     protected _onValueChange:Function|undefined
 
-    public get onValueChange ():Function|undefined  { return this._onValueChange }
+    public get onValueChange ():Function|undefined { return this._onValueChange_ }
     public set onValueChange (newCallback:Function|undefined) {
       allowFunction('"onValueChange" callback',newCallback)
-      if (newCallback == null) {
-        this._onValueChange = undefined
-      } else {
-        this._onValueChange = () => {
-          try {
-            newCallback.call(this)
-          } catch (Signal:any) {
-            console.error('"onValueChange" Callback Failure',Signal)
-          }
+      this._onValueChange = newCallback
+    }
+
+    protected _onValueChange_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onValueChange != null) { this._onValueChange.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onValueChange" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
         }
+      } else {                                          // definition invocation
+        this._onValueChange = newCallback
       }
     }
 
@@ -1905,6 +1910,147 @@
     }
     public set memoized (_:Indexable) { throwReadOnlyError('memoized') }
 
+  /**** Script ****/
+
+    public get Script ():WAT_Text {
+      return (
+        this._pendingScript == null
+        ? (this._activeScript || '')
+        : this._pendingScript
+      )
+    }
+    public set Script (_:WAT_Text|undefined) { throwReadOnlyError('Script') }
+
+  /**** activeScript - is always treated as existing ****/
+
+    protected _activeScript:WAT_Text|undefined
+
+    public get activeScript ():WAT_Text  { return this._activeScript || '' }
+    public set activeScript (_:WAT_Text) { throwReadOnlyError('activeScript') }
+
+  /**** pendingScript - may be missing or may consist of white-space only ****/
+
+    protected _pendingScript:WAT_Text|undefined
+
+    public get pendingScript ():WAT_Text|undefined { return this._pendingScript }
+    public set pendingScript (newScript:WAT_Text|undefined) {
+      allowText('visual script',newScript)
+
+      if (this._pendingScript !== newScript) {
+        this._pendingScript = newScript
+        this.rerender()
+      }
+    }
+
+  /**** activateScript - even if underlying applet is not (yet) attached ****/
+
+    public async activateScript (Mode:string = 'catch-exception'):Promise<void> {
+      let activeScript:string = (this._activeScript || '').trim()
+
+      this._Renderer = () => ''
+      unregisterAllReactiveFunctionsFrom(this)
+
+    /**** prepare for script execution ****/
+
+      const reactively = (reactiveFunction:Function):void => {
+        expectFunction('reactive function',reactiveFunction)
+// @ts-ignore TS2345 do not care about the specific signature of "reactiveFunction"
+        registerReactiveFunctionIn(this,computed(() => {
+          try {
+            reactiveFunction()
+          } catch (Signal:any) {
+            console.error('WAT: execution error in reactive function',Signal)
+          }
+        }))
+      }
+
+      const onRender      = this._onRender_.bind(this)
+      const onMount       = this._onMount_.bind(this)
+      const onUnmount     = this._onUnmount_.bind(this)
+      const onValueChange = this._onValueChange_.bind(this)
+
+    /**** compile and run the script ****/
+
+      this.ScriptError = undefined     // only to be set by "applyPendingScript"
+        let compiledScript:Function
+        try {
+// @ts-ignore TS2351 AsyncFunction *is* constructible
+          compiledScript = new AsyncFunction(
+            'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange',
+            activeScript
+          )
+        } catch (Signal:any) {
+          console.error('WAT: script compilation failure',Signal)
+          return
+        }
+
+        try {
+          await compiledScript.call(this,
+            this,this, html,reactively, onRender,onMount,onUnmount,onValueChange
+          )
+        } catch (Signal:any) {
+          if (Mode === 'catch-exception') {
+            console.error('WAT: script execution failure',Signal)
+            return
+          } else {
+            console.warn('WAT: script execution failure',Signal)
+            throw Signal
+          }
+        }
+      this.rerender()
+    }
+
+  /**** applyPendingScript - but only if it can be compiled ****/
+
+    public async applyPendingScript ():Promise<void> {
+      if (! this.isAttached) { return }        // consider attached applets only
+
+      let activeScript:string  = this._activeScript  || ''
+      let pendingScript:string = this._pendingScript || ''
+      if (activeScript === pendingScript) { return }
+
+      if (pendingScript.trim() !== '') {
+        let compiledScript:Function        // try compiling pending script first
+        try {
+// @ts-ignore TS2351 AsyncFunction *is* constructible
+          compiledScript = new AsyncFunction(
+            'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange',
+            pendingScript
+          )
+        } catch (Signal:any) {
+          console.warn('WAT: script compilation failure - ',Signal)
+          this.ScriptError = 'Script Compilation Failure: ' + Signal
+          this.rerender()
+          return
+        }
+      }
+
+      this._activeScript  = pendingScript.trim()
+      this._pendingScript = undefined
+      this._ScriptError   = undefined
+
+      try {
+        await this.activateScript('rethrow-exception')
+      } catch (Signal:any) {
+        this.ScriptError = 'Script Execution Failure: ' + Signal
+        this.rerender()
+        return
+      }
+      this.rerender()
+    }
+
+  /**** ScriptError - script compilation errors, for internal use only ****/
+
+    protected _ScriptError:string|undefined
+
+    public get ScriptError ():string|undefined {
+      return this._ScriptError
+    }
+    public set ScriptError (newScriptError:string|undefined) {
+      allowString('script error',newScriptError)
+      this._ScriptError = newScriptError
+    }
+
   /**** Error - for internal use only ****/
 
     protected _ErrorReport:WAT_ErrorReport|undefined
@@ -1928,17 +2074,42 @@
     public get Renderer ():Function|undefined { return this._Renderer }
     public set Renderer (newRenderer:Function|undefined) {
       allowFunction('WAT renderer',newRenderer)
-      if (this._Renderer !== newRenderer) {
-        this._Renderer = newRenderer
-        this.rerender()
+      if (newRenderer == null) { newRenderer = () => ''}
+
+      this._Renderer = () => {
+        try {
+          newRenderer.call(this)
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'Rendering Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
       }
+      this.rerender()
     }
 
   /**** onRender ****/
 
-    public onRender (newRenderer:Function):void {
-      expectFunction('renderer callback',newRenderer)
-      this.Renderer = newRenderer
+    public get onRender ():Function|undefined { return this._onRender_ }
+    public set onRender (newCallback:Function|undefined) {
+      allowFunction('rendering callback',newCallback)
+      this._Renderer = newCallback
+    }
+
+    protected _onRender_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._Renderer != null) { this._Renderer.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'Rendering Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._Renderer = newCallback
+      }
     }
 
   /**** Rendering - generates the rendering for this widget ****/
@@ -2041,19 +2212,24 @@
 
     protected _onMount:Function|undefined
 
-    public get onMount ():Function|undefined  { return this._onMount }
+    public get onMount ():Function|undefined { return this._onMount_ }
     public set onMount (newCallback:Function|undefined) {
       allowFunction('"onMount" callback',newCallback)
-      if (newCallback == null) {
-        this._onMount = undefined
-      } else {
-        this._onMount = () => {
-          try {
-            newCallback.call(this)
-          } catch (Signal:any) {
-            console.error('"onMount" Callback Failure',Signal)
-          }
+      this._onMount = newCallback
+    }
+
+    protected _onMount_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onMount != null) { this._onMount.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onMount" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
         }
+      } else {                                          // definition invocation
+        this._onMount = newCallback
       }
     }
 
@@ -2061,19 +2237,24 @@
 
     protected _onUnmount:Function|undefined
 
-    public get onUnmount ():Function|undefined  { return this._onUnmount }
+    public get onUnmount ():Function|undefined { return this._onUnmount_ }
     public set onUnmount (newCallback:Function|undefined) {
       allowFunction('"onUnmount" callback',newCallback)
-      if (newCallback == null) {
-        this._onUnmount = undefined
-      } else {
-        this._onUnmount = () => {
-          try {
-            newCallback.call(this)
-          } catch (Signal:any) {
-            console.error('"onUnmount" Callback Failure',Signal)
-          }
+      this._onUnmount = newCallback
+    }
+
+    protected _onUnmount_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onUnmount != null) { this._onUnmount.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onUnmount" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
         }
+      } else {                                          // definition invocation
+        this._onUnmount = newCallback
       }
     }
 
@@ -2112,6 +2293,7 @@
         'ForegroundColor', 'BackgroundColor','BackgroundTexture',
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
+        'activeScript','pendingScript',
         'memoized','Value',
       ].forEach((Name:string) => serializeProperty(Name))
     }
@@ -2140,6 +2322,7 @@
         'ForegroundColor', 'BackgroundColor','BackgroundTexture',
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
+        /*'activeScript',*/'pendingScript',
         'Value',
       ].forEach((Name:string) => deserializeProperty(Name))
 
@@ -2155,7 +2338,14 @@
           )
         }
       }
-    }
+
+    /**** "activeScript" needs special treatment ****/
+
+      if (ValueIsText(Serialization.activeScript)) {
+        this._activeScript = Serialization.activeScript as string
+        this.activateScript()                      // in "creation" order, i.e.,
+      }           // pages and widgets will already be attached, applets may not
+    }                          // and inner visuals may not yet (all) be present
   }
 
 //------------------------------------------------------------------------------
@@ -2289,138 +2479,6 @@
           }
         }
       }
-    }
-
-  /**** Script ****/
-
-    public get Script ():WAT_Text {
-      return (
-        this._pendingScript == null
-        ? (this._activeScript || '')
-        : this._pendingScript
-      )
-    }
-    public set Script (_:WAT_Text|undefined) { throwReadOnlyError('Script') }
-
-  /**** activeScript - is always treated as existing ****/
-
-    protected _activeScript:WAT_Text|undefined
-
-    public get activeScript ():WAT_Text  { return this._activeScript || '' }
-    public set activeScript (_:WAT_Text) { throwReadOnlyError('activeScript') }
-
-  /**** pendingScript - may be missing or consist of white-space only ****/
-
-    protected _pendingScript:WAT_Text|undefined
-
-    public get pendingScript ():WAT_Text|undefined { return this._pendingScript }
-    public set pendingScript (newScript:WAT_Text|undefined) {
-      allowText('applet script',newScript)
-
-      if (this._pendingScript !== newScript) {
-        this._pendingScript = newScript
-        this.rerender()
-      }
-    }
-
-  /**** activateScript - even if Applet is not (yet) attached ****/
-
-    public async activateScript (Mode:string = 'catch-exception'):Promise<void> {
-      let activeScript:string = (this._activeScript || '').trim()
-
-      this._Renderer = undefined
-      unregisterAllReactiveFunctionsFrom(this)
-
-    /**** prepare for script execution ****/
-
-      const reactively = (reactiveFunction:Function):void => {
-        expectFunction('reactive function',reactiveFunction)
-// @ts-ignore TS2345 do not care about the specific signature of "reactiveFunction"
-        registerReactiveFunctionIn(this,computed(() => {
-          try {
-            reactiveFunction()
-          } catch (Signal:any) {
-            console.error('WAT: execution error in reactive function',Signal)
-          }
-        }))
-      }
-
-    /**** compile and run the applet script ****/
-
-      this.ScriptError = undefined     // only to be set by "applyPendingScript"
-        let compiledScript:Function
-        try {
-// @ts-ignore TS2351 AsyncFunction *is* constructible
-          compiledScript = new AsyncFunction(
-            'Applet,me,my, html,reactively', activeScript
-          )
-        } catch (Signal:any) {
-          console.error('WAT: script compilation failure',Signal)
-          return
-        }
-
-        try {
-          await compiledScript.call(this, this,this,this, html,reactively)
-        } catch (Signal:any) {
-          if (Mode === 'catch-exception') {
-            console.error('WAT: script execution failure',Signal)
-            return
-          } else {
-            console.warn('WAT: script execution failure',Signal)
-            throw Signal
-          }
-        }
-      this.rerender()
-    }
-
-  /**** applyPendingScript - but only if it can be compiled ****/
-
-    public async applyPendingScript ():Promise<void> {
-      if (! this.isAttached) { return }        // consider attached applets only
-
-      let activeScript:string  = this._activeScript  || ''
-      let pendingScript:string = this._pendingScript || ''
-      if (activeScript === pendingScript) { return }
-
-      if (pendingScript.trim() !== '') {
-        let compiledScript:Function        // try compiling pending script first
-        try {
-// @ts-ignore TS2351 AsyncFunction *is* constructible
-          compiledScript = new AsyncFunction(
-            'Applet,me,my, html,reactively', pendingScript
-          )
-        } catch (Signal:any) {
-          console.warn('WAT: script compilation failure - ',Signal)
-          this.ScriptError = 'Script Compilation Failure: ' + Signal
-          this.rerender()
-          return
-        }
-      }
-
-      this._activeScript  = pendingScript.trim()
-      this._pendingScript = undefined
-      this._ScriptError   = undefined
-
-      try {
-        await this.activateScript('rethrow-exception')
-      } catch (Signal:any) {
-        this.ScriptError = 'Script Execution Failure: ' + Signal
-        this.rerender()
-        return
-      }
-      this.rerender()
-    }
-
-  /**** ScriptError - script compilation errors, for internal use only ****/
-
-    protected _ScriptError:string|undefined
-
-    public get ScriptError ():string|undefined {
-      return this._ScriptError
-    }
-    public set ScriptError (newScriptError:string|undefined) {
-      allowString('script error',newScriptError)
-      this._ScriptError = newScriptError
     }
 
   /**** x/y ****/
@@ -3079,7 +3137,7 @@
           }
 
           this.PageDeserializedAt(PageSerialization,Index)
-        }
+        }           // also activates the scripts of all pages and their widgets
       )
     }
 
@@ -3096,7 +3154,6 @@
 
       ;[
         'Name',
-        'activeScript','pendingScript',
         'SnapToGrid','GridWidth','GridHeight',
       ].forEach((Name:string) => serializeProperty(Name))
 
@@ -3129,15 +3186,8 @@
 
       ;[
         'Name',
-        /*'activeScript',*/'pendingScript',
         'SnapToGrid','GridWidth','GridHeight',
       ].forEach((Name:string) => deserializeProperty(Name))
-
-    /**** "activeScript" needs special treatment ****/
-
-      if (ValueIsText(Serialization.activeScript)) {
-        this._activeScript = Serialization.activeScript as string
-      }
     }
 
   /**** deserializedFrom ****/
@@ -3157,8 +3207,8 @@
       )
 
       const Applet = new WAT_Applet()
-        Applet._deserializePagesFrom(Serialization)
         Applet._deserializeConfigurationFrom(Serialization)
+        Applet._deserializePagesFrom(Serialization)
       return Applet
     }
 
@@ -3244,138 +3294,6 @@
           }
         }
       }
-    }
-
-  /**** Script ****/
-
-    public get Script ():WAT_Text {
-      return (
-        this._pendingScript == null
-        ? (this._activeScript || '')
-        : this._pendingScript
-      )
-    }
-    public set Script (_:WAT_Text|undefined) { throwReadOnlyError('Script') }
-
-  /**** activeScript - is always treated as existing ****/
-
-    protected _activeScript:WAT_Text|undefined
-
-    public get activeScript ():WAT_Text  { return this._activeScript || '' }
-    public set activeScript (_:WAT_Text) { throwReadOnlyError('activeScript') }
-
-  /**** pendingScript - may be missing or consist of white-space only ****/
-
-    protected _pendingScript:WAT_Text|undefined
-
-    public get pendingScript ():WAT_Text|undefined { return this._pendingScript }
-    public set pendingScript (newScript:WAT_Text|undefined) {
-      allowText('applet script',newScript)
-
-      if (this._pendingScript !== newScript) {
-        this._pendingScript = newScript
-        this.rerender()
-      }
-    }
-
-  /**** activateScript - even if Page is not (yet) attached ****/
-
-    public async activateScript (Mode:string = 'catch-exception'):Promise<void> {
-      let activeScript:string = (this._activeScript || '').trim()
-
-      this._Renderer = undefined
-      unregisterAllReactiveFunctionsFrom(this)
-
-    /**** prepare for script execution ****/
-
-      const reactively = (reactiveFunction:Function):void => {
-        expectFunction('reactive function',reactiveFunction)
-// @ts-ignore TS2345 do not care about the specific signature of "reactiveFunction"
-        registerReactiveFunctionIn(this,computed(() => {
-          try {
-            reactiveFunction()
-          } catch (Signal:any) {
-            console.error('WAT: execution error in reactive function',Signal)
-          }
-        }))
-      }
-
-    /**** compile and run the applet script ****/
-
-      this.ScriptError = undefined     // only to be set by "applyPendingScript"
-        let compiledScript:Function
-        try {
-// @ts-ignore TS2351 AsyncFunction *is* constructible
-          compiledScript = new AsyncFunction(
-            'Applet,me,my, html,reactively', activeScript
-          )
-        } catch (Signal:any) {
-          console.error('WAT: script compilation failure',Signal)
-          return
-        }
-
-        try {
-          await compiledScript.call(this, this.Applet,this,this, html,reactively)
-        } catch (Signal:any) {
-          if (Mode === 'catch-exception') {
-            console.error('WAT: script execution failure',Signal)
-            return
-          } else {
-            console.warn('WAT: script execution failure',Signal)
-            throw Signal
-          }
-        }
-      this.rerender()
-    }
-
-  /**** applyPendingScript - but only if it can be compiled ****/
-
-    public async applyPendingScript ():Promise<void> {
-      if (! this.isAttached) { return }          // consider attached pages only
-
-      let activeScript:string  = this._activeScript  || ''
-      let pendingScript:string = this._pendingScript || ''
-      if (activeScript === pendingScript) { return }
-
-      if (pendingScript.trim() !== '') {
-        let compiledScript:Function        // try compiling pending script first
-        try {
-// @ts-ignore TS2351 AsyncFunction *is* constructible
-          compiledScript = new AsyncFunction(
-            'Applet,me,my, html,reactively', pendingScript
-          )
-        } catch (Signal:any) {
-          console.warn('WAT: script compilation failure - ',Signal)
-          this.ScriptError = 'Script Compilation Failure: ' + Signal
-          this.rerender()
-          return
-        }
-      }
-
-      this._activeScript  = pendingScript.trim()
-      this._pendingScript = undefined
-      this._ScriptError   = undefined
-
-      try {
-        await this.activateScript('rethrow-exception')
-      } catch (Signal:any) {
-        this.ScriptError = 'Script Execution Failure: ' + Signal
-        this.rerender()
-        return
-      }
-      this.rerender()
-    }
-
-  /**** ScriptError - script compilation errors, for internal use only ****/
-
-    protected _ScriptError:string|undefined
-
-    public get ScriptError ():string|undefined {
-      return this._ScriptError
-    }
-    public set ScriptError (newScriptError:string|undefined) {
-      allowString('script error',newScriptError)
-      this._ScriptError = newScriptError
     }
 
   /**** x/y ****/
@@ -3771,7 +3689,17 @@
           )
         }
       )
+    }  /**** recursivelyActivateAllScripts ****/
+
+    public recursivelyActivateAllScripts ():void {
+      this.activateScript()
+
+      this._WidgetList.forEach(
+        (Widget:WAT_Widget) => Widget.activateScript()
+      )
     }
+
+
   }
 
 //------------------------------------------------------------------------------
