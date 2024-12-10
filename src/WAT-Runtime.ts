@@ -25,12 +25,13 @@
     ValidatorForClassifier, acceptNil,rejectNil,
     expectValue,
     allowBoolean, expectBoolean,
-    allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger,
-      allowIntegerInRange, allowOrdinal, expectCardinal,
+    allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange,
+      allowInteger, expectInteger, allowIntegerInRange,
+      allowOrdinal, expectCardinal,
     allowString, expectString, allowText, allowTextline,
-    allowFunction, expectFunction,
     expectPlainObject,
-    expectList, expectListSatisfying,
+    expectList, allowListSatisfying, expectListSatisfying,
+    allowFunction, expectFunction,
     allowOneOf, expectOneOf,
     allowColor, allowURL,
   } from 'javascript-interface-library'
@@ -5753,6 +5754,23 @@
     public get Type ():string  { return 'Progressbar' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Maximum ****/
+
+    protected _Maximum:number|undefined
+
+    public get Maximum ():number|undefined { return this._Maximum }
+    public set Maximum (newSetting:number|undefined) {
+      allowNumber('maximal value',newSetting)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const Value = acceptableNumber(
         ValueIsString(this.Value) ? parseFloat(this.Value as string) : this.Value, 0
@@ -5785,15 +5803,71 @@
 
   const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d*[.](?:\d*))(?:\s*:\s*([^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]+))?$/
 
+  function HashmarkMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,HashmarkPattern) || ValueIsNumber(Value)
+  }
+
   export class WAT_Slider extends WAT_Widget {
     public constructor (Page:WAT_Page) { super(Page) }
 
     public get Type ():string  { return 'Slider' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
-    public HashmarkMatcher (Value:any):boolean {
-      return ValueIsStringMatching(Value,HashmarkPattern) || ValueIsNumber(Value)
+  /**** Minimum ****/
+
+    protected _Minimum:number|undefined
+
+    public get Minimum ():number|undefined { return this._Minimum }
+    public set Minimum (newSetting:number|undefined) {
+      allowNumber('minimal value',newSetting)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
     }
+
+  /**** Stepping ****/
+
+    protected _Stepping:number|undefined
+
+    public get Stepping ():number|undefined { return this._Stepping }
+    public set Stepping (newSetting:number|undefined) {
+      allowNumberInRange('stepping',newSetting, 0,Infinity, true,false)
+      if (this._Stepping !== newSetting) {
+        this._Stepping = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:number|undefined
+
+    public get Maximum ():number|undefined { return this._Maximum }
+    public set Maximum (newSetting:number|undefined) {
+      allowNumber('maximal value',newSetting)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Hashmarks ****/
+
+    protected _Hashmarks:(number|string)[]|undefined
+
+    public get Hashmarks ():(number|string)[]|undefined {
+      return (this._Hashmarks == null ? this._Hashmarks : this._Hashmarks.slice())
+    }
+    public set Hashmarks (newSetting:(number|string)[]|undefined) {
+      allowListSatisfying('hashmark list',newSetting,HashmarkMatcher)
+      if (ValuesDiffer(this._Hashmarks,newSetting)) {
+        this._Hashmarks = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -5825,12 +5899,8 @@
 
     /**** process any other parameters ****/
 
-      const Minimum  = acceptableOptionalNumber((this as Indexable).Minimum)
-      const Stepping = acceptableOptionalNumberInRange((this as Indexable).Stepping,undefined, 0)
-      const Maximum  = acceptableOptionalNumber((this as Indexable).Maximum)
-
       const Hashmarks = acceptableOptionalListSatisfying(
-        (this as Indexable).Hashmarks, undefined, this.HashmarkMatcher
+        (this as Indexable).Hashmarks, undefined, HashmarkMatcher
       )
 
       let HashmarkList:any = '', HashmarkId
@@ -5851,7 +5921,7 @@
     /**** actual rendering ****/
 
       return html`<input type="range" class="WAT Content Slider"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${HashmarkId}
       />${HashmarkList}`
