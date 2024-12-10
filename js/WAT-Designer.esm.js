@@ -3231,6 +3231,49 @@ function WAD_Toolbox() {
           active=${isLayouting}
           onClick=${toggleLayouting}
         />
+        <${WAD_PseudoDropDown} Icon="${IconFolder}/plus.png"
+          enabled=${Applet.visitedPage != null} Value="" Placeholder="(please select)"
+          OptionList=${[
+        '----',
+        'plainWidget:plain Widget', 'Outline:Widget Outline',
+        '----',
+        'Title', 'Subtitle', 'Label', 'Text', 'Fineprint',
+        '----',
+        'HTMLView:HTML View', 'ImageView:Image View',
+        'SVGView:SVG View', 'WebView:Web View',
+        'Badge', 'Icon',
+        'horizontalSeparator:horizontal Separator',
+        'verticalSeparator:vertical Separator',
+        '----',
+        'Button', 'Checkbox', 'Radiobutton',
+        '----',
+        'Gauge', 'Slider', 'Progressbar',
+        '----',
+        'TextlineInput:Textline Input', 'PasswordInput:Password Input',
+        'NumberInput:Number Input', 'PhoneNumberInput:Phone Number Input',
+        'EMailAddressInput:EMail Address Input', 'URLInput:URL Input',
+        'SearchInput:Search Input', 'TextInput:Text Input',
+        'ColorInput:Color Input',
+        '----',
+        'DropDown', 'PseudoDropDown:Pseudo DropDown',
+        '----',
+        'TimeInput:Time Input', 'DateTimeInput:Date and Time Input',
+        'DateInput:Date Input', 'WeekInput:Week Input', 'MonthInput:Month Input',
+        '----',
+        'FileInput:File Input', 'PseudoFileInput:pseudo File Input',
+        'FileDropArea:File Drop Area',
+        '----',
+        'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
+        'WidgetPane:Widget Pane',
+        '-Accordion', '-AccordionFold:Accordion Fold',
+        '-flatListView:flat List View', '-nestedListView:nested List View',
+        '-NoteSticker'
+    ]}
+          onInput=${(Event) => {
+        doCreateWidget(Event.target.value);
+        Event.target.value = '';
+    }}
+        />
         <${WAD_Icon} Icon="${IconFolder}/pen-ruler.png"
           active=${DialogIsOpen('Inspector')}
           onClick=${(Event) => toggleDialog('Inspector', Event)}
@@ -3239,7 +3282,6 @@ function WAD_Toolbox() {
           active=${DialogIsOpen('ScriptEditor')}
           onClick=${(Event) => toggleDialog('ScriptEditor', Event)}
         />
-        <${WAD_Icon} />
 
         <${WAD_Icon} Icon="${IconFolder}/scissors.png"
           enabled=${selectedWidgets.length > 0}
@@ -3399,8 +3441,7 @@ function WAD_AppletConfigurationPane() {
       <${WAD_horizontally}>
         <${WAD_Label} style="width:56px">Applet</>
         <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
-          Value=${Applet.Name}
-          onInput=${(Event) => doConfigureApplet('Name', Event.target.value)}
+          readonly Value=${Applet.Name}
         />
       </>
 
@@ -3460,8 +3501,9 @@ function WAD_AppletConfigurationPane() {
             <${WAD_Gap}/>
             <${WAD_TextlineInput} style="flex:1 0 auto"
               Suggestions=${[
-        "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif",
-        "'Lucida Console', 'Courier New', Courier, monospace"
+        "Arial,Verdana,'Source Sans Pro','Open Sans',Helvetica,sans-serif",
+        "'Times New Roman',Georgia,Cambria,serif",
+        "'Courier New','Consolas','Lucida Console',Monaco,Menlo,monospace"
     ]}
               Value=${Applet.FontFamily}
               onInput=${(Event) => doConfigureApplet('FontFamily', Event.target.value)}
@@ -3932,8 +3974,9 @@ function WAD_PageConfigurationPane() {
             <${WAD_Gap}/>
             <${WAD_TextlineInput} style="flex:1 0 auto"
               Suggestions=${[
-        "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif",
-        "'Lucida Console', 'Courier New', Courier, monospace"
+        "Arial,Verdana,'Source Sans Pro','Open Sans',Helvetica,sans-serif",
+        "'Times New Roman',Georgia,Cambria,serif",
+        "'Courier New','Consolas','Lucida Console',Monaco,Menlo,monospace"
     ]}
               Value=${visitedPage.FontFamily}
               onInput=${(Event) => doConfigureVisitedPage('FontFamily', Event.target.value)}
@@ -4229,8 +4272,9 @@ function WAD_WidgetBrowserPane() {
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
         <${WAD_PseudoDropDown} Icon="${IconFolder}/plus.png"
-          enabled=${visitedPage != null}
+          enabled=${visitedPage != null} Value="" Placeholder="(please select)"
           OptionList=${[
+        '----',
         'plainWidget:plain Widget', 'Outline:Widget Outline',
         '----',
         'Title', 'Subtitle', 'Label', 'Text', 'Fineprint',
@@ -4419,6 +4463,16 @@ function WAD_WidgetConfigurationPane() {
           </>
 
           <${WAD_horizontally}>
+            <${WAD_Label}>Selection Lock</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Lock))}
+              onInput=${(Event) => doConfigureSelectedWidgets('Lock', Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
             <${WAD_Label}>Opacity [%]</>
             <${WAD_Gap}/>
             <${WAD_IntegerInput} style="width:60px"
@@ -4543,8 +4597,9 @@ function WAD_WidgetConfigurationPane() {
             <${WAD_TextlineInput} style="flex:1 0 auto"
               enabled=${selectedWidgets.length > 0}
               Suggestions=${[
-        "'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif",
-        "'Lucida Console', 'Courier New', Courier, monospace"
+        "Arial,Verdana,'Source Sans Pro','Open Sans',Helvetica,sans-serif",
+        "'Times New Roman',Georgia,Cambria,serif",
+        "'Courier New','Consolas','Lucida Console',Monaco,Menlo,monospace"
     ]}
               Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.FontFamily))}
               onInput=${(Event) => doConfigureSelectedWidgets('FontFamily', Event.target.value)}
@@ -4977,8 +5032,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 0)}
               Minimum=${0}
               onInput=${(Event) => {
-        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii))
-            || [0, 0, 0, 0]);
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
             parseFloat(Event.target.value), Radius_1, Radius_2, Radius_3
         ]);
@@ -4990,8 +5044,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 1)}
               Minimum=${0}
               onInput=${(Event) => {
-        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii))
-            || [0, 0, 0, 0]);
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
             Radius_0, parseFloat(Event.target.value), Radius_2, Radius_3
         ]);
@@ -5003,26 +5056,24 @@ function WAD_WidgetConfigurationPane() {
             <${WAD_Gap}/>
             <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
-              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 2)}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 3)}
               Minimum=${0}
               onInput=${(Event) => {
-        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii))
-            || [0, 0, 0, 0]);
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
-            Radius_0, Radius_1, parseFloat(Event.target.value), Radius_3
+            Radius_0, Radius_1, Radius_2, parseFloat(Event.target.value)
         ]);
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
             <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
-              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 3)}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 2)}
               Minimum=${0}
               onInput=${(Event) => {
-        const { Radius_0, Radius_1, Radius_2, Radius_3 } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii))
-            || [0, 0, 0, 0]);
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
-            Radius_0, Radius_1, Radius_2, parseFloat(Event.target.value)
+            Radius_0, Radius_1, parseFloat(Event.target.value), Radius_3
         ]);
     }}
             />
@@ -5065,7 +5116,7 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'xOffset')}
               onInput=${(Event) => {
@@ -5077,7 +5128,7 @@ function WAD_WidgetConfigurationPane() {
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'yOffset')}
               onInput=${(Event) => {
@@ -5092,7 +5143,7 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'BlurRadius')}
               onInput=${(Event) => {
@@ -5107,9 +5158,9 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Spread Radius [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
-              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'BlurRadius')}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'SpreadRadius')}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
