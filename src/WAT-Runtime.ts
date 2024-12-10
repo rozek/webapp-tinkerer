@@ -7904,7 +7904,98 @@
     public get Type ():string  { return 'SearchInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
 
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** readonly ****/
+
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** minLength ****/
+
+    protected _minLength:number|undefined
+
+    public get minLength ():number|undefined { return this._minLength }
+    public set minLength (newSetting:number|undefined) {
+      allowOrdinal('minimal length',newSetting)
+      if (this._minLength !== newSetting) {
+        this._minLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** maxLength ****/
+
+    protected _maxLength:number|undefined
+
+    public get maxLength ():number|undefined { return this._maxLength }
+    public set maxLength (newSetting:number|undefined) {
+      allowOrdinal('maximal length',newSetting)
+      if (this._maxLength !== newSetting) {
+        this._maxLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Pattern ****/
+
+    protected _Pattern:WAT_Textline|undefined
+
+    public get Pattern ():WAT_Textline|undefined { return this._Pattern }
+    public set Pattern (newSetting:WAT_Textline|undefined) {
+      allowTextline('input pattern',newSetting)
+      if (this._Pattern !== newSetting) {
+        this._Pattern = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** SpellChecking ****/
+
+    protected _SpellChecking:boolean = false
+
+    public get SpellChecking ():boolean { return this._SpellChecking }
+    public set SpellChecking (newSetting:boolean) {
+      allowBoolean('spell check setting',newSetting)
+      if (this._SpellChecking !== newSetting) {
+        this._SpellChecking = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,ValueIsTextline)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -7935,18 +8026,9 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process any other parameters ****/
+    /**** process suggestions ****/
 
-      const Placeholder   = acceptableOptionalTextline((this as Indexable).Placeholder)
-      const readonly      = acceptableOptionalBoolean ((this as Indexable).readonly)
-      const minLength     = acceptableOptionalOrdinal ((this as Indexable).minLength)
-      const maxLength     = acceptableOptionalOrdinal ((this as Indexable).maxLength)
-      const Pattern       = acceptableOptionalTextline((this as Indexable).Pattern)
-      const SpellChecking = acceptableOptionalBoolean ((this as Indexable).SpellChecking)
-
-      const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, ValueIsTextline
-      )
+      const Suggestions = this._Suggestions
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -7960,9 +8042,9 @@
     /**** actual rendering ****/
 
       return html`<input type="search" class="WAT Content SearchInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
