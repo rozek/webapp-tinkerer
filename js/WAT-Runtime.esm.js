@@ -4327,8 +4327,8 @@ appendStyle(`
   }
   `);
 /**** ImageView ****/
-const WAT_ImageScalings = ['none', 'stretch', 'cover', 'contain'];
-const WAT_ImageAlignments = [
+export const WAT_ImageScalings = ['none', 'stretch', 'cover', 'contain'];
+export const WAT_ImageAlignments = [
     'left top', 'center top', 'right top', 'left center', 'center center',
     'right center', 'left bottom', 'center bottom', 'right bottom'
 ];
@@ -4453,9 +4453,45 @@ appendStyle(`
   }
   `);
 /**** WebView ****/
+export const WAT_DefaultSandboxPermissions = ('allow-downloads allow-forms allow-modals allow-orientation-lock ' +
+    'allow-pointer-lock allow-popups allow-same-origin allow-scripts');
+export const WAT_ReferrerPolicies = [
+    'no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin',
+    'same-origin', 'strict-origin', 'strict-origin', 'strict-origin-when-cross-origin',
+    'unsafe-url'
+];
 export class WAT_WebView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** PermissionsPolicy ****/
+        Object.defineProperty(this, "_PermissionsPolicy", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** allowsFullscreen ****/
+        Object.defineProperty(this, "_allowsFullscreen", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** SandboxPermissions ****/
+        Object.defineProperty(this, "_SandboxPermissions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** ReferrerPolicy ****/
+        Object.defineProperty(this, "_ReferrerPolicy", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -4463,12 +4499,49 @@ export class WAT_WebView extends WAT_Widget {
             value: () => {
                 return html `<iframe class="WAT Content WebView"
         src=${acceptableURL(this.Value, '')}
+        allow=${this._PermissionsPolicy} allowfullscreen=${this._allowsFullscreen}
+        sandbox=${this._SandboxPermissions || WAT_DefaultSandboxPermissions}
+        referrerpolicy=${this._ReferrerPolicy}
       />`;
             }
         });
     }
     get Type() { return 'WebView'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get PermissionsPolicy() { return this._PermissionsPolicy; }
+    set PermissionsPolicy(newSetting) {
+        allowTextline('permissions policy', newSetting);
+        if (this._PermissionsPolicy !== newSetting) {
+            this._PermissionsPolicy = newSetting;
+            this.rerender();
+        }
+    }
+    get allowsFullscreen() { return this._allowsFullscreen; }
+    set allowsFullscreen(newSetting) {
+        allowBoolean('fullscreen permission', newSetting);
+        if (this._allowsFullscreen !== newSetting) {
+            this._allowsFullscreen = newSetting;
+            this.rerender();
+        }
+    }
+    get SandboxPermissions() { return this._SandboxPermissions; }
+    set SandboxPermissions(newSetting) {
+        allowTextline('sandbox permissions', newSetting);
+        if (this._SandboxPermissions !== newSetting) {
+            this._SandboxPermissions = newSetting;
+            this.rerender();
+        }
+    }
+    get ReferrerPolicy() {
+        return this._ReferrerPolicy;
+    }
+    set ReferrerPolicy(newSetting) {
+        allowOneOf('referrer policy', newSetting, WAT_ReferrerPolicies);
+        if (this._ReferrerPolicy !== newSetting) {
+            this._ReferrerPolicy = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['WebView'] = WAT_WebView;
 appendStyle(`
@@ -4523,10 +4596,9 @@ export class WAT_Icon extends WAT_Widget {
                     }
                 };
                 const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
-                const Color = acceptableColor(this.Color, 'black');
                 return html `<div class="WAT Content Icon" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${Color};
+        background-color:${this._Color || 'black'};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`;
             }
@@ -4711,22 +4783,18 @@ appendStyle(`
 export class WAT_Gauge extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
                 const Value = acceptableNumber(ValueIsString(this.Value) ? parseFloat(this.Value) : this.Value, 0);
-                const Minimum = acceptableOptionalNumber(this.Minimum);
-                const lowerBound = acceptableOptionalNumber(this.lowerBound);
-                const Optimum = acceptableOptionalNumber(this.Optimum);
-                const upperBound = acceptableOptionalNumber(this.upperBound);
-                const Maximum = acceptableOptionalNumber(this.Maximum);
                 return html `<meter class="WAT Content Gauge" value=${Value}
-        min=${Minimum} low=${lowerBound} opt=${Optimum}
-        high=${upperBound} max=${Maximum}
+        min=${this._Minimum} low=${this._lowerBound} opt=${this._Optimum}
+        high=${this._upperBound} max=${this._Maximum}
       />`;
-                return html `<div class="WAT Gauge">${this.Value}</div>`;
+                1;
             }
         });
     }
