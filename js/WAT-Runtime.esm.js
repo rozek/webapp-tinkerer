@@ -4997,7 +4997,7 @@ export class WAT_Slider extends WAT_Widget {
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                 });
-                /**** process any other parameters ****/
+                /**** process hashmarks ****/
                 const Hashmarks = this._Hashmarks;
                 let HashmarkList = '', HashmarkId;
                 if ((Hashmarks != null) && (Hashmarks.length > 0)) {
@@ -5147,7 +5147,7 @@ export class WAT_TextlineInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
+                /**** process suggestions ****/
                 const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -5246,6 +5246,41 @@ appendStyle(`
 export class WAT_PasswordInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Pattern ****/
+        Object.defineProperty(this, "_Pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -5278,17 +5313,11 @@ export class WAT_PasswordInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const Pattern = acceptableOptionalTextline(this.Pattern);
                 /**** actual rendering ****/
                 return html `<input type="password" class="WAT Content PasswordInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
       />`;
             }
@@ -5296,6 +5325,46 @@ export class WAT_PasswordInput extends WAT_Widget {
     }
     get Type() { return 'PasswordInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get Pattern() { return this._Pattern; }
+    set Pattern(newSetting) {
+        allowTextline('input pattern', newSetting);
+        if (this._Pattern !== newSetting) {
+            this._Pattern = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['PasswordInput'] = WAT_PasswordInput;
 appendStyle(`
@@ -5315,6 +5384,48 @@ appendStyle(`
 export class WAT_NumberInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Stepping ****/
+        Object.defineProperty(this, "_Stepping", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -5347,13 +5458,8 @@ export class WAT_NumberInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const Minimum = acceptableOptionalNumber(this.Minimum);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalNumber(this.Maximum);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsNumber);
+                /**** process suggestions ****/
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5363,8 +5469,8 @@ export class WAT_NumberInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="number" class="WAT Content NumberInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        readOnly=${readonly} placeholder=${Placeholder}
+        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5373,6 +5479,56 @@ export class WAT_NumberInput extends WAT_Widget {
     }
     get Type() { return 'NumberInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowNumber('minimal value', newSetting);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Stepping() { return this._Stepping; }
+    set Stepping(newSetting) {
+        allowNumberInRange('stepping', newSetting, 0, Infinity, true, false);
+        if (this._Stepping !== newSetting) {
+            this._Stepping = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowNumber('maximal value', newSetting);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsNumber);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['NumberInput'] = WAT_NumberInput;
 appendStyle(`
@@ -5392,6 +5548,48 @@ appendStyle(`
 export class WAT_PhoneNumberInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Pattern ****/
+        Object.defineProperty(this, "_Pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -5424,13 +5622,8 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const Pattern = acceptableOptionalTextline(this.Pattern);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsPhoneNumber);
+                /**** process suggestions ****/
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5440,9 +5633,9 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="tel" class="WAT Content PhoneNumberInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5451,6 +5644,56 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
     }
     get Type() { return 'PhoneNumberInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get Pattern() { return this._Pattern; }
+    set Pattern(newSetting) {
+        allowTextline('input pattern', newSetting);
+        if (this._Pattern !== newSetting) {
+            this._Pattern = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsPhoneNumber);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['PhoneNumberInput'] = WAT_PhoneNumberInput;
 appendStyle(`
