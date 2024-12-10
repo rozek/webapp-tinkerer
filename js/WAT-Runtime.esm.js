@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -4783,6 +4783,41 @@ appendStyle(`
 export class WAT_Gauge extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** lowerBound ****/
+        Object.defineProperty(this, "_lowerBound", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Optimum ****/
+        Object.defineProperty(this, "_Optimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** upperBound ****/
+        Object.defineProperty(this, "_upperBound", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -4800,6 +4835,46 @@ export class WAT_Gauge extends WAT_Widget {
     }
     get Type() { return 'Gauge'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowNumber('minimal value', newSetting);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get lowerBound() { return this._lowerBound; }
+    set lowerBound(newSetting) {
+        allowNumber('lower bound', newSetting);
+        if (this._lowerBound !== newSetting) {
+            this._lowerBound = newSetting;
+            this.rerender();
+        }
+    }
+    get Optimum() { return this._Optimum; }
+    set Optimum(newSetting) {
+        allowNumber('optimal value', newSetting);
+        if (this._Optimum !== newSetting) {
+            this._Optimum = newSetting;
+            this.rerender();
+        }
+    }
+    get upperBound() { return this._upperBound; }
+    set upperBound(newSetting) {
+        allowNumber('upper bound', newSetting);
+        if (this._upperBound !== newSetting) {
+            this._upperBound = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowNumber('maximal value', newSetting);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['Gauge'] = WAT_Gauge;
 appendStyle(`
