@@ -6270,10 +6270,10 @@ appendStyle(`
   }
   `);
 /**** TimeInput ****/
-const TimePattern = '\\d{2}:\\d{2}';
-const TimeRegExp = /\d{2}:\d{2}/;
-function TimeMatcher(Value) {
-    return ValueIsStringMatching(Value, TimeRegExp);
+export const WAT_TimePattern = '\\d{2}:\\d{2}';
+export const WAT_TimeRegExp = /\d{2}:\d{2}/;
+export function WAT_TimeMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_TimeRegExp);
 }
 export class WAT_TimeInput extends WAT_Widget {
     constructor(Page) {
@@ -6323,7 +6323,7 @@ export class WAT_TimeInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableStringMatching(Value, '', TimeRegExp);
+                let ValueToShow = acceptableStringMatching(Value, '', WAT_TimeRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6348,9 +6348,9 @@ export class WAT_TimeInput extends WAT_Widget {
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const withSeconds = acceptableOptionalBoolean(this._withSeconds);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, TimeRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, TimeRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, TimeMatcher);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_TimeRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_TimeRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_TimeMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6362,7 +6362,7 @@ export class WAT_TimeInput extends WAT_Widget {
                 return html `<input type="time" class="WAT Content TimeInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${TimePattern}
+        readOnly=${readonly} pattern=${WAT_TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -6389,7 +6389,7 @@ export class WAT_TimeInput extends WAT_Widget {
     }
     get Minimum() { return this._Minimum; }
     set Minimum(newSetting) {
-        allowStringMatching('earliest time', newSetting, TimeRegExp);
+        allowStringMatching('earliest time', newSetting, WAT_TimeRegExp);
         if (this._Minimum !== newSetting) {
             this._Minimum = newSetting;
             this.rerender();
@@ -6397,7 +6397,7 @@ export class WAT_TimeInput extends WAT_Widget {
     }
     get Maximum() { return this._Maximum; }
     set Maximum(newSetting) {
-        allowStringMatching('latest time', newSetting, TimeRegExp);
+        allowStringMatching('latest time', newSetting, WAT_TimeRegExp);
         if (this._Maximum !== newSetting) {
             this._Maximum = newSetting;
             this.rerender();
@@ -6407,7 +6407,7 @@ export class WAT_TimeInput extends WAT_Widget {
         return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
     }
     set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, TimeMatcher);
+        allowListSatisfying('suggestion list', newSetting, WAT_TimeMatcher);
         if (ValuesDiffer(this._Suggestions, newSetting)) {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
@@ -6425,9 +6425,9 @@ export class WAT_TimeInput extends WAT_Widget {
         super._deserializeConfigurationFrom(Serialization);
         this._readonly = acceptableBoolean(Serialization.readonly, false);
         this._withSeconds = acceptableBoolean(Serialization.withSeconds, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, TimeRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, TimeRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, TimeMatcher);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_TimeRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_TimeRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_TimeMatcher);
     }
 }
 builtInWidgetTypes['TimeInput'] = WAT_TimeInput;
@@ -6445,10 +6445,10 @@ appendStyle(`
   }
   `);
 /**** DateTimeInput ****/
-const DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}';
-const DateTimeRegExp = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
-function DateTimeMatcher(Value) {
-    return ValueIsStringMatching(Value, DateTimeRegExp);
+export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}';
+export const WAT_DateTimeRegExp = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+export function WAT_DateTimeMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_DateTimeRegExp);
 }
 export class WAT_DateTimeInput extends WAT_Widget {
     constructor(Page) {
@@ -6498,7 +6498,7 @@ export class WAT_DateTimeInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableStringMatching(Value, '', DateTimeRegExp);
+                let ValueToShow = acceptableStringMatching(Value, '', WAT_DateTimeRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6523,9 +6523,9 @@ export class WAT_DateTimeInput extends WAT_Widget {
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const withSeconds = acceptableOptionalBoolean(this._withSeconds);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, DateTimeRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, DateTimeRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, DateTimeMatcher);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateTimeRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_DateTimeRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_DateTimeMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6537,7 +6537,7 @@ export class WAT_DateTimeInput extends WAT_Widget {
                 return html `<input type="datetime-local" class="WAT Content DateTimeInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${DateTimePattern}
+        readOnly=${readonly} pattern=${WAT_DateTimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -6564,7 +6564,7 @@ export class WAT_DateTimeInput extends WAT_Widget {
     }
     get Minimum() { return this._Minimum; }
     set Minimum(newSetting) {
-        allowStringMatching('earliest point in time', newSetting, DateTimeRegExp);
+        allowStringMatching('earliest point in time', newSetting, WAT_DateTimeRegExp);
         if (this._Minimum !== newSetting) {
             this._Minimum = newSetting;
             this.rerender();
@@ -6572,7 +6572,7 @@ export class WAT_DateTimeInput extends WAT_Widget {
     }
     get Maximum() { return this._Maximum; }
     set Maximum(newSetting) {
-        allowStringMatching('latest point in time', newSetting, DateTimeRegExp);
+        allowStringMatching('latest point in time', newSetting, WAT_DateTimeRegExp);
         if (this._Maximum !== newSetting) {
             this._Maximum = newSetting;
             this.rerender();
@@ -6582,7 +6582,7 @@ export class WAT_DateTimeInput extends WAT_Widget {
         return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
     }
     set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, DateTimeMatcher);
+        allowListSatisfying('suggestion list', newSetting, WAT_DateTimeMatcher);
         if (ValuesDiffer(this._Suggestions, newSetting)) {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
@@ -6600,9 +6600,9 @@ export class WAT_DateTimeInput extends WAT_Widget {
         super._deserializeConfigurationFrom(Serialization);
         this._readonly = acceptableBoolean(Serialization.readonly, false);
         this._withSeconds = acceptableBoolean(Serialization.withSeconds, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateTimeRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateTimeRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, DateTimeMatcher);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_DateTimeRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_DateTimeRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_DateTimeMatcher);
     }
 }
 builtInWidgetTypes['DateTimeInput'] = WAT_DateTimeInput;
@@ -6620,10 +6620,10 @@ appendStyle(`
   }
   `);
 /**** DateInput ****/
-const DatePattern = '\\d{4}-\\d{2}-\\d{2}';
-const DateRegExp = /\d{4}-\d{2}-\d{2}/;
-function DateMatcher(Value) {
-    return ValueIsStringMatching(Value, DateRegExp);
+export const WAT_DatePattern = '\\d{4}-\\d{2}-\\d{2}';
+export const WAT_DateRegExp = /\d{4}-\d{2}-\d{2}/;
+export function WAT_DateMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_DateRegExp);
 }
 export class WAT_DateInput extends WAT_Widget {
     constructor(Page) {
@@ -6666,7 +6666,7 @@ export class WAT_DateInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableStringMatching(Value, '', DateRegExp);
+                let ValueToShow = acceptableStringMatching(Value, '', WAT_DateRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6690,9 +6690,9 @@ export class WAT_DateInput extends WAT_Widget {
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, DateRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, DateRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, DateMatcher);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_DateRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_DateMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6703,7 +6703,7 @@ export class WAT_DateInput extends WAT_Widget {
                 /**** actual rendering ****/
                 return html `<input type="date" class="WAT Content DateInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${DatePattern}
+        readOnly=${readonly} pattern=${WAT_DatePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -6722,7 +6722,7 @@ export class WAT_DateInput extends WAT_Widget {
     }
     get Minimum() { return this._Minimum; }
     set Minimum(newSetting) {
-        allowStringMatching('earliest date', newSetting, DateRegExp);
+        allowStringMatching('earliest date', newSetting, WAT_DateRegExp);
         if (this._Minimum !== newSetting) {
             this._Minimum = newSetting;
             this.rerender();
@@ -6730,7 +6730,7 @@ export class WAT_DateInput extends WAT_Widget {
     }
     get Maximum() { return this._Maximum; }
     set Maximum(newSetting) {
-        allowStringMatching('latest date', newSetting, DateRegExp);
+        allowStringMatching('latest date', newSetting, WAT_DateRegExp);
         if (this._Maximum !== newSetting) {
             this._Maximum = newSetting;
             this.rerender();
@@ -6740,7 +6740,7 @@ export class WAT_DateInput extends WAT_Widget {
         return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
     }
     set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, DateMatcher);
+        allowListSatisfying('suggestion list', newSetting, WAT_DateMatcher);
         if (ValuesDiffer(this._Suggestions, newSetting)) {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
@@ -6757,9 +6757,9 @@ export class WAT_DateInput extends WAT_Widget {
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
         this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, DateMatcher);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_DateRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_DateRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_DateMatcher);
     }
 }
 builtInWidgetTypes['DateInput'] = WAT_DateInput;
@@ -6777,10 +6777,10 @@ appendStyle(`
   }
   `);
 /**** WeekInput ****/
-const WeekPattern = '\\d{4}-W\\d{2}';
-const WeekRegExp = /\d{4}-W\d{2}/;
-function WeekMatcher(Value) {
-    return ValueIsStringMatching(Value, WeekRegExp);
+export const WAT_WeekPattern = '\\d{4}-W\\d{2}';
+export const WAT_WeekRegExp = /\d{4}-W\d{2}/;
+export function WAT_WeekMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_WeekRegExp);
 }
 export class WAT_WeekInput extends WAT_Widget {
     constructor(Page) {
@@ -6823,7 +6823,7 @@ export class WAT_WeekInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableStringMatching(Value, '', WeekRegExp);
+                let ValueToShow = acceptableStringMatching(Value, '', WAT_WeekRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6847,9 +6847,9 @@ export class WAT_WeekInput extends WAT_Widget {
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WeekRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WeekRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WeekMatcher);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_WeekRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_WeekRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_WeekMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6860,7 +6860,7 @@ export class WAT_WeekInput extends WAT_Widget {
                 /**** actual rendering ****/
                 return html `<input type="week" class="WAT Content WeekInput"
         value=${Value} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WeekPattern}
+        readOnly=${readonly} pattern=${WAT_WeekPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -6879,7 +6879,7 @@ export class WAT_WeekInput extends WAT_Widget {
     }
     get Minimum() { return this._Minimum; }
     set Minimum(newSetting) {
-        allowStringMatching('earliest week', newSetting, WeekRegExp);
+        allowStringMatching('earliest week', newSetting, WAT_WeekRegExp);
         if (this._Minimum !== newSetting) {
             this._Minimum = newSetting;
             this.rerender();
@@ -6887,7 +6887,7 @@ export class WAT_WeekInput extends WAT_Widget {
     }
     get Maximum() { return this._Maximum; }
     set Maximum(newSetting) {
-        allowStringMatching('latest week', newSetting, WeekRegExp);
+        allowStringMatching('latest week', newSetting, WAT_WeekRegExp);
         if (this._Maximum !== newSetting) {
             this._Maximum = newSetting;
             this.rerender();
@@ -6897,7 +6897,7 @@ export class WAT_WeekInput extends WAT_Widget {
         return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
     }
     set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, WeekMatcher);
+        allowListSatisfying('suggestion list', newSetting, WAT_WeekMatcher);
         if (ValuesDiffer(this._Suggestions, newSetting)) {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
@@ -6914,9 +6914,9 @@ export class WAT_WeekInput extends WAT_Widget {
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
         this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WeekRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WeekRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WeekMatcher);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_WeekRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_WeekRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_WeekMatcher);
     }
 }
 builtInWidgetTypes['WeekInput'] = WAT_WeekInput;
@@ -6934,10 +6934,10 @@ appendStyle(`
   }
   `);
 /**** MonthInput ****/
-const MonthPattern = '\\d{4}-\\d{2}';
-const MonthRegExp = /\d{4}-\d{2}/;
-function MonthMatcher(Value) {
-    return ValueIsStringMatching(Value, MonthRegExp);
+export const WAT_MonthPattern = '\\d{4}-\\d{2}';
+export const WAT_MonthRegExp = /\d{4}-\d{2}/;
+export function WAT_MonthMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_MonthRegExp);
 }
 export class WAT_MonthInput extends WAT_Widget {
     constructor(Page) {
@@ -6980,7 +6980,7 @@ export class WAT_MonthInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableStringMatching(Value, '', MonthRegExp);
+                let ValueToShow = acceptableStringMatching(Value, '', WAT_MonthRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -7004,9 +7004,9 @@ export class WAT_MonthInput extends WAT_Widget {
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, MonthRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, MonthRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, MonthMatcher);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_MonthRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_MonthRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_MonthMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -7017,7 +7017,7 @@ export class WAT_MonthInput extends WAT_Widget {
                 /**** actual rendering ****/
                 return html `<input type="month" class="WAT Content MonthInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${MonthPattern}
+        readOnly=${readonly} pattern=${WAT_MonthPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -7036,7 +7036,7 @@ export class WAT_MonthInput extends WAT_Widget {
     }
     get Minimum() { return this._Minimum; }
     set Minimum(newSetting) {
-        allowStringMatching('earliest month', newSetting, MonthRegExp);
+        allowStringMatching('earliest month', newSetting, WAT_MonthRegExp);
         if (this._Minimum !== newSetting) {
             this._Minimum = newSetting;
             this.rerender();
@@ -7044,7 +7044,7 @@ export class WAT_MonthInput extends WAT_Widget {
     }
     get Maximum() { return this._Maximum; }
     set Maximum(newSetting) {
-        allowStringMatching('latest month', newSetting, MonthRegExp);
+        allowStringMatching('latest month', newSetting, WAT_MonthRegExp);
         if (this._Maximum !== newSetting) {
             this._Maximum = newSetting;
             this.rerender();
@@ -7054,7 +7054,7 @@ export class WAT_MonthInput extends WAT_Widget {
         return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
     }
     set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, MonthMatcher);
+        allowListSatisfying('suggestion list', newSetting, WAT_MonthMatcher);
         if (ValuesDiffer(this._Suggestions, newSetting)) {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
@@ -7071,9 +7071,9 @@ export class WAT_MonthInput extends WAT_Widget {
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
         this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, MonthRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, MonthRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, MonthMatcher);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_MonthRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_MonthRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_MonthMatcher);
     }
 }
 builtInWidgetTypes['MonthInput'] = WAT_MonthInput;
