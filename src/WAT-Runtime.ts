@@ -5899,9 +5899,7 @@
 
     /**** process any other parameters ****/
 
-      const Hashmarks = acceptableOptionalListSatisfying(
-        (this as Indexable).Hashmarks, undefined, HashmarkMatcher
-      )
+      const Hashmarks = this._Hashmarks
 
       let HashmarkList:any = '', HashmarkId
       if ((Hashmarks != null) && (Hashmarks.length > 0)) {
@@ -5942,6 +5940,101 @@
     public get Type ():string  { return 'TextlineInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
+
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** readonly ****/
+
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** minLength ****/
+
+    protected _minLength:number|undefined
+
+    public get minLength ():number|undefined { return this._minLength }
+    public set minLength (newSetting:number|undefined) {
+      allowOrdinal('minimal length',newSetting)
+      if (this._minLength !== newSetting) {
+        this._minLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** maxLength ****/
+
+    protected _maxLength:number|undefined
+
+    public get maxLength ():number|undefined { return this._maxLength }
+    public set maxLength (newSetting:number|undefined) {
+      allowOrdinal('maximal length',newSetting)
+      if (this._maxLength !== newSetting) {
+        this._maxLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Pattern ****/
+
+    protected _Pattern:WAT_Textline|undefined
+
+    public get Pattern ():WAT_Textline|undefined { return this._Pattern }
+    public set Pattern (newSetting:WAT_Textline|undefined) {
+      allowTextline('input pattern',newSetting)
+      if (this._Pattern !== newSetting) {
+        this._Pattern = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** SpellChecking ****/
+
+    protected _SpellChecking:boolean = false
+
+    public get SpellChecking ():boolean { return this._SpellChecking }
+    public set SpellChecking (newSetting:boolean) {
+      allowBoolean('spell check setting',newSetting)
+      if (this._SpellChecking !== newSetting) {
+        this._SpellChecking = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,ValueIsTextline)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
@@ -5971,16 +6064,7 @@
 
     /**** process any other parameters ****/
 
-      const Placeholder   = acceptableOptionalTextline((this as Indexable).Placeholder)
-      const readonly      = acceptableOptionalBoolean ((this as Indexable).readonly)
-      const minLength     = acceptableOptionalOrdinal ((this as Indexable).minLength)
-      const maxLength     = acceptableOptionalOrdinal ((this as Indexable).maxLength)
-      const Pattern       = acceptableOptionalTextline((this as Indexable).Pattern)
-      const SpellChecking = acceptableOptionalBoolean ((this as Indexable).SpellChecking)
-
-      const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, ValueIsTextline
-      )
+      const Suggestions = this._Suggestions
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -5994,9 +6078,9 @@
     /**** actual rendering ****/
 
       return html`<input type="text" class="WAT Content TextlineInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6025,6 +6109,10 @@
 
     public get Type ():string  { return 'PasswordInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -6094,6 +6182,10 @@
 
     public get Type ():string  { return 'NumberInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -6179,6 +6271,10 @@
     public get Type ():string  { return 'PhoneNumberInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
@@ -6262,6 +6358,10 @@
     public get Type ():string  { return 'EMailAddressInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
@@ -6344,6 +6444,10 @@
 
     public get Type ():string  { return 'URLInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -6435,6 +6539,10 @@
     public get Type ():string  { return 'TimeInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
@@ -6522,6 +6630,10 @@
 
     public get Type ():string  { return 'DateTimeInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -6611,6 +6723,10 @@
     public get Type ():string  { return 'DateInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
@@ -6698,6 +6814,10 @@
 
     public get Type ():string  { return 'WeekInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -6787,6 +6907,10 @@
     public get Type ():string  { return 'MonthInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
@@ -6868,6 +6992,10 @@
     public get Type ():string  { return 'FileInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const Value           = acceptableText            (this.Value,'').trim().replace(/[\n\r]+/g,',')
       const Placeholder     = acceptableTextline        ((this as Indexable).Placeholder,'').trim()
@@ -6939,6 +7067,10 @@
     public get Type ():string  { return 'PseudoFileInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const Icon            = acceptableURL             ((this as Indexable).Icon,`${IconFolder}/arrow-up-from-bracket.png`)
       const Color           = acceptableColor           ((this as Indexable).Color,'black')
@@ -6983,6 +7115,10 @@
 
     public get Type ():string  { return 'FileDropArea' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const Placeholder     = acceptableTextline        ((this as Indexable).Placeholder,'').trim()
@@ -7045,6 +7181,10 @@
 
     public get Type ():string  { return 'SearchInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this as Indexable
@@ -7130,6 +7270,10 @@
     public get Type ():string  { return 'ColorInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       let Value = acceptableOptionalColor(this.Value)
 
@@ -7179,6 +7323,10 @@
     public get Type ():string  { return 'DropDown' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       let Value = acceptableTextline(this.Value,'')
 
@@ -7227,6 +7375,10 @@
 
     public get Type ():string  { return 'PseudoDropDown' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       let   Value = acceptableTextline(this.Value,'')
@@ -7289,6 +7441,10 @@
 
     public get Type ():string  { return 'TextInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const { Value, Enabling } = this
@@ -7392,6 +7548,8 @@
 
 
 
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const active = (this.isActive ? 'active' : '')
 
@@ -7453,6 +7611,8 @@
     public set isActive (newActivation:boolean) { this.Activation = newActivation }
 
 
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       const active = (this.isActive ? 'active' : '')
@@ -7655,6 +7815,10 @@
     public get Type ():string  { return 'Accordion' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       return html`<div class="WAT Content Accordion">${this.Value}</div>`
     }
@@ -7671,6 +7835,10 @@
   export class WAT_AccordionFold extends WAT_Widget {
     public get Type ():string  { return 'AccordionFold' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       return html`<div class="WAT Content AccordionFold">${this.Value}</div>`
@@ -7691,6 +7859,10 @@
     public get Type ():string  { return 'flatListView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       return html`<div class="WAT Content flatListView">${this.Value}</div>`
     }
@@ -7709,6 +7881,10 @@
 
     public get Type ():string  { return 'nestedListView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
 
     protected _Renderer = () => {
       return html`<div class="WAT Content nestedListView">${this.Value}</div>`
