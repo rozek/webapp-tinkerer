@@ -375,6 +375,7 @@
   .WAD.Fold {
     display:block; position:relative;
     left:0px; top:0px; width:100%; bottom:auto;
+    margin:none; margin-bottom:2px;
   }
 
   .WAD.Fold-Header {
@@ -598,6 +599,11 @@
       x:NaN, y:NaN, Width:360, Height:550,
       minWidth:360, minHeight:550,
       ReportToShow:undefined, // workaround for strange closure problem
+      Expansions:{
+        AppletConfiguration:{ Scripting:true },
+        PageConfiguration:  { Scripting:true },
+        WidgetConfiguration:{},
+      },
     },
     ValueEditor: {                           // only visible if Designer is open
       Title:'Value Editor',   View:undefined,
@@ -1601,11 +1607,11 @@
 //------------------------------------------------------------------------------
 
   function WAD_Fold (PropSet:Indexable) {
-    let { Label } = PropSet
+    let { Label, Expansion,onExpansionChange } = PropSet
 
-    const [ Expansion,setExpansion ] = useState(true)
-
-    const onClick = useCallback(() => setExpansion(! Expansion))
+    const onClick = useCallback(() => {
+      onExpansionChange(! Expansion)
+    },[])
 
     return html`<div class="WAD Fold">
       <div class="WAD Fold-Header" onClick=${onClick}>
@@ -3733,7 +3739,8 @@ console.error(Signal)
 /**** WAD_AppletConfigurationPane ****/
 
   function WAD_AppletConfigurationPane () {
-    const { Applet } = DesignerState
+    const { Applet,Inspector } = DesignerState
+    const Expansions = Inspector.Expansions.AppletConfiguration
 
     const { activeScript,pendingScript, ErrorReport,ScriptError } = Applet
 
@@ -3761,7 +3768,13 @@ console.error(Signal)
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
       ">
-        <${WAD_Fold} Label="Visibility">
+        <${WAD_Fold} Label="Visibility"
+          Expansion=${Expansions.Visibility}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Visibility = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Opacity [%]</>
             <${WAD_Gap}/>
@@ -3772,7 +3785,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Geometry">
+        <${WAD_Fold} Label="Geometry"
+          Expansion=${Expansions.Geometry}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Geometry = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Position (x,y) [px]</>
             <${WAD_Gap}/>
@@ -3798,7 +3817,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Typography">
+        <${WAD_Fold} Label="Typography"
+          Expansion=${Expansions.Typography}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Typography = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
             <${WAD_Gap}/>
@@ -3942,7 +3967,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Background">
+        <${WAD_Fold} Label="Background"
+          Expansion=${Expansions.Background}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Background = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Background</>
             <${WAD_Gap}/>
@@ -4035,7 +4066,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Layout Settings">
+        <${WAD_Fold} Label="Layout Settings"
+          Expansion=${Expansions.Layout}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Layout = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Snap-to-Grid</>
             <${WAD_Gap}/>
@@ -4058,7 +4095,13 @@ console.error(Signal)
               onInput=${(Event:Indexable) => doConfigureApplet('GridHeight',parseFloat(Event.target.value))}
             />
           </>
-        </>        <${WAD_Fold} Label="Scripting">
+        </>        <${WAD_Fold} Label="Scripting"
+          Expansion=${Expansions.Scripting}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Scripting = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Script</>
               <div style="width:8px"/>
@@ -4200,7 +4243,8 @@ console.error(Signal)
 /**** WAD_PageConfigurationPane ****/
 
   function WAD_PageConfigurationPane () {
-    const { Applet } = DesignerState
+    const { Applet,Inspector } = DesignerState
+    const Expansions = Inspector.Expansions.PageConfiguration
 
     const { visitedPage }                                         = Applet
     const { activeScript,pendingScript, ErrorReport,ScriptError } = visitedPage
@@ -4230,7 +4274,13 @@ console.error(Signal)
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
       ">
-        <${WAD_Fold} Label="Visibility">
+        <${WAD_Fold} Label="Visibility"
+          Expansion=${Expansions.Visibility}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Visibility = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Opacity [%]</>
             <${WAD_Gap}/>
@@ -4241,7 +4291,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Geometry">
+        <${WAD_Fold} Label="Geometry"
+          Expansion=${Expansions.Geometry}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Geometry = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Position (x,y) [px]</>
             <${WAD_Gap}/>
@@ -4267,7 +4323,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Typography">
+        <${WAD_Fold} Label="Typography"
+          Expansion=${Expansions.Typography}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Typography = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
             <${WAD_Gap}/>
@@ -4411,7 +4473,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Background">
+        <${WAD_Fold} Label="Background"
+          Expansion=${Expansions.Background}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Background = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Background</>
             <${WAD_Gap}/>
@@ -4504,7 +4572,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Scripting">
+        <${WAD_Fold} Label="Scripting"
+          Expansion=${Expansions.Scripting}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Scripting = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Script</>
               <div style="width:8px"/>
@@ -4676,8 +4750,9 @@ console.error(Signal)
 /**** WAD_WidgetConfigurationPane ****/
 
   function WAD_WidgetConfigurationPane () {
-    const { Applet, selectedWidgets } = DesignerState
+    const { Applet, selectedWidgets, Inspector } = DesignerState
     const visitedPage = Applet.visitedPage
+    const Expansions  = Inspector.Expansions.WidgetConfiguration
 
     let ValueType:string = 'string'
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Value))
@@ -4742,7 +4817,13 @@ console.error(Signal)
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
       ">
-        <${WAD_Fold} Label="Visibility and Enabling">
+        <${WAD_Fold} Label="Visibility and Enabling"
+          Expansion=${Expansions.Visibility}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Visibility = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Visibility</>
             <${WAD_Gap}/>
@@ -4785,7 +4866,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Geometry">
+        <${WAD_Fold} Label="Geometry"
+          Expansion=${Expansions.Geometry}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Geometry = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Position (x,y) [px]</>
             <${WAD_Gap}/>
@@ -4865,7 +4952,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Typography">
+        <${WAD_Fold} Label="Typography"
+          Expansion=${Expansions.Typography}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Typography = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
             <${WAD_Gap}/>
@@ -5031,7 +5124,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Background">
+        <${WAD_Fold} Label="Background"
+          Expansion=${Expansions.Background}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Background = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Background</>
             <${WAD_Gap}/>
@@ -5137,7 +5236,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Border">
+        <${WAD_Fold} Label="Border"
+          Expansion=${Expansions.Border}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Border = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Border Lines</>
           </>
@@ -5403,7 +5508,13 @@ console.error(Signal)
             />
           </>
         </>
-        <${WAD_Fold} Label="Shadow">
+        <${WAD_Fold} Label="Shadow"
+          Expansion=${Expansions.Shadow}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Shadow = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Box Shadow</>
             <${WAD_Gap}/>
@@ -5505,7 +5616,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Cursor">
+        <${WAD_Fold} Label="Cursor"
+          Expansion=${Expansions.Cursor}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Cursor = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Standard</>
             <${WAD_Gap}/>
@@ -5518,7 +5635,13 @@ console.error(Signal)
           </>
         </>
 
-        <${WAD_Fold} Label="Scripting">
+        <${WAD_Fold} Label="Scripting"
+          Expansion=${Expansions.Scripting}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.Scripting = newExpansion
+            WAT_rerender()
+          }}
+        >
           <${WAD_horizontally}>
             <${WAD_Label}>Script</>
               <div style="width:8px"/>
@@ -5548,7 +5671,13 @@ console.error(Signal)
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event:Indexable) => setPendingScriptTo(Event.target.value)}
           />
-        </>        <${WAD_Fold} Label="Type-specific Settings">
+        </>        <${WAD_Fold} Label="Type-specific Settings"
+          Expansion=${Expansions.TypeSpecific}
+          onExpansionChange=${(newExpansion:boolean) => {
+            Expansions.TypeSpecific = newExpansion
+            WAT_rerender()
+          }}
+        >
 
 
           <${WAD_horizontally}>
