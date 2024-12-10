@@ -650,6 +650,14 @@ export function acceptableListSatisfying(Value, Default, Matcher) {
 export function acceptableOptionalListSatisfying(Value, Default, Matcher) {
     return (ValueIsListSatisfying(Value, Matcher) ? Value : Default);
 }
+/**** acceptableOneOf ****/
+export function acceptableOneOf(Value, Default, ValueList) {
+    return (ValueIsOneOf(Value, ValueList) ? Value : Default);
+}
+/**** acceptableOptionalOneOf ****/
+export function acceptableOptionalOneOf(Value, ValueList) {
+    return (ValueIsOneOf(Value, ValueList) ? Value : undefined);
+}
 /**** acceptableColor ****/
 export function acceptableColor(Value, Default) {
     return (ValueIsColor(Value) ? Value : Default);
@@ -1785,12 +1793,7 @@ export class WAT_Visual {
             }
         }
         /**** then perform the actual serialization ****/
-        const serializeProperty = (Name) => {
-            // @ts-ignore TS7053 allow "Visual" to be indexed
-            if (this['_' + Name] != null) {
-                Serialization[Name] = this[Name];
-            }
-        };
+        ;
         [
             'Name',
             'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
@@ -1800,7 +1803,7 @@ export class WAT_Visual {
             'Opacity', 'OverflowVisibility', 'Cursor',
             'activeScript', 'pendingScript',
             'memoized', 'Value',
-        ].forEach((Name) => serializeProperty(Name));
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -1841,6 +1844,13 @@ export class WAT_Visual {
             this.activateScript(); // in "creation" order, i.e.,
         } // pages and widgets will already be attached, applets may not
     } // and inner visuals may not yet (all) be present
+    /**** _serializePropertyInto ****/
+    _serializePropertyInto(Name, Serialization) {
+        // @ts-ignore TS7053 allow "Visual" to be indexed
+        if (this['_' + Name] != null) {
+            Serialization[Name] = this[Name];
+        }
+    }
 }
 //------------------------------------------------------------------------------
 //--                                WAT_Applet                                --
@@ -2524,17 +2534,10 @@ export class WAT_Applet extends WAT_Visual {
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
         super._serializeConfigurationInto(Serialization);
-        //    delete Serialization.Name                  // do not serialize applet name
-        const serializeProperty = (Name) => {
-            // @ts-ignore TS7053 allow "Applet" to be indexed
-            if (this['_' + Name] != null) {
-                Serialization[Name] = this[Name];
-            }
-        };
         [
             'Name',
             'SnapToGrid', 'GridWidth', 'GridHeight',
-        ].forEach((Name) => serializeProperty(Name));
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
         /**** "activeScript" needs special treatment ****/
         // @ts-ignore TS2339 if it exists "Serialization.activeScript" is a string
         if ((Serialization.activeScript || '').trim() === '') {
@@ -4355,9 +4358,11 @@ export class WAT_ImageView extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
+                const ImageScaling = acceptableOneOf(this._ImageScaling, 'contain', WAT_ImageScalings);
+                const ImageAlignment = acceptableOneOf(this._ImageAlignment, 'center', WAT_ImageAlignments);
                 return html `<img class="WAT Content ImageView"
         src=${acceptableURL(this.Value, '')}
-        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
       />`;
             }
         });
@@ -4383,6 +4388,18 @@ export class WAT_ImageView extends WAT_Widget {
             this._ImageAlignment = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        this._serializePropertyInto('ImageScaling', Serialization);
+        this._serializePropertyInto('ImageAlignment', Serialization);
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._ImageScaling = acceptableOneOf(Serialization.ImageScaling, 'contain', WAT_ImageScalings);
+        this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment, 'center', WAT_ImageAlignments);
     }
 }
 builtInWidgetTypes['ImageView'] = WAT_ImageView;
@@ -4416,9 +4433,11 @@ export class WAT_SVGView extends WAT_Widget {
             writable: true,
             value: () => {
                 const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value, ''));
+                const ImageScaling = acceptableOneOf(this._ImageScaling, 'contain', WAT_ImageScalings);
+                const ImageAlignment = acceptableOneOf(this._ImageAlignment, 'center', WAT_ImageAlignments);
                 return html `<img class="WAT Content SVGView"
         src=${DataURL}
-        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
       />`;
             }
         });
@@ -4444,6 +4463,18 @@ export class WAT_SVGView extends WAT_Widget {
             this._ImageAlignment = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        this._serializePropertyInto('ImageScaling', Serialization);
+        this._serializePropertyInto('ImageAlignment', Serialization);
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._ImageScaling = acceptableOneOf(Serialization.ImageScaling, 'contain', WAT_ImageScalings);
+        this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment, 'center', WAT_ImageAlignments);
     }
 }
 builtInWidgetTypes['SVGView'] = WAT_SVGView;
@@ -4497,11 +4528,14 @@ export class WAT_WebView extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
+                const PermissionsPolicy = acceptableOptionalTextline(this._PermissionsPolicy);
+                const allowsFullscreen = acceptableBoolean(this._allowsFullscreen, false);
+                const SandboxPermissions = acceptableTextline(this._SandboxPermissions, WAT_DefaultSandboxPermissions);
+                const ReferrerPolicy = acceptableOptionalOneOf(this._ReferrerPolicy, WAT_ReferrerPolicies);
                 return html `<iframe class="WAT Content WebView"
         src=${acceptableURL(this.Value, '')}
-        allow=${this._PermissionsPolicy} allowfullscreen=${this._allowsFullscreen}
-        sandbox=${this._SandboxPermissions || WAT_DefaultSandboxPermissions}
-        referrerpolicy=${this._ReferrerPolicy}
+        allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
+        sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
       />`;
             }
         });
@@ -4541,6 +4575,22 @@ export class WAT_WebView extends WAT_Widget {
             this._ReferrerPolicy = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'PermissionsPolicy', 'allowsFullscreen', 'SandboxPermissions',
+            'ReferrerPolicy'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._PermissionsPolicy = acceptableOptionalTextline(Serialization.PermissionsPolicy);
+        this._allowsFullscreen = acceptableBoolean(Serialization.allowsFullscreen, false);
+        this._SandboxPermissions = acceptableTextline(Serialization.SandboxPermissions, WAT_DefaultSandboxPermissions);
+        this._ReferrerPolicy = acceptableOptionalOneOf(Serialization.ReferrerPolicy, WAT_ReferrerPolicies);
     }
 }
 builtInWidgetTypes['WebView'] = WAT_WebView;
@@ -4596,9 +4646,10 @@ export class WAT_Icon extends WAT_Widget {
                     }
                 };
                 const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
+                const Color = acceptableColor(this.Color, 'black');
                 return html `<div class="WAT Content Icon" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${this._Color || 'black'};
+        background-color:${Color};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`;
             }
@@ -4825,11 +4876,15 @@ export class WAT_Gauge extends WAT_Widget {
             writable: true,
             value: () => {
                 const Value = acceptableNumber(ValueIsString(this.Value) ? parseFloat(this.Value) : this.Value, 0);
+                const Minimum = acceptableOptionalNumber(this._Minimum);
+                const lowerBound = acceptableOptionalNumber(this._lowerBound);
+                const Optimum = acceptableOptionalNumber(this._Optimum);
+                const upperBound = acceptableOptionalNumber(this._upperBound);
+                const Maximum = acceptableOptionalNumber(this._Maximum);
                 return html `<meter class="WAT Content Gauge" value=${Value}
-        min=${this._Minimum} low=${this._lowerBound} opt=${this._Optimum}
-        high=${this._upperBound} max=${this._Maximum}
-      />`;
-                1;
+        min=${Minimum} low=${lowerBound} opt=${Optimum}
+        high=${upperBound} max=${Maximum}
+       />`;
             }
         });
     }
@@ -4875,6 +4930,18 @@ export class WAT_Gauge extends WAT_Widget {
             this.rerender();
         }
     }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            ''
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        //this._PermissionsPolicy  = acceptableOptionalTextline(Serialization.PermissionsPolicy)
+    }
 }
 builtInWidgetTypes['Gauge'] = WAT_Gauge;
 appendStyle(`
@@ -4899,7 +4966,7 @@ export class WAT_Progressbar extends WAT_Widget {
             writable: true,
             value: () => {
                 const Value = acceptableNumber(ValueIsString(this.Value) ? parseFloat(this.Value) : this.Value, 0);
-                const Maximum = acceptableOptionalNumber(this.Maximum);
+                const Maximum = acceptableOptionalNumber(this._Maximum);
                 return html `<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
       style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`;
             }
@@ -4909,11 +4976,21 @@ export class WAT_Progressbar extends WAT_Widget {
     set Type(_) { throwReadOnlyError('Type'); }
     get Maximum() { return this._Maximum; }
     set Maximum(newSetting) {
-        allowNumber('maximal value', newSetting);
+        allowNumberInRange('maximal value', newSetting, 0, Infinity, true, false);
         if (this._Maximum !== newSetting) {
             this._Maximum = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        this._serializePropertyInto('Maximum', Serialization);
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Maximum = acceptableOptionalNumberInRange(Serialization.Maximum, undefined, 0);
     }
 }
 builtInWidgetTypes['Progressbar'] = WAT_Progressbar;
@@ -4997,8 +5074,11 @@ export class WAT_Slider extends WAT_Widget {
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                 });
-                /**** process hashmarks ****/
-                const Hashmarks = this._Hashmarks;
+                /**** process any other parameters ****/
+                const Minimum = acceptableOptionalNumber(this._Minimum);
+                const Stepping = acceptableOptionalNumberInRange(this._Stepping, undefined, 0);
+                const Maximum = acceptableOptionalNumber(this._Maximum);
+                const Hashmarks = acceptableOptionalListSatisfying(this._Hashmarks, undefined, HashmarkMatcher);
                 let HashmarkList = '', HashmarkId;
                 if ((Hashmarks != null) && (Hashmarks.length > 0)) {
                     HashmarkId = IdOfWidget(this) + '-Hashmarks';
@@ -5013,7 +5093,7 @@ export class WAT_Slider extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="range" class="WAT Content Slider"
-        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${HashmarkId}
       />${HashmarkList}`;
@@ -5055,6 +5135,21 @@ export class WAT_Slider extends WAT_Widget {
             this._Hashmarks = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Minimum', 'Stepping', 'Maximum', 'Hashmarks',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Minimum = acceptableOptionalNumber(Serialization.Minimum);
+        this._Stepping = acceptableOptionalNumberInRange(Serialization.Stepping, undefined, 0);
+        this._Maximum = acceptableOptionalNumber(Serialization.Maximum);
+        this._Hashmarks = acceptableOptionalListSatisfying(Serialization.Hashmarks, undefined, HashmarkMatcher);
     }
 }
 builtInWidgetTypes['Slider'] = WAT_Slider;
@@ -5147,8 +5242,14 @@ export class WAT_TextlineInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const Pattern = acceptableOptionalTextline(this._Pattern);
+                const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsTextline);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5158,9 +5259,9 @@ export class WAT_TextlineInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="text" class="WAT Content TextlineInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5226,6 +5327,25 @@ export class WAT_TextlineInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern',
+            'SpellChecking', 'Suggestions',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
+        this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsTextline);
     }
 }
 builtInWidgetTypes['TextlineInput'] = WAT_TextlineInput;
@@ -5313,11 +5433,17 @@ export class WAT_PasswordInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const Pattern = acceptableOptionalTextline(this._Pattern);
                 /**** actual rendering ****/
                 return html `<input type="password" class="WAT Content PasswordInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
       />`;
             }
@@ -5364,6 +5490,22 @@ export class WAT_PasswordInput extends WAT_Widget {
             this._Pattern = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
     }
 }
 builtInWidgetTypes['PasswordInput'] = WAT_PasswordInput;
@@ -5458,8 +5600,13 @@ export class WAT_NumberInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const Minimum = acceptableOptionalNumber(this._Minimum);
+                const Stepping = acceptableOptionalNumberInRange(this._Stepping, undefined, 0);
+                const Maximum = acceptableOptionalNumber(this._Maximum);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsNumber);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5469,8 +5616,8 @@ export class WAT_NumberInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="number" class="WAT Content NumberInput"
-        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} placeholder=${Placeholder}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5528,6 +5675,23 @@ export class WAT_NumberInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'Minimum', 'Stepping', 'Maximum', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._Minimum = acceptableOptionalNumber(Serialization.Minimum);
+        this._Stepping = acceptableOptionalNumberInRange(Serialization.Stepping, undefined, 0);
+        this._Maximum = acceptableOptionalNumber(Serialization.Maximum);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsNumber);
     }
 }
 builtInWidgetTypes['NumberInput'] = WAT_NumberInput;
@@ -5622,8 +5786,13 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const Pattern = acceptableOptionalTextline(this._Pattern);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsPhoneNumber);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5633,9 +5802,9 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="tel" class="WAT Content PhoneNumberInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5693,6 +5862,23 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsPhoneNumber);
     }
 }
 builtInWidgetTypes['PhoneNumberInput'] = WAT_PhoneNumberInput;
@@ -5787,8 +5973,13 @@ export class WAT_EMailAddressInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const Pattern = acceptableOptionalTextline(this._Pattern);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsEMailAddress);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5798,9 +5989,9 @@ export class WAT_EMailAddressInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="email" class="WAT Content EMailAddressInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5858,6 +6049,23 @@ export class WAT_EMailAddressInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsEMailAddress);
     }
 }
 builtInWidgetTypes['EMailAddressInput'] = WAT_EMailAddressInput;
@@ -5952,8 +6160,13 @@ export class WAT_URLInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const Pattern = acceptableOptionalTextline(this._Pattern);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsURL);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5963,9 +6176,9 @@ export class WAT_URLInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="url" class="WAT Content URLInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -6023,6 +6236,23 @@ export class WAT_URLInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsURL);
     }
 }
 builtInWidgetTypes['URLInput'] = WAT_URLInput;
@@ -6115,8 +6345,12 @@ export class WAT_TimeInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const withSeconds = acceptableOptionalBoolean(this._withSeconds);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, TimeRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, TimeRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, TimeMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6126,9 +6360,9 @@ export class WAT_TimeInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="time" class="WAT Content TimeInput"
-        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum}
-        step=${this._withSeconds ? 1 : 60}
-        readOnly=${this._readonly} pattern=${TimePattern}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
+        readOnly=${readonly} pattern=${TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -6178,6 +6412,22 @@ export class WAT_TimeInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._withSeconds = acceptableBoolean(Serialization.withSeconds, false);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, TimeRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, TimeRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, TimeMatcher);
     }
 }
 builtInWidgetTypes['TimeInput'] = WAT_TimeInput;
@@ -6271,11 +6521,11 @@ export class WAT_DateTimeInput extends WAT_Widget {
                     }
                 });
                 /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const Minimum = acceptableOptionalStringMatching(this.Minimum, undefined, DateTimeRegExp);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalStringMatching(this.Maximum, undefined, DateTimeRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, DateTimeMatcher);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const withSeconds = acceptableOptionalBoolean(this._withSeconds);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, DateTimeRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, DateTimeRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, DateTimeMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6285,7 +6535,8 @@ export class WAT_DateTimeInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="datetime-local" class="WAT Content DateTimeInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
         readOnly=${readonly} pattern=${DateTimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -6336,6 +6587,22 @@ export class WAT_DateTimeInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._withSeconds = acceptableBoolean(Serialization.withSeconds, false);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateTimeRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateTimeRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, DateTimeMatcher);
     }
 }
 builtInWidgetTypes['DateTimeInput'] = WAT_DateTimeInput;
@@ -6422,11 +6689,10 @@ export class WAT_DateInput extends WAT_Widget {
                     }
                 });
                 /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const Minimum = acceptableOptionalStringMatching(this.Minimum, undefined, DateRegExp);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalStringMatching(this.Maximum, undefined, DateRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, DateMatcher);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, DateRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, DateRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, DateMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6436,7 +6702,7 @@ export class WAT_DateInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="date" class="WAT Content DateInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${DatePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -6479,6 +6745,21 @@ export class WAT_DateInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, DateMatcher);
     }
 }
 builtInWidgetTypes['DateInput'] = WAT_DateInput;
@@ -6565,11 +6846,10 @@ export class WAT_WeekInput extends WAT_Widget {
                     }
                 });
                 /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const Minimum = acceptableOptionalStringMatching(this.Minimum, undefined, WeekRegExp);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalStringMatching(this.Maximum, undefined, WeekRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, WeekMatcher);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WeekRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WeekRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WeekMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6579,7 +6859,7 @@ export class WAT_WeekInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="week" class="WAT Content WeekInput"
-        value=${Value} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${Value} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WeekPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -6622,6 +6902,21 @@ export class WAT_WeekInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WeekRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WeekRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WeekMatcher);
     }
 }
 builtInWidgetTypes['WeekInput'] = WAT_WeekInput;
@@ -6708,11 +7003,10 @@ export class WAT_MonthInput extends WAT_Widget {
                     }
                 });
                 /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const Minimum = acceptableOptionalStringMatching(this.Minimum, undefined, MonthRegExp);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalStringMatching(this.Maximum, undefined, MonthRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, MonthMatcher);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, MonthRegExp);
+                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, MonthRegExp);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, MonthMatcher);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -6722,7 +7016,7 @@ export class WAT_MonthInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="month" class="WAT Content MonthInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${MonthPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -6765,6 +7059,21 @@ export class WAT_MonthInput extends WAT_Widget {
             this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, MonthRegExp);
+        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, MonthRegExp);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, MonthMatcher);
     }
 }
 builtInWidgetTypes['MonthInput'] = WAT_MonthInput;
@@ -6812,7 +7121,10 @@ export class WAT_FileInput extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
-                const Value = acceptableText(this.Value, '').trim().replace(/[\n\r]+/g, ',');
+                const Value = acceptableText(this._Value, '').trim().replace(/[\n\r]+/g, ',');
+                const Placeholder = acceptableTextline(this._Placeholder, '').trim();
+                const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
+                const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
                 const _onInput = useCallback((Event) => {
                     if (this.Enabling === false) {
                         return consumingEvent(Event);
@@ -6843,10 +7155,10 @@ export class WAT_FileInput extends WAT_Widget {
         ${Value === ''
                     ? this._Placeholder === '' ? '' : html `<span style="
               font-size:${Math.round((this.FontSize || 14) * 0.95)}px; line-height:${this.Height}px
-            ">${this._Placeholder}</span>`
+            ">${Placeholder}</span>`
                     : html `<span style="line-height:${this.Height}px">${Value}</span>`}
         <input type="file" style="display:none"
-          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
+          multiple=${allowMultiple} accept=${acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`;
@@ -6878,6 +7190,20 @@ export class WAT_FileInput extends WAT_Widget {
             this._acceptableTypes = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'acceptableTypes', 'allowMultiple'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        const Placeholder = acceptableTextline(this._Placeholder, '').trim();
+        const acceptableTypes = acceptableTextline(this._acceptableTypes, '*');
+        const allowMultiple = acceptableBoolean(this._allowMultiple, false);
     }
 }
 builtInWidgetTypes['FileInput'] = WAT_FileInput;
@@ -6928,6 +7254,10 @@ export class WAT_PseudoFileInput extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
+                const Icon = acceptableURL(this._Icon, `${IconFolder}/arrow-up-from-bracket.png`);
+                const Color = acceptableColor(this._Color, 'black');
+                const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
+                const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
                 const _onInput = useCallback((Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
@@ -6940,11 +7270,11 @@ export class WAT_PseudoFileInput extends WAT_Widget {
                 });
                 return html `<label class="WAT Content PseudoFileInput">
         <div style="
-          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
-          background-color:${this._Color || 'black'};
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
         "></div>
         <input type="file" style="display:none"
-          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
+          multiple=${allowMultiple} accept=${acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`;
@@ -6976,6 +7306,20 @@ export class WAT_PseudoFileInput extends WAT_Widget {
             this._acceptableTypes = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Icon', 'acceptableTypes', 'allowMultiple'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        const Icon = acceptableURL(this._Icon, `${IconFolder}/arrow-up-from-bracket.png`);
+        const acceptableTypes = acceptableTextline(this._acceptableTypes, '*');
+        const allowMultiple = acceptableBoolean(this._allowMultiple, false);
     }
 }
 builtInWidgetTypes['PseudoFileInput'] = WAT_PseudoFileInput;
@@ -7018,6 +7362,9 @@ export class WAT_FileDropArea extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
+                const Placeholder = acceptableTextline(this._Placeholder, '').trim();
+                const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
+                const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
                 const _onInput = useCallback((Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
@@ -7043,9 +7390,9 @@ export class WAT_FileDropArea extends WAT_Widget {
                 }); // nota bene: "files" is now in "Event.dataTransfer.files"
                 return html `<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
-        <span>${this._Placeholder}</span>
+        <span>${Placeholder}</span>
         <input type="file"
-          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
+          multiple=${allowMultiple} accept=${acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`;
@@ -7077,6 +7424,20 @@ export class WAT_FileDropArea extends WAT_Widget {
             this._acceptableTypes = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'acceptableTypes', 'allowMultiple'
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        const Placeholder = acceptableTextline(this._Placeholder, '').trim();
+        const acceptableTypes = acceptableTextline(this._acceptableTypes, '*');
+        const allowMultiple = acceptableBoolean(this._allowMultiple, false);
     }
 }
 builtInWidgetTypes['FileDropArea'] = WAT_FileDropArea;
@@ -7181,8 +7542,14 @@ export class WAT_SearchInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process suggestions ****/
-                const Suggestions = this._Suggestions;
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const Pattern = acceptableOptionalTextline(this._Pattern);
+                const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsTextline);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -7192,9 +7559,9 @@ export class WAT_SearchInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="search" class="WAT Content SearchInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -7261,6 +7628,25 @@ export class WAT_SearchInput extends WAT_Widget {
             this.rerender();
         }
     }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern',
+            'SpellChecking', 'Suggestions',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
+        this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsTextline);
+    }
 }
 builtInWidgetTypes['SearchInput'] = WAT_SearchInput;
 appendStyle(`
@@ -7293,8 +7679,8 @@ export class WAT_ColorInput extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
-                let Value = acceptableOptionalColor(this.Value);
-                const Suggestions = this._Suggestions;
+                let Value = acceptableOptionalColor(this._Value);
+                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsColor);
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -7329,6 +7715,16 @@ export class WAT_ColorInput extends WAT_Widget {
             this.rerender();
         }
     }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        this._serializePropertyInto('Suggestions', Serialization);
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsColor);
+    }
 }
 builtInWidgetTypes['ColorInput'] = WAT_ColorInput;
 appendStyle(`
@@ -7356,8 +7752,8 @@ export class WAT_DropDown extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
-                let Value = acceptableTextline(this.Value, '');
-                const Options = this._Options || [];
+                let Value = acceptableTextline(this._Value, '');
+                const Options = acceptableListSatisfying(this._Options, [], ValueIsTextline);
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
@@ -7394,6 +7790,16 @@ export class WAT_DropDown extends WAT_Widget {
             this.rerender();
         }
     }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        this._serializePropertyInto('Options', Serialization);
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Options = acceptableListSatisfying(Serialization.Options, [], ValueIsTextline);
+    }
 }
 builtInWidgetTypes['DropDown'] = WAT_DropDown;
 appendStyle(`
@@ -7428,8 +7834,10 @@ export class WAT_PseudoDropDown extends WAT_Widget {
             configurable: true,
             writable: true,
             value: () => {
-                let Value = acceptableTextline(this.Value, '');
-                const Options = this._Options || [];
+                let Value = acceptableTextline(this._Value, '');
+                const Icon = acceptableURL(this._Icon, `${IconFolder}/menu.png`);
+                const Color = acceptableColor(this._Color, 'black');
+                const Options = acceptableListSatisfying(this._Options, [], ValueIsTextline);
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
@@ -7438,8 +7846,8 @@ export class WAT_PseudoDropDown extends WAT_Widget {
                 }, []);
                 return html `<div class="WAT Content PseudoDropDown">
         <div style="
-          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
-          background-color:${this._Color || 'black'};
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
         "></div>
         <select disabled=${this.Enabling == false} onInput=${_onInput}>
           ${Options.map((Option) => {
@@ -7479,6 +7887,18 @@ export class WAT_PseudoDropDown extends WAT_Widget {
             this._Options = (newSetting == null ? newSetting : newSetting.slice());
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        this._serializePropertyInto('Icon', Serialization);
+        this._serializePropertyInto('Options', Serialization);
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        const Icon = acceptableURL(this._Icon, `${IconFolder}/menu.png`);
+        this._Options = acceptableListSatisfying(Serialization.Options, [], ValueIsTextline);
     }
 }
 builtInWidgetTypes['PseudoDropDown'] = WAT_PseudoDropDown;
@@ -7574,11 +7994,18 @@ export class WAT_TextInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
+                /**** process any other parameters ****/
+                const Placeholder = acceptableOptionalTextline(this._Placeholder);
+                const readonly = acceptableOptionalBoolean(this._readonly);
+                const minLength = acceptableOptionalOrdinal(this._minLength);
+                const maxLength = acceptableOptionalOrdinal(this._maxLength);
+                const LineWrapping = acceptableOptionalBoolean(this._LineWrapping);
+                const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
                 /**** actual rendering ****/
                 return html `<textarea class="WAT Content TextInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        spellcheck=${this._SpellChecking} style="resize:none; ${this._LineWrapping == true
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        spellcheck=${SpellChecking} style="resize:none; ${LineWrapping == true
                     ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
                     : undefined}"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -7635,6 +8062,24 @@ export class WAT_TextInput extends WAT_Widget {
             this._SpellChecking = newSetting;
             this.rerender();
         }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'readonly', 'minLength', 'maxLength', 'LineWrapping',
+            'SpellChecking',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._readonly = acceptableBoolean(Serialization.readonly, false);
+        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
+        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
+        this._LineWrapping = acceptableBoolean(Serialization.LineWrapping, true);
+        this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
     }
 }
 builtInWidgetTypes['TextInput'] = WAT_TextInput;
@@ -7740,10 +8185,11 @@ export class WAT_IconTab extends WAT_Widget {
                         this._onClick(Event);
                     }
                 };
-                const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
+                const Value = acceptableURL(this._Value, `${IconFolder}/pencil.png`);
+                const Color = acceptableColor(this.Color, 'black');
                 return html `<div class="WAT ${active} IconTab" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${this._Color || 'black'};
+        background-color:${Color};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`;
             }
