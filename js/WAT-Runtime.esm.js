@@ -1059,6 +1059,13 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
+        /**** hasBackground - not inheritable ****/
+        Object.defineProperty(this, "_hasBackground", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         /**** Opacity - 0...100%, not inheritable ****/
         Object.defineProperty(this, "_Opacity", {
             enumerable: true,
@@ -1211,7 +1218,7 @@ export class WAT_Visual {
             : this._FontFamily);
     }
     set FontFamily(newFontFamily) {
-        allowTextline('widget font family', newFontFamily);
+        allowTextline('font family', newFontFamily);
         if (this._FontFamily !== newFontFamily) {
             this._FontFamily = newFontFamily;
             this.rerender();
@@ -1223,7 +1230,7 @@ export class WAT_Visual {
             : this._FontSize);
     }
     set FontSize(newFontSize) {
-        allowOrdinal('widget font size', newFontSize);
+        allowOrdinal('font size', newFontSize);
         if (this._FontSize !== newFontSize) {
             this._FontSize = newFontSize;
             this.rerender();
@@ -1235,7 +1242,7 @@ export class WAT_Visual {
             : this._FontWeight);
     }
     set FontWeight(newFontWeight) {
-        allowOneOf('widget font weight', newFontWeight, WAT_FontWeights);
+        allowOneOf('font weight', newFontWeight, WAT_FontWeights);
         if (this._FontWeight !== newFontWeight) {
             this._FontWeight = newFontWeight;
             this.rerender();
@@ -1247,7 +1254,7 @@ export class WAT_Visual {
             : this._FontStyle);
     }
     set FontStyle(newFontStyle) {
-        allowOneOf('widget font style', newFontStyle, WAT_FontStyles);
+        allowOneOf('font style', newFontStyle, WAT_FontStyles);
         if (this._FontStyle !== newFontStyle) {
             this._FontStyle = newFontStyle;
             this.rerender();
@@ -1257,7 +1264,7 @@ export class WAT_Visual {
         return (this._TextDecoration == null ? undefined : Object.assign({}, this._TextDecoration));
     }
     set TextDecoration(newTextDecoration) {
-        allowTextDecoration('widget text decoration', newTextDecoration);
+        allowTextDecoration('text decoration', newTextDecoration);
         if (ValuesDiffer(this._TextDecoration, newTextDecoration)) {
             if (newTextDecoration == null) {
                 this._TextDecoration = undefined;
@@ -1275,7 +1282,7 @@ export class WAT_Visual {
             : this._TextShadow);
     }
     set TextShadow(newTextShadow) {
-        allowTextShadow('widget text shadow', newTextShadow);
+        allowTextShadow('text shadow', newTextShadow);
         if (ValuesDiffer(this._TextShadow, newTextShadow)) {
             if (newTextShadow == null) {
                 this._TextShadow = undefined;
@@ -1293,7 +1300,7 @@ export class WAT_Visual {
             : this._TextAlignment);
     }
     set TextAlignment(newTextAlignment) {
-        allowOneOf('widget text alignment', newTextAlignment, WAT_TextAlignments);
+        allowOneOf('text alignment', newTextAlignment, WAT_TextAlignments);
         if (this._TextAlignment !== newTextAlignment) {
             this._TextAlignment = newTextAlignment;
             this.rerender();
@@ -1305,7 +1312,7 @@ export class WAT_Visual {
             : this._LineHeight);
     }
     set LineHeight(newLineHeight) {
-        allowOrdinal('widget line height', newLineHeight);
+        allowOrdinal('line height', newLineHeight);
         if (this._LineHeight !== newLineHeight) {
             this._LineHeight = newLineHeight;
             this.rerender();
@@ -1317,7 +1324,7 @@ export class WAT_Visual {
             : this._ForegroundColor);
     }
     set ForegroundColor(newForegroundColor) {
-        allowColor('widget foreground color', newForegroundColor);
+        allowColor('foreground color', newForegroundColor);
         if (this._ForegroundColor !== newForegroundColor) {
             this._ForegroundColor = newForegroundColor;
             this.rerender();
@@ -1332,7 +1339,7 @@ export class WAT_Visual {
             : this._BackgroundColor);
     }
     set BackgroundColor(newColor) {
-        allowColor('widget background color', newColor);
+        allowColor('background color', newColor);
         if (this._BackgroundColor !== newColor) {
             this._BackgroundColor = newColor;
             this.rerender();
@@ -1344,7 +1351,7 @@ export class WAT_Visual {
             : Object.assign({}, this._BackgroundTexture));
     }
     set BackgroundTexture(newTexture) {
-        allowBackgroundTexture('widget background texture', newTexture);
+        allowBackgroundTexture('background texture', newTexture);
         if (ValuesDiffer(this._BackgroundTexture, newTexture)) {
             if (newTexture == null) {
                 this._BackgroundTexture = undefined;
@@ -1356,11 +1363,19 @@ export class WAT_Visual {
             this.rerender();
         }
     }
+    get hasBackground() { return this._hasBackground; }
+    set hasBackground(newSetting) {
+        expectBoolean('background setting', newSetting);
+        if (this._hasBackground !== newSetting) {
+            this._hasBackground = newSetting;
+            this.rerender();
+        }
+    }
     get Opacity() {
         return this._Opacity;
     }
     set Opacity(newOpacity) {
-        allowIntegerInRange('widget opacity', newOpacity, 0, 100);
+        allowIntegerInRange('opacity', newOpacity, 0, 100);
         if (this._Opacity !== newOpacity) {
             this._Opacity = newOpacity;
             this.rerender();
@@ -1372,7 +1387,7 @@ export class WAT_Visual {
             : this._Cursor);
     }
     set Cursor(newCursor) {
-        allowOneOf('widget cursor name', newCursor, WAT_Cursors);
+        allowOneOf('cursor name', newCursor, WAT_Cursors);
         if (this._Cursor !== newCursor) {
             this._Cursor = newCursor;
             this.rerender();
@@ -1380,7 +1395,7 @@ export class WAT_Visual {
     }
     get Value() { return this._Value; }
     set Value(newValue) {
-        allowSerializableValue('Value', newValue);
+        allowSerializableValue('value', newValue);
         if (ValuesDiffer(this._Value, newValue)) {
             this._Value = newValue; // *C* a deep copy may be better
             if (this._onValueChange != null) {
@@ -1449,7 +1464,7 @@ export class WAT_Visual {
     set activeScript(_) { throwReadOnlyError('activeScript'); }
     get pendingScript() { return this._pendingScript; }
     set pendingScript(newScript) {
-        allowText('visual script', newScript);
+        allowText('script', newScript);
         if (this._pendingScript !== newScript) {
             this._pendingScript = newScript;
             this.rerender();
@@ -1564,7 +1579,7 @@ export class WAT_Visual {
     set isBroken(_) { throwReadOnlyError('isBroken'); }
     get Renderer() { return this._Renderer; }
     set Renderer(newRenderer) {
-        allowFunction('WAT renderer', newRenderer);
+        allowFunction('renderer', newRenderer);
         if (newRenderer == null) {
             newRenderer = () => '';
         }
@@ -1621,7 +1636,7 @@ export class WAT_Visual {
     /**** CSSStyle ****/
     get CSSStyle() {
         let CSSStyleList = [];
-        const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, BackgroundColor, BackgroundTexture, Opacity, Cursor } = this;
+        const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, hasBackground, BackgroundColor, BackgroundTexture, Opacity, Cursor } = this;
         if (FontFamily != null) {
             CSSStyleList.push(`font-family:${FontFamily}`);
         }
@@ -1659,32 +1674,34 @@ export class WAT_Visual {
         if (ForegroundColor != null) {
             CSSStyleList.push(`color:${ForegroundColor}`);
         }
-        if (BackgroundColor != null) {
-            CSSStyleList.push(`background-color:${BackgroundColor}`);
-        }
-        if (BackgroundTexture != null) {
-            const { isActive, ImageURL, Mode, xOffset, yOffset } = BackgroundTexture;
-            let BackgroundSize = 'auto auto';
-            switch (Mode) {
-                case 'normal': break;
-                case 'contain':
-                case 'cover':
-                    BackgroundSize = BackgroundTexture.Mode;
-                    break;
-                case 'fill':
-                    BackgroundSize = '100% 100%';
-                    break;
-                case 'tile':
-                    BackgroundSize = 'auto auto';
-                    break;
+        if (hasBackground) {
+            if (BackgroundColor != null) {
+                CSSStyleList.push(`background-color:${BackgroundColor}`);
             }
-            let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
-            if (isActive) {
-                CSSStyleList.push(`background-image:url(${ImageURL})`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
-                    `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
-            }
-            else {
-                CSSStyleList.push('background-image:none');
+            if (BackgroundTexture != null) {
+                const { isActive, ImageURL, Mode, xOffset, yOffset } = BackgroundTexture;
+                let BackgroundSize = 'auto auto';
+                switch (Mode) {
+                    case 'normal': break;
+                    case 'contain':
+                    case 'cover':
+                        BackgroundSize = BackgroundTexture.Mode;
+                        break;
+                    case 'fill':
+                        BackgroundSize = '100% 100%';
+                        break;
+                    case 'tile':
+                        BackgroundSize = 'auto auto';
+                        break;
+                }
+                let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
+                if (isActive) {
+                    CSSStyleList.push(`background-image:url(${ImageURL})`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+                        `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
+                }
+                else {
+                    CSSStyleList.push('background-image:none');
+                }
             }
         }
         if (Opacity != null) {
@@ -1778,7 +1795,7 @@ export class WAT_Visual {
             'Name',
             'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
             'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
-            'ForegroundColor', 'BackgroundColor', 'BackgroundTexture',
+            'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
             'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
             'Opacity', 'OverflowVisibility', 'Cursor',
             'activeScript', 'pendingScript',
@@ -1803,7 +1820,7 @@ export class WAT_Visual {
             'Name',
             'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
             'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
-            'ForegroundColor', 'BackgroundColor', 'BackgroundTexture',
+            'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
             'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
             'Opacity', 'OverflowVisibility', 'Cursor',
             /*'activeScript',*/ 'pendingScript',
