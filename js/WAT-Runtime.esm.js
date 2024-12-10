@@ -4998,7 +4998,7 @@ export class WAT_Slider extends WAT_Widget {
                     this.rerender();
                 });
                 /**** process any other parameters ****/
-                const Hashmarks = acceptableOptionalListSatisfying(this.Hashmarks, undefined, HashmarkMatcher);
+                const Hashmarks = this._Hashmarks;
                 let HashmarkList = '', HashmarkId;
                 if ((Hashmarks != null) && (Hashmarks.length > 0)) {
                     HashmarkId = IdOfWidget(this) + '-Hashmarks';
@@ -5066,6 +5066,56 @@ appendStyle(`
 export class WAT_TextlineInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Pattern ****/
+        Object.defineProperty(this, "_Pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** SpellChecking ****/
+        Object.defineProperty(this, "_SpellChecking", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5098,13 +5148,7 @@ export class WAT_TextlineInput extends WAT_Widget {
                     }
                 });
                 /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const Pattern = acceptableOptionalTextline(this.Pattern);
-                const SpellChecking = acceptableOptionalBoolean(this.SpellChecking);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsTextline);
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5114,9 +5158,9 @@ export class WAT_TextlineInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="text" class="WAT Content TextlineInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5125,6 +5169,64 @@ export class WAT_TextlineInput extends WAT_Widget {
     }
     get Type() { return 'TextlineInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get Pattern() { return this._Pattern; }
+    set Pattern(newSetting) {
+        allowTextline('input pattern', newSetting);
+        if (this._Pattern !== newSetting) {
+            this._Pattern = newSetting;
+            this.rerender();
+        }
+    }
+    get SpellChecking() { return this._SpellChecking; }
+    set SpellChecking(newSetting) {
+        allowBoolean('spell check setting', newSetting);
+        if (this._SpellChecking !== newSetting) {
+            this._SpellChecking = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsTextline);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['TextlineInput'] = WAT_TextlineInput;
 appendStyle(`
@@ -5144,6 +5246,7 @@ appendStyle(`
 export class WAT_PasswordInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5212,6 +5315,7 @@ appendStyle(`
 export class WAT_NumberInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5288,6 +5392,7 @@ appendStyle(`
 export class WAT_PhoneNumberInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5365,6 +5470,7 @@ appendStyle(`
 export class WAT_EMailAddressInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5442,6 +5548,7 @@ appendStyle(`
 export class WAT_URLInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5524,6 +5631,7 @@ function TimeMatcher(Value) {
 export class WAT_TimeInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5604,6 +5712,7 @@ function DateTimeMatcher(Value) {
 export class WAT_DateTimeInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5684,6 +5793,7 @@ function DateMatcher(Value) {
 export class WAT_DateInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5764,6 +5874,7 @@ function WeekMatcher(Value) {
 export class WAT_WeekInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5844,6 +5955,7 @@ function MonthMatcher(Value) {
 export class WAT_MonthInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5919,6 +6031,7 @@ appendStyle(`
 export class WAT_FileInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5992,6 +6105,7 @@ appendStyle(`
 export class WAT_PseudoFileInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6040,6 +6154,7 @@ appendStyle(`
 export class WAT_FileDropArea extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6106,6 +6221,7 @@ appendStyle(`
 export class WAT_SearchInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6184,6 +6300,7 @@ appendStyle(`
 export class WAT_ColorInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6229,6 +6346,7 @@ appendStyle(`
 export class WAT_DropDown extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6276,6 +6394,7 @@ appendStyle(`
 export class WAT_PseudoDropDown extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6337,6 +6456,7 @@ appendStyle(`
 export class WAT_TextInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6415,6 +6535,7 @@ export class WAT_TextTab extends WAT_Widget {
             writable: true,
             value: false
         });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6476,6 +6597,7 @@ export class WAT_IconTab extends WAT_Widget {
             writable: true,
             value: false
         });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6676,6 +6798,7 @@ appendStyle(`
 export class WAT_Accordion extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6697,6 +6820,7 @@ appendStyle(`
 export class WAT_AccordionFold extends WAT_Widget {
     constructor() {
         super(...arguments);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6718,6 +6842,7 @@ appendStyle(`
 export class WAT_flatListView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6739,6 +6864,7 @@ appendStyle(`
 export class WAT_nestedListView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
