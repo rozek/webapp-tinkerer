@@ -6953,7 +6953,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableTextline(Value,'')
+      let ValueToShow:string = acceptableStringMatching(Value,'',TimeRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7104,7 +7104,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableTextline(Value,'')
+      let ValueToShow:string = acceptableStringMatching(Value,'',DateTimeRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7248,7 +7248,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableTextline(Value,'')
+      let ValueToShow:string = acceptableStringMatching(Value,'',DateRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7392,7 +7392,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableTextline(Value,'')
+      let ValueToShow:string = acceptableStringMatching(Value,'',WeekRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7536,7 +7536,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableTextline(Value,'')
+      let ValueToShow:string = acceptableStringMatching(Value,'',MonthRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7609,15 +7609,51 @@
     public get Type ():string  { return 'FileInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
+
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** allowMultiple ****/
+
+    protected _allowMultiple:boolean = false
+
+    public get allowMultiple ():boolean { return this._allowMultiple }
+    public set allowMultiple (newSetting:boolean) {
+      allowBoolean('"allowMultiple" setting',newSetting)
+      if (this._allowMultiple !== newSetting) {
+        this._allowMultiple = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** acceptableTypes ****/
+
+    protected _acceptableTypes:WAT_Textline|undefined
+
+    public get acceptableTypes ():WAT_Textline|undefined { return this._acceptableTypes }
+    public set acceptableTypes (newSetting:WAT_Textline|undefined) {
+      allowTextline('acceptable file types',newSetting)
+      if (this._acceptableTypes !== newSetting) {
+        this._acceptableTypes = newSetting
+        this.rerender()
+      }
+    }
+
 
 
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      const Value           = acceptableText            (this.Value,'').trim().replace(/[\n\r]+/g,',')
-      const Placeholder     = acceptableTextline        ((this as Indexable).Placeholder,'').trim()
-      const acceptableTypes = acceptableOptionalTextline((this as Indexable).acceptableTypes,'*')
-      const multiple        = acceptableOptionalBoolean ((this as Indexable).multiple)
+      const Value = acceptableText(this.Value,'').trim().replace(/[\n\r]+/g,',')
 
       const _onInput = useCallback((Event:any):void => {
         if (this.Enabling === false) { return consumingEvent(Event) }
@@ -7645,13 +7681,13 @@
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
       >
         ${Value === ''
-          ? Placeholder === '' ? '' : html`<span style="
+          ? this._Placeholder === '' ? '' : html`<span style="
               font-size:${Math.round((this.FontSize || 14)*0.95)}px; line-height:${this.Height}px
-            ">${Placeholder}</span>`
+            ">${this._Placeholder}</span>`
           : html`<span style="line-height:${this.Height}px">${Value}</span>`
         }
         <input type="file" style="display:none"
-          multiple=${multiple} accept=${acceptableTypes}
+          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`
@@ -7684,16 +7720,50 @@
     public get Type ():string  { return 'PseudoFileInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Icon ****/
+
+    protected _Icon:WAT_URL|undefined
+
+    public get Icon ():WAT_URL|undefined { return this._Icon }
+    public set Icon (newSetting:WAT_URL|undefined) {
+      allowURL('icon image ULR',newSetting)
+      if (this._Icon !== newSetting) {
+        this._Icon = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** allowMultiple ****/
+
+    protected _allowMultiple:boolean = false
+
+    public get allowMultiple ():boolean { return this._allowMultiple }
+    public set allowMultiple (newSetting:boolean) {
+      allowBoolean('"allowMultiple" setting',newSetting)
+      if (this._allowMultiple !== newSetting) {
+        this._allowMultiple = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** acceptableTypes ****/
+
+    protected _acceptableTypes:WAT_Textline|undefined
+
+    public get acceptableTypes ():WAT_Textline|undefined { return this._acceptableTypes }
+    public set acceptableTypes (newSetting:WAT_Textline|undefined) {
+      allowTextline('acceptable file types',newSetting)
+      if (this._acceptableTypes !== newSetting) {
+        this._acceptableTypes = newSetting
+        this.rerender()
+      }
+    }
+
 
 
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      const Icon            = acceptableURL             ((this as Indexable).Icon,`${IconFolder}/arrow-up-from-bracket.png`)
-      const Color           = acceptableColor           ((this as Indexable).Color,'black')
-      const acceptableTypes = acceptableOptionalTextline((this as Indexable).acceptableTypes,'*')
-      const multiple        = acceptableOptionalBoolean ((this as Indexable).multiple)
-
       const _onInput = useCallback((Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
 
@@ -7704,11 +7774,11 @@
 
       return html`<label class="WAT Content PseudoFileInput">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
+          background-color:${(this as Indexable)._Color || 'black'};
         "></div>
         <input type="file" style="display:none"
-          multiple=${multiple} accept=${acceptableTypes}
+          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`
@@ -7733,15 +7803,50 @@
     public get Type ():string  { return 'FileDropArea' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
+
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** allowMultiple ****/
+
+    protected _allowMultiple:boolean = false
+
+    public get allowMultiple ():boolean { return this._allowMultiple }
+    public set allowMultiple (newSetting:boolean) {
+      allowBoolean('"allowMultiple" setting',newSetting)
+      if (this._allowMultiple !== newSetting) {
+        this._allowMultiple = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** acceptableTypes ****/
+
+    protected _acceptableTypes:WAT_Textline|undefined
+
+    public get acceptableTypes ():WAT_Textline|undefined { return this._acceptableTypes }
+    public set acceptableTypes (newSetting:WAT_Textline|undefined) {
+      allowTextline('acceptable file types',newSetting)
+      if (this._acceptableTypes !== newSetting) {
+        this._acceptableTypes = newSetting
+        this.rerender()
+      }
+    }
+
 
 
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      const Placeholder     = acceptableTextline        ((this as Indexable).Placeholder,'').trim()
-      const acceptableTypes = acceptableOptionalTextline((this as Indexable).acceptableTypes,'*')
-      const multiple        = acceptableOptionalBoolean ((this as Indexable).multiple)
-
       const _onInput = useCallback((Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
 
@@ -7764,9 +7869,9 @@
 
       return html`<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
-        <span>${Placeholder}</span>
+        <span>${this._Placeholder}</span>
         <input type="file"
-          multiple=${multiple} accept=${acceptableTypes}
+          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`
