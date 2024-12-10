@@ -1186,13 +1186,13 @@ export class WAT_Visual {
     }
     get Name() { return this._Name; }
     set Name(newName) {
-        allowName('WAT name', newName);
-        if (newName != null) {
+        if (ValueIsString(newName)) {
             newName = newName.trim();
             if (newName === '') {
                 newName = undefined;
             }
         }
+        allowName('WAT name', newName);
         if (this._Name !== newName) {
             this._Name = newName;
             this.rerender();
@@ -1227,6 +1227,9 @@ export class WAT_Visual {
     }
     set FontFamily(newFontFamily) {
         allowTextline('font family', newFontFamily);
+        if ((newFontFamily || '').trim() === '') {
+            newFontFamily = undefined;
+        }
         if (this._FontFamily !== newFontFamily) {
             this._FontFamily = newFontFamily;
             this.rerender();
@@ -1396,6 +1399,9 @@ export class WAT_Visual {
     }
     set Cursor(newCursor) {
         allowOneOf('cursor name', newCursor, WAT_Cursors);
+        if ((newCursor || '').trim() === '') {
+            newCursor = undefined;
+        }
         if (this._Cursor !== newCursor) {
             this._Cursor = newCursor;
             this.rerender();
@@ -1525,6 +1531,17 @@ export class WAT_Visual {
             });
             if (Mode === 'rethrow-exception') {
                 throw Signal;
+            }
+        }
+        if (this.isMounted && (this._onMount != null)) {
+            try {
+                this._onMount.call(this);
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onMount" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
             }
         }
         this.rerender();
@@ -1901,6 +1918,9 @@ export class WAT_Applet extends WAT_Visual {
             value: []
         });
     }
+    /**** Name ****/
+    get Name() { return this._Name; }
+    set Name(newName) { throwReadOnlyError('Name'); }
     /**** Path - to be overwritten ****/
     get Path() { return '/'; }
     set Path(_) { throwReadOnlyError('Path'); }
@@ -3439,7 +3459,7 @@ export class WAT_Widget extends WAT_Visual {
                 BorderRadii[0] + 'px ' + BorderRadii[1] + 'px ' +
                 BorderRadii[2] + 'px ' + BorderRadii[3] + 'px');
         }
-        if (BoxShadow != null) {
+        if ((BoxShadow != null) && BoxShadow.isActive) {
             CSSStyleList.push('box-shadow:' +
                 BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
                 BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
