@@ -551,6 +551,13 @@ const DesignerState = {
         x: NaN, y: NaN, Width: 360, Height: 550,
         minWidth: 360, minHeight: 550,
         ReportToShow: undefined, // workaround for strange closure problem
+        ScrollPositions: {
+            AppletConfiguration: 0,
+            PageBrowser: 0,
+            PageConfiguration: 0,
+            WidgetBrowser: 0,
+            WidgetConfiguration: 0,
+        },
         Expansions: {
             AppletConfiguration: { Scripting: true },
             PageConfiguration: { Scripting: true },
@@ -3355,11 +3362,20 @@ DesignerState.Inspector.View = WAD_Inspector;
 function WAD_AppletConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const { Applet, Inspector } = DesignerState;
+    /**** remember fold expansions ****/
     const Expansions = Inspector.Expansions.AppletConfiguration;
     function toggleExpansion(Name) {
         Expansions[Name] = !Expansions[Name];
         WAT_rerender();
     }
+    /**** remember scroll position ****/
+    const ScrollPosition = Inspector.ScrollPositions.AppletConfiguration;
+    function updateScrollPosition(Event) {
+        Inspector.ScrollPositions.AppletConfiguration = Event.target.scrollTop;
+    }
+    const scrollablePane = useRef(null);
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    /**** handle script input ****/
     const { activeScript, pendingScript, ErrorReport, ScriptError } = Applet;
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
     const ReportToShow = ScriptError || ErrorReport;
@@ -3368,6 +3384,7 @@ function WAD_AppletConfigurationPane() {
         doConfigureApplet('pendingScript', newScript);
     }, []);
     const applyPendingScript = useCallback(() => doApplyAppletScript(), []);
+    /**** actual rendering ****/
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
@@ -3381,7 +3398,7 @@ function WAD_AppletConfigurationPane() {
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
-      ">
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
         <${WAD_Fold} Label="Visibility"
           Expansion=${Expansions.Visibility}
           toggleExpansion=${() => toggleExpansion('Visibility')}
@@ -3727,6 +3744,7 @@ function WAD_AppletConfigurationPane() {
 /**** WAD_PageBrowserPane ****/
 function WAD_PageBrowserPane() {
     const { Applet, selectedPages } = DesignerState;
+    /**** handle list item rendering and selection ****/
     const PageListItemRenderer = useCallback((Page, Index, selected) => {
         let Result = '<span style="font-style:italic">(unnamed)</span>';
         const PageName = Page.Name;
@@ -3744,6 +3762,7 @@ function WAD_PageBrowserPane() {
         DesignerState.selectedPages = selectedIndices.map((Index) => PageList[Index]);
         WAT_rerender();
     });
+    /**** actual rendering ****/
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
@@ -3813,11 +3832,20 @@ function WAD_PageBrowserPane() {
 function WAD_PageConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const { Applet, Inspector } = DesignerState;
+    /**** remember fold expansions ****/
     const Expansions = Inspector.Expansions.PageConfiguration;
     function toggleExpansion(Name) {
         Expansions[Name] = !Expansions[Name];
         WAT_rerender();
     }
+    /**** remember scroll position ****/
+    const ScrollPosition = Inspector.ScrollPositions.PageConfiguration;
+    function updateScrollPosition(Event) {
+        Inspector.ScrollPositions.PageConfiguration = Event.target.scrollTop;
+    }
+    const scrollablePane = useRef(null);
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    /**** handle script input ****/
     const { visitedPage } = Applet;
     const { activeScript, pendingScript, ErrorReport, ScriptError } = visitedPage;
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
@@ -3827,6 +3855,7 @@ function WAD_PageConfigurationPane() {
         doConfigureVisitedPage('pendingScript', newScript);
     }, []);
     const applyPendingScript = useCallback(() => doApplyVisitedPageScript(), []);
+    /**** actual rendering ****/
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
@@ -3841,7 +3870,7 @@ function WAD_PageConfigurationPane() {
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
-      ">
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
         <${WAD_Fold} Label="Visibility"
           Expansion=${Expansions.Visibility}
           toggleExpansion=${() => toggleExpansion('Visibility')}
@@ -4162,6 +4191,7 @@ function WAD_PageConfigurationPane() {
 function WAD_WidgetBrowserPane() {
     const { Applet, selectedWidgets } = DesignerState;
     const visitedPage = Applet.visitedPage;
+    /**** handle list item rendering and selection ****/
     const WidgetListItemRenderer = useCallback((Widget, Index, selected) => {
         const WidgetName = Widget.Name;
         if (WidgetName == null) {
@@ -4176,6 +4206,7 @@ function WAD_WidgetBrowserPane() {
         const WidgetList = visitedPage.WidgetList;
         selectWidgets(selectedIndices.map((Index) => WidgetList[Index]));
     });
+    /**** actual rendering ****/
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
@@ -4279,11 +4310,20 @@ function WAD_WidgetBrowserPane() {
 function WAD_WidgetConfigurationPane() {
     const { Applet, selectedWidgets, Inspector } = DesignerState;
     const visitedPage = Applet.visitedPage;
+    /**** remember fold expansions ****/
     const Expansions = Inspector.Expansions.WidgetConfiguration;
     function toggleExpansion(Name) {
         Expansions[Name] = !Expansions[Name];
         WAT_rerender();
     }
+    /**** remember scroll position ****/
+    const ScrollPosition = Inspector.ScrollPositions.WidgetConfiguration;
+    function updateScrollPosition(Event) {
+        Inspector.ScrollPositions.WidgetConfiguration = Event.target.scrollTop;
+    }
+    const scrollablePane = useRef(null);
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    /**** handle value input ****/
     let ValueType = 'string';
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget) => Widget.Value));
     switch (true) {
@@ -4317,6 +4357,7 @@ function WAD_WidgetConfigurationPane() {
         }
         doConfigureSelectedWidgets('Value', Value);
     }
+    /**** handle script input ****/
     const activeScript = commonValueOf(selectedWidgets.map((Widget) => Widget.activeScript));
     const pendingScript = commonValueOf(selectedWidgets.map((Widget) => Widget.pendingScript));
     const ErrorReport = commonValueOf(selectedWidgets.map((Widget) => Widget.ErrorReport));
@@ -4328,6 +4369,7 @@ function WAD_WidgetConfigurationPane() {
         doConfigureSelectedWidgets('pendingScript', newScript);
     }, []);
     const applyPendingScript = useCallback(() => doApplySelectedWidgetsScript(), []);
+    /**** actual rendering ****/
     return html `<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally} style="padding-top:4px">
@@ -4349,7 +4391,7 @@ function WAD_WidgetConfigurationPane() {
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
-      ">
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
         <${WAD_Fold} Label="Visibility and Enabling"
           Expansion=${Expansions.Visibility}
           toggleExpansion=${() => toggleExpansion('Visibility')}
