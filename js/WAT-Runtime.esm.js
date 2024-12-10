@@ -4144,6 +4144,7 @@ builtInWidgetTypes['plainWidget'] = WAT_plainWidget;
 export class WAT_Outline extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -4155,6 +4156,7 @@ export class WAT_Outline extends WAT_Widget {
     }
     get Type() { return 'Outline'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    /**** bundledWidgets ****/
     bundledWidgets() {
         const Page = this.Page;
         if (Page == null) {
@@ -4325,20 +4327,63 @@ appendStyle(`
   }
   `);
 /**** ImageView ****/
+const WAT_ImageScalings = ['none', 'stretch', 'cover', 'contain'];
+const WAT_ImageAlignments = [
+    'left top', 'center top', 'right top', 'left center', 'center center',
+    'right center', 'left bottom', 'center bottom', 'right bottom'
+];
 export class WAT_ImageView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** ImageScaling ****/
+        Object.defineProperty(this, "_ImageScaling", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** ImageAlignment ****/
+        Object.defineProperty(this, "_ImageAlignment", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
-                return html `<img class="WAT Content ImageView" src=${acceptableURL(this.Value, '')}/>`;
+                return html `<img class="WAT Content ImageView"
+        src=${acceptableURL(this.Value, '')}
+        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+      />`;
             }
         });
     }
     get Type() { return 'ImageView'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get ImageScaling() {
+        return this._ImageScaling;
+    }
+    set ImageScaling(newSetting) {
+        allowOneOf('image scaling', newSetting, WAT_ImageScalings);
+        if (this._ImageScaling !== newSetting) {
+            this._ImageScaling = newSetting;
+            this.rerender();
+        }
+    }
+    get ImageAlignment() {
+        return this._ImageAlignment;
+    }
+    set ImageAlignment(newSetting) {
+        allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
+        if (this._ImageAlignment !== newSetting) {
+            this._ImageAlignment = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['ImageView'] = WAT_ImageView;
 appendStyle(`
@@ -4350,18 +4395,56 @@ appendStyle(`
 export class WAT_SVGView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** ImageScaling ****/
+        Object.defineProperty(this, "_ImageScaling", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** ImageAlignment ****/
+        Object.defineProperty(this, "_ImageAlignment", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
                 const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value, ''));
-                return html `<img class="WAT Content SVGView" src=${DataURL}/>`;
+                return html `<img class="WAT Content SVGView"
+        src=${DataURL}
+        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+      />`;
             }
         });
     }
     get Type() { return 'SVGView'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get ImageScaling() {
+        return this._ImageScaling;
+    }
+    set ImageScaling(newSetting) {
+        allowOneOf('image scaling', newSetting, WAT_ImageScalings);
+        if (this._ImageScaling !== newSetting) {
+            this._ImageScaling = newSetting;
+            this.rerender();
+        }
+    }
+    get ImageAlignment() {
+        return this._ImageAlignment;
+    }
+    set ImageAlignment(newSetting) {
+        allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
+        if (this._ImageAlignment !== newSetting) {
+            this._ImageAlignment = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['SVGView'] = WAT_SVGView;
 appendStyle(`
@@ -4463,6 +4546,7 @@ appendStyle(`
 export class WAT_horizontalSeparator extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** rendering ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -4485,6 +4569,7 @@ appendStyle(`
 export class WAT_verticalSeparator extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** rendering ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
