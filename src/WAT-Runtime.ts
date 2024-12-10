@@ -25,7 +25,7 @@
     ValidatorForClassifier, acceptNil,rejectNil,
     expectValue,
     allowBoolean, expectBoolean,
-    expectNumber, allowFiniteNumber, allowInteger, expectInteger,
+    allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger,
       allowIntegerInRange, allowOrdinal, expectCardinal,
     allowString, expectString, allowText, allowTextline,
     allowFunction, expectFunction,
@@ -5481,7 +5481,7 @@
 
       return html`<div class="WAT Content Icon" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${this._Color || 'black'};
+        background-color:${(this as Indexable)._Color || 'black'};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`
     }
@@ -5657,6 +5657,71 @@
 
     public get Type ():string  { return 'Gauge' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+  /**** Minimum ****/
+
+    protected _Minimum:number|undefined
+
+    public get Minimum ():number|undefined { return this._Minimum }
+    public set Minimum (newSetting:number|undefined) {
+      allowNumber('minimal value',newSetting)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** lowerBound ****/
+
+    protected _lowerBound:number|undefined
+
+    public get lowerBound ():number|undefined { return this._lowerBound }
+    public set lowerBound (newSetting:number|undefined) {
+      allowNumber('lower bound',newSetting)
+      if (this._lowerBound !== newSetting) {
+        this._lowerBound = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Optimum ****/
+
+    protected _Optimum:number|undefined
+
+    public get Optimum ():number|undefined { return this._Optimum }
+    public set Optimum (newSetting:number|undefined) {
+      allowNumber('optimal value',newSetting)
+      if (this._Optimum !== newSetting) {
+        this._Optimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** upperBound ****/
+
+    protected _upperBound:number|undefined
+
+    public get upperBound ():number|undefined { return this._upperBound }
+    public set upperBound (newSetting:number|undefined) {
+      allowNumber('upper bound',newSetting)
+      if (this._upperBound !== newSetting) {
+        this._upperBound = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:number|undefined
+
+    public get Maximum ():number|undefined { return this._Maximum }
+    public set Maximum (newSetting:number|undefined) {
+      allowNumber('maximal value',newSetting)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
 
 
 
