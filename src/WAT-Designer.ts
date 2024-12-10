@@ -599,6 +599,13 @@
       x:NaN, y:NaN, Width:360, Height:550,
       minWidth:360, minHeight:550,
       ReportToShow:undefined, // workaround for strange closure problem
+      ScrollPositions:{
+        AppletConfiguration:0,
+        PageBrowser:        0,
+        PageConfiguration:  0,
+        WidgetBrowser:      0,
+        WidgetConfiguration:0,
+      },
       Expansions:{
         AppletConfiguration:{ Scripting:true },
         PageConfiguration:  { Scripting:true },
@@ -3737,11 +3744,25 @@ console.error(Signal)
   function WAD_AppletConfigurationPane () {
     const { Applet,Inspector } = DesignerState
 
+  /**** remember fold expansions ****/
+
     const Expansions = Inspector.Expansions.AppletConfiguration
     function toggleExpansion (Name:string):void {
       Expansions[Name] = ! Expansions[Name]
       WAT_rerender()
     }
+
+  /**** remember scroll position ****/
+
+    const ScrollPosition = Inspector.ScrollPositions.AppletConfiguration
+    function updateScrollPosition (Event:Indexable) {
+      Inspector.ScrollPositions.AppletConfiguration = Event.target.scrollTop
+    }
+
+    const scrollablePane = useRef(null)
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition,[])
+
+  /**** handle script input ****/
 
     const { activeScript,pendingScript, ErrorReport,ScriptError } = Applet
 
@@ -3754,6 +3775,8 @@ console.error(Signal)
     },[])
 
     const applyPendingScript = useCallback(() => doApplyAppletScript(),[])
+
+  /**** actual rendering ****/
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -3768,7 +3791,7 @@ console.error(Signal)
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
-      ">
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
         <${WAD_Fold} Label="Visibility"
           Expansion=${Expansions.Visibility}
           toggleExpansion=${() => toggleExpansion('Visibility')}
@@ -4137,6 +4160,8 @@ console.error(Signal)
   function WAD_PageBrowserPane () {
     const { Applet, selectedPages } = DesignerState
 
+  /**** handle list item rendering and selection ****/
+
     const PageListItemRenderer = useCallback((Page:WAT_Page, Index:number, selected:boolean) => {
       let Result = '<span style="font-style:italic">(unnamed)</span>'
         const PageName = Page.Name
@@ -4156,6 +4181,8 @@ console.error(Signal)
       )
       WAT_rerender()
     })
+
+  /**** actual rendering ****/
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4228,11 +4255,25 @@ console.error(Signal)
   function WAD_PageConfigurationPane () {
     const { Applet,Inspector } = DesignerState
 
+  /**** remember fold expansions ****/
+
     const Expansions = Inspector.Expansions.PageConfiguration
     function toggleExpansion (Name:string):void {
       Expansions[Name] = ! Expansions[Name]
       WAT_rerender()
     }
+
+  /**** remember scroll position ****/
+
+    const ScrollPosition = Inspector.ScrollPositions.PageConfiguration
+    function updateScrollPosition (Event:Indexable) {
+      Inspector.ScrollPositions.PageConfiguration = Event.target.scrollTop
+    }
+
+    const scrollablePane = useRef(null)
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition,[])
+
+  /**** handle script input ****/
 
     const { visitedPage }                                         = Applet
     const { activeScript,pendingScript, ErrorReport,ScriptError } = visitedPage
@@ -4246,6 +4287,8 @@ console.error(Signal)
     },[])
 
     const applyPendingScript = useCallback(() => doApplyVisitedPageScript(),[])
+
+  /**** actual rendering ****/
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4261,7 +4304,7 @@ console.error(Signal)
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
-      ">
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
         <${WAD_Fold} Label="Visibility"
           Expansion=${Expansions.Visibility}
           toggleExpansion=${() => toggleExpansion('Visibility')}
@@ -4605,6 +4648,8 @@ console.error(Signal)
     const { Applet, selectedWidgets } = DesignerState
     const visitedPage = Applet.visitedPage
 
+  /**** handle list item rendering and selection ****/
+
     const WidgetListItemRenderer = useCallback((Widget:WAT_Widget, Index:number, selected:boolean) => {
       const WidgetName = Widget.Name
       if (WidgetName == null) {
@@ -4618,6 +4663,8 @@ console.error(Signal)
       const WidgetList = visitedPage.WidgetList
       selectWidgets(selectedIndices.map((Index:number) => WidgetList[Index]))
     })
+
+  /**** actual rendering ****/
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4726,11 +4773,25 @@ console.error(Signal)
     const { Applet, selectedWidgets, Inspector } = DesignerState
     const visitedPage = Applet.visitedPage
 
+  /**** remember fold expansions ****/
+
     const Expansions  = Inspector.Expansions.WidgetConfiguration
     function toggleExpansion (Name:string):void {
       Expansions[Name] = ! Expansions[Name]
       WAT_rerender()
     }
+
+  /**** remember scroll position ****/
+
+    const ScrollPosition = Inspector.ScrollPositions.WidgetConfiguration
+    function updateScrollPosition (Event:Indexable) {
+      Inspector.ScrollPositions.WidgetConfiguration = Event.target.scrollTop
+    }
+
+    const scrollablePane = useRef(null)
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition,[])
+
+  /**** handle value input ****/
 
     let ValueType:string = 'string'
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Value))
@@ -4758,6 +4819,8 @@ console.error(Signal)
       doConfigureSelectedWidgets('Value',Value)
     }
 
+  /**** handle script input ****/
+
     const activeScript  = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.activeScript))
     const pendingScript = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.pendingScript))
     const ErrorReport   = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.ErrorReport))
@@ -4772,6 +4835,8 @@ console.error(Signal)
     },[])
 
     const applyPendingScript = useCallback(() => doApplySelectedWidgetsScript(),[])
+
+  /**** actual rendering ****/
 
     return html`<div class="WAD InspectorPane">
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
@@ -4794,7 +4859,7 @@ console.error(Signal)
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
         margin-top:6px;
-      ">
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
         <${WAD_Fold} Label="Visibility and Enabling"
           Expansion=${Expansions.Visibility}
           toggleExpansion=${() => toggleExpansion('Visibility')}
