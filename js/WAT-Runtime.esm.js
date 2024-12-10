@@ -7280,6 +7280,13 @@ appendStyle(`
 export class WAT_ColorInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -7287,7 +7294,7 @@ export class WAT_ColorInput extends WAT_Widget {
             writable: true,
             value: () => {
                 let Value = acceptableOptionalColor(this.Value);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsColor);
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -7303,7 +7310,7 @@ export class WAT_ColorInput extends WAT_Widget {
                     }
                 }, []);
                 return html `<input type="color" class="WAT Content ColorInput"
-        value=${Value}
+        value=${Value === '' ? null : Value}
         disabled=${this.Enabling == false} onInput=${_onInput}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -7312,6 +7319,16 @@ export class WAT_ColorInput extends WAT_Widget {
     }
     get Type() { return 'ColorInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsColor);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['ColorInput'] = WAT_ColorInput;
 appendStyle(`
@@ -7326,6 +7343,13 @@ appendStyle(`
 export class WAT_DropDown extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Options ****/
+        Object.defineProperty(this, "_Options", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -7333,7 +7357,7 @@ export class WAT_DropDown extends WAT_Widget {
             writable: true,
             value: () => {
                 let Value = acceptableTextline(this.Value, '');
-                const Options = acceptableListSatisfying(this.Options, [], ValueIsTextline);
+                const Options = this._Options || [];
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
@@ -7360,6 +7384,16 @@ export class WAT_DropDown extends WAT_Widget {
     }
     get Type() { return 'DropDown'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Options() {
+        return (this._Options == null ? this._Options : this._Options.slice());
+    }
+    set Options(newSetting) {
+        allowListSatisfying('option list', newSetting, ValueIsTextline);
+        if (ValuesDiffer(this._Options, newSetting)) {
+            this._Options = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['DropDown'] = WAT_DropDown;
 appendStyle(`
@@ -7374,6 +7408,20 @@ appendStyle(`
 export class WAT_PseudoDropDown extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Icon ****/
+        Object.defineProperty(this, "_Icon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Options ****/
+        Object.defineProperty(this, "_Options", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -7381,9 +7429,7 @@ export class WAT_PseudoDropDown extends WAT_Widget {
             writable: true,
             value: () => {
                 let Value = acceptableTextline(this.Value, '');
-                const Icon = acceptableURL(this.Icon, `${IconFolder}/menu.png`);
-                const Color = acceptableColor(this.Color, 'black');
-                const Options = acceptableListSatisfying(this.Options, [], ValueIsTextline);
+                const Options = this._Options || [];
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
@@ -7392,8 +7438,8 @@ export class WAT_PseudoDropDown extends WAT_Widget {
                 }, []);
                 return html `<div class="WAT Content PseudoDropDown">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
+          background-color:${this._Color || 'black'};
         "></div>
         <select disabled=${this.Enabling == false} onInput=${_onInput}>
           ${Options.map((Option) => {
@@ -7416,6 +7462,24 @@ export class WAT_PseudoDropDown extends WAT_Widget {
     }
     get Type() { return 'PseudoDropDown'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Icon() { return this._Icon; }
+    set Icon(newSetting) {
+        allowURL('icon image ULR', newSetting);
+        if (this._Icon !== newSetting) {
+            this._Icon = newSetting;
+            this.rerender();
+        }
+    }
+    get Options() {
+        return (this._Options == null ? this._Options : this._Options.slice());
+    }
+    set Options(newSetting) {
+        allowListSatisfying('option list', newSetting, ValueIsTextline);
+        if (ValuesDiffer(this._Options, newSetting)) {
+            this._Options = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['PseudoDropDown'] = WAT_PseudoDropDown;
 appendStyle(`
@@ -7436,6 +7500,48 @@ appendStyle(`
 export class WAT_TextInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** LineWrapping ****/
+        Object.defineProperty(this, "_LineWrapping", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** SpellChecking ****/
+        Object.defineProperty(this, "_SpellChecking", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -7468,18 +7574,11 @@ export class WAT_TextInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const LineWrapping = acceptableOptionalBoolean(this.LineWrapping);
-                const SpellChecking = acceptableOptionalBoolean(this.SpellChecking);
                 /**** actual rendering ****/
                 return html `<textarea class="WAT Content TextInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        spellcheck=${SpellChecking} style="resize:none; ${LineWrapping == true
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        spellcheck=${this._SpellChecking} style="resize:none; ${this._LineWrapping == true
                     ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
                     : undefined}"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -7489,6 +7588,54 @@ export class WAT_TextInput extends WAT_Widget {
     }
     get Type() { return 'TextInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get LineWrapping() { return this._LineWrapping; }
+    set LineWrapping(newSetting) {
+        allowBoolean('line wrapping setting', newSetting);
+        if (this._LineWrapping !== newSetting) {
+            this._LineWrapping = newSetting;
+            this.rerender();
+        }
+    }
+    get SpellChecking() { return this._SpellChecking; }
+    set SpellChecking(newSetting) {
+        allowBoolean('spell check setting', newSetting);
+        if (this._SpellChecking !== newSetting) {
+            this._SpellChecking = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['TextInput'] = WAT_TextInput;
 appendStyle(`
@@ -7530,8 +7677,9 @@ export class WAT_TextTab extends WAT_Widget {
                         this._onClick(Event);
                     }
                 };
+                const Value = acceptableTextline(this.Value, '');
                 return html `<div class="WAT ${active} TextTab"
-        onClick=${_onClick}>${this.Value}</div>`;
+        onClick=${_onClick}>${Value}</div>`;
             }
         });
     }
@@ -7593,10 +7741,9 @@ export class WAT_IconTab extends WAT_Widget {
                     }
                 };
                 const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
-                const Color = acceptableColor(this.Color, 'black');
                 return html `<div class="WAT ${active} IconTab" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${Color};
+        background-color:${this._Color || 'black'};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`;
             }
