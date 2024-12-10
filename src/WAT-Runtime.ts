@@ -7218,11 +7218,11 @@
 
 /**** TimeInput ****/
 
-  const TimePattern = '\\d{2}:\\d{2}'
-  const TimeRegExp  = /\d{2}:\d{2}/
+  export const WAT_TimePattern = '\\d{2}:\\d{2}'
+  export const WAT_TimeRegExp  = /\d{2}:\d{2}/
 
-  function TimeMatcher (Value:any):boolean {
-    return ValueIsStringMatching(Value,TimeRegExp)
+  export function WAT_TimeMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,WAT_TimeRegExp)
   }
 
   export class WAT_TimeInput extends WAT_Widget {
@@ -7263,7 +7263,7 @@
 
     public get Minimum ():WAT_Textline|undefined { return this._Minimum }
     public set Minimum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('earliest time',newSetting,TimeRegExp)
+      allowStringMatching('earliest time',newSetting,WAT_TimeRegExp)
       if (this._Minimum !== newSetting) {
         this._Minimum = newSetting
         this.rerender()
@@ -7276,7 +7276,7 @@
 
     public get Maximum ():WAT_Textline|undefined { return this._Maximum }
     public set Maximum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('latest time',newSetting,TimeRegExp)
+      allowStringMatching('latest time',newSetting,WAT_TimeRegExp)
       if (this._Maximum !== newSetting) {
         this._Maximum = newSetting
         this.rerender()
@@ -7291,7 +7291,7 @@
       return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
     }
     public set Suggestions (newSetting:string[]|undefined) {
-      allowListSatisfying('suggestion list',newSetting,TimeMatcher)
+      allowListSatisfying('suggestion list',newSetting,WAT_TimeMatcher)
       if (ValuesDiffer(this._Suggestions,newSetting)) {
         this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
         this.rerender()
@@ -7315,11 +7315,11 @@
 
       this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
       this._withSeconds = acceptableBoolean               (Serialization.withSeconds, false)
-      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, TimeRegExp)
-      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, TimeRegExp)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_TimeRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_TimeRegExp)
 
       this._Suggestions = acceptableOptionalListSatisfying(
-        Serialization.Suggestions, undefined, TimeMatcher
+        Serialization.Suggestions, undefined, WAT_TimeMatcher
       )
     }
 
@@ -7333,7 +7333,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableStringMatching(Value,'',TimeRegExp)
+      let ValueToShow:string = acceptableStringMatching(Value,'',WAT_TimeRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7356,11 +7356,11 @@
 
       const readonly    = acceptableOptionalBoolean       (this._readonly)
       const withSeconds = acceptableOptionalBoolean       (this._withSeconds)
-      const Minimum     = acceptableOptionalStringMatching(this._Minimum, undefined, TimeRegExp)
-      const Maximum     = acceptableOptionalStringMatching(this._Maximum, undefined, TimeRegExp)
+      const Minimum     = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_TimeRegExp)
+      const Maximum     = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_TimeRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        this._Suggestions, undefined, TimeMatcher
+        this._Suggestions, undefined, WAT_TimeMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7377,7 +7377,7 @@
       return html`<input type="time" class="WAT Content TimeInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${TimePattern}
+        readOnly=${readonly} pattern=${WAT_TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -7401,11 +7401,11 @@
 
 /**** DateTimeInput ****/
 
-  const DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}'
-  const DateTimeRegExp  = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
+  export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}'
+  export const WAT_DateTimeRegExp  = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/
 
-  function DateTimeMatcher (Value:any):boolean {
-    return ValueIsStringMatching(Value,DateTimeRegExp)
+  export function WAT_DateTimeMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,WAT_DateTimeRegExp)
   }
 
   export class WAT_DateTimeInput extends WAT_Widget {
@@ -7446,7 +7446,7 @@
 
     public get Minimum ():WAT_Textline|undefined { return this._Minimum }
     public set Minimum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('earliest point in time',newSetting,DateTimeRegExp)
+      allowStringMatching('earliest point in time',newSetting,WAT_DateTimeRegExp)
       if (this._Minimum !== newSetting) {
         this._Minimum = newSetting
         this.rerender()
@@ -7459,7 +7459,7 @@
 
     public get Maximum ():WAT_Textline|undefined { return this._Maximum }
     public set Maximum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('latest point in time',newSetting,DateTimeRegExp)
+      allowStringMatching('latest point in time',newSetting,WAT_DateTimeRegExp)
       if (this._Maximum !== newSetting) {
         this._Maximum = newSetting
         this.rerender()
@@ -7474,7 +7474,7 @@
       return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
     }
     public set Suggestions (newSetting:string[]|undefined) {
-      allowListSatisfying('suggestion list',newSetting,DateTimeMatcher)
+      allowListSatisfying('suggestion list',newSetting,WAT_DateTimeMatcher)
       if (ValuesDiffer(this._Suggestions,newSetting)) {
         this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
         this.rerender()
@@ -7498,11 +7498,11 @@
 
       this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
       this._withSeconds = acceptableBoolean               (Serialization.withSeconds, false)
-      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateTimeRegExp)
-      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateTimeRegExp)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_DateTimeRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_DateTimeRegExp)
 
       this._Suggestions = acceptableOptionalListSatisfying(
-        Serialization.Suggestions, undefined, DateTimeMatcher
+        Serialization.Suggestions, undefined, WAT_DateTimeMatcher
       )
     }
 
@@ -7516,7 +7516,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableStringMatching(Value,'',DateTimeRegExp)
+      let ValueToShow:string = acceptableStringMatching(Value,'',WAT_DateTimeRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7539,11 +7539,11 @@
 
       const readonly    = acceptableOptionalBoolean       (this._readonly)
       const withSeconds = acceptableOptionalBoolean       (this._withSeconds)
-      const Minimum     = acceptableOptionalStringMatching(this._Minimum, undefined, DateTimeRegExp)
-      const Maximum     = acceptableOptionalStringMatching(this._Maximum, undefined, DateTimeRegExp)
+      const Minimum     = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateTimeRegExp)
+      const Maximum     = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_DateTimeRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        this._Suggestions, undefined, DateTimeMatcher
+        this._Suggestions, undefined, WAT_DateTimeMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7560,7 +7560,7 @@
       return html`<input type="datetime-local" class="WAT Content DateTimeInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${DateTimePattern}
+        readOnly=${readonly} pattern=${WAT_DateTimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -7584,11 +7584,11 @@
 
 /**** DateInput ****/
 
-  const DatePattern = '\\d{4}-\\d{2}-\\d{2}'
-  const DateRegExp  = /\d{4}-\d{2}-\d{2}/
+  export const WAT_DatePattern = '\\d{4}-\\d{2}-\\d{2}'
+  export const WAT_DateRegExp  = /\d{4}-\d{2}-\d{2}/
 
-  function DateMatcher (Value:any):boolean {
-    return ValueIsStringMatching(Value,DateRegExp)
+  export function WAT_DateMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,WAT_DateRegExp)
   }
 
   export class WAT_DateInput extends WAT_Widget {
@@ -7616,7 +7616,7 @@
 
     public get Minimum ():WAT_Textline|undefined { return this._Minimum }
     public set Minimum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('earliest date',newSetting,DateRegExp)
+      allowStringMatching('earliest date',newSetting,WAT_DateRegExp)
       if (this._Minimum !== newSetting) {
         this._Minimum = newSetting
         this.rerender()
@@ -7629,7 +7629,7 @@
 
     public get Maximum ():WAT_Textline|undefined { return this._Maximum }
     public set Maximum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('latest date',newSetting,DateRegExp)
+      allowStringMatching('latest date',newSetting,WAT_DateRegExp)
       if (this._Maximum !== newSetting) {
         this._Maximum = newSetting
         this.rerender()
@@ -7644,7 +7644,7 @@
       return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
     }
     public set Suggestions (newSetting:string[]|undefined) {
-      allowListSatisfying('suggestion list',newSetting,DateMatcher)
+      allowListSatisfying('suggestion list',newSetting,WAT_DateMatcher)
       if (ValuesDiffer(this._Suggestions,newSetting)) {
         this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
         this.rerender()
@@ -7667,11 +7667,11 @@
       super._deserializeConfigurationFrom(Serialization)
 
       this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
-      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateRegExp)
-      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateRegExp)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_DateRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_DateRegExp)
 
       this._Suggestions = acceptableOptionalListSatisfying(
-        Serialization.Suggestions, undefined, DateMatcher
+        Serialization.Suggestions, undefined, WAT_DateMatcher
       )
     }
 
@@ -7685,7 +7685,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableStringMatching(Value,'',DateRegExp)
+      let ValueToShow:string = acceptableStringMatching(Value,'',WAT_DateRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7707,11 +7707,11 @@
     /**** process any other parameters ****/
 
       const readonly = acceptableOptionalBoolean       (this._readonly)
-      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, DateRegExp)
-      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, DateRegExp)
+      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateRegExp)
+      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_DateRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        this._Suggestions, undefined, DateMatcher
+        this._Suggestions, undefined, WAT_DateMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7727,7 +7727,7 @@
 
       return html`<input type="date" class="WAT Content DateInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${DatePattern}
+        readOnly=${readonly} pattern=${WAT_DatePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -7751,11 +7751,11 @@
 
 /**** WeekInput ****/
 
-  const WeekPattern = '\\d{4}-W\\d{2}'
-  const WeekRegExp  = /\d{4}-W\d{2}/
+  export const WAT_WeekPattern = '\\d{4}-W\\d{2}'
+  export const WAT_WeekRegExp  = /\d{4}-W\d{2}/
 
-  function WeekMatcher (Value:any):boolean {
-    return ValueIsStringMatching(Value,WeekRegExp)
+  export function WAT_WeekMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,WAT_WeekRegExp)
   }
 
   export class WAT_WeekInput extends WAT_Widget {
@@ -7783,7 +7783,7 @@
 
     public get Minimum ():WAT_Textline|undefined { return this._Minimum }
     public set Minimum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('earliest week',newSetting,WeekRegExp)
+      allowStringMatching('earliest week',newSetting,WAT_WeekRegExp)
       if (this._Minimum !== newSetting) {
         this._Minimum = newSetting
         this.rerender()
@@ -7796,7 +7796,7 @@
 
     public get Maximum ():WAT_Textline|undefined { return this._Maximum }
     public set Maximum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('latest week',newSetting,WeekRegExp)
+      allowStringMatching('latest week',newSetting,WAT_WeekRegExp)
       if (this._Maximum !== newSetting) {
         this._Maximum = newSetting
         this.rerender()
@@ -7811,7 +7811,7 @@
       return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
     }
     public set Suggestions (newSetting:string[]|undefined) {
-      allowListSatisfying('suggestion list',newSetting,WeekMatcher)
+      allowListSatisfying('suggestion list',newSetting,WAT_WeekMatcher)
       if (ValuesDiffer(this._Suggestions,newSetting)) {
         this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
         this.rerender()
@@ -7834,11 +7834,11 @@
       super._deserializeConfigurationFrom(Serialization)
 
       this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
-      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WeekRegExp)
-      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WeekRegExp)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_WeekRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_WeekRegExp)
 
       this._Suggestions = acceptableOptionalListSatisfying(
-        Serialization.Suggestions, undefined, WeekMatcher
+        Serialization.Suggestions, undefined, WAT_WeekMatcher
       )
     }
 
@@ -7852,7 +7852,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableStringMatching(Value,'',WeekRegExp)
+      let ValueToShow:string = acceptableStringMatching(Value,'',WAT_WeekRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -7874,11 +7874,11 @@
     /**** process any other parameters ****/
 
       const readonly = acceptableOptionalBoolean       (this._readonly)
-      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, WeekRegExp)
-      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, WeekRegExp)
+      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_WeekRegExp)
+      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_WeekRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        this._Suggestions, undefined, WeekMatcher
+        this._Suggestions, undefined, WAT_WeekMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7894,7 +7894,7 @@
 
       return html`<input type="week" class="WAT Content WeekInput"
         value=${Value} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WeekPattern}
+        readOnly=${readonly} pattern=${WAT_WeekPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -7918,11 +7918,11 @@
 
 /**** MonthInput ****/
 
-  const MonthPattern = '\\d{4}-\\d{2}'
-  const MonthRegExp  = /\d{4}-\d{2}/
+  export const WAT_MonthPattern = '\\d{4}-\\d{2}'
+  export const WAT_MonthRegExp  = /\d{4}-\d{2}/
 
-  function MonthMatcher (Value:any):boolean {
-    return ValueIsStringMatching(Value,MonthRegExp)
+  export function WAT_MonthMatcher (Value:any):boolean {
+    return ValueIsStringMatching(Value,WAT_MonthRegExp)
   }
 
   export class WAT_MonthInput extends WAT_Widget {
@@ -7950,7 +7950,7 @@
 
     public get Minimum ():WAT_Textline|undefined { return this._Minimum }
     public set Minimum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('earliest month',newSetting,MonthRegExp)
+      allowStringMatching('earliest month',newSetting,WAT_MonthRegExp)
       if (this._Minimum !== newSetting) {
         this._Minimum = newSetting
         this.rerender()
@@ -7963,7 +7963,7 @@
 
     public get Maximum ():WAT_Textline|undefined { return this._Maximum }
     public set Maximum (newSetting:WAT_Textline|undefined) {
-      allowStringMatching('latest month',newSetting,MonthRegExp)
+      allowStringMatching('latest month',newSetting,WAT_MonthRegExp)
       if (this._Maximum !== newSetting) {
         this._Maximum = newSetting
         this.rerender()
@@ -7978,7 +7978,7 @@
       return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
     }
     public set Suggestions (newSetting:string[]|undefined) {
-      allowListSatisfying('suggestion list',newSetting,MonthMatcher)
+      allowListSatisfying('suggestion list',newSetting,WAT_MonthMatcher)
       if (ValuesDiffer(this._Suggestions,newSetting)) {
         this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
         this.rerender()
@@ -8001,11 +8001,11 @@
       super._deserializeConfigurationFrom(Serialization)
 
       this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
-      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, MonthRegExp)
-      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, MonthRegExp)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_MonthRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_MonthRegExp)
 
       this._Suggestions = acceptableOptionalListSatisfying(
-        Serialization.Suggestions, undefined, MonthMatcher
+        Serialization.Suggestions, undefined, WAT_MonthMatcher
       )
     }
 
@@ -8019,7 +8019,7 @@
       const shownValue   = useRef('')
       const InputElement = useRef(null)
 
-      let ValueToShow:string = acceptableStringMatching(Value,'',MonthRegExp)
+      let ValueToShow:string = acceptableStringMatching(Value,'',WAT_MonthRegExp)
       if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current
       } else {
@@ -8041,11 +8041,11 @@
     /**** process any other parameters ****/
 
       const readonly = acceptableOptionalBoolean       (this._readonly)
-      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, MonthRegExp)
-      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, MonthRegExp)
+      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_MonthRegExp)
+      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_MonthRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        this._Suggestions, undefined, MonthMatcher
+        this._Suggestions, undefined, WAT_MonthMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -8061,7 +8061,7 @@
 
       return html`<input type="month" class="WAT Content MonthInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${MonthPattern}
+        readOnly=${readonly} pattern=${WAT_MonthPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
