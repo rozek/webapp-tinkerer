@@ -5046,9 +5046,13 @@
     public get Type ():string  { return 'Outline' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       return html`<div class="WAT Content Outline"/>`
     }
+
+  /**** bundledWidgets ****/
 
     public bundledWidgets ():WAT_Widget[] {
       const Page = this.Page
@@ -5213,14 +5217,62 @@
 
 /**** ImageView ****/
 
+  const WAT_ImageScalings = ['none','stretch','cover','contain']
+  type  WAT_ImageScaling  = typeof WAT_ImageScalings[number]
+
+  const WAT_ImageAlignments = [
+    'left top','center top','right top','left center','center center',
+    'right center','left bottom','center bottom','right bottom'
+  ]
+  type  WAT_ImageAlignment  = typeof WAT_ImageAlignments[number]
+
   export class WAT_ImageView extends WAT_Widget {
     public constructor (Page:WAT_Page) { super(Page) }
 
     public get Type ():string  { return 'ImageView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** ImageScaling ****/
+
+    protected _ImageScaling:WAT_ImageScaling|undefined
+
+    public get ImageScaling ():WAT_ImageScaling|undefined {
+      return this._ImageScaling
+    }
+
+    public set ImageScaling (newSetting:WAT_ImageScaling|undefined) {
+      allowOneOf('image scaling',newSetting, WAT_ImageScalings)
+      if (this._ImageScaling !== newSetting) {
+        this._ImageScaling = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** ImageAlignment ****/
+
+    protected _ImageAlignment:WAT_ImageAlignment|undefined
+
+    public get ImageAlignment ():WAT_ImageAlignment|undefined {
+      return this._ImageAlignment
+    }
+
+    public set ImageAlignment (newSetting:WAT_ImageAlignment|undefined) {
+      allowOneOf('image alignment',newSetting, WAT_ImageAlignments)
+      if (this._ImageAlignment !== newSetting) {
+        this._ImageAlignment = newSetting
+        this.rerender()
+      }
+    }
+
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
-      return html`<img class="WAT Content ImageView" src=${acceptableURL(this.Value,'')}/>`
+      return html`<img class="WAT Content ImageView"
+        src=${acceptableURL(this.Value,'')}
+        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+      />`
     }
   }
   builtInWidgetTypes['ImageView'] = WAT_ImageView
@@ -5239,9 +5291,48 @@
     public get Type ():string  { return 'SVGView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** ImageScaling ****/
+
+    protected _ImageScaling:WAT_ImageScaling|undefined
+
+    public get ImageScaling ():WAT_ImageScaling|undefined {
+      return this._ImageScaling
+    }
+
+    public set ImageScaling (newSetting:WAT_ImageScaling|undefined) {
+      allowOneOf('image scaling',newSetting, WAT_ImageScalings)
+      if (this._ImageScaling !== newSetting) {
+        this._ImageScaling = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** ImageAlignment ****/
+
+    protected _ImageAlignment:WAT_ImageAlignment|undefined
+
+    public get ImageAlignment ():WAT_ImageAlignment|undefined {
+      return this._ImageAlignment
+    }
+
+    public set ImageAlignment (newSetting:WAT_ImageAlignment|undefined) {
+      allowOneOf('image alignment',newSetting, WAT_ImageAlignments)
+      if (this._ImageAlignment !== newSetting) {
+        this._ImageAlignment = newSetting
+        this.rerender()
+      }
+    }
+
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value,''))
-      return html`<img class="WAT Content SVGView" src=${DataURL}/>`
+      return html`<img class="WAT Content SVGView"
+        src=${DataURL}
+        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+      />`
     }
   }
   builtInWidgetTypes['SVGView'] = WAT_SVGView
@@ -5345,6 +5436,8 @@
     public get Type ():string  { return 'horizontalSeparator' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** rendering ****/
+
     protected _Renderer = () => {
       return html`<div class="WAT Content horizontalSeparator"></div>`
     }
@@ -5364,6 +5457,8 @@
 
     public get Type ():string  { return 'verticalSeparator' }
     public set Type (_:string) { throwReadOnlyError('Type') }
+
+  /**** rendering ****/
 
     protected _Renderer = () => {
       return html`<div class="WAT Content verticalSeparator"></div>`
