@@ -3944,6 +3944,15 @@ console.error(Signal)
 
         <${WAD_Fold} Label="Background">
           <${WAD_horizontally}>
+            <${WAD_Label}>Background</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${Applet.hasBackground === true}
+              onInput=${(Event:Indexable) => doConfigureApplet('hasBackground',Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
             <${WAD_Label}>Color</>
             <${WAD_Gap}/>
             <${WAD_ColorInput}
@@ -4403,6 +4412,15 @@ console.error(Signal)
         </>
 
         <${WAD_Fold} Label="Background">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Background</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              Value=${visitedPage.hasBackground === true}
+              onInput=${(Event:Indexable) => doConfigureVisitedPage('hasBackground',Event.target.checked)}
+            />
+          </>
+
           <${WAD_horizontally}>
             <${WAD_Label}>Color</>
             <${WAD_Gap}/>
@@ -5014,6 +5032,16 @@ console.error(Signal)
         </>
 
         <${WAD_Fold} Label="Background">
+          <${WAD_horizontally}>
+            <${WAD_Label}>Background</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.hasBackground))}
+              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('hasBackground',Event.target.checked)}
+            />
+          </>
+
           <${WAD_horizontally}>
             <${WAD_Label}>Color</>
             <${WAD_Gap}/>
