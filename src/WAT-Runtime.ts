@@ -5217,14 +5217,14 @@
 
 /**** ImageView ****/
 
-  const WAT_ImageScalings = ['none','stretch','cover','contain']
-  type  WAT_ImageScaling  = typeof WAT_ImageScalings[number]
+  export const WAT_ImageScalings = ['none','stretch','cover','contain']
+  export type  WAT_ImageScaling  = typeof WAT_ImageScalings[number]
 
-  const WAT_ImageAlignments = [
+  export const WAT_ImageAlignments = [
     'left top','center top','right top','left center','center center',
     'right center','left bottom','center bottom','right bottom'
   ]
-  type  WAT_ImageAlignment  = typeof WAT_ImageAlignments[number]
+  export type  WAT_ImageAlignment  = typeof WAT_ImageAlignments[number]
 
   export class WAT_ImageView extends WAT_Widget {
     public constructor (Page:WAT_Page) { super(Page) }
@@ -5263,8 +5263,6 @@
         this.rerender()
       }
     }
-
-
 
   /**** Renderer ****/
 
@@ -5323,8 +5321,6 @@
       }
     }
 
-
-
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -5345,15 +5341,87 @@
 
 /**** WebView ****/
 
+  export const WAT_DefaultSandboxPermissions = (
+    'allow-downloads allow-forms allow-modals allow-orientation-lock ' +
+    'allow-pointer-lock allow-popups allow-same-origin allow-scripts'
+  )
+
+  export const WAT_ReferrerPolicies = [
+    'no-referrer','no-referrer-when-downgrade','origin','origin-when-cross-origin',
+    'same-origin', 'strict-origin', 'strict-origin','strict-origin-when-cross-origin',
+    'unsafe-url'
+  ]
+  export type  WAT_ReferrerPolicy   = typeof WAT_ReferrerPolicies[number]
+
   export class WAT_WebView extends WAT_Widget {
     public constructor (Page:WAT_Page) { super(Page) }
 
     public get Type ():string  { return 'WebView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** PermissionsPolicy ****/
+
+    protected _PermissionsPolicy:WAT_Textline|undefined
+
+    public get PermissionsPolicy ():WAT_Textline|undefined { return this._PermissionsPolicy }
+    public set PermissionsPolicy (newSetting:WAT_Textline|undefined) {
+      allowTextline('permissions policy',newSetting)
+      if (this._PermissionsPolicy !== newSetting) {
+        this._PermissionsPolicy = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** allowsFullscreen ****/
+
+    protected _allowsFullscreen:boolean = false
+
+    public get allowsFullscreen ():boolean { return this._allowsFullscreen }
+    public set allowsFullscreen (newSetting:boolean) {
+      allowBoolean('fullscreen permission',newSetting)
+      if (this._allowsFullscreen !== newSetting) {
+        this._allowsFullscreen = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** SandboxPermissions ****/
+
+    protected _SandboxPermissions:WAT_Textline|undefined
+
+    public get SandboxPermissions ():WAT_Textline|undefined { return this._SandboxPermissions }
+    public set SandboxPermissions (newSetting:WAT_Textline|undefined) {
+      allowTextline('sandbox permissions',newSetting)
+      if (this._SandboxPermissions !== newSetting) {
+        this._SandboxPermissions = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** ReferrerPolicy ****/
+
+    protected _ReferrerPolicy:WAT_ReferrerPolicy|undefined
+
+    public get ReferrerPolicy ():WAT_ReferrerPolicy|undefined {
+      return this._ReferrerPolicy
+    }
+
+    public set ReferrerPolicy (newSetting:WAT_ReferrerPolicy|undefined) {
+      allowOneOf('referrer policy',newSetting, WAT_ReferrerPolicies)
+      if (this._ReferrerPolicy !== newSetting) {
+        this._ReferrerPolicy = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       return html`<iframe class="WAT Content WebView"
         src=${acceptableURL(this.Value,'')}
+        allow=${this._PermissionsPolicy} allowfullscreen=${this._allowsFullscreen}
+        sandbox=${this._SandboxPermissions || WAT_DefaultSandboxPermissions}
+        referrerpolicy=${this._ReferrerPolicy}
       />`
     }
   }
@@ -5410,11 +5478,10 @@
       }
 
       const Value = acceptableURL(this.Value,`${IconFolder}/pencil.png`)
-      const Color = acceptableColor(this.Color,'black')
 
       return html`<div class="WAT Content Icon" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${Color};
+        background-color:${this._Color || 'black'};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`
     }
@@ -5591,23 +5658,20 @@
     public get Type ():string  { return 'Gauge' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
       const Value = acceptableNumber(
         ValueIsString(this.Value) ? parseFloat(this.Value as string) : this.Value, 0
       )
-      const Minimum    = acceptableOptionalNumber((this as Indexable).Minimum)
-      const lowerBound = acceptableOptionalNumber((this as Indexable).lowerBound)
-      const Optimum    = acceptableOptionalNumber((this as Indexable).Optimum)
-      const upperBound = acceptableOptionalNumber((this as Indexable).upperBound)
-      const Maximum    = acceptableOptionalNumber((this as Indexable).Maximum)
 
       return html`<meter class="WAT Content Gauge" value=${Value}
-        min=${Minimum} low=${lowerBound} opt=${Optimum}
-        high=${upperBound} max=${Maximum}
+        min=${this._Minimum} low=${this._lowerBound} opt=${this._Optimum}
+        high=${this._upperBound} max=${this._Maximum}
       />`
-
-      return html`<div class="WAT Gauge">${this.Value}</div>`
-    }
+1    }
   }
   builtInWidgetTypes['Gauge'] = WAT_Gauge
 
