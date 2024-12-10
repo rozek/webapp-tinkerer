@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -6093,7 +6093,7 @@ export class WAT_TimeInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableTextline(Value, '');
+                let ValueToShow = acceptableStringMatching(Value, '', TimeRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6248,7 +6248,7 @@ export class WAT_DateTimeInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableTextline(Value, '');
+                let ValueToShow = acceptableStringMatching(Value, '', DateTimeRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6399,7 +6399,7 @@ export class WAT_DateInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableTextline(Value, '');
+                let ValueToShow = acceptableStringMatching(Value, '', DateRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6542,7 +6542,7 @@ export class WAT_WeekInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableTextline(Value, '');
+                let ValueToShow = acceptableStringMatching(Value, '', WeekRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6685,7 +6685,7 @@ export class WAT_MonthInput extends WAT_Widget {
                 /**** handle external changes ****/
                 const shownValue = useRef('');
                 const InputElement = useRef(null);
-                let ValueToShow = acceptableTextline(Value, '');
+                let ValueToShow = acceptableStringMatching(Value, '', MonthRegExp);
                 if (document.activeElement === InputElement.current) {
                     ValueToShow = shownValue.current;
                 }
@@ -6785,6 +6785,27 @@ appendStyle(`
 export class WAT_FileInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** allowMultiple ****/
+        Object.defineProperty(this, "_allowMultiple", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** acceptableTypes ****/
+        Object.defineProperty(this, "_acceptableTypes", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -6792,9 +6813,6 @@ export class WAT_FileInput extends WAT_Widget {
             writable: true,
             value: () => {
                 const Value = acceptableText(this.Value, '').trim().replace(/[\n\r]+/g, ',');
-                const Placeholder = acceptableTextline(this.Placeholder, '').trim();
-                const acceptableTypes = acceptableOptionalTextline(this.acceptableTypes, '*');
-                const multiple = acceptableOptionalBoolean(this.multiple);
                 const _onInput = useCallback((Event) => {
                     if (this.Enabling === false) {
                         return consumingEvent(Event);
@@ -6823,12 +6841,12 @@ export class WAT_FileInput extends WAT_Widget {
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
       >
         ${Value === ''
-                    ? Placeholder === '' ? '' : html `<span style="
+                    ? this._Placeholder === '' ? '' : html `<span style="
               font-size:${Math.round((this.FontSize || 14) * 0.95)}px; line-height:${this.Height}px
-            ">${Placeholder}</span>`
+            ">${this._Placeholder}</span>`
                     : html `<span style="line-height:${this.Height}px">${Value}</span>`}
         <input type="file" style="display:none"
-          multiple=${multiple} accept=${acceptableTypes}
+          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`;
@@ -6837,6 +6855,30 @@ export class WAT_FileInput extends WAT_Widget {
     }
     get Type() { return 'FileInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get allowMultiple() { return this._allowMultiple; }
+    set allowMultiple(newSetting) {
+        allowBoolean('"allowMultiple" setting', newSetting);
+        if (this._allowMultiple !== newSetting) {
+            this._allowMultiple = newSetting;
+            this.rerender();
+        }
+    }
+    get acceptableTypes() { return this._acceptableTypes; }
+    set acceptableTypes(newSetting) {
+        allowTextline('acceptable file types', newSetting);
+        if (this._acceptableTypes !== newSetting) {
+            this._acceptableTypes = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['FileInput'] = WAT_FileInput;
 appendStyle(`
@@ -6859,16 +6901,33 @@ appendStyle(`
 export class WAT_PseudoFileInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Icon ****/
+        Object.defineProperty(this, "_Icon", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** allowMultiple ****/
+        Object.defineProperty(this, "_allowMultiple", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** acceptableTypes ****/
+        Object.defineProperty(this, "_acceptableTypes", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
-                const Icon = acceptableURL(this.Icon, `${IconFolder}/arrow-up-from-bracket.png`);
-                const Color = acceptableColor(this.Color, 'black');
-                const acceptableTypes = acceptableOptionalTextline(this.acceptableTypes, '*');
-                const multiple = acceptableOptionalBoolean(this.multiple);
                 const _onInput = useCallback((Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
@@ -6881,11 +6940,11 @@ export class WAT_PseudoFileInput extends WAT_Widget {
                 });
                 return html `<label class="WAT Content PseudoFileInput">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
+          background-color:${this._Color || 'black'};
         "></div>
         <input type="file" style="display:none"
-          multiple=${multiple} accept=${acceptableTypes}
+          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`;
@@ -6894,6 +6953,30 @@ export class WAT_PseudoFileInput extends WAT_Widget {
     }
     get Type() { return 'PseudoFileInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Icon() { return this._Icon; }
+    set Icon(newSetting) {
+        allowURL('icon image ULR', newSetting);
+        if (this._Icon !== newSetting) {
+            this._Icon = newSetting;
+            this.rerender();
+        }
+    }
+    get allowMultiple() { return this._allowMultiple; }
+    set allowMultiple(newSetting) {
+        allowBoolean('"allowMultiple" setting', newSetting);
+        if (this._allowMultiple !== newSetting) {
+            this._allowMultiple = newSetting;
+            this.rerender();
+        }
+    }
+    get acceptableTypes() { return this._acceptableTypes; }
+    set acceptableTypes(newSetting) {
+        allowTextline('acceptable file types', newSetting);
+        if (this._acceptableTypes !== newSetting) {
+            this._acceptableTypes = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['PseudoFileInput'] = WAT_PseudoFileInput;
 appendStyle(`
@@ -6908,15 +6991,33 @@ appendStyle(`
 export class WAT_FileDropArea extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** allowMultiple ****/
+        Object.defineProperty(this, "_allowMultiple", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** acceptableTypes ****/
+        Object.defineProperty(this, "_acceptableTypes", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
-                const Placeholder = acceptableTextline(this.Placeholder, '').trim();
-                const acceptableTypes = acceptableOptionalTextline(this.acceptableTypes, '*');
-                const multiple = acceptableOptionalBoolean(this.multiple);
                 const _onInput = useCallback((Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
@@ -6942,9 +7043,9 @@ export class WAT_FileDropArea extends WAT_Widget {
                 }); // nota bene: "files" is now in "Event.dataTransfer.files"
                 return html `<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
-        <span>${Placeholder}</span>
+        <span>${this._Placeholder}</span>
         <input type="file"
-          multiple=${multiple} accept=${acceptableTypes}
+          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`;
@@ -6953,6 +7054,30 @@ export class WAT_FileDropArea extends WAT_Widget {
     }
     get Type() { return 'FileDropArea'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get allowMultiple() { return this._allowMultiple; }
+    set allowMultiple(newSetting) {
+        allowBoolean('"allowMultiple" setting', newSetting);
+        if (this._allowMultiple !== newSetting) {
+            this._allowMultiple = newSetting;
+            this.rerender();
+        }
+    }
+    get acceptableTypes() { return this._acceptableTypes; }
+    set acceptableTypes(newSetting) {
+        allowTextline('acceptable file types', newSetting);
+        if (this._acceptableTypes !== newSetting) {
+            this._acceptableTypes = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['FileDropArea'] = WAT_FileDropArea;
 appendStyle(`
