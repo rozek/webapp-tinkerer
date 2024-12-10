@@ -1580,7 +1580,7 @@
     }
 
     public set FontFamily (newFontFamily:WAT_Textline|undefined) {
-      allowTextline('widget font family',newFontFamily)
+      allowTextline('font family',newFontFamily)
       if (this._FontFamily !== newFontFamily) {
         this._FontFamily = newFontFamily
         this.rerender()
@@ -1600,7 +1600,7 @@
     }
 
     public set FontSize (newFontSize:WAT_Ordinal|undefined) {
-      allowOrdinal('widget font size',newFontSize)
+      allowOrdinal('font size',newFontSize)
       if (this._FontSize !== newFontSize) {
         this._FontSize = newFontSize
         this.rerender()
@@ -1620,7 +1620,7 @@
     }
 
     public set FontWeight (newFontWeight:WAT_FontWeight|undefined) {
-      allowOneOf('widget font weight',newFontWeight, WAT_FontWeights)
+      allowOneOf('font weight',newFontWeight, WAT_FontWeights)
       if (this._FontWeight !== newFontWeight) {
         this._FontWeight = newFontWeight
         this.rerender()
@@ -1640,7 +1640,7 @@
     }
 
     public set FontStyle (newFontStyle:WAT_FontStyle|undefined) {
-      allowOneOf('widget font style',newFontStyle, WAT_FontStyles)
+      allowOneOf('font style',newFontStyle, WAT_FontStyles)
       if (this._FontStyle !== newFontStyle) {
         this._FontStyle = newFontStyle
         this.rerender()
@@ -1656,7 +1656,7 @@
     }
 
     public set TextDecoration (newTextDecoration:WAT_TextDecoration|undefined) {
-      allowTextDecoration('widget text decoration',newTextDecoration)
+      allowTextDecoration('text decoration',newTextDecoration)
       if (ValuesDiffer(this._TextDecoration,newTextDecoration)) {
         if (newTextDecoration == null) {
           this._TextDecoration = undefined
@@ -1681,7 +1681,7 @@
     }
 
     public set TextShadow (newTextShadow:WAT_TextShadow|undefined) {
-      allowTextShadow('widget text shadow',newTextShadow)
+      allowTextShadow('text shadow',newTextShadow)
       if (ValuesDiffer(this._TextShadow,newTextShadow)) {
         if (newTextShadow == null) {
           this._TextShadow = undefined
@@ -1706,7 +1706,7 @@
     }
 
     public set TextAlignment (newTextAlignment:WAT_TextAlignment|undefined) {
-      allowOneOf('widget text alignment',newTextAlignment, WAT_TextAlignments)
+      allowOneOf('text alignment',newTextAlignment, WAT_TextAlignments)
       if (this._TextAlignment !== newTextAlignment) {
         this._TextAlignment = newTextAlignment
         this.rerender()
@@ -1726,7 +1726,7 @@
     }
 
     public set LineHeight (newLineHeight:WAT_Ordinal|undefined) {
-      allowOrdinal('widget line height',newLineHeight)
+      allowOrdinal('line height',newLineHeight)
       if (this._LineHeight !== newLineHeight) {
         this._LineHeight = newLineHeight
         this.rerender()
@@ -1746,7 +1746,7 @@
     }
 
     public set ForegroundColor (newForegroundColor:WAT_Color|undefined) {
-      allowColor('widget foreground color',newForegroundColor)
+      allowColor('foreground color',newForegroundColor)
       if (this._ForegroundColor !== newForegroundColor) {
         this._ForegroundColor = newForegroundColor
         this.rerender()
@@ -1771,7 +1771,7 @@
     }
 
     public set BackgroundColor (newColor:WAT_Color|undefined) {
-      allowColor('widget background color',newColor)
+      allowColor('background color',newColor)
       if (this._BackgroundColor !== newColor) {
         this._BackgroundColor = newColor
         this.rerender()
@@ -1791,7 +1791,7 @@
     }
 
     public set BackgroundTexture (newTexture:WAT_BackgroundTexture|undefined) {
-      allowBackgroundTexture('widget background texture',newTexture)
+      allowBackgroundTexture('background texture',newTexture)
       if (ValuesDiffer(this._BackgroundTexture,newTexture)) {
         if (newTexture == null) {
           this._BackgroundTexture = undefined
@@ -1799,6 +1799,19 @@
           const { isActive, ImageURL, Mode, xOffset,yOffset } = newTexture
           this._BackgroundTexture = { isActive, ImageURL, Mode, xOffset,yOffset }
         }
+        this.rerender()
+      }
+    }
+
+  /**** hasBackground - not inheritable ****/
+
+    protected _hasBackground:boolean = false
+
+    public get hasBackground ():boolean { return this._hasBackground }
+    public set hasBackground (newSetting:boolean) {
+      expectBoolean('background setting',newSetting)
+      if (this._hasBackground !== newSetting) {
+        this._hasBackground = newSetting
         this.rerender()
       }
     }
@@ -1812,7 +1825,7 @@
     }
 
     public set Opacity (newOpacity:WAT_Ordinal|undefined) {
-      allowIntegerInRange('widget opacity',newOpacity, 0,100)
+      allowIntegerInRange('opacity',newOpacity, 0,100)
       if (this._Opacity !== newOpacity) {
         this._Opacity = newOpacity
         this.rerender()
@@ -1832,7 +1845,7 @@
     }
 
     public set Cursor (newCursor:WAT_Cursor|undefined) {
-      allowOneOf('widget cursor name',newCursor, WAT_Cursors)
+      allowOneOf('cursor name',newCursor, WAT_Cursors)
       if (this._Cursor !== newCursor) {
         this._Cursor = newCursor
         this.rerender()
@@ -1845,7 +1858,7 @@
 
     public get Value ():serializableValue|undefined { return this._Value }
     public set Value (newValue:serializableValue|undefined) {
-      allowSerializableValue('Value',newValue)
+      allowSerializableValue('value',newValue)
 
       if (ValuesDiffer(this._Value,newValue)) {
         this._Value = newValue // *C* a deep copy may be better
@@ -1950,7 +1963,7 @@
 
     public get pendingScript ():WAT_Text|undefined { return this._pendingScript }
     public set pendingScript (newScript:WAT_Text|undefined) {
-      allowText('visual script',newScript)
+      allowText('script',newScript)
 
       if (this._pendingScript !== newScript) {
         this._pendingScript = newScript
@@ -2098,7 +2111,7 @@
 
     public get Renderer ():Function|undefined { return this._Renderer }
     public set Renderer (newRenderer:Function|undefined) {
-      allowFunction('WAT renderer',newRenderer)
+      allowFunction('renderer',newRenderer)
       if (newRenderer == null) { newRenderer = () => ''}
 
       this._Renderer = () => {
@@ -2161,7 +2174,7 @@
         const {
           FontFamily, FontSize, FontWeight, FontStyle,
           TextDecoration, TextShadow, TextAlignment, LineHeight,
-          ForegroundColor, BackgroundColor, BackgroundTexture,
+          ForegroundColor, hasBackground, BackgroundColor, BackgroundTexture,
           Opacity, Cursor
         } = this
 
@@ -2191,27 +2204,29 @@
         if (LineHeight    != null) { CSSStyleList.push(`line-height:${LineHeight}px`) }
 
         if (ForegroundColor != null) { CSSStyleList.push(`color:${ForegroundColor}`) }
-        if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
-        if (BackgroundTexture != null) {
-          const { isActive, ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
-          let BackgroundSize = 'auto auto'
-            switch (Mode) {
-              case 'normal':  break
-              case 'contain':
-              case 'cover':   BackgroundSize = BackgroundTexture.Mode; break
-              case 'fill':    BackgroundSize = '100% 100%';  break
-              case 'tile':    BackgroundSize = 'auto auto';  break
-            }
-          let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat')
+        if (hasBackground) {
+          if (BackgroundColor != null) { CSSStyleList.push(`background-color:${BackgroundColor}`) }
+          if (BackgroundTexture != null) {
+            const { isActive, ImageURL, Mode, xOffset,yOffset } = BackgroundTexture
+            let BackgroundSize = 'auto auto'
+              switch (Mode) {
+                case 'normal':  break
+                case 'contain':
+                case 'cover':   BackgroundSize = BackgroundTexture.Mode; break
+                case 'fill':    BackgroundSize = '100% 100%';  break
+                case 'tile':    BackgroundSize = 'auto auto';  break
+              }
+            let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat')
 
-          if (isActive) {
-            CSSStyleList.push(
-              `background-image:url(${ImageURL})`,
-              `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
-              `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
-            )
-          } else {
-            CSSStyleList.push('background-image:none')
+            if (isActive) {
+              CSSStyleList.push(
+                `background-image:url(${ImageURL})`,
+                `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+                `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`
+              )
+            } else {
+              CSSStyleList.push('background-image:none')
+            }
           }
         }
 
@@ -2315,7 +2330,7 @@
         'Name',
         'FontFamily','FontSize','FontWeight','FontStyle',
         'TextDecoration', 'TextShadow','TextAlignment','LineHeight',
-        'ForegroundColor', 'BackgroundColor','BackgroundTexture',
+        'ForegroundColor', 'hasBackground', 'BackgroundColor','BackgroundTexture',
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
         'activeScript','pendingScript',
@@ -2344,7 +2359,7 @@
         'Name',
         'FontFamily','FontSize','FontWeight','FontStyle',
         'TextDecoration', 'TextShadow','TextAlignment','LineHeight',
-        'ForegroundColor', 'BackgroundColor','BackgroundTexture',
+        'ForegroundColor', 'hasBackground', 'BackgroundColor','BackgroundTexture',
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
         /*'activeScript',*/'pendingScript',
