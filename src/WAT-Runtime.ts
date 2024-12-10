@@ -1537,15 +1537,16 @@
 
   /**** Name ****/
 
-    private _Name:WAT_Name|undefined
+    protected _Name:WAT_Name|undefined
 
     public get Name ():WAT_Name|undefined { return this._Name }
     public set Name (newName:WAT_Name|undefined) {
-      allowName('WAT name',newName)
-      if (newName != null) {
-        newName = newName.trim()
+      if (ValueIsString(newName)) {
+        newName = (newName as string).trim()
         if (newName === '') { newName = undefined }
       }
+
+      allowName('WAT name',newName)
 
       if (this._Name !== newName) {
         this._Name = newName
@@ -1598,6 +1599,8 @@
 
     public set FontFamily (newFontFamily:WAT_Textline|undefined) {
       allowTextline('font family',newFontFamily)
+      if ((newFontFamily || '').trim() === '') { newFontFamily = undefined }
+
       if (this._FontFamily !== newFontFamily) {
         this._FontFamily = newFontFamily
         this.rerender()
@@ -1863,6 +1866,8 @@
 
     public set Cursor (newCursor:WAT_Cursor|undefined) {
       allowOneOf('cursor name',newCursor, WAT_Cursors)
+      if ((newCursor || '').trim() === '') { newCursor = undefined }
+
       if (this._Cursor !== newCursor) {
         this._Cursor = newCursor
         this.rerender()
@@ -2046,6 +2051,17 @@
 
           if (Mode === 'rethrow-exception') {
             throw Signal
+          }
+        }
+
+        if (this.isMounted && (this._onMount != null)) {
+          try {
+            this._onMount.call(this)
+          } catch (Signal:any) {
+            setErrorReport(this,{
+              Type:'"onMount" Callback Failure',
+              Sufferer:this, Message:'' + Signal, Cause:Signal
+            })
           }
         }
       this.rerender()
@@ -2417,6 +2433,11 @@
     public constructor () {
       super(undefined)
     }
+
+  /**** Name ****/
+
+    public get Name ():WAT_Name|undefined { return this._Name }
+    public set Name (newName:WAT_Name|undefined) { throwReadOnlyError('Name') }
 
   /**** Path - to be overwritten ****/
 
@@ -4209,7 +4230,7 @@
             BorderRadii[2] + 'px ' + BorderRadii[3] + 'px'
           )
         }
-        if (BoxShadow != null) {
+        if ((BoxShadow != null) && BoxShadow.isActive) {
           CSSStyleList.push('box-shadow:' +
             BoxShadow.xOffset + 'px ' + BoxShadow.yOffset + 'px ' +
             BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
