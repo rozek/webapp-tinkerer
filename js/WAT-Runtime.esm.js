@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, allowTextline, allowFunction, expectFunction, expectPlainObject, expectList, expectListSatisfying, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -4885,6 +4885,14 @@ appendStyle(`
 export class WAT_Progressbar extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -4899,6 +4907,14 @@ export class WAT_Progressbar extends WAT_Widget {
     }
     get Type() { return 'Progressbar'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowNumber('maximal value', newSetting);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['Progressbar'] = WAT_Progressbar;
 appendStyle(`
@@ -4918,9 +4934,41 @@ appendStyle(`
   `);
 /**** Slider ****/
 const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d*[.](?:\d*))(?:\s*:\s*([^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]+))?$/;
+function HashmarkMatcher(Value) {
+    return ValueIsStringMatching(Value, HashmarkPattern) || ValueIsNumber(Value);
+}
 export class WAT_Slider extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Stepping ****/
+        Object.defineProperty(this, "_Stepping", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Hashmarks ****/
+        Object.defineProperty(this, "_Hashmarks", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -4950,10 +4998,7 @@ export class WAT_Slider extends WAT_Widget {
                     this.rerender();
                 });
                 /**** process any other parameters ****/
-                const Minimum = acceptableOptionalNumber(this.Minimum);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalNumber(this.Maximum);
-                const Hashmarks = acceptableOptionalListSatisfying(this.Hashmarks, undefined, this.HashmarkMatcher);
+                const Hashmarks = acceptableOptionalListSatisfying(this.Hashmarks, undefined, HashmarkMatcher);
                 let HashmarkList = '', HashmarkId;
                 if ((Hashmarks != null) && (Hashmarks.length > 0)) {
                     HashmarkId = IdOfWidget(this) + '-Hashmarks';
@@ -4968,7 +5013,7 @@ export class WAT_Slider extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="range" class="WAT Content Slider"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${HashmarkId}
       />${HashmarkList}`;
@@ -4977,8 +5022,39 @@ export class WAT_Slider extends WAT_Widget {
     }
     get Type() { return 'Slider'; }
     set Type(_) { throwReadOnlyError('Type'); }
-    HashmarkMatcher(Value) {
-        return ValueIsStringMatching(Value, HashmarkPattern) || ValueIsNumber(Value);
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowNumber('minimal value', newSetting);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Stepping() { return this._Stepping; }
+    set Stepping(newSetting) {
+        allowNumberInRange('stepping', newSetting, 0, Infinity, true, false);
+        if (this._Stepping !== newSetting) {
+            this._Stepping = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowNumber('maximal value', newSetting);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Hashmarks() {
+        return (this._Hashmarks == null ? this._Hashmarks : this._Hashmarks.slice());
+    }
+    set Hashmarks(newSetting) {
+        allowListSatisfying('hashmark list', newSetting, HashmarkMatcher);
+        if (ValuesDiffer(this._Hashmarks, newSetting)) {
+            this._Hashmarks = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
     }
 }
 builtInWidgetTypes['Slider'] = WAT_Slider;
