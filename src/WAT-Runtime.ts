@@ -1144,6 +1144,22 @@
     return (ValueIsListSatisfying(Value,Matcher) ? Value : Default)
   }
 
+/**** acceptableOneOf ****/
+
+  export function acceptableOneOf (
+    Value:any, Default:any, ValueList:any[]
+  ):any {
+    return (ValueIsOneOf(Value,ValueList) ? Value : Default)
+  }
+
+/**** acceptableOptionalOneOf ****/
+
+  export function acceptableOptionalOneOf (
+    Value:any, ValueList:any[]
+  ):any|undefined {
+    return (ValueIsOneOf(Value,ValueList) ? Value : undefined)
+  }
+
 /**** acceptableColor ****/
 
   export function acceptableColor (Value:any, Default:string):string {
@@ -2322,11 +2338,6 @@
 
     /**** then perform the actual serialization ****/
 
-      const serializeProperty = (Name:string) => {
-// @ts-ignore TS7053 allow "Visual" to be indexed
-        if (this['_'+Name] != null) { Serialization[Name] = this[Name] }
-      }
-
       ;[
         'Name',
         'FontFamily','FontSize','FontWeight','FontStyle',
@@ -2336,7 +2347,7 @@
         'Opacity','OverflowVisibility','Cursor',
         'activeScript','pendingScript',
         'memoized','Value',
-      ].forEach((Name:string) => serializeProperty(Name))
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
     }
 
   /**** _deserializeConfigurationFrom ****/
@@ -2387,6 +2398,15 @@
         this.activateScript()                      // in "creation" order, i.e.,
       }           // pages and widgets will already be attached, applets may not
     }                          // and inner visuals may not yet (all) be present
+
+  /**** _serializePropertyInto ****/
+
+    protected _serializePropertyInto (
+      Name:string, Serialization:Serializable
+    ):void {
+// @ts-ignore TS7053 allow "Visual" to be indexed
+      if (this['_'+Name] != null) { Serialization[Name] = this[Name] }
+    }
   }
 
 //------------------------------------------------------------------------------
@@ -3188,15 +3208,10 @@
       super._serializeConfigurationInto(Serialization)
 //    delete Serialization.Name                  // do not serialize applet name
 
-      const serializeProperty = (Name:string) => {
-// @ts-ignore TS7053 allow "Applet" to be indexed
-        if (this['_'+Name] != null) { Serialization[Name] = this[Name] }
-      }
-
       ;[
         'Name',
         'SnapToGrid','GridWidth','GridHeight',
-      ].forEach((Name:string) => serializeProperty(Name))
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
 
     /**** "activeScript" needs special treatment ****/
 
@@ -5265,12 +5280,33 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      this._serializePropertyInto('ImageScaling',  Serialization)
+      this._serializePropertyInto('ImageAlignment',Serialization)
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._ImageScaling   = acceptableOneOf(Serialization.ImageScaling,  'contain', WAT_ImageScalings)
+      this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment,'center',  WAT_ImageAlignments)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
+      const ImageScaling   = acceptableOneOf(this._ImageScaling,  'contain', WAT_ImageScalings)
+      const ImageAlignment = acceptableOneOf(this._ImageAlignment,'center',  WAT_ImageAlignments)
+
       return html`<img class="WAT Content ImageView"
         src=${acceptableURL(this.Value,'')}
-        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
       />`
     }
   }
@@ -5322,13 +5358,35 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      this._serializePropertyInto('ImageScaling',  Serialization)
+      this._serializePropertyInto('ImageAlignment',Serialization)
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._ImageScaling   = acceptableOneOf(Serialization.ImageScaling,  'contain', WAT_ImageScalings)
+      this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment,'center',  WAT_ImageAlignments)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
       const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value,''))
+
+      const ImageScaling   = acceptableOneOf(this._ImageScaling,  'contain', WAT_ImageScalings)
+      const ImageAlignment = acceptableOneOf(this._ImageAlignment,'center',  WAT_ImageAlignments)
+
       return html`<img class="WAT Content SVGView"
         src=${DataURL}
-        style="object-fit:${this._ImageScaling}; object-position:${this._ImageAlignment}"
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
       />`
     }
   }
@@ -5415,14 +5473,40 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'PermissionsPolicy', 'allowsFullscreen', 'SandboxPermissions',
+        'ReferrerPolicy'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._PermissionsPolicy  = acceptableOptionalTextline(Serialization.PermissionsPolicy)
+      this._allowsFullscreen   = acceptableBoolean         (Serialization.allowsFullscreen,   false)
+      this._SandboxPermissions = acceptableTextline        (Serialization.SandboxPermissions, WAT_DefaultSandboxPermissions)
+      this._ReferrerPolicy     = acceptableOptionalOneOf   (Serialization.ReferrerPolicy,     WAT_ReferrerPolicies)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
+      const PermissionsPolicy  = acceptableOptionalTextline(this._PermissionsPolicy)
+      const allowsFullscreen   = acceptableBoolean         (this._allowsFullscreen,   false)
+      const SandboxPermissions = acceptableTextline        (this._SandboxPermissions, WAT_DefaultSandboxPermissions)
+      const ReferrerPolicy     = acceptableOptionalOneOf   (this._ReferrerPolicy,     WAT_ReferrerPolicies)
+
       return html`<iframe class="WAT Content WebView"
         src=${acceptableURL(this.Value,'')}
-        allow=${this._PermissionsPolicy} allowfullscreen=${this._allowsFullscreen}
-        sandbox=${this._SandboxPermissions || WAT_DefaultSandboxPermissions}
-        referrerpolicy=${this._ReferrerPolicy}
+        allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
+        sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
       />`
     }
   }
@@ -5479,10 +5563,11 @@
       }
 
       const Value = acceptableURL(this.Value,`${IconFolder}/pencil.png`)
+      const Color = acceptableColor(this.Color,'black')
 
       return html`<div class="WAT Content Icon" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${(this as Indexable)._Color || 'black'};
+        background-color:${Color};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`
     }
@@ -5726,18 +5811,41 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        ''
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+//this._PermissionsPolicy  = acceptableOptionalTextline(Serialization.PermissionsPolicy)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
       const Value = acceptableNumber(
         ValueIsString(this.Value) ? parseFloat(this.Value as string) : this.Value, 0
       )
+      const Minimum    = acceptableOptionalNumber(this._Minimum)
+      const lowerBound = acceptableOptionalNumber(this._lowerBound)
+      const Optimum    = acceptableOptionalNumber(this._Optimum)
+      const upperBound = acceptableOptionalNumber(this._upperBound)
+      const Maximum    = acceptableOptionalNumber(this._Maximum)
 
       return html`<meter class="WAT Content Gauge" value=${Value}
-        min=${this._Minimum} low=${this._lowerBound} opt=${this._Optimum}
-        high=${this._upperBound} max=${this._Maximum}
-      />`
-1    }
+        min=${Minimum} low=${lowerBound} opt=${Optimum}
+        high=${upperBound} max=${Maximum}
+       />`
+     }
   }
   builtInWidgetTypes['Gauge'] = WAT_Gauge
 
@@ -5760,7 +5868,7 @@
 
     public get Maximum ():number|undefined { return this._Maximum }
     public set Maximum (newSetting:number|undefined) {
-      allowNumber('maximal value',newSetting)
+      allowNumberInRange('maximal value',newSetting, 0,Infinity, true,false)
       if (this._Maximum !== newSetting) {
         this._Maximum = newSetting
         this.rerender()
@@ -5769,13 +5877,27 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+      this._serializePropertyInto('Maximum',Serialization)
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+      this._Maximum = acceptableOptionalNumberInRange(Serialization.Maximum,undefined, 0)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
       const Value = acceptableNumber(
         ValueIsString(this.Value) ? parseFloat(this.Value as string) : this.Value, 0
       )
-      const Maximum = acceptableOptionalNumber((this as Indexable).Maximum)
+      const Maximum = acceptableOptionalNumber(this._Maximum)
 
       return html`<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
       style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`
@@ -5867,6 +5989,30 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Minimum','Stepping','Maximum','Hashmarks',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Minimum  = acceptableOptionalNumber       (Serialization.Minimum)
+      this._Stepping = acceptableOptionalNumberInRange(Serialization.Stepping,undefined, 0)
+      this._Maximum  = acceptableOptionalNumber       (Serialization.Maximum)
+
+      this._Hashmarks = acceptableOptionalListSatisfying(
+        Serialization.Hashmarks, undefined, HashmarkMatcher
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -5897,9 +6043,15 @@
         this.rerender()
       })
 
-    /**** process hashmarks ****/
+    /**** process any other parameters ****/
 
-      const Hashmarks = this._Hashmarks
+      const Minimum  = acceptableOptionalNumber(this._Minimum)
+      const Stepping = acceptableOptionalNumberInRange(this._Stepping,undefined, 0)
+      const Maximum  = acceptableOptionalNumber(this._Maximum)
+
+      const Hashmarks = acceptableOptionalListSatisfying(
+        this._Hashmarks, undefined, HashmarkMatcher
+      )
 
       let HashmarkList:any = '', HashmarkId
       if ((Hashmarks != null) && (Hashmarks.length > 0)) {
@@ -5919,7 +6071,7 @@
     /**** actual rendering ****/
 
       return html`<input type="range" class="WAT Content Slider"
-        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${HashmarkId}
       />${HashmarkList}`
@@ -6033,6 +6185,34 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','Pattern',
+        'SpellChecking','Suggestions',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder   = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly      = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength     = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength     = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._Pattern       = acceptableOptionalTextline(Serialization.Pattern)
+      this._SpellChecking = acceptableBoolean         (Serialization.SpellChecking, false)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsTextline
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6062,9 +6242,18 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const Placeholder   = acceptableOptionalTextline(this._Placeholder)
+      const readonly      = acceptableOptionalBoolean (this._readonly)
+      const minLength     = acceptableOptionalOrdinal (this._minLength)
+      const maxLength     = acceptableOptionalOrdinal (this._maxLength)
+      const Pattern       = acceptableOptionalTextline(this._Pattern)
+      const SpellChecking = acceptableOptionalBoolean (this._SpellChecking)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsTextline
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6078,9 +6267,9 @@
     /**** actual rendering ****/
 
       return html`<input type="text" class="WAT Content TextlineInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6177,6 +6366,28 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','Pattern',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly    = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength   = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength   = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._Pattern     = acceptableOptionalTextline(Serialization.Pattern)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6206,12 +6417,20 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
+    /**** process any other parameters ****/
+
+      const Placeholder = acceptableOptionalTextline(this._Placeholder)
+      const readonly    = acceptableOptionalBoolean (this._readonly)
+      const minLength   = acceptableOptionalOrdinal (this._minLength)
+      const maxLength   = acceptableOptionalOrdinal (this._maxLength)
+      const Pattern     = acceptableOptionalTextline(this._Pattern)
+
     /**** actual rendering ****/
 
       return html`<input type="password" class="WAT Content PasswordInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
       />`
     }
@@ -6320,6 +6539,32 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','Minimum','Stepping','Maximum','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly    = acceptableBoolean         (Serialization.readonly, false)
+      this._Minimum     = acceptableOptionalNumber  (Serialization.Minimum)
+      this._Stepping    = acceptableOptionalNumberInRange(Serialization.Stepping,undefined, 0)
+      this._Maximum     = acceptableOptionalNumber  (Serialization.Maximum)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsNumber
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6351,9 +6596,17 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const Placeholder = acceptableOptionalTextline(this._Placeholder)
+      const readonly    = acceptableOptionalBoolean (this._readonly)
+      const Minimum     = acceptableOptionalNumber  (this._Minimum)
+      const Stepping    = acceptableOptionalNumberInRange(this._Stepping,undefined, 0)
+      const Maximum     = acceptableOptionalNumber  (this._Maximum)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsNumber
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6367,8 +6620,8 @@
     /**** actual rendering ****/
 
       return html`<input type="number" class="WAT Content NumberInput"
-        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum} step=${this._Stepping}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} placeholder=${Placeholder}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6478,6 +6731,32 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','Pattern','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly    = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength   = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength   = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._Pattern     = acceptableOptionalTextline(Serialization.Pattern)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsPhoneNumber
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6507,9 +6786,17 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const Placeholder = acceptableOptionalTextline(this._Placeholder)
+      const readonly    = acceptableOptionalBoolean (this._readonly)
+      const minLength   = acceptableOptionalOrdinal (this._minLength)
+      const maxLength   = acceptableOptionalOrdinal (this._maxLength)
+      const Pattern     = acceptableOptionalTextline(this._Pattern)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsPhoneNumber
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6523,9 +6810,9 @@
     /**** actual rendering ****/
 
       return html`<input type="tel" class="WAT Content PhoneNumberInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6635,6 +6922,32 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','Pattern','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly    = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength   = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength   = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._Pattern     = acceptableOptionalTextline(Serialization.Pattern)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsEMailAddress
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6664,9 +6977,17 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const Placeholder = acceptableOptionalTextline(this._Placeholder)
+      const readonly    = acceptableOptionalBoolean (this._readonly)
+      const minLength   = acceptableOptionalOrdinal (this._minLength)
+      const maxLength   = acceptableOptionalOrdinal (this._maxLength)
+      const Pattern     = acceptableOptionalTextline(this._Pattern)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsEMailAddress
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6680,9 +7001,9 @@
     /**** actual rendering ****/
 
       return html`<input type="email" class="WAT Content EMailAddressInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6792,6 +7113,32 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','Pattern','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly    = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength   = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength   = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._Pattern     = acceptableOptionalTextline(Serialization.Pattern)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsURL
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6821,9 +7168,17 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const Placeholder = acceptableOptionalTextline(this._Placeholder)
+      const readonly    = acceptableOptionalBoolean (this._readonly)
+      const minLength   = acceptableOptionalOrdinal (this._minLength)
+      const maxLength   = acceptableOptionalOrdinal (this._maxLength)
+      const Pattern     = acceptableOptionalTextline(this._Pattern)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsURL
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6837,9 +7192,9 @@
     /**** actual rendering ****/
 
       return html`<input type="url" class="WAT Content URLInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6943,6 +7298,31 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly','withSeconds','Minimum','Maximum','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
+      this._withSeconds = acceptableBoolean               (Serialization.withSeconds, false)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, TimeRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, TimeRegExp)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, TimeMatcher
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -6972,9 +7352,16 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const readonly    = acceptableOptionalBoolean       (this._readonly)
+      const withSeconds = acceptableOptionalBoolean       (this._withSeconds)
+      const Minimum     = acceptableOptionalStringMatching(this._Minimum, undefined, TimeRegExp)
+      const Maximum     = acceptableOptionalStringMatching(this._Maximum, undefined, TimeRegExp)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, TimeMatcher
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6988,9 +7375,9 @@
     /**** actual rendering ****/
 
       return html`<input type="time" class="WAT Content TimeInput"
-        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum}
-        step=${this._withSeconds ? 1 : 60}
-        readOnly=${this._readonly} pattern=${TimePattern}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
+        readOnly=${readonly} pattern=${TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -7094,6 +7481,31 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly','withSeconds','Minimum','Maximum','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
+      this._withSeconds = acceptableBoolean               (Serialization.withSeconds, false)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateTimeRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateTimeRegExp)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, DateTimeMatcher
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -7125,13 +7537,13 @@
 
     /**** process any other parameters ****/
 
-      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
-      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, DateTimeRegExp)
-      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
-      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, DateTimeRegExp)
+      const readonly    = acceptableOptionalBoolean       (this._readonly)
+      const withSeconds = acceptableOptionalBoolean       (this._withSeconds)
+      const Minimum     = acceptableOptionalStringMatching(this._Minimum, undefined, DateTimeRegExp)
+      const Maximum     = acceptableOptionalStringMatching(this._Maximum, undefined, DateTimeRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, DateTimeMatcher
+        this._Suggestions, undefined, DateTimeMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7146,7 +7558,8 @@
     /**** actual rendering ****/
 
       return html`<input type="datetime-local" class="WAT Content DateTimeInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
         readOnly=${readonly} pattern=${DateTimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -7238,6 +7651,30 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly','withSeconds','Minimum','Maximum','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, DateRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, DateRegExp)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, DateMatcher
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -7269,13 +7706,12 @@
 
     /**** process any other parameters ****/
 
-      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
-      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, DateRegExp)
-      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
-      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, DateRegExp)
+      const readonly = acceptableOptionalBoolean       (this._readonly)
+      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, DateRegExp)
+      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, DateRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, DateMatcher
+        this._Suggestions, undefined, DateMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7290,7 +7726,7 @@
     /**** actual rendering ****/
 
       return html`<input type="date" class="WAT Content DateInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${DatePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -7382,6 +7818,30 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly','withSeconds','Minimum','Maximum','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WeekRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WeekRegExp)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, WeekMatcher
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -7413,13 +7873,12 @@
 
     /**** process any other parameters ****/
 
-      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
-      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, WeekRegExp)
-      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
-      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, WeekRegExp)
+      const readonly = acceptableOptionalBoolean       (this._readonly)
+      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, WeekRegExp)
+      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, WeekRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, WeekMatcher
+        this._Suggestions, undefined, WeekMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7434,7 +7893,7 @@
     /**** actual rendering ****/
 
       return html`<input type="week" class="WAT Content WeekInput"
-        value=${Value} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${Value} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WeekPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -7526,6 +7985,30 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly','withSeconds','Minimum','Maximum','Suggestions'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly    = acceptableBoolean               (Serialization.readonly,    false)
+      this._Minimum     = acceptableOptionalStringMatching(Serialization.Minimum, undefined, MonthRegExp)
+      this._Maximum     = acceptableOptionalStringMatching(Serialization.Maximum, undefined, MonthRegExp)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, MonthMatcher
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -7557,13 +8040,12 @@
 
     /**** process any other parameters ****/
 
-      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
-      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, MonthRegExp)
-      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
-      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, MonthRegExp)
+      const readonly = acceptableOptionalBoolean       (this._readonly)
+      const Minimum  = acceptableOptionalStringMatching(this._Minimum, undefined, MonthRegExp)
+      const Maximum  = acceptableOptionalStringMatching(this._Maximum, undefined, MonthRegExp)
 
       const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, MonthMatcher
+        this._Suggestions, undefined, MonthMatcher
       )
 
       let SuggestionList:any = '', SuggestionId
@@ -7578,7 +8060,7 @@
     /**** actual rendering ****/
 
       return html`<input type="month" class="WAT Content MonthInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${MonthPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
@@ -7650,10 +8132,33 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','acceptableTypes','allowMultiple'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      const Placeholder     = acceptableTextline(this._Placeholder,'').trim()
+      const acceptableTypes = acceptableTextline(this._acceptableTypes,'*')
+      const allowMultiple   = acceptableBoolean (this._allowMultiple,  false)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      const Value = acceptableText(this.Value,'').trim().replace(/[\n\r]+/g,',')
+      const Value           = acceptableText            (this._Value,'').trim().replace(/[\n\r]+/g,',')
+      const Placeholder     = acceptableTextline        (this._Placeholder,'').trim()
+      const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes,'*')
+      const allowMultiple   = acceptableOptionalBoolean (this._allowMultiple)
 
       const _onInput = useCallback((Event:any):void => {
         if (this.Enabling === false) { return consumingEvent(Event) }
@@ -7683,11 +8188,11 @@
         ${Value === ''
           ? this._Placeholder === '' ? '' : html`<span style="
               font-size:${Math.round((this.FontSize || 14)*0.95)}px; line-height:${this.Height}px
-            ">${this._Placeholder}</span>`
+            ">${Placeholder}</span>`
           : html`<span style="line-height:${this.Height}px">${Value}</span>`
         }
         <input type="file" style="display:none"
-          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
+          multiple=${allowMultiple} accept=${acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`
@@ -7761,9 +8266,34 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Icon','acceptableTypes','allowMultiple'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      const Icon            = acceptableURL     (this._Icon,`${IconFolder}/arrow-up-from-bracket.png`)
+      const acceptableTypes = acceptableTextline(this._acceptableTypes,'*')
+      const allowMultiple   = acceptableBoolean (this._allowMultiple,  false)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
+      const Icon            = acceptableURL             (this._Icon,`${IconFolder}/arrow-up-from-bracket.png`)
+      const Color           = acceptableColor           ((this as Indexable)._Color,'black')
+      const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes,'*')
+      const allowMultiple   = acceptableOptionalBoolean (this._allowMultiple)
+
       const _onInput = useCallback((Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
 
@@ -7774,11 +8304,11 @@
 
       return html`<label class="WAT Content PseudoFileInput">
         <div style="
-          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
-          background-color:${(this as Indexable)._Color || 'black'};
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
         "></div>
         <input type="file" style="display:none"
-          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
+          multiple=${allowMultiple} accept=${acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`
@@ -7844,9 +8374,33 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','acceptableTypes','allowMultiple'
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      const Placeholder     = acceptableTextline(this._Placeholder,'').trim()
+      const acceptableTypes = acceptableTextline(this._acceptableTypes,'*')
+      const allowMultiple   = acceptableBoolean (this._allowMultiple,  false)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
+      const Placeholder     = acceptableTextline        (this._Placeholder,'').trim()
+      const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes,'*')
+      const allowMultiple   = acceptableOptionalBoolean (this._allowMultiple)
+
       const _onInput = useCallback((Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
 
@@ -7869,9 +8423,9 @@
 
       return html`<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
-        <span>${this._Placeholder}</span>
+        <span>${Placeholder}</span>
         <input type="file"
-          multiple=${this._allowMultiple} accept=${this._acceptableTypes}
+          multiple=${allowMultiple} accept=${acceptableTypes}
           disabled=${this.Enabling === false} onInput=${_onInput}
         />
       </label>`
@@ -7997,6 +8551,34 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','Pattern',
+        'SpellChecking','Suggestions',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder   = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly      = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength     = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength     = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._Pattern       = acceptableOptionalTextline(Serialization.Pattern)
+      this._SpellChecking = acceptableBoolean         (Serialization.SpellChecking, false)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsTextline
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -8026,9 +8608,18 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process suggestions ****/
+    /**** process any other parameters ****/
 
-      const Suggestions = this._Suggestions
+      const Placeholder   = acceptableOptionalTextline(this._Placeholder)
+      const readonly      = acceptableOptionalBoolean (this._readonly)
+      const minLength     = acceptableOptionalOrdinal (this._minLength)
+      const maxLength     = acceptableOptionalOrdinal (this._maxLength)
+      const Pattern       = acceptableOptionalTextline(this._Pattern)
+      const SpellChecking = acceptableOptionalBoolean (this._SpellChecking)
+
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsTextline
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -8042,9 +8633,9 @@
     /**** actual rendering ****/
 
       return html`<input type="search" class="WAT Content SearchInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -8089,12 +8680,31 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+      this._serializePropertyInto('Suggestions',Serialization)
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Suggestions = acceptableOptionalListSatisfying(
+        Serialization.Suggestions, undefined, ValueIsColor
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      let Value = acceptableOptionalColor(this.Value)
+      let Value = acceptableOptionalColor(this._Value)
 
-      const Suggestions = this._Suggestions
+      const Suggestions = acceptableOptionalListSatisfying(
+        this._Suggestions, undefined, ValueIsColor
+      )
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -8153,12 +8763,31 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+      this._serializePropertyInto('Options',Serialization)
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Options = acceptableListSatisfying(
+        Serialization.Options, [], ValueIsTextline
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      let Value = acceptableTextline(this.Value,'')
+      let Value = acceptableTextline(this._Value,'')
 
-      const Options = this._Options || []
+      const Options = acceptableListSatisfying(
+        this._Options, [], ValueIsTextline
+      )
 
       const _onInput = useCallback((Event:any) => {
         this.Value = Event.target.value
@@ -8230,12 +8859,36 @@
       }
     }
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+      this._serializePropertyInto('Icon',   Serialization)
+      this._serializePropertyInto('Options',Serialization)
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      const Icon = acceptableURL(this._Icon,`${IconFolder}/menu.png`)
+
+      this._Options = acceptableListSatisfying(
+        Serialization.Options, [], ValueIsTextline
+      )
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      let Value = acceptableTextline(this.Value,'')
+      let   Value = acceptableTextline(this._Value,'')
+      const Icon  = acceptableURL     (this._Icon,`${IconFolder}/menu.png`)
+      const Color = acceptableColor   ((this as Indexable)._Color,'black')
 
-      const Options = this._Options || []
+      const Options = acceptableListSatisfying(
+        this._Options, [], ValueIsTextline
+      )
 
       const _onInput = useCallback((Event:any) => {
         this.Value = Event.target.value
@@ -8244,8 +8897,8 @@
 
       return html`<div class="WAT Content PseudoDropDown">
         <div style="
-          -webkit-mask-image:url(${this._Icon}); mask-image:url(${this._Icon});
-          background-color:${(this as Indexable)._Color || 'black'};
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
         "></div>
         <select disabled=${this.Enabling == false} onInput=${_onInput}>
           ${Options.map((Option:string) => {
@@ -8370,6 +9023,30 @@
 
 
 
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','readonly','minLength','maxLength','LineWrapping',
+        'SpellChecking',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder   = acceptableOptionalTextline(Serialization.Placeholder)
+      this._readonly      = acceptableBoolean         (Serialization.readonly, false)
+      this._minLength     = acceptableOptionalOrdinal (Serialization.minLength)
+      this._maxLength     = acceptableOptionalOrdinal (Serialization.maxLength)
+      this._LineWrapping  = acceptableBoolean         (Serialization.LineWrapping,  true)
+      this._SpellChecking = acceptableBoolean         (Serialization.SpellChecking, false)
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -8399,13 +9076,22 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
+    /**** process any other parameters ****/
+
+      const Placeholder   = acceptableOptionalTextline(this._Placeholder)
+      const readonly      = acceptableOptionalBoolean (this._readonly)
+      const minLength     = acceptableOptionalOrdinal (this._minLength)
+      const maxLength     = acceptableOptionalOrdinal (this._maxLength)
+      const LineWrapping  = acceptableOptionalBoolean (this._LineWrapping)
+      const SpellChecking = acceptableOptionalBoolean (this._SpellChecking)
+
     /**** actual rendering ****/
 
       return html`<textarea class="WAT Content TextInput"
-        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
-        readOnly=${this._readonly} placeholder=${this._Placeholder}
-        spellcheck=${this._SpellChecking} style="resize:none; ${
-          this._LineWrapping == true
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        spellcheck=${SpellChecking} style="resize:none; ${
+          LineWrapping == true
           ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
           : undefined
         }"
@@ -8541,11 +9227,12 @@
         if (this._onClick != null) { this._onClick(Event) }
       }
 
-      const Value = acceptableURL(this.Value,`${IconFolder}/pencil.png`)
+      const Value = acceptableURL(this._Value,`${IconFolder}/pencil.png`)
+      const Color = acceptableColor(this.Color,'black')
 
       return html`<div class="WAT ${active} IconTab" style="
         -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${(this as Indexable)._Color || 'black'};
+        background-color:${Color};
       " disabled=${this.Enabling == false} onClick=${_onClick}
       />`
     }
