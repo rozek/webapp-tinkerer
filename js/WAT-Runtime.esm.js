@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -5713,6 +5713,48 @@ appendStyle(`
 export class WAT_EMailAddressInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Pattern ****/
+        Object.defineProperty(this, "_Pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -5745,13 +5787,8 @@ export class WAT_EMailAddressInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const Pattern = acceptableOptionalTextline(this.Pattern);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsEMailAddress);
+                /**** process suggestions ****/
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5761,9 +5798,9 @@ export class WAT_EMailAddressInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="email" class="WAT Content EMailAddressInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5772,6 +5809,56 @@ export class WAT_EMailAddressInput extends WAT_Widget {
     }
     get Type() { return 'EMailAddressInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get Pattern() { return this._Pattern; }
+    set Pattern(newSetting) {
+        allowTextline('input pattern', newSetting);
+        if (this._Pattern !== newSetting) {
+            this._Pattern = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsEMailAddress);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['EMailAddressInput'] = WAT_EMailAddressInput;
 appendStyle(`
@@ -5791,6 +5878,48 @@ appendStyle(`
 export class WAT_URLInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Pattern ****/
+        Object.defineProperty(this, "_Pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -5823,13 +5952,8 @@ export class WAT_URLInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const Pattern = acceptableOptionalTextline(this.Pattern);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsURL);
+                /**** process suggestions ****/
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5839,9 +5963,9 @@ export class WAT_URLInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="url" class="WAT Content URLInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5850,6 +5974,56 @@ export class WAT_URLInput extends WAT_Widget {
     }
     get Type() { return 'URLInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get Pattern() { return this._Pattern; }
+    set Pattern(newSetting) {
+        allowTextline('input pattern', newSetting);
+        if (this._Pattern !== newSetting) {
+            this._Pattern = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsURL);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['URLInput'] = WAT_URLInput;
 appendStyle(`
@@ -5874,6 +6048,41 @@ function TimeMatcher(Value) {
 export class WAT_TimeInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** withSeconds ****/
+        Object.defineProperty(this, "_withSeconds", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -5906,12 +6115,8 @@ export class WAT_TimeInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const Minimum = acceptableOptionalStringMatching(this.Minimum, undefined, TimeRegExp);
-                const Stepping = acceptableOptionalNumberInRange(this.Stepping, undefined, 0);
-                const Maximum = acceptableOptionalStringMatching(this.Maximum, undefined, TimeRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, TimeMatcher);
+                /**** process suggestions ****/
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -5921,8 +6126,9 @@ export class WAT_TimeInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="time" class="WAT Content TimeInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        readOnly=${readonly} pattern=${TimePattern}
+        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum}
+        step=${this._withSeconds ? 1 : 60}
+        readOnly=${this._readonly} pattern=${TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -5931,6 +6137,48 @@ export class WAT_TimeInput extends WAT_Widget {
     }
     get Type() { return 'TimeInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get withSeconds() { return this._withSeconds; }
+    set withSeconds(newSetting) {
+        allowBoolean('seconds display setting', newSetting);
+        if (this._withSeconds !== newSetting) {
+            this._withSeconds = newSetting;
+            this.rerender();
+        }
+    }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowStringMatching('earliest time', newSetting, TimeRegExp);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowStringMatching('latest time', newSetting, TimeRegExp);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, TimeMatcher);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['TimeInput'] = WAT_TimeInput;
 appendStyle(`
@@ -5955,6 +6203,41 @@ function DateTimeMatcher(Value) {
 export class WAT_DateTimeInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** withSeconds ****/
+        Object.defineProperty(this, "_withSeconds", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -6012,6 +6295,48 @@ export class WAT_DateTimeInput extends WAT_Widget {
     }
     get Type() { return 'DateTimeInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get withSeconds() { return this._withSeconds; }
+    set withSeconds(newSetting) {
+        allowBoolean('seconds display setting', newSetting);
+        if (this._withSeconds !== newSetting) {
+            this._withSeconds = newSetting;
+            this.rerender();
+        }
+    }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowStringMatching('earliest point in time', newSetting, DateTimeRegExp);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowStringMatching('latest point in time', newSetting, DateTimeRegExp);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, DateTimeMatcher);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['DateTimeInput'] = WAT_DateTimeInput;
 appendStyle(`
@@ -6036,6 +6361,34 @@ function DateMatcher(Value) {
 export class WAT_DateInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -6093,6 +6446,40 @@ export class WAT_DateInput extends WAT_Widget {
     }
     get Type() { return 'DateInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowStringMatching('earliest date', newSetting, DateRegExp);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowStringMatching('latest date', newSetting, DateRegExp);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, DateMatcher);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['DateInput'] = WAT_DateInput;
 appendStyle(`
@@ -6117,6 +6504,34 @@ function WeekMatcher(Value) {
 export class WAT_WeekInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -6174,6 +6589,40 @@ export class WAT_WeekInput extends WAT_Widget {
     }
     get Type() { return 'WeekInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowStringMatching('earliest week', newSetting, WeekRegExp);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowStringMatching('latest week', newSetting, WeekRegExp);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, WeekMatcher);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['WeekInput'] = WAT_WeekInput;
 appendStyle(`
@@ -6198,6 +6647,34 @@ function MonthMatcher(Value) {
 export class WAT_MonthInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Minimum ****/
+        Object.defineProperty(this, "_Minimum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Maximum ****/
+        Object.defineProperty(this, "_Maximum", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -6255,6 +6732,40 @@ export class WAT_MonthInput extends WAT_Widget {
     }
     get Type() { return 'MonthInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get Minimum() { return this._Minimum; }
+    set Minimum(newSetting) {
+        allowStringMatching('earliest month', newSetting, MonthRegExp);
+        if (this._Minimum !== newSetting) {
+            this._Minimum = newSetting;
+            this.rerender();
+        }
+    }
+    get Maximum() { return this._Maximum; }
+    set Maximum(newSetting) {
+        allowStringMatching('latest month', newSetting, MonthRegExp);
+        if (this._Maximum !== newSetting) {
+            this._Maximum = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, MonthMatcher);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['MonthInput'] = WAT_MonthInput;
 appendStyle(`
