@@ -7100,6 +7100,55 @@ appendStyle(`
 export class WAT_SearchInput extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** readonly ****/
+        Object.defineProperty(this, "_readonly", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** minLength ****/
+        Object.defineProperty(this, "_minLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxLength ****/
+        Object.defineProperty(this, "_maxLength", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Pattern ****/
+        Object.defineProperty(this, "_Pattern", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** SpellChecking ****/
+        Object.defineProperty(this, "_SpellChecking", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** Suggestions ****/
+        Object.defineProperty(this, "_Suggestions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
@@ -7132,14 +7181,8 @@ export class WAT_SearchInput extends WAT_Widget {
                         this._onBlur(Event);
                     }
                 });
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this.Placeholder);
-                const readonly = acceptableOptionalBoolean(this.readonly);
-                const minLength = acceptableOptionalOrdinal(this.minLength);
-                const maxLength = acceptableOptionalOrdinal(this.maxLength);
-                const Pattern = acceptableOptionalTextline(this.Pattern);
-                const SpellChecking = acceptableOptionalBoolean(this.SpellChecking);
-                const Suggestions = acceptableOptionalListSatisfying(this.Suggestions, undefined, ValueIsTextline);
+                /**** process suggestions ****/
+                const Suggestions = this._Suggestions;
                 let SuggestionList = '', SuggestionId;
                 if ((Suggestions != null) && (Suggestions.length > 0)) {
                     SuggestionId = IdOfWidget(this) + '-Suggestions';
@@ -7149,9 +7192,9 @@ export class WAT_SearchInput extends WAT_Widget {
                 }
                 /**** actual rendering ****/
                 return html `<input type="search" class="WAT Content SearchInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern} spellcheck=${this._SpellChecking}
         disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -7160,6 +7203,64 @@ export class WAT_SearchInput extends WAT_Widget {
     }
     get Type() { return 'SearchInput'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get readonly() { return this._readonly; }
+    set readonly(newSetting) {
+        allowBoolean('readonly setting', newSetting);
+        if (this._readonly !== newSetting) {
+            this._readonly = newSetting;
+            this.rerender();
+        }
+    }
+    get minLength() { return this._minLength; }
+    set minLength(newSetting) {
+        allowOrdinal('minimal length', newSetting);
+        if (this._minLength !== newSetting) {
+            this._minLength = newSetting;
+            this.rerender();
+        }
+    }
+    get maxLength() { return this._maxLength; }
+    set maxLength(newSetting) {
+        allowOrdinal('maximal length', newSetting);
+        if (this._maxLength !== newSetting) {
+            this._maxLength = newSetting;
+            this.rerender();
+        }
+    }
+    get Pattern() { return this._Pattern; }
+    set Pattern(newSetting) {
+        allowTextline('input pattern', newSetting);
+        if (this._Pattern !== newSetting) {
+            this._Pattern = newSetting;
+            this.rerender();
+        }
+    }
+    get SpellChecking() { return this._SpellChecking; }
+    set SpellChecking(newSetting) {
+        allowBoolean('spell check setting', newSetting);
+        if (this._SpellChecking !== newSetting) {
+            this._SpellChecking = newSetting;
+            this.rerender();
+        }
+    }
+    get Suggestions() {
+        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
+    }
+    set Suggestions(newSetting) {
+        allowListSatisfying('suggestion list', newSetting, ValueIsTextline);
+        if (ValuesDiffer(this._Suggestions, newSetting)) {
+            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
+            this.rerender();
+        }
+    }
 }
 builtInWidgetTypes['SearchInput'] = WAT_SearchInput;
 appendStyle(`
