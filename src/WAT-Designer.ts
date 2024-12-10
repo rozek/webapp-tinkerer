@@ -49,6 +49,9 @@
     WAT_FontWeights, WAT_FontStyles,
     WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments,
     WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors,
+    WAT_ImageScalings, WAT_ImageAlignments, WAT_ReferrerPolicies,
+    WAT_TimePattern, WAT_DateTimePattern, WAT_DatePattern, WAT_WeekPattern,
+      WAT_MonthPattern,
     ValueIsApplet, ValueIsPage, ValueIsWidget,
     ValueIsWidgetType, ValueIsErrorReport,
     allowPage,
@@ -720,6 +723,19 @@
         ? commonValue[Entry]
         : commonValue
       )
+    }
+  }
+
+/**** commonListLiteralOf ****/
+
+  function commonListLiteralOf (ValueList:any[]):any {
+    const commonValue = commonValueOf(ValueList)
+    switch (commonValue) {
+      case null:
+      case undefined:      return ''
+      case noSelection:
+      case multipleValues: return commonValue
+      default:             return (commonValue as any[]).join('\n')
     }
   }
 
@@ -2482,18 +2498,14 @@
   /**** constructor ****/
 
     public constructor (
-      Widgets:WAT_Widget[],  PropertyName:string, PropertyValues:any|any[]
+      Widgets:WAT_Widget[],  PropertyName:string, PropertyValue:any
     ) {
       super()
 
       this._Widgets      = Widgets.slice()
       this._PropertyName = PropertyName
       this._oldValues    = Widgets.map((Widget:WAT_Widget) => Widget[PropertyName])
-      this._newValues    = (
-        ValueIsList(PropertyValues)
-        ? (PropertyValues as any[]).slice()
-        : Array.from({length:Widgets.length},() => PropertyValues)
-      )
+      this._newValues    = Array.from({length:Widgets.length},() => PropertyValue)
     }
 
   /**** canExtend ****/
@@ -4709,9 +4721,11 @@ console.error(Signal)
             'FileInput:File Input', 'PseudoFileInput:pseudo File Input',
             'FileDropArea:File Drop Area',
             '----',
-            'TextTab:Text Tab', 'IconTab:Icon Tab', 'WidgetPane:Widget Pane',
-            'Accordion','AccordionFold:Accordion Fold',
-            'flatListView:flat List View','nestedListView:nested List View'
+            'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
+            'WidgetPane:Widget Pane',
+            '-Accordion','-AccordionFold:Accordion Fold',
+            '-flatListView:flat List View','-nestedListView:nested List View',
+            '-NoteSticker'
 
           ]}
           onInput=${(Event:Indexable) => {
@@ -4772,6 +4786,8 @@ console.error(Signal)
   function WAD_WidgetConfigurationPane () {
     const { Applet, selectedWidgets, Inspector } = DesignerState
     const visitedPage = Applet.visitedPage
+
+    const commonType = commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Type))
 
   /**** remember fold expansions ****/
 
@@ -5694,6 +5710,1042 @@ console.error(Signal)
           Expansion=${Expansions.TypeSpecific}
           toggleExpansion=${() => toggleExpansion('TypeSpecific')}
         >
+          ${(['ImageView','SVGView'].indexOf(commonType) >= 0) && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Image Scaling</>
+              <${WAD_Gap}/>
+              <${WAD_DropDown}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:Indexable) => Widget.ImageScaling))}
+                Options=${WAT_ImageScalings}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('ImageScaling',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Image Alignment</>
+              <${WAD_Gap}/>
+              <${WAD_DropDown}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:Indexable) => Widget.ImageAlignment))}
+                Options=${WAT_ImageAlignments}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('ImageAlignment',Event.target.value)}
+              />
+            </>
+          `}
+
+          ${(commonType === 'WebView') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Permissions Policy</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.PermissionsPolicy))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('PermissionsPolicy',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>allows Fullscreen</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.allowsFullscreen))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowsFullscreen',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Permissions Policy</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.PermissionsPolicy))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('PermissionsPolicy',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Sandbox Permissionsy</>
+              <${WAD_Gap}/>
+              <${WAD_DropDown}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:Indexable) => Widget.SandboxPermissions))}
+                Options=${WAT_ReferrerPolicies}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('SandboxPermissions',Event.target.value)}
+              />
+            </>
+          `}
+
+          ${(commonType === 'Gauge') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Minimum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>lower Bound</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.lowerBound))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('lowerBound',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Optimum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Optimum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Optimum',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>upper Bound</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.upperBound))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('upperBound',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Maximum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',parseFloat(Event.target.value))}
+              />
+            </>
+
+          `}
+
+          ${(commonType === 'Progressbar') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Maximum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',parseFloat(Event.target.value))}
+              />
+            </>
+
+          `}
+
+          ${(commonType === 'Slider') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Minimum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Stepping</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Stepping))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Stepping',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Maximum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Hashmarks (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter hashmark list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Hashmarks))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Hashmarks',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(['TextlineInput','SearchInput'].indexOf(commonType) >= 0) && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Input Pattern</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Pattern))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Pattern',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>check Spelling</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.SpellChecking))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('SpellChecking',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'PasswordInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Input Pattern</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Pattern))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Pattern',Event.target.value)}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'NumberInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Minimum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Stepping</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Stepping))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Stepping',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Maximum</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',parseFloat(Event.target.value))}
+              />
+            </>
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/).map(Number))}
+            />
+
+          `}
+
+          ${(commonType === 'PhoneNumberInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Input Pattern</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Pattern))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Pattern',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'EMailAddressInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Input Pattern</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Pattern))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Pattern',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'URLInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Input Pattern</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Pattern))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Pattern',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'TimeInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>with Seconds</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.withSeconds))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('withSeconds',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>earliest Time</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                Pattern=${WAT_TimePattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>latest Time</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                Pattern=${WAT_TimePattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'DateTimeInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>with Seconds</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.withSeconds))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('withSeconds',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>earliest Point of Time</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                Pattern=${WAT_DateTimePattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>latest Point of Time</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                Pattern=${WAT_DateTimePattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'DateInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>earliest Date</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                Pattern=${WAT_DatePattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>latest Date</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                Pattern=${WAT_DatePattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'WeekInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>earliest Week</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                Pattern=${WAT_WeekPattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>latest Week</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                Pattern=${WAT_WeekPattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'MonthInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>earliest Month</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Minimum))}
+                Pattern=${WAT_MonthPattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Minimum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>latest Month</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Maximum))}
+                Pattern=${WAT_MonthPattern}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Maximum',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'FileInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>acceptable Types</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.acceptableTypes))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('acceptableTypes',Event.target.value)}
+              />
+            </>
+
+         <${WAD_horizontally}>
+              <${WAD_Label}>multiple Files</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.allowMultiple))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowMultiple',Event.target.checked)}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'PseudoFileInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Icon URL</>
+              <${WAD_Gap}/>
+              <${WAD_URLInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Icon))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Icon',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>acceptable Types</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.acceptableTypes))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('acceptableTypes',Event.target.value)}
+              />
+            </>
+
+         <${WAD_horizontally}>
+              <${WAD_Label}>multiple Files</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.allowMultiple))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowMultiple',Event.target.checked)}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'FileDropArea') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>acceptable Types</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.acceptableTypes))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('acceptableTypes',Event.target.value)}
+              />
+            </>
+
+         <${WAD_horizontally}>
+              <${WAD_Label}>multiple Files</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.allowMultiple))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowMultiple',Event.target.checked)}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'ColorInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'DropDown') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Options (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Options))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Options',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'PseudoDropDown') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Icon URL</>
+              <${WAD_Gap}/>
+              <${WAD_URLInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Icon))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Icon',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Options (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Options))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Options',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(commonType === 'TextInput') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.readonly))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('readonly',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Input Length</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxLength))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxLength',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>wrap Lines</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.LineWrapping))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('LineWrapping',Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Suggestions (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Suggestions))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Suggestions',Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(['TextTab','IconTab'].indexOf(commonType) >= 0) && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>active</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Activation))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Activation',Event.target.checked)}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'TabStrip') && html`
+
+          `}
 
 
           <${WAD_horizontally}>
