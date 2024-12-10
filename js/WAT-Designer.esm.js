@@ -1474,12 +1474,9 @@ function WAD_FlatListView(PropSet) {
 //--                                 WAD_Fold                                 --
 //------------------------------------------------------------------------------
 function WAD_Fold(PropSet) {
-    let { Label, Expansion, onExpansionChange } = PropSet;
-    const onClick = useCallback(() => {
-        onExpansionChange(!Expansion);
-    }, []);
+    let { Label, Expansion, toggleExpansion } = PropSet;
     return html `<div class="WAD Fold">
-      <div class="WAD Fold-Header" onClick=${onClick}>
+      <div class="WAD Fold-Header" onClick=${toggleExpansion}>
         <img class="WAD Fold-Expander" src=${Expansion
         ? `${IconFolder}/caret-down.png`
         : `${IconFolder}/caret-right.png`}/>
@@ -3359,6 +3356,10 @@ function WAD_AppletConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const { Applet, Inspector } = DesignerState;
     const Expansions = Inspector.Expansions.AppletConfiguration;
+    function toggleExpansion(Name) {
+        Expansions[Name] = !Expansions[Name];
+        WAT_rerender();
+    }
     const { activeScript, pendingScript, ErrorReport, ScriptError } = Applet;
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
     const ReportToShow = ScriptError || ErrorReport;
@@ -3383,10 +3384,7 @@ function WAD_AppletConfigurationPane() {
       ">
         <${WAD_Fold} Label="Visibility"
           Expansion=${Expansions.Visibility}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Visibility = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Visibility')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Opacity [%]</>
@@ -3400,10 +3398,7 @@ function WAD_AppletConfigurationPane() {
 
         <${WAD_Fold} Label="Geometry"
           Expansion=${Expansions.Geometry}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Geometry = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Geometry')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Position (x,y) [px]</>
@@ -3432,10 +3427,7 @@ function WAD_AppletConfigurationPane() {
 
         <${WAD_Fold} Label="Typography"
           Expansion=${Expansions.Typography}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Typography = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Typography')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
@@ -3572,10 +3564,7 @@ function WAD_AppletConfigurationPane() {
 
         <${WAD_Fold} Label="Background"
           Expansion=${Expansions.Background}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Background = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Background')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Background</>
@@ -3661,10 +3650,7 @@ function WAD_AppletConfigurationPane() {
 
         <${WAD_Fold} Label="Layout Settings"
           Expansion=${Expansions.Layout}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Layout = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Layout')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Snap-to-Grid</>
@@ -3690,10 +3676,7 @@ function WAD_AppletConfigurationPane() {
           </>
         </>        <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Scripting = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Scripting')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Script</>
@@ -3831,6 +3814,10 @@ function WAD_PageConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const { Applet, Inspector } = DesignerState;
     const Expansions = Inspector.Expansions.PageConfiguration;
+    function toggleExpansion(Name) {
+        Expansions[Name] = !Expansions[Name];
+        WAT_rerender();
+    }
     const { visitedPage } = Applet;
     const { activeScript, pendingScript, ErrorReport, ScriptError } = visitedPage;
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
@@ -3857,10 +3844,7 @@ function WAD_PageConfigurationPane() {
       ">
         <${WAD_Fold} Label="Visibility"
           Expansion=${Expansions.Visibility}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Visibility = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Visibility')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Opacity [%]</>
@@ -3874,10 +3858,7 @@ function WAD_PageConfigurationPane() {
 
         <${WAD_Fold} Label="Geometry"
           Expansion=${Expansions.Geometry}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Geometry = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Geometry')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Position (x,y) [px]</>
@@ -3906,10 +3887,7 @@ function WAD_PageConfigurationPane() {
 
         <${WAD_Fold} Label="Typography"
           Expansion=${Expansions.Typography}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Typography = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Typography')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
@@ -4046,10 +4024,7 @@ function WAD_PageConfigurationPane() {
 
         <${WAD_Fold} Label="Background"
           Expansion=${Expansions.Background}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Background = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Background')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Background</>
@@ -4135,10 +4110,7 @@ function WAD_PageConfigurationPane() {
 
         <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Scripting = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Scripting')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Script</>
@@ -4308,6 +4280,10 @@ function WAD_WidgetConfigurationPane() {
     const { Applet, selectedWidgets, Inspector } = DesignerState;
     const visitedPage = Applet.visitedPage;
     const Expansions = Inspector.Expansions.WidgetConfiguration;
+    function toggleExpansion(Name) {
+        Expansions[Name] = !Expansions[Name];
+        WAT_rerender();
+    }
     let ValueType = 'string';
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget) => Widget.Value));
     switch (true) {
@@ -4376,10 +4352,7 @@ function WAD_WidgetConfigurationPane() {
       ">
         <${WAD_Fold} Label="Visibility and Enabling"
           Expansion=${Expansions.Visibility}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Visibility = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Visibility')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Visibility</>
@@ -4425,10 +4398,7 @@ function WAD_WidgetConfigurationPane() {
 
         <${WAD_Fold} Label="Geometry"
           Expansion=${Expansions.Geometry}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Geometry = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Geometry')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Position (x,y) [px]</>
@@ -4511,10 +4481,7 @@ function WAD_WidgetConfigurationPane() {
 
         <${WAD_Fold} Label="Typography"
           Expansion=${Expansions.Typography}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Typography = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Typography')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Font Family</>
@@ -4673,10 +4640,7 @@ function WAD_WidgetConfigurationPane() {
 
         <${WAD_Fold} Label="Background"
           Expansion=${Expansions.Background}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Background = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Background')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Background</>
@@ -4775,10 +4739,7 @@ function WAD_WidgetConfigurationPane() {
 
         <${WAD_Fold} Label="Border"
           Expansion=${Expansions.Border}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Border = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Border')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Border Lines</>
@@ -5015,10 +4976,7 @@ function WAD_WidgetConfigurationPane() {
         </>
         <${WAD_Fold} Label="Shadow"
           Expansion=${Expansions.Shadow}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Shadow = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Shadow')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Box Shadow</>
@@ -5111,10 +5069,7 @@ function WAD_WidgetConfigurationPane() {
 
         <${WAD_Fold} Label="Cursor"
           Expansion=${Expansions.Cursor}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Cursor = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Cursor')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Standard</>
@@ -5130,10 +5085,7 @@ function WAD_WidgetConfigurationPane() {
 
         <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.Scripting = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('Scripting')}
         >
           <${WAD_horizontally}>
             <${WAD_Label}>Script</>
@@ -5166,10 +5118,7 @@ function WAD_WidgetConfigurationPane() {
           />
         </>        <${WAD_Fold} Label="Type-specific Settings"
           Expansion=${Expansions.TypeSpecific}
-          onExpansionChange=${(newExpansion) => {
-        Expansions.TypeSpecific = newExpansion;
-        WAT_rerender();
-    }}
+          toggleExpansion=${() => toggleExpansion('TypeSpecific')}
         >
 
 
