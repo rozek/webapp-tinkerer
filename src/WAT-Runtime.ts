@@ -28,7 +28,7 @@
     allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange,
       allowInteger, expectInteger, allowIntegerInRange,
       allowOrdinal, expectCardinal,
-    allowString, expectString, allowText, allowTextline,
+    allowString, expectString, allowStringMatching, allowText, allowTextline,
     expectPlainObject,
     expectList, allowListSatisfying, expectListSatisfying,
     allowFunction, expectFunction,
@@ -6555,7 +6555,85 @@
     public get Type ():string  { return 'EMailAddressInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
 
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** readonly ****/
+
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** minLength ****/
+
+    protected _minLength:number|undefined
+
+    public get minLength ():number|undefined { return this._minLength }
+    public set minLength (newSetting:number|undefined) {
+      allowOrdinal('minimal length',newSetting)
+      if (this._minLength !== newSetting) {
+        this._minLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** maxLength ****/
+
+    protected _maxLength:number|undefined
+
+    public get maxLength ():number|undefined { return this._maxLength }
+    public set maxLength (newSetting:number|undefined) {
+      allowOrdinal('maximal length',newSetting)
+      if (this._maxLength !== newSetting) {
+        this._maxLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Pattern ****/
+
+    protected _Pattern:WAT_Textline|undefined
+
+    public get Pattern ():WAT_Textline|undefined { return this._Pattern }
+    public set Pattern (newSetting:WAT_Textline|undefined) {
+      allowTextline('input pattern',newSetting)
+      if (this._Pattern !== newSetting) {
+        this._Pattern = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,ValueIsEMailAddress)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -6586,17 +6664,9 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process any other parameters ****/
+    /**** process suggestions ****/
 
-      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
-      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
-      const minLength   = acceptableOptionalOrdinal ((this as Indexable).minLength)
-      const maxLength   = acceptableOptionalOrdinal ((this as Indexable).maxLength)
-      const Pattern     = acceptableOptionalTextline((this as Indexable).Pattern)
-
-      const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, ValueIsEMailAddress
-      )
+      const Suggestions = this._Suggestions
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6610,9 +6680,9 @@
     /**** actual rendering ****/
 
       return html`<input type="email" class="WAT Content EMailAddressInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6642,7 +6712,85 @@
     public get Type ():string  { return 'URLInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
 
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** readonly ****/
+
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** minLength ****/
+
+    protected _minLength:number|undefined
+
+    public get minLength ():number|undefined { return this._minLength }
+    public set minLength (newSetting:number|undefined) {
+      allowOrdinal('minimal length',newSetting)
+      if (this._minLength !== newSetting) {
+        this._minLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** maxLength ****/
+
+    protected _maxLength:number|undefined
+
+    public get maxLength ():number|undefined { return this._maxLength }
+    public set maxLength (newSetting:number|undefined) {
+      allowOrdinal('maximal length',newSetting)
+      if (this._maxLength !== newSetting) {
+        this._maxLength = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Pattern ****/
+
+    protected _Pattern:WAT_Textline|undefined
+
+    public get Pattern ():WAT_Textline|undefined { return this._Pattern }
+    public set Pattern (newSetting:WAT_Textline|undefined) {
+      allowTextline('input pattern',newSetting)
+      if (this._Pattern !== newSetting) {
+        this._Pattern = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,ValueIsURL)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -6673,17 +6821,9 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process any other parameters ****/
+    /**** process suggestions ****/
 
-      const Placeholder = acceptableOptionalTextline((this as Indexable).Placeholder)
-      const readonly    = acceptableOptionalBoolean ((this as Indexable).readonly)
-      const minLength   = acceptableOptionalOrdinal ((this as Indexable).minLength)
-      const maxLength   = acceptableOptionalOrdinal ((this as Indexable).maxLength)
-      const Pattern     = acceptableOptionalTextline((this as Indexable).Pattern)
-
-      const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, ValueIsURL
-      )
+      const Suggestions = this._Suggestions
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6697,9 +6837,9 @@
     /**** actual rendering ****/
 
       return html`<input type="url" class="WAT Content URLInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+        value=${ValueToShow} minlength=${this._minLength} maxlength=${this._maxLength}
+        readOnly=${this._readonly} placeholder=${this._Placeholder}
+        pattern=${this._Pattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6736,7 +6876,72 @@
     public get Type ():string  { return 'TimeInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** readonly ****/
 
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** withSeconds ****/
+
+    protected _withSeconds:boolean = false
+
+    public get withSeconds ():boolean { return this._withSeconds }
+    public set withSeconds (newSetting:boolean) {
+      allowBoolean('seconds display setting',newSetting)
+      if (this._withSeconds !== newSetting) {
+        this._withSeconds = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Minimum ****/
+
+    protected _Minimum:WAT_Textline|undefined
+
+    public get Minimum ():WAT_Textline|undefined { return this._Minimum }
+    public set Minimum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('earliest time',newSetting,TimeRegExp)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:WAT_Textline|undefined
+
+    public get Maximum ():WAT_Textline|undefined { return this._Maximum }
+    public set Maximum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('latest time',newSetting,TimeRegExp)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,TimeMatcher)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -6767,16 +6972,9 @@
         if (this._onBlur != null) { this._onBlur(Event) }
       })
 
-    /**** process any other parameters ****/
+    /**** process suggestions ****/
 
-      const readonly = acceptableOptionalBoolean       ((this as Indexable).readonly)
-      const Minimum  = acceptableOptionalStringMatching((this as Indexable).Minimum, undefined, TimeRegExp)
-      const Stepping = acceptableOptionalNumberInRange ((this as Indexable).Stepping,undefined, 0)
-      const Maximum  = acceptableOptionalStringMatching((this as Indexable).Maximum, undefined, TimeRegExp)
-
-      const Suggestions = acceptableOptionalListSatisfying(
-        (this as Indexable).Suggestions, undefined, TimeMatcher
-      )
+      const Suggestions = this._Suggestions
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
@@ -6790,8 +6988,9 @@
     /**** actual rendering ****/
 
       return html`<input type="time" class="WAT Content TimeInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        readOnly=${readonly} pattern=${TimePattern}
+        value=${ValueToShow} min=${this._Minimum} max=${this._Maximum}
+        step=${this._withSeconds ? 1 : 60}
+        readOnly=${this._readonly} pattern=${TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${SuggestionId}
       />${SuggestionList}`
@@ -6828,7 +7027,72 @@
     public get Type ():string  { return 'DateTimeInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** readonly ****/
 
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** withSeconds ****/
+
+    protected _withSeconds:boolean = false
+
+    public get withSeconds ():boolean { return this._withSeconds }
+    public set withSeconds (newSetting:boolean) {
+      allowBoolean('seconds display setting',newSetting)
+      if (this._withSeconds !== newSetting) {
+        this._withSeconds = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Minimum ****/
+
+    protected _Minimum:WAT_Textline|undefined
+
+    public get Minimum ():WAT_Textline|undefined { return this._Minimum }
+    public set Minimum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('earliest point in time',newSetting,DateTimeRegExp)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:WAT_Textline|undefined
+
+    public get Maximum ():WAT_Textline|undefined { return this._Maximum }
+    public set Maximum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('latest point in time',newSetting,DateTimeRegExp)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,DateTimeMatcher)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -6920,7 +7184,59 @@
     public get Type ():string  { return 'DateInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** readonly ****/
 
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Minimum ****/
+
+    protected _Minimum:WAT_Textline|undefined
+
+    public get Minimum ():WAT_Textline|undefined { return this._Minimum }
+    public set Minimum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('earliest date',newSetting,DateRegExp)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:WAT_Textline|undefined
+
+    public get Maximum ():WAT_Textline|undefined { return this._Maximum }
+    public set Maximum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('latest date',newSetting,DateRegExp)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,DateMatcher)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -7012,7 +7328,59 @@
     public get Type ():string  { return 'WeekInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** readonly ****/
 
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Minimum ****/
+
+    protected _Minimum:WAT_Textline|undefined
+
+    public get Minimum ():WAT_Textline|undefined { return this._Minimum }
+    public set Minimum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('earliest week',newSetting,WeekRegExp)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:WAT_Textline|undefined
+
+    public get Maximum ():WAT_Textline|undefined { return this._Maximum }
+    public set Maximum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('latest week',newSetting,WeekRegExp)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,WeekMatcher)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
@@ -7104,7 +7472,59 @@
     public get Type ():string  { return 'MonthInput' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** readonly ****/
 
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Minimum ****/
+
+    protected _Minimum:WAT_Textline|undefined
+
+    public get Minimum ():WAT_Textline|undefined { return this._Minimum }
+    public set Minimum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('earliest month',newSetting,MonthRegExp)
+      if (this._Minimum !== newSetting) {
+        this._Minimum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Maximum ****/
+
+    protected _Maximum:WAT_Textline|undefined
+
+    public get Maximum ():WAT_Textline|undefined { return this._Maximum }
+    public set Maximum (newSetting:WAT_Textline|undefined) {
+      allowStringMatching('latest month',newSetting,MonthRegExp)
+      if (this._Maximum !== newSetting) {
+        this._Maximum = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** Suggestions ****/
+
+    protected _Suggestions:string[]|undefined
+
+    public get Suggestions ():string[]|undefined {
+      return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice())
+    }
+    public set Suggestions (newSetting:string[]|undefined) {
+      allowListSatisfying('suggestion list',newSetting,MonthMatcher)
+      if (ValuesDiffer(this._Suggestions,newSetting)) {
+        this._Suggestions = (newSetting == null ? newSetting : newSetting.slice())
+        this.rerender()
+      }
+    }
 
   /**** Renderer ****/
 
