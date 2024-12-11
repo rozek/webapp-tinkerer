@@ -21,12 +21,10 @@ quoted, HTMLsafe, ValuesAreEqual, ValueIsOrdinal, ValueIsText, ValueIsPlainObjec
 import Conversion from 'svelte-coordinate-conversion';
 const { fromViewportTo } = Conversion;
 import { html, useState, useRef, useEffect, useMemo, useCallback, } from 'htm/preact';
-import hyperactiv from 'hyperactiv';
-const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_ImageScalings, WAT_ImageAlignments, WAT_ReferrerPolicies, WAT_TimePattern, WAT_DateTimePattern, WAT_DatePattern, WAT_WeekPattern, WAT_MonthPattern, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsWidgetType, ValueIsErrorReport, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_ImageScalings, WAT_ImageAlignments, WAT_ReferrerPolicies, WAT_TimePattern, WAT_DateTimePattern, WAT_DatePattern, WAT_WeekPattern, WAT_MonthPattern, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsWidgetType, ValueIsErrorReport, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -448,8 +446,6 @@ appendStyle(`
     color:red;
   }
 
-
-
 /**** InspectorPane ****/
 
   .WAD.InspectorPane {
@@ -525,8 +521,6 @@ appendStyle(`
     border-left:dotted 1px orangered;
     pointer-events:none;
   }
-
-
 
 
 `.trimLeft());
@@ -2666,7 +2660,7 @@ function doShiftSelectedPagesToBottom() {
 }
 /**** doVisitSelectedPage ****/
 function doVisitSelectedPage() {
-    const { Applet, selectedPages } = DesignerState;
+    const { selectedPages } = DesignerState;
     visitPage(selectedPages[selectedPages.length - 1]);
 }
 /**** doDeleteSelectedPages ****/
@@ -4650,14 +4644,92 @@ function WAD_WidgetConfigurationPane() {
           </>
 
           <${WAD_horizontally}>
+            <${WAD_Label}>Text Decoration</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'isActive')}
+              onInput=${(Event) => {
+        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+            || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
+        doConfigureSelectedWidgets('TextDecoration', {
+            isActive: Event.target.checked, Line, Color, Style, Thickness
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Line</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Line')}
+              Options=${WAT_TextDecorationLines}
+              onInput=${(Event) => {
+        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+            || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
+        doConfigureSelectedWidgets('TextDecoration', {
+            isActive, Line: Event.target.value, Color, Style, Thickness
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Color</>
+            <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Color')}
+              onInput=${(Event) => {
+        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+            || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
+        doConfigureSelectedWidgets('TextDecoration', {
+            isActive, Line, Color: Event.target.value, Style, Thickness
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Style</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Style')}
+              Options=${WAT_TextDecorationStyles}
+              onInput=${(Event) => {
+        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+            || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
+        doConfigureSelectedWidgets('TextDecoration', {
+            isActive, Line, Color, Style: Event.target.value, Thickness
+        });
+    }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Thickness [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Thickness')}
+              onInput=${(Event) => {
+        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+            || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
+        doConfigureSelectedWidgets('TextDecoration', {
+            isActive, Line, Color, Style, Thickness: parseFloat(Event.target.value)
+        });
+    }}
+            />
+          </>
+
+          <${WAD_horizontally}>
             <${WAD_Label}>Text Shadow</>
             <${WAD_Gap}/>
             <${WAD_Checkbox}
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'isActive')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow))
-            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive: Event.target.checked, xOffset, yOffset, BlurRadius, Color
         });
@@ -4671,8 +4743,8 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'Color')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow))
-            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset, yOffset, BlurRadius, Color: Event.target.value
         });
@@ -4686,8 +4758,8 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'xOffset')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow))
-            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset: parseFloat(Event.target.value), yOffset, BlurRadius, Color
         });
@@ -4698,8 +4770,8 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'yOffset')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow))
-            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset, yOffset: parseFloat(Event.target.value), BlurRadius, Color
         });
@@ -4713,8 +4785,8 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'BlurRadius')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow))
-            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+            || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset, yOffset, BlurRadius: parseFloat(Event.target.value), Color
         });
@@ -4861,8 +4933,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 0)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles))
-            || ['none', 'none', 'none', 'none']);
+        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Event.target.value, Style_1, Style_2, Style_3
         ]);
@@ -4874,8 +4945,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 0)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths))
-            || [0, 0, 0, 0]);
+        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             parseFloat(Event.target.value), Width_1, Width_2, Width_3
         ]);
@@ -4886,8 +4956,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 0)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors))
-            || ['black', 'black', 'black', 'black']);
+        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Event.target.value, Color_1, Color_2, Color_3
         ]);
@@ -4903,8 +4972,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 1)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles))
-            || ['none', 'none', 'none', 'none']);
+        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Style_0, Event.target.value, Style_2, Style_3
         ]);
@@ -4916,8 +4984,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 1)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths))
-            || [0, 0, 0, 0]);
+        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             Width_0, parseFloat(Event.target.value), Width_2, Width_3
         ]);
@@ -4928,8 +4995,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 1)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors))
-            || ['black', 'black', 'black', 'black']);
+        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Color_0, Event.target.value, Color_2, Color_3
         ]);
@@ -4945,8 +5011,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 2)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles))
-            || ['none', 'none', 'none', 'none']);
+        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Style_0, Style_1, Event.target.value, Style_3
         ]);
@@ -4958,8 +5023,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 2)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths))
-            || [0, 0, 0, 0]);
+        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             Width_0, Width_1, parseFloat(Event.target.value), Width_3
         ]);
@@ -4970,8 +5034,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 2)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors))
-            || ['black', 'black', 'black', 'black']);
+        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Color_0, Color_1, Event.target.value, Color_3
         ]);
@@ -4987,8 +5050,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 3)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles))
-            || ['none', 'none', 'none', 'none']);
+        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Style_0, Style_1, Style_2, Event.target.value
         ]);
@@ -5000,8 +5062,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 3)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths))
-            || [0, 0, 0, 0]);
+        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             Width_0, Width_1, Width_2, parseFloat(Event.target.value)
         ]);
@@ -5012,8 +5073,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 3)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors))
-            || ['black', 'black', 'black', 'black']);
+        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Color_0, Color_1, Color_2, Event.target.value
         ]);
@@ -6058,8 +6118,6 @@ function WAD_WidgetConfigurationPane() {
                 onInput=${(Event) => doConfigureSelectedWidgets('allowMultiple', Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'PseudoFileInput') && html `
@@ -6092,8 +6150,6 @@ function WAD_WidgetConfigurationPane() {
                 onInput=${(Event) => doConfigureSelectedWidgets('allowMultiple', Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'FileDropArea') && html `
@@ -6126,8 +6182,6 @@ function WAD_WidgetConfigurationPane() {
                 onInput=${(Event) => doConfigureSelectedWidgets('allowMultiple', Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'ColorInput') && html `
@@ -6254,15 +6308,11 @@ function WAD_WidgetConfigurationPane() {
                 onInput=${(Event) => doConfigureSelectedWidgets('Activation', Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'TabStrip') && html `
 
           `}
-
-
           <${WAD_horizontally}>
             <${WAD_Label}>Value</>
             <${WAD_Gap}/>
@@ -6517,7 +6567,7 @@ LayouterState.CoverRecognizer = GestureRecognizer({
     onlyFrom: '.WAD.Cover',
     ClickRadius: 4,
     onDragStart: (dx, dy, StartX, StartY, Event) => {
-        const { pointedWidget, shapedWidgets } = LayouterState;
+        const { pointedWidget } = LayouterState;
         if (!WidgetIsSelected(LayouterState.pointedWidget)) {
             if (Event.shiftKey || Event.metaKey) { // additive/subtractive selection
                 selectWidgets([pointedWidget], DesignerState.selectedWidgets);
