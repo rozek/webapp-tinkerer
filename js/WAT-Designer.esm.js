@@ -2250,7 +2250,7 @@ class WAD_WidgetDeserializationOperation extends WAD_Operation {
 //----------------------------------------------------------------------------//
 class WAD_WidgetConfigurationOperation extends WAD_Operation {
     /**** constructor ****/
-    constructor(Widgets, PropertyName, PropertyValue) {
+    constructor(Widgets, PropertyName, PropertyValues) {
         super();
         Object.defineProperty(this, "_Widgets", {
             enumerable: true,
@@ -2279,7 +2279,7 @@ class WAD_WidgetConfigurationOperation extends WAD_Operation {
         this._Widgets = Widgets.slice();
         this._PropertyName = PropertyName;
         this._oldValues = Widgets.map((Widget) => Widget[PropertyName]);
-        this._newValues = Array.from({ length: Widgets.length }, () => PropertyValue);
+        this._newValues = PropertyValues.slice();
     }
     /**** canExtend ****/
     canExtend(otherOperation) {
@@ -2725,7 +2725,7 @@ function doConfigureSelectedWidgets(Property, Value) {
             });
             break;
         default:
-            ValuesToSet = Value;
+            ValuesToSet = selectedWidgets.map((_) => Value);
     }
     doOperation(new WAD_WidgetConfigurationOperation(selectedWidgets, Property, ValuesToSet));
 }
@@ -3260,7 +3260,7 @@ function WAD_Toolbox() {
         'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
         'WidgetPane:Widget Pane',
         '-Accordion', '-AccordionFold:Accordion Fold',
-        '-flatListView:flat List View', '-nestedListView:nested List View',
+        'FlatListView:flat List View', '-NestedListView:nested List View',
         '-NoteSticker'
     ]}
           onInput=${(Event) => {
@@ -4300,7 +4300,7 @@ function WAD_WidgetBrowserPane() {
         'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
         'WidgetPane:Widget Pane',
         '-Accordion', '-AccordionFold:Accordion Fold',
-        '-flatListView:flat List View', '-nestedListView:nested List View',
+        'FlatListView:flat List View', '-nestedListView:nested List View',
         '-NoteSticker'
     ]}
           onInput=${(Event) => {
@@ -4538,9 +4538,9 @@ function WAD_WidgetConfigurationPane() {
             <${WAD_Icon} Icon="${IconFolder}/arrows-left-right.png" style="width:24px"/>
             <${WAD_Gap}/>
             <${WAD_DropDown} style="width:104px"
-              OptionList=${['left-width', 'left-right', 'width-right']}
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Anchors[0]))}
+              Options=${['left-width', 'left-right', 'width-right']}
               onInput=${(Event) => doConfigureSelectedWidgets('Anchors_0', Event.target.value)}
             />
               <div style="width:8px"/>
@@ -4561,9 +4561,9 @@ function WAD_WidgetConfigurationPane() {
             <${WAD_Icon} Icon="${IconFolder}/arrows-up-down.png" style="width:24px"/>
             <${WAD_Gap}/>
             <${WAD_DropDown} style="width:104px"
-              OptionList=${['top-height', 'top-bottom', 'height-bottom']}
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Anchors[1]))}
+              Options=${['top-height', 'top-bottom', 'height-bottom']}
               onInput=${(Event) => doConfigureSelectedWidgets('Anchors_1', Event.target.value)}
             />
               <div style="width:8px"/>
@@ -6311,6 +6311,29 @@ function WAD_WidgetConfigurationPane() {
           `}
 
           ${(commonType === 'TabStrip') && html `
+
+          `}          ${(commonType === 'FlatListView') && html `
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
+                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Selection Limit</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.SelectionLimit))}
+                Minimum=${0}
+                onInput=${(Event) => doConfigureSelectedWidgets('SelectionLimit', parseFloat(Event.target.value))}
+              />
+            </>
+
 
           `}
           <${WAD_horizontally}>
