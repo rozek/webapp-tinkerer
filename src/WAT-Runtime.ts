@@ -1192,6 +1192,12 @@
     return (ValueIsURL(Value) ? Value : Default)
   }
 
+/**** acceptableName ****/
+
+  export function acceptableName (Value:any, Default:WAT_Name):WAT_Name {
+    return (ValueIsName(Value) ? Value : Default)
+  }
+
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -2434,6 +2440,9 @@
 //------------------------------------------------------------------------------
 
   export class WAT_Applet extends WAT_Visual {
+    protected _Width:number  = -1            // used by the "WAT Applet Manager"
+    protected _Height:number = -1                                        // dto.
+
     public constructor () {
       super(undefined)
     }
@@ -3244,6 +3253,11 @@
       if ((Serialization.activeScript || '').trim() === '') {
         delete Serialization.activeScript
       }
+
+    /**** additional properties used by the "WAT Applet Manager" ****/
+
+      if (ValueIsOrdinal(this._Width))  { Serialization._Width  = this._Width }
+      if (ValueIsOrdinal(this._Height)) { Serialization._Height = this._Height }
     }
 
   /**** _deserializeConfigurationFrom ****/
@@ -3269,6 +3283,11 @@
         'Name',
         'SnapToGrid','GridWidth','GridHeight',
       ].forEach((Name:string) => deserializeProperty(Name))
+
+    /**** additional properties used by the "WAT Applet Manager" ****/
+
+      if (ValueIsOrdinal(Serialization._Width))  { this._Width  = Serialization._Width  as number }
+      if (ValueIsOrdinal(Serialization._Height)) { this._Height = Serialization._Height as number }
     }
 
   /**** deserializedFrom ****/
@@ -9588,7 +9607,7 @@
         ${Applet.isAttached ? html`
           ${broken === '' ? Applet.Rendering() : ErrorRenderingFor(Applet)}
           ${visitedPage == null
-            ? html`<div class="WAT centered"><div>(no page to show)</div></div>`
+            ? html`<div class="WAT centered" style="width:100%; height:100%"><div>(no page to show)</div></div>`
             : html`<${WAT_PageView} Page=${visitedPage}/>`
           }
         ` : '' }
@@ -10249,17 +10268,29 @@
   async function startWAT ():Promise<void> {
     console.log('starting WebApp Tinkerer Runtime...')
 
-    let SerializationElement = document.querySelector('script[type="wat/applet"]')
+  /**** find rendering target (with applet name) ****/
+
+    let AppletElement = document.body.querySelector('div[type="wat/applet"]')
+    if (AppletElement == null) {
+      AppletElement = document.createElement('div')
+        AppletElement.setAttribute('type','wat/applet')
+        AppletElement.classList.add('fullscreen')
+      document.body.appendChild(AppletElement)
+    }
+
+    let AppletName = acceptableName(AppletElement.getAttribute('name'),'WAT-Applet')
 
   /**** deserialize applet ****/
 
+    let SerializationElement = document.querySelector('script[type="wat/applet"]')
+
     let Applet:WAT_Applet|undefined = undefined
-      let Serialization = await AppletStore.getItem('WAT-Applet')
+      let Serialization = await AppletStore.getItem(AppletName)
       if (Serialization != null) {
         try {
           Applet = WAT_Applet.deserializedFrom(Serialization)
         } catch (Signal:any) {
-          console.error('could not deserialize applet from backup', Signal)
+          console.error(`could not deserialize applet ${quoted(AppletName)} from backup`, Signal)
         }
       }
 
@@ -10267,13 +10298,14 @@
         try {
           Applet = WAT_Applet.deserializedFrom(SerializationElement.textContent || '')
         } catch (Signal:any) {
-          console.error('could not deserialize applet', Signal)
+          console.error(`could not deserialize applet ${quoted(AppletName)}`, Signal)
         }
       }
     if (Applet == null) {
       Applet = WAT_Applet.deserializedFrom('{"PageList":[]}')
     }
 
+    (Applet as Indexable)._Name = AppletName
     if (Applet.visitedPage == null) {
       Applet.visitPage(Applet.PageList[0])
     }
@@ -10289,15 +10321,7 @@
 
   /**** finally render the applet ****/
 
-    let AppletElement = document.body.querySelector('div[type="wat/applet"]')
-    if (AppletElement == null) {
-      AppletElement = document.createElement('div')
-        AppletElement.setAttribute('type','wat/applet')
-        AppletElement.classList.add('fullscreen')
-      document.body.appendChild(AppletElement)
-    }
     AppletElement.innerHTML = ''
-
     render(html`<${WAT_combinedView} Applet=${Applet}/>`,AppletElement)
 
   /**** rerender whenever window is changed ****/
