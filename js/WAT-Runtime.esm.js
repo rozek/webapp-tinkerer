@@ -3107,6 +3107,13 @@ export class WAT_Widget extends WAT_Visual {
             writable: true,
             value: void 0
         });
+        /**** onDblClick ****/
+        Object.defineProperty(this, "_onDblClick", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** onInput ****/
         Object.defineProperty(this, "_onInput", {
             enumerable: true,
@@ -3445,30 +3452,143 @@ export class WAT_Widget extends WAT_Visual {
             this.rerender();
         }
     }
-    get onFocus() { return this._onFocus; }
+    get onFocus() { return this._onFocus_; }
     set onFocus(newCallback) {
-        expectFunction('"focus" event handler', newCallback);
+        allowFunction('"onFocus" callback', newCallback);
         this._onFocus = newCallback;
     }
-    get onBlur() { return this._onBlur; }
+    _onFocus_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onFocus != null) {
+                    this._onFocus.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onFocus" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onFocus = newCallback;
+        }
+    }
+    get onBlur() { return this._onBlur_; }
     set onBlur(newCallback) {
-        expectFunction('"blur" event handler', newCallback);
+        allowFunction('"onBlur" callback', newCallback);
         this._onBlur = newCallback;
     }
-    get onClick() { return this._onClick; }
+    _onBlur_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onBlur != null) {
+                    this._onBlur.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onBlur" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onBlur = newCallback;
+        }
+    }
+    get onClick() { return this._onClick_; }
     set onClick(newCallback) {
-        expectFunction('"click" event handler', newCallback);
+        allowFunction('"onClick" callback', newCallback);
         this._onClick = newCallback;
     }
-    get onInput() { return this._onInput; }
+    _onClick_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onClick != null) {
+                    this._onClick.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onClick" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onClick = newCallback;
+        }
+    }
+    get onDblClick() { return this._onDblClick_; }
+    set onDblClick(newCallback) {
+        allowFunction('"onDblClick" callback', newCallback);
+        this._onDblClick = newCallback;
+    }
+    _onDblClick_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onDblClick != null) {
+                    this._onDblClick.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onDblClick" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onDblClick = newCallback;
+        }
+    }
+    get onInput() { return this._onInput_; }
     set onInput(newCallback) {
-        expectFunction('"input" event handler', newCallback);
+        allowFunction('"onInput" callback', newCallback);
         this._onInput = newCallback;
     }
-    get onDrop() { return this._onDrop; }
+    _onInput_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onInput != null) {
+                    this._onInput.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onInput" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onInput = newCallback;
+        }
+    }
+    get onDrop() { return this._onDrop_; }
     set onDrop(newCallback) {
-        expectFunction('"drop" event handler', newCallback);
+        allowFunction('"onDrop" callback', newCallback);
         this._onDrop = newCallback;
+    }
+    _onDrop_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onDrop != null) {
+                    this._onDrop.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onDrop" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onDrop = newCallback;
+        }
     }
     /**** rerender ****/
     rerender() {
@@ -8472,26 +8592,355 @@ appendStyle(`
   .WAT.Widget > .WAT.AccordionFold {
   }
   `);
-/**** flatListView ****/
-export class WAT_flatListView extends WAT_Widget {
+/**** FlatListView ****/
+export class WAT_FlatListView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        /**** Placeholder ****/
+        Object.defineProperty(this, "_Placeholder", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** List ****/
+        Object.defineProperty(this, "_List", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        /**** ItemRenderer ****/
+        Object.defineProperty(this, "_ItemRenderer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** SelectionLimit ****/
+        Object.defineProperty(this, "_SelectionLimit", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** selectedIndices ****/
+        Object.defineProperty(this, "_selectedIndices", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        /**** onSelectionChange ****/
+        Object.defineProperty(this, "_onSelectionChange", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** onItemSelected ****/
+        Object.defineProperty(this, "_onItemSelected", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** onItemDeselected ****/
+        Object.defineProperty(this, "_onItemDeselected", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: () => {
-                return html `<div class="WAT Content flatListView">${this.Value}</div>`;
+            value: (PropSet) => {
+                let List = acceptableList(this._List, []);
+                let ItemRenderer = acceptableOptionalFunction(this._ItemRenderer);
+                let Placeholder = acceptableTextline(this._Placeholder, '(empty)');
+                let selectedIndices = acceptableListSatisfying(this._selectedIndices, [], ValueIsOrdinal);
+                let SelectionLimit = acceptableOrdinal(this._SelectionLimit, 1);
+                let onClick = acceptableOptionalFunction(this._onClick);
+                let onDblClick = acceptableOptionalFunction(this._onDblClick);
+                let onSelectionChange = acceptableOptionalFunction(this._onSelectionChange);
+                let onItemSelected = acceptableOptionalFunction(this._onItemSelected);
+                let onItemDeselected = acceptableOptionalFunction(this._onItemDeselected);
+                if (ItemRenderer == null) {
+                    ItemRenderer = (Item) => html `${Item + ''}`;
+                }
+                const selectedIndexSet = Object.create(null);
+                selectedIndices = selectedIndices.filter((selectedIndex) => {
+                    if ((selectedIndex < List.length) &&
+                        !(selectedIndex in selectedIndexSet)) {
+                        selectedIndexSet[selectedIndex] = true;
+                        return true;
+                    }
+                    else {
+                        return false;
+                    }
+                });
+                if (selectedIndices.length > SelectionLimit) {
+                    const deselectedIndices = selectedIndices.slice(SelectionLimit);
+                    selectedIndices.length = SelectionLimit;
+                    if (onSelectionChange != null) {
+                        onSelectionChange(selectedIndices);
+                    }
+                    if (onItemDeselected != null) {
+                        deselectedIndices.forEach((deselectedIndex) => {
+                            onItemDeselected(List[deselectedIndex], deselectedIndex);
+                        });
+                    }
+                }
+                function _onClick(Event, Index) {
+                    Event.stopImmediatePropagation();
+                    Event.preventDefault();
+                    if (SelectionLimit === 0) {
+                        return;
+                    }
+                    let SelectionChanged = false;
+                    let IndicesToSelect, IndicesToDeselect;
+                    if (Event.shiftKey || Event.metaKey) {
+                        SelectionChanged = true;
+                        if (ItemIsSelected(Index)) {
+                            IndicesToDeselect = [Index];
+                            selectedIndices = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
+                        }
+                        else {
+                            if (selectedIndices.length === SelectionLimit) {
+                                IndicesToDeselect = [selectedIndices.shift()];
+                            }
+                            IndicesToSelect = [Index];
+                            selectedIndices.push(Index);
+                        }
+                    }
+                    else {
+                        IndicesToDeselect = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
+                        SelectionChanged = !ItemIsSelected(Index);
+                        IndicesToSelect = (SelectionChanged ? [Index] : []);
+                        selectedIndices = [Index];
+                    }
+                    if (SelectionChanged && (onSelectionChange != null)) {
+                        onSelectionChange(selectedIndices);
+                    }
+                    // @ts-ignore TS2454 let's check IF variables were assigned
+                    if ((IndicesToDeselect != null) && (onItemDeselected != null)) {
+                        IndicesToDeselect.forEach((deselectedIndex) => {
+                            onItemDeselected(List[deselectedIndex], deselectedIndex);
+                        });
+                    }
+                    // @ts-ignore TS2454 let's check IF variables were assigned
+                    if ((IndicesToSelect != null) && (onItemSelected != null)) {
+                        IndicesToSelect.forEach((selectedIndex) => {
+                            onItemSelected(List[selectedIndex], selectedIndex);
+                        });
+                    }
+                    if (onClick != null) {
+                        onClick(Event, Index);
+                    }
+                }
+                function _onDblClick(Event, Index) {
+                    if (onDblClick != null) {
+                        onDblClick(Event, Index);
+                    }
+                }
+                function ItemIsSelected(Index) {
+                    return (Index in selectedIndexSet);
+                }
+                return html `<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView"
+        ...${PropSet}
+      >
+        ${List.length === 0
+                    ? html `<div class="Placeholder"><div>${Placeholder}</></>`
+                    : List.map((Item, Index) => html `<div
+              class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
+              dangerouslySetInnerHTML=${{
+                        __html: ItemRenderer(Item, Index, ItemIsSelected(Index))
+                    }}
+              onClick=${(Event) => _onClick(Event, Index)}
+              onDblClick=${(Event) => _onDblClick(Event, Index)}
+            />`)}
+      </>`;
             }
         });
     }
-    get Type() { return 'flatListView'; }
+    get Type() { return 'FlatListView'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    get Placeholder() { return this._Placeholder; }
+    set Placeholder(newSetting) {
+        allowTextline('placeholder', newSetting);
+        if (this._Placeholder !== newSetting) {
+            this._Placeholder = newSetting;
+            this.rerender();
+        }
+    }
+    get List() { return this._List.slice(); }
+    set List(newList) {
+        expectList('list', newList);
+        if (ValuesDiffer(this._List, newList)) {
+            this._List = newList.slice();
+            this.rerender();
+        }
+    }
+    get ItemRenderer() { return this._ItemRenderer; }
+    set ItemRenderer(newCallback) {
+        expectFunction('list item rendering callback', newCallback);
+        this._ItemRenderer = newCallback;
+    }
+    get SelectionLimit() { return this._SelectionLimit; }
+    set SelectionLimit(newSetting) {
+        allowOrdinal('selection limit', newSetting);
+        if (this._SelectionLimit !== newSetting) {
+            this._SelectionLimit = newSetting;
+            this.rerender();
+        }
+    }
+    get selectedIndices() {
+        return this._selectedIndices.slice();
+    }
+    set selectedIndices(newList) {
+        expectListSatisfying('indicies of selected list elements', newList, ValueIsOrdinal);
+        if (ValuesDiffer(this._selectedIndices, newList)) {
+            const selectedIndexSet = Object.create(null);
+            this._selectedIndices = newList.filter((selectedIndex) => {
+                if ((selectedIndex < this._List.length) &&
+                    !(selectedIndex in selectedIndexSet)) {
+                    selectedIndexSet[selectedIndex] = true;
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
+            this.rerender();
+        }
+    }
+    get onSelectionChange() { return this._onSelectionChange_; }
+    set onSelectionChange(newCallback) {
+        allowFunction('"onSelectionChange" callback', newCallback);
+        this._onSelectionChange = newCallback;
+    }
+    _onSelectionChange_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onSelectionChange != null) {
+                    this._onSelectionChange.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onSelectionChange" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onSelectionChange = newCallback;
+        }
+    }
+    get onItemSelected() { return this._onItemSelected_; }
+    set onItemSelected(newCallback) {
+        allowFunction('"onItemSelected" callback', newCallback);
+        this._onItemSelected = newCallback;
+    }
+    _onItemSelected_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onItemSelected != null) {
+                    this._onItemSelected.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onItemSelected" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onItemSelected = newCallback;
+        }
+    }
+    get onItemDeselected() { return this._onItemDeselected_; }
+    set onItemDeselected(newCallback) {
+        allowFunction('"onItemDeselected" callback', newCallback);
+        this._onItemDeselected = newCallback;
+    }
+    _onItemDeselected_(newCallback) {
+        if (newCallback == null) { // callback invocation
+            try {
+                if (this._onItemDeselected != null) {
+                    this._onItemDeselected.call(this);
+                }
+            }
+            catch (Signal) {
+                setErrorReport(this, {
+                    Type: '"onItemDeselected" Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+        else { // definition invocation
+            this._onItemDeselected = newCallback;
+        }
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'Placeholder', 'SelectionLimit',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
+        this._SelectionLimit = acceptableOptionalOrdinal(Serialization.SelectionLimit);
+    }
 }
-builtInWidgetTypes['flatListView'] = WAT_flatListView;
+builtInWidgetTypes['FlatListView'] = WAT_FlatListView;
 appendStyle(`
-  .WAT.Widget > .WAT.flatListView {
+/**** FlatListView ****/
+
+  .WAT.Widget > .WAT.FlatListView {
+    display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
+    overflow:scroll; overflow-x:auto; overflow-y:scroll;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff; padding:0px 2px 0px 4px;
+  }
+
+  .WAT.Widget > .WAT.FlatListView.empty {
+    overflow:hidden;
+    background-color:#EEEEEE;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.Placeholder {
+    display:flex; position:relative;
+      flex-flow:column nowrap; align-items:center; justify-content:center;
+    width:100%; height:100%;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.Placeholder > * {
+    position:relative;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.ListItem {
+    display:block; position:relative; overflow:hidden; flex:0 0 auto;
+    left:0px; top:0px; width:auto; height:22px; line-height:22px;
+    background:none;
+    border:none; border-bottom:solid 1px lightgray;
+    white-space:nowrap; text-overflow:ellipsis;
+    user-select:none; pointer-events:auto;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.ListItem:last-child {
+    border:none; border-bottom:solid 1px transparent;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.ListItem.selected {
+    background:dodgerblue; color:white;
   }
   `);
 /**** nestedListView ****/
