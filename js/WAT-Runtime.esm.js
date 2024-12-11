@@ -216,6 +216,7 @@ const expectIncompleteGeometry = ValidatorForClassifier(ValueIsIncompleteGeometr
 /**** ValueIsTextDecoration ****/
 export function ValueIsTextDecoration(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
+        ValueIsBoolean(Value.isActive) &&
         ValueIsOneOf(Value.Line, WAT_TextDecorationLines) &&
         ((Value.Color == null) || ValueIsColor(Value.Color)) &&
         ((Value.Style == null) || ValueIsOneOf(Value.Style, WAT_TextDecorationStyles)) &&
@@ -486,7 +487,6 @@ appendStyle(`
     pointer-events:auto;
   }
 
-
 /**** "broken" and Error Indicator ****/
 
   .WAT.broken {
@@ -500,7 +500,6 @@ appendStyle(`
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
   }
-
 
 /**** common Settings ****/
 
@@ -1281,8 +1280,8 @@ export class WAT_Visual {
                 this._TextDecoration = undefined;
             }
             else {
-                const { Line, Color, Style, Thickness } = newTextDecoration;
-                this._TextDecoration = { Line, Color, Style, Thickness };
+                const { isActive, Line, Color, Style, Thickness } = newTextDecoration;
+                this._TextDecoration = { isActive, Line, Color, Style, Thickness };
             }
             this.rerender();
         }
@@ -1675,10 +1674,15 @@ export class WAT_Visual {
             CSSStyleList.push(`font-style:${FontStyle}`);
         }
         if (TextDecoration != null) {
-            CSSStyleList.push('text-decoration:' + TextDecoration.Line +
-                (TextDecoration.Color == null ? '' : ' ' + TextDecoration.Color) +
-                (TextDecoration.Style == null ? '' : ' ' + TextDecoration.Style) +
-                (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
+            if (TextDecoration.isActive) {
+                CSSStyleList.push('text-decoration:' + TextDecoration.Line +
+                    (TextDecoration.Color == null ? '' : ' ' + TextDecoration.Color) +
+                    (TextDecoration.Style == null ? '' : ' ' + TextDecoration.Style) +
+                    (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px'));
+            }
+            else {
+                CSSStyleList.push('text-decoration:none');
+            }
         }
         if (TextShadow != null) {
             if (TextShadow.isActive) {
@@ -2963,7 +2967,8 @@ export class WAT_Page extends WAT_Visual {
             }
             this.WidgetDeserializedAt(WidgetSerialization.Type, WidgetSerialization, Index);
         });
-    } /**** recursivelyActivateAllScripts ****/
+    }
+    /**** recursivelyActivateAllScripts ****/
     recursivelyActivateAllScripts() {
         this.activateScript();
         this._WidgetList.forEach((Widget) => Widget.activateScript());
@@ -5058,7 +5063,6 @@ export class WAT_Slider extends WAT_Widget {
             writable: true,
             value: void 0
         });
-        /**** Hashmarks ****/
         Object.defineProperty(this, "_Hashmarks", {
             enumerable: true,
             configurable: true,
@@ -5145,7 +5149,7 @@ export class WAT_Slider extends WAT_Widget {
             this._Maximum = newSetting;
             this.rerender();
         }
-    }
+    } /**** Hashmarks ****/
     get Hashmarks() {
         return (this._Hashmarks == null ? this._Hashmarks : this._Hashmarks.slice());
     }
@@ -8807,8 +8811,7 @@ class WAT_DialogView extends Component {
         }
         // @ts-ignore TS5905 all variables will be assigned by now
         return { x, y, Width, Height };
-    }
-    /**** dialog dragging and resizing ****/
+    } /**** dialog dragging and resizing ****/
     _handleDrag(dx, dy) {
         if (this._DragInfo.Mode === 'drag') {
             this._moveDialog(dx, dy);
@@ -8876,7 +8879,7 @@ class WAT_DialogView extends Component {
         const { Applet, Dialog } = PropSet;
         this._Applet = Applet;
         this._Dialog = Dialog;
-        const { Name, SourceWidgetPath, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, } = Dialog;
+        const { SourceWidgetPath, Title, isClosable, isDraggable, isResizable, x, y, Width, Height, } = Dialog;
         const hasTitlebar = (Title != null) || isDraggable || isClosable;
         const resizable = (isResizable ? 'resizable' : '');
         const withTitlebar = (hasTitlebar ? 'withTitlebar' : '');
