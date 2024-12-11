@@ -2301,7 +2301,7 @@
       this._onMount = newCallback
     }
 
-    protected _onMount_ (newCallback:Function|undefined):void {
+    protected _onMount_ (newCallback?:Function):void {
       if (newCallback == null) {                          // callback invocation
         try {
           if (this._onMount != null) { this._onMount.call(this) }
@@ -2313,6 +2313,7 @@
         }
       } else {                                          // definition invocation
         this._onMount = newCallback
+        if (this.isMounted) { this._onMount_() }
       }
     }
 
@@ -2326,7 +2327,7 @@
       this._onUnmount = newCallback
     }
 
-    protected _onUnmount_ (newCallback:Function|undefined):void {
+    protected _onUnmount_ (newCallback?:Function):void {
       if (newCallback == null) {                          // callback invocation
         try {
           if (this._onUnmount != null) { this._onUnmount.call(this) }
@@ -2338,6 +2339,7 @@
         }
       } else {                                          // definition invocation
         this._onUnmount = newCallback
+//      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
       }
     }
 
@@ -10705,6 +10707,10 @@
 
     let AppletName = acceptableName(AppletElement.getAttribute('name'),'WAT-Applet')
 
+  /**** read applet script - if stored separately ****/
+
+    let ScriptElement = document.querySelector('script[type="wat/applet-script"]')
+
   /**** deserialize applet ****/
 
     let SerializationElement = document.querySelector('script[type="wat/applet"]')
@@ -10720,29 +10726,25 @@
       }
 
       if ((Applet == null) && (SerializationElement != null)) {
+        Serialization = SerializationElement.textContent || ''
+        if (ScriptElement != null) {
+          Serialization.activeScript = ScriptElement.textContent || ''
+        }
+
         try {
-          Applet = WAT_Applet.deserializedFrom(SerializationElement.textContent || '')
+          Applet = WAT_Applet.deserializedFrom(Serialization)
         } catch (Signal:any) {
           console.error(`could not deserialize applet ${quoted(AppletName)}`, Signal)
         }
       }
     if (Applet == null) {
-      Applet = WAT_Applet.deserializedFrom('{"PageList":[]}')
+      Applet = WAT_Applet.deserializedFrom('{"PageList":[{ WidgetList:[] }]}')
     }
 
     (Applet as Indexable)._Name = AppletName
     if (Applet.visitedPage == null) {
       Applet.visitPage(Applet.PageList[0])
     }
-
-  /**** read and activate applet script - if stored separately ****/
-
-    let ScriptElement = document.querySelector('script[type="wat/applet-script"]')
-    if (ScriptElement != null) {
-      Applet.activeScript = ScriptElement.textContent || ''
-    }
-
-    Applet.activateScript()
 
   /**** finally render the applet ****/
 
