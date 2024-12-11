@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -1883,12 +1883,18 @@ export class WAT_Visual {
 export class WAT_Applet extends WAT_Visual {
     constructor() {
         super(undefined);
+        Object.defineProperty(this, "_fullScreen", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        }); // used by the "WAT Applet Manager"
         Object.defineProperty(this, "_Width", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: -1
-        }); // used by the "WAT Applet Manager"
+        }); // dto.
         Object.defineProperty(this, "_Height", {
             enumerable: true,
             configurable: true,
@@ -2584,12 +2590,10 @@ export class WAT_Applet extends WAT_Visual {
             delete Serialization.activeScript;
         }
         /**** additional properties used by the "WAT Applet Manager" ****/
-        if (ValueIsOrdinal(this._Width)) {
-            Serialization._Width = this._Width;
-        }
-        if (ValueIsOrdinal(this._Height)) {
-            Serialization._Height = this._Height;
-        }
+        ;
+        [
+            'fullScreen', 'Width', 'Height',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -2611,11 +2615,14 @@ export class WAT_Applet extends WAT_Visual {
             'SnapToGrid', 'GridWidth', 'GridHeight',
         ].forEach((Name) => deserializeProperty(Name));
         /**** additional properties used by the "WAT Applet Manager" ****/
-        if (ValueIsOrdinal(Serialization._Width)) {
-            this._Width = Serialization._Width;
+        if (ValueIsBoolean(Serialization.fullScreen)) {
+            this._fullScreen = Serialization.fullScreen;
         }
-        if (ValueIsOrdinal(Serialization._Height)) {
-            this._Height = Serialization._Height;
+        if (ValueIsCardinal(Serialization.Width)) {
+            this._Width = Serialization.Width;
+        }
+        if (ValueIsCardinal(Serialization.Height)) {
+            this._Height = Serialization.Height;
         }
     }
     /**** deserializedFrom ****/
