@@ -677,6 +677,10 @@ export function acceptablePhoneNumber(Value, Default) {
 export function acceptableURL(Value, Default) {
     return (ValueIsURL(Value) ? Value : Default);
 }
+/**** acceptableName ****/
+export function acceptableName(Value, Default) {
+    return (ValueIsName(Value) ? Value : Default);
+}
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -1879,6 +1883,18 @@ export class WAT_Visual {
 export class WAT_Applet extends WAT_Visual {
     constructor() {
         super(undefined);
+        Object.defineProperty(this, "_Width", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: -1
+        }); // used by the "WAT Applet Manager"
+        Object.defineProperty(this, "_Height", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: -1
+        }); // dto.
         /**** SnapToGrid ****/
         Object.defineProperty(this, "_SnapToGrid", {
             enumerable: true,
@@ -2567,6 +2583,13 @@ export class WAT_Applet extends WAT_Visual {
         if ((Serialization.activeScript || '').trim() === '') {
             delete Serialization.activeScript;
         }
+        /**** additional properties used by the "WAT Applet Manager" ****/
+        if (ValueIsOrdinal(this._Width)) {
+            Serialization._Width = this._Width;
+        }
+        if (ValueIsOrdinal(this._Height)) {
+            Serialization._Height = this._Height;
+        }
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -2587,6 +2610,13 @@ export class WAT_Applet extends WAT_Visual {
             'Name',
             'SnapToGrid', 'GridWidth', 'GridHeight',
         ].forEach((Name) => deserializeProperty(Name));
+        /**** additional properties used by the "WAT Applet Manager" ****/
+        if (ValueIsOrdinal(Serialization._Width)) {
+            this._Width = Serialization._Width;
+        }
+        if (ValueIsOrdinal(Serialization._Height)) {
+            this._Height = Serialization._Height;
+        }
     }
     /**** deserializedFrom ****/
     static deserializedFrom(JSONString) {
@@ -8563,7 +8593,7 @@ class WAT_AppletView extends Component {
         ${Applet.isAttached ? html `
           ${broken === '' ? Applet.Rendering() : ErrorRenderingFor(Applet)}
           ${visitedPage == null
-            ? html `<div class="WAT centered"><div>(no page to show)</div></div>`
+            ? html `<div class="WAT centered" style="width:100%; height:100%"><div>(no page to show)</div></div>`
             : html `<${WAT_PageView} Page=${visitedPage}/>`}
         ` : ''}
       </div>
@@ -9133,16 +9163,25 @@ function startup() {
 /**** startWAT ****/
 async function startWAT() {
     console.log('starting WebApp Tinkerer Runtime...');
-    let SerializationElement = document.querySelector('script[type="wat/applet"]');
+    /**** find rendering target (with applet name) ****/
+    let AppletElement = document.body.querySelector('div[type="wat/applet"]');
+    if (AppletElement == null) {
+        AppletElement = document.createElement('div');
+        AppletElement.setAttribute('type', 'wat/applet');
+        AppletElement.classList.add('fullscreen');
+        document.body.appendChild(AppletElement);
+    }
+    let AppletName = acceptableName(AppletElement.getAttribute('name'), 'WAT-Applet');
     /**** deserialize applet ****/
+    let SerializationElement = document.querySelector('script[type="wat/applet"]');
     let Applet = undefined;
-    let Serialization = await AppletStore.getItem('WAT-Applet');
+    let Serialization = await AppletStore.getItem(AppletName);
     if (Serialization != null) {
         try {
             Applet = WAT_Applet.deserializedFrom(Serialization);
         }
         catch (Signal) {
-            console.error('could not deserialize applet from backup', Signal);
+            console.error(`could not deserialize applet ${quoted(AppletName)} from backup`, Signal);
         }
     }
     if ((Applet == null) && (SerializationElement != null)) {
@@ -9150,12 +9189,13 @@ async function startWAT() {
             Applet = WAT_Applet.deserializedFrom(SerializationElement.textContent || '');
         }
         catch (Signal) {
-            console.error('could not deserialize applet', Signal);
+            console.error(`could not deserialize applet ${quoted(AppletName)}`, Signal);
         }
     }
     if (Applet == null) {
         Applet = WAT_Applet.deserializedFrom('{"PageList":[]}');
     }
+    Applet._Name = AppletName;
     if (Applet.visitedPage == null) {
         Applet.visitPage(Applet.PageList[0]);
     }
@@ -9166,13 +9206,6 @@ async function startWAT() {
     }
     Applet.activateScript();
     /**** finally render the applet ****/
-    let AppletElement = document.body.querySelector('div[type="wat/applet"]');
-    if (AppletElement == null) {
-        AppletElement = document.createElement('div');
-        AppletElement.setAttribute('type', 'wat/applet');
-        AppletElement.classList.add('fullscreen');
-        document.body.appendChild(AppletElement);
-    }
     AppletElement.innerHTML = '';
     render(html `<${WAT_combinedView} Applet=${Applet}/>`, AppletElement);
     /**** rerender whenever window is changed ****/
