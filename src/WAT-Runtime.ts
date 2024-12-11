@@ -146,6 +146,7 @@
   export type  WAT_TextDecorationStyle  = typeof WAT_TextDecorationStyles[number]
 
   export type WAT_TextDecoration = {
+    isActive:  boolean,
     Line:      WAT_TextDecorationLine,
     Color?:    WAT_Color,           // "null" or "undefined" mean "currentColor"
     Style?:    WAT_TextDecorationStyle,
@@ -529,6 +530,7 @@
   export function ValueIsTextDecoration (Value:any):boolean {
     return (Value === 'none') || (
       ValueIsObject(Value) &&
+      ValueIsBoolean(Value.isActive) &&
       ValueIsOneOf(Value.Line, WAT_TextDecorationLines) &&
       ((Value.Color == null) || ValueIsColor(Value.Color)) &&
       ((Value.Style == null) || ValueIsOneOf(Value.Style,WAT_TextDecorationStyles)) &&
@@ -872,7 +874,6 @@
     pointer-events:auto;
   }
 
-
 /**** "broken" and Error Indicator ****/
 
   .WAT.broken {
@@ -886,7 +887,6 @@
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
   }
-
 
 /**** common Settings ****/
 
@@ -1681,8 +1681,8 @@
         if (newTextDecoration == null) {
           this._TextDecoration = undefined
         } else {
-          const { Line, Color, Style, Thickness } = newTextDecoration
-          this._TextDecoration = { Line, Color, Style, Thickness }
+          const { isActive, Line, Color, Style, Thickness } = newTextDecoration
+          this._TextDecoration = { isActive, Line, Color, Style, Thickness }
         }
         this.rerender()
       }
@@ -2217,11 +2217,15 @@
         if (FontStyle  != null) { CSSStyleList.push(`font-style:${FontStyle}`) }
 
         if (TextDecoration != null) {
-          CSSStyleList.push('text-decoration:' + TextDecoration.Line +
-            (TextDecoration.Color     == null ? '' : ' ' + TextDecoration.Color) +
-            (TextDecoration.Style     == null ? '' : ' ' + TextDecoration.Style) +
-            (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px')
-          )
+          if (TextDecoration.isActive) {
+            CSSStyleList.push('text-decoration:' + TextDecoration.Line +
+              (TextDecoration.Color     == null ? '' : ' ' + TextDecoration.Color) +
+              (TextDecoration.Style     == null ? '' : ' ' + TextDecoration.Style) +
+              (TextDecoration.Thickness == null ? '' : ' ' + TextDecoration.Thickness + 'px')
+            )
+          } else {
+            CSSStyleList.push('text-decoration:none')
+          }
         }
         if (TextShadow != null) {
           if (TextShadow.isActive) {
@@ -2521,7 +2525,7 @@
       expectPlainObject('widget name set',NameSet)
 
       const WidgetSet:Indexable = {}
-        for (const [PageName,NameList] of Object.entries(NameSet)) {
+        for (const [ PageName,NameList ] of Object.entries(NameSet)) {
           const Page:WAT_Page = this.existingPage(PageName)          // may fail
           NameList.forEach((WidgetName:WAT_Name) => {
             const Widget = Page.existingWidget(WidgetName)           // may fail
@@ -3294,8 +3298,6 @@
     public async preserve ():Promise<void> {
       await AppletStore.setItem('WAT-Applet',JSON.stringify(this.Serialization))
     }
-
-
   }
 
 //------------------------------------------------------------------------------
@@ -3766,7 +3768,9 @@
           )
         }
       )
-    }  /**** recursivelyActivateAllScripts ****/
+    }
+
+  /**** recursivelyActivateAllScripts ****/
 
     public recursivelyActivateAllScripts ():void {
       this.activateScript()
@@ -3775,8 +3779,6 @@
         (Widget:WAT_Widget) => Widget.activateScript()
       )
     }
-
-
   }
 
 //------------------------------------------------------------------------------
@@ -5829,9 +5831,6 @@
         this.rerender()
       }
     }
-
-
-
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
@@ -5895,8 +5894,6 @@
         this.rerender()
       }
     }
-
-
 
   /**** _serializeConfigurationInto ****/
 
@@ -5993,9 +5990,7 @@
         this._Maximum = newSetting
         this.rerender()
       }
-    }
-
-  /**** Hashmarks ****/
+    }  /**** Hashmarks ****/
 
     protected _Hashmarks:(number|string)[]|undefined
 
@@ -6384,7 +6379,6 @@
         this.rerender()
       }
     }
-
 
 
   /**** _serializeConfigurationInto ****/
@@ -8151,8 +8145,6 @@
       }
     }
 
-
-
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
@@ -8285,8 +8277,6 @@
       }
     }
 
-
-
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
@@ -8392,8 +8382,6 @@
         this.rerender()
       }
     }
-
-
 
   /**** _serializeConfigurationInto ****/
 
@@ -8603,7 +8591,7 @@
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      const { Value, Enabling } = this as Indexable
+      const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
@@ -9043,7 +9031,6 @@
     }
 
 
-
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
@@ -9170,8 +9157,6 @@
     public get isActive ():boolean              { return this.Activation }
     public set isActive (newActivation:boolean) { this.Activation = newActivation }
 
-
-
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -9235,8 +9220,6 @@
 
     public get isActive ():boolean              { return this.Activation }
     public set isActive (newActivation:boolean) { this.Activation = newActivation }
-
-
 
   /**** Renderer ****/
 
@@ -9380,7 +9363,6 @@
 // @ts-ignore TS5905 all variables will be assigned by now
       return { x,y, Width,Height }
     }
-
 
   /**** _releaseWidgets ****/
 
@@ -9865,8 +9847,7 @@
         }
 // @ts-ignore TS5905 all variables will be assigned by now
       return { x,y, Width,Height }
-    }
-  /**** dialog dragging and resizing ****/
+    }  /**** dialog dragging and resizing ****/
 
     protected _handleDrag (dx:number,dy:number):void {
       if (this._DragInfo.Mode === 'drag') {
@@ -9948,9 +9929,9 @@
         this._Applet = Applet
         this._Dialog = Dialog
       const {
-        Name, SourceWidgetPath,
-        Title, isModal, isClosable, isDraggable, isResizable,
-        x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
+        SourceWidgetPath,
+        Title, isClosable, isDraggable, isResizable,
+        x,y, Width,Height,
       } = Dialog
 
       const hasTitlebar = (Title != null) || isDraggable || isClosable
@@ -10155,7 +10136,6 @@
 // @ts-ignore TS5905 all variables will be assigned by now
       return { x,y, Width,Height }
     }
-
 
   /**** render ****/
 
