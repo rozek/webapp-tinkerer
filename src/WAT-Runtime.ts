@@ -15,7 +15,7 @@
     ValuesDiffer,
     ValueIsBoolean,
     ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange,
-      ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal,
+      ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal,
     ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline,
     ValueIsObject, ValueIsPlainObject,
     ValueIsList, ValueIsListSatisfying,
@@ -2440,8 +2440,9 @@
 //------------------------------------------------------------------------------
 
   export class WAT_Applet extends WAT_Visual {
-    protected _Width:number  = -1            // used by the "WAT Applet Manager"
-    protected _Height:number = -1                                        // dto.
+    protected _fullScreen:boolean = false    // used by the "WAT Applet Manager"
+    protected _Width:number       = -1                                   // dto.
+    protected _Height:number      = -1                                   // dto.
 
     public constructor () {
       super(undefined)
@@ -3256,8 +3257,9 @@
 
     /**** additional properties used by the "WAT Applet Manager" ****/
 
-      if (ValueIsOrdinal(this._Width))  { Serialization._Width  = this._Width }
-      if (ValueIsOrdinal(this._Height)) { Serialization._Height = this._Height }
+      ;[
+        'fullScreen','Width','Height',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
     }
 
   /**** _deserializeConfigurationFrom ****/
@@ -3286,8 +3288,9 @@
 
     /**** additional properties used by the "WAT Applet Manager" ****/
 
-      if (ValueIsOrdinal(Serialization._Width))  { this._Width  = Serialization._Width  as number }
-      if (ValueIsOrdinal(Serialization._Height)) { this._Height = Serialization._Height as number }
+      if (ValueIsBoolean (Serialization.fullScreen)) { this._fullScreen = Serialization.fullScreen as boolean }
+      if (ValueIsCardinal(Serialization.Width))      { this._Width      = Serialization.Width      as number }
+      if (ValueIsCardinal(Serialization.Height))     { this._Height     = Serialization.Height     as number }
     }
 
   /**** deserializedFrom ****/
