@@ -16,15 +16,12 @@
     ValueIsOrdinal,
     ValueIsText,
     ValueIsPlainObject,
-    ValueIsList, ValueIsListSatisfying,
-    ValueIsFunction,
+    ValueIsListSatisfying,
     allowOrdinal,
     allowTextline,
-    expectPlainObject,
     expectList, allowListSatisfying,
     allowFunction,
   } from 'javascript-interface-library'
-  import * as JIL from 'javascript-interface-library'
 
   import Conversion from 'svelte-coordinate-conversion'
   const { fromViewportTo } = Conversion
@@ -33,9 +30,6 @@
     render, html, Component,
     useState, useRef, useEffect, useMemo, useCallback,
   } from 'htm/preact'
-
-  import hyperactiv from 'hyperactiv'
-  const { observe, computed, dispose } = hyperactiv
 
   import { customAlphabet }   from 'nanoid'
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
@@ -497,8 +491,6 @@
     color:red;
   }
 
-
-
 /**** InspectorPane ****/
 
   .WAD.InspectorPane {
@@ -574,8 +566,6 @@
     border-left:dotted 1px orangered;
     pointer-events:none;
   }
-
-
 
 
 `.trimLeft())
@@ -994,7 +984,6 @@
           >${ErrorReport.Type}: ${ErrorReport.Message}</>`
     }
   }
-
 
 //------------------------------------------------------------------------------
 //--                   WAD_horizontally/vertically/centered                   --
@@ -2954,7 +2943,7 @@
 /**** doVisitSelectedPage ****/
 
   function doVisitSelectedPage ():void {
-    const { Applet,selectedPages } = DesignerState
+    const { selectedPages } = DesignerState
     visitPage(selectedPages[selectedPages.length-1])
   }
 
@@ -5121,6 +5110,99 @@ console.error(Signal)
           </>
 
           <${WAD_horizontally}>
+            <${WAD_Label}>Text Decoration</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration),'isActive')}
+              onInput=${(Event:Indexable) => {
+                const { isActive, Line, Color, Style, Thickness } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration
+                    || { isActive:false, Line:'none', Color:'black', Style:'solid', Thickness:1 }
+                  ))
+                )
+                doConfigureSelectedWidgets('TextDecoration',{
+                  isActive:Event.target.checked, Line, Color, Style, Thickness
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Line</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration),'Line')}
+              Options=${WAT_TextDecorationLines}
+              onInput=${(Event:Indexable) => {
+                const { isActive, Line, Color, Style, Thickness } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration
+                    || { isActive:false, Line:'none', Color:'black', Style:'solid', Thickness:1 }
+                  ))
+                )
+                doConfigureSelectedWidgets('TextDecoration',{
+                  isActive, Line:Event.target.value, Color, Style, Thickness
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Color</>
+            <${WAD_Gap}/>
+            <${WAD_ColorInput}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration),'Color')}
+              onInput=${(Event:Indexable) => {
+                const { isActive, Line, Color, Style, Thickness } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration
+                    || { isActive:false, Line:'none', Color:'black', Style:'solid', Thickness:1 }
+                  ))
+                )
+                doConfigureSelectedWidgets('TextDecoration',{
+                  isActive, Line, Color:Event.target.value, Style, Thickness
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Style</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration),'Style')}
+              Options=${WAT_TextDecorationStyles}
+              onInput=${(Event:Indexable) => {
+                const { isActive, Line, Color, Style, Thickness } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration
+                    || { isActive:false, Line:'none', Color:'black', Style:'solid', Thickness:1 }
+                  ))
+                )
+                doConfigureSelectedWidgets('TextDecoration',{
+                  isActive, Line, Color, Style:Event.target.value, Thickness
+                })
+              }}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">Thickness [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration),'Thickness')}
+              onInput=${(Event:Indexable) => {
+                const { isActive, Line, Color, Style, Thickness } = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextDecoration
+                    || { isActive:false, Line:'none', Color:'black', Style:'solid', Thickness:1 }
+                  ))
+                )
+                doConfigureSelectedWidgets('TextDecoration',{
+                  isActive, Line, Color, Style, Thickness:parseFloat(Event.target.value)
+                })
+              }}
+            />
+          </>
+
+          <${WAD_horizontally}>
             <${WAD_Label}>Text Shadow</>
             <${WAD_Gap}/>
             <${WAD_Checkbox}
@@ -5128,8 +5210,9 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow),'isActive')}
               onInput=${(Event:Indexable) => {
                 const { isActive, xOffset,yOffset, BlurRadius, Color } = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow))
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow
                     || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                  ))
                 )
                 doConfigureSelectedWidgets('TextShadow',{
                   isActive:Event.target.checked, xOffset,yOffset, BlurRadius, Color
@@ -5145,8 +5228,9 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow),'Color')}
               onInput=${(Event:Indexable) => {
                 const { isActive, xOffset,yOffset, BlurRadius, Color } = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow))
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow
                     || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                  ))
                 )
                 doConfigureSelectedWidgets('TextShadow',{
                   isActive, xOffset,yOffset, BlurRadius, Color:Event.target.value
@@ -5162,8 +5246,9 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow),'xOffset')}
               onInput=${(Event:Indexable) => {
                 const { isActive, xOffset,yOffset, BlurRadius, Color } = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow))
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow
                     || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                  ))
                 )
                 doConfigureSelectedWidgets('TextShadow',{
                   isActive, xOffset:parseFloat(Event.target.value),yOffset, BlurRadius, Color
@@ -5176,8 +5261,9 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow),'yOffset')}
               onInput=${(Event:Indexable) => {
                 const { isActive, xOffset,yOffset, BlurRadius, Color } = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow))
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow
                    || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                 ))
                 )
                 doConfigureSelectedWidgets('TextShadow',{
                   isActive, xOffset,yOffset:parseFloat(Event.target.value), BlurRadius, Color
@@ -5193,8 +5279,9 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow),'BlurRadius')}
               onInput=${(Event:Indexable) => {
                 const { isActive, xOffset,yOffset, BlurRadius, Color } = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow))
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.TextShadow
                     || { isActive:false, xOffset:0,yOffset:0, BlurRadius:5, Color:'black' }
+                  ))
                 )
                 doConfigureSelectedWidgets('TextShadow',{
                   isActive, xOffset,yOffset, BlurRadius:parseFloat(Event.target.value), Color
@@ -5353,8 +5440,7 @@ console.error(Signal)
               Options=${WAT_BorderStyles}
               onInput=${(Event:Indexable) => {
                 const [ Style_0,Style_1,Style_2,Style_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles))
-                    || ['none','none','none','none']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles || ['none','none','none','none']))
                 )
                 doConfigureSelectedWidgets('BorderStyles',[
                   Event.target.value,Style_1,Style_2,Style_3
@@ -5368,8 +5454,7 @@ console.error(Signal)
               Minimum=${0}
               onInput=${(Event:Indexable) => {
                 const [ Width_0,Width_1,Width_2,Width_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths))
-                    || [0,0,0,0]
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths || [0,0,0,0]))
                 )
                 doConfigureSelectedWidgets('BorderWidths',[
                   parseFloat(Event.target.value),Width_1,Width_2,Width_3
@@ -5382,8 +5467,7 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors),0)}
               onInput=${(Event:Indexable) => {
                 const [ Color_0,Color_1,Color_2,Color_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors))
-                    || ['black','black','black','black']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors || ['black','black','black','black']))
                 )
                 doConfigureSelectedWidgets('BorderColors',[
                   Event.target.value,Color_1,Color_2,Color_3
@@ -5401,8 +5485,7 @@ console.error(Signal)
               Options=${WAT_BorderStyles}
               onInput=${(Event:Indexable) => {
                 const [ Style_0,Style_1,Style_2,Style_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles))
-                    || ['none','none','none','none']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles || ['none','none','none','none']))
                 )
                 doConfigureSelectedWidgets('BorderStyles',[
                   Style_0,Event.target.value,Style_2,Style_3
@@ -5416,8 +5499,7 @@ console.error(Signal)
               Minimum=${0}
               onInput=${(Event:Indexable) => {
                 const [ Width_0,Width_1,Width_2,Width_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths))
-                    || [0,0,0,0]
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths || [0,0,0,0]))
                 )
                 doConfigureSelectedWidgets('BorderWidths',[
                   Width_0,parseFloat(Event.target.value),Width_2,Width_3
@@ -5430,8 +5512,7 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors),1)}
               onInput=${(Event:Indexable) => {
                 const [ Color_0,Color_1,Color_2,Color_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors))
-                    || ['black','black','black','black']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors || ['black','black','black','black']))
                 )
                 doConfigureSelectedWidgets('BorderColors',[
                   Color_0,Event.target.value,Color_2,Color_3
@@ -5449,8 +5530,7 @@ console.error(Signal)
               Options=${WAT_BorderStyles}
               onInput=${(Event:Indexable) => {
                 const [ Style_0,Style_1,Style_2,Style_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles))
-                    || ['none','none','none','none']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles || ['none','none','none','none']))
                 )
                 doConfigureSelectedWidgets('BorderStyles',[
                   Style_0,Style_1,Event.target.value,Style_3
@@ -5464,8 +5544,7 @@ console.error(Signal)
               Minimum=${0}
               onInput=${(Event:Indexable) => {
                 const [ Width_0,Width_1,Width_2,Width_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths))
-                    || [0,0,0,0]
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths || [0,0,0,0]))
                 )
                 doConfigureSelectedWidgets('BorderWidths',[
                   Width_0,Width_1,parseFloat(Event.target.value),Width_3
@@ -5478,8 +5557,7 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors),2)}
               onInput=${(Event:Indexable) => {
                 const [ Color_0,Color_1,Color_2,Color_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors))
-                    || ['black','black','black','black']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors || ['black','black','black','black']))
                 )
                 doConfigureSelectedWidgets('BorderColors',[
                   Color_0,Color_1,Event.target.value,Color_3
@@ -5497,8 +5575,7 @@ console.error(Signal)
               Options=${WAT_BorderStyles}
               onInput=${(Event:Indexable) => {
                 const [ Style_0,Style_1,Style_2,Style_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles))
-                    || ['none','none','none','none']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderStyles || ['none','none','none','none']))
                 )
                 doConfigureSelectedWidgets('BorderStyles',[
                   Style_0,Style_1,Style_2,Event.target.value
@@ -5512,8 +5589,7 @@ console.error(Signal)
               Minimum=${0}
               onInput=${(Event:Indexable) => {
                 const [ Width_0,Width_1,Width_2,Width_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths))
-                    || [0,0,0,0]
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderWidths || [0,0,0,0]))
                 )
                 doConfigureSelectedWidgets('BorderWidths',[
                   Width_0,Width_1,Width_2,parseFloat(Event.target.value)
@@ -5526,8 +5602,7 @@ console.error(Signal)
               Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors),3)}
               onInput=${(Event:Indexable) => {
                 const [ Color_0,Color_1,Color_2,Color_3 ] = (
-                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors))
-                    || ['black','black','black','black']
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.BorderColors || ['black','black','black','black']))
                 )
                 doConfigureSelectedWidgets('BorderColors',[
                   Color_0,Color_1,Color_2,Event.target.value
@@ -6593,8 +6668,6 @@ console.error(Signal)
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowMultiple',Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'PseudoFileInput') && html`
@@ -6627,8 +6700,6 @@ console.error(Signal)
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowMultiple',Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'FileDropArea') && html`
@@ -6661,8 +6732,6 @@ console.error(Signal)
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('allowMultiple',Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'ColorInput') && html`
@@ -6789,15 +6858,11 @@ console.error(Signal)
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Activation',Event.target.checked)}
               />
             </>
-
-
           `}
 
           ${(commonType === 'TabStrip') && html`
 
           `}
-
-
           <${WAD_horizontally}>
             <${WAD_Label}>Value</>
             <${WAD_Gap}/>
@@ -7082,7 +7147,7 @@ console.error(Signal)
     onlyFrom:   '.WAD.Cover',
     ClickRadius:4,
     onDragStart:(dx:number,dy:number, StartX:number,StartY:number, Event:Indexable) => {
-      const { pointedWidget,shapedWidgets } = LayouterState
+      const { pointedWidget } = LayouterState
       if (! WidgetIsSelected(LayouterState.pointedWidget as WAT_Widget)) {
         if (Event.shiftKey || Event.metaKey) { // additive/subtractive selection
           selectWidgets([pointedWidget as WAT_Widget],DesignerState.selectedWidgets)
