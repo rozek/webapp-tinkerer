@@ -4168,50 +4168,151 @@
 
     protected _onFocus:Function|undefined
 
-    public get onFocus ():Function|undefined  { return this._onFocus }
+    public get onFocus ():Function|undefined { return this._onFocus_ }
     public set onFocus (newCallback:Function|undefined) {
-      expectFunction('"focus" event handler',newCallback)
+      allowFunction('"onFocus" callback',newCallback)
       this._onFocus = newCallback
+    }
+
+    protected _onFocus_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onFocus != null) { this._onFocus.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onFocus" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onFocus = newCallback
+      }
     }
 
   /**** onBlur ****/
 
     protected _onBlur:Function|undefined
 
-    public get onBlur ():Function|undefined  { return this._onBlur }
+    public get onBlur ():Function|undefined { return this._onBlur_ }
     public set onBlur (newCallback:Function|undefined) {
-      expectFunction('"blur" event handler',newCallback)
+      allowFunction('"onBlur" callback',newCallback)
       this._onBlur = newCallback
+    }
+
+    protected _onBlur_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onBlur != null) { this._onBlur.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onBlur" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onBlur = newCallback
+      }
     }
 
   /**** onClick ****/
 
     protected _onClick:Function|undefined
 
-    public get onClick ():Function|undefined  { return this._onClick }
+    public get onClick ():Function|undefined { return this._onClick_ }
     public set onClick (newCallback:Function|undefined) {
-      expectFunction('"click" event handler',newCallback)
+      allowFunction('"onClick" callback',newCallback)
       this._onClick = newCallback
     }
+
+    protected _onClick_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onClick != null) { this._onClick.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onClick" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onClick = newCallback
+      }
+    }
+
+  /**** onDblClick ****/
+
+    protected _onDblClick:Function|undefined
+
+    public get onDblClick ():Function|undefined { return this._onDblClick_ }
+    public set onDblClick (newCallback:Function|undefined) {
+      allowFunction('"onDblClick" callback',newCallback)
+      this._onDblClick = newCallback
+    }
+
+    protected _onDblClick_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onDblClick != null) { this._onDblClick.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onDblClick" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onDblClick = newCallback
+      }
+    }
+
 
   /**** onInput ****/
 
     protected _onInput:Function|undefined
 
-    public get onInput ():Function|undefined  { return this._onInput }
+    public get onInput ():Function|undefined { return this._onInput_ }
     public set onInput (newCallback:Function|undefined) {
-      expectFunction('"input" event handler',newCallback)
+      allowFunction('"onInput" callback',newCallback)
       this._onInput = newCallback
+    }
+
+    protected _onInput_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onInput != null) { this._onInput.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onInput" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onInput = newCallback
+      }
     }
 
   /**** onDrop ****/
 
     protected _onDrop:Function|undefined
 
-    public get onDrop ():Function|undefined  { return this._onDrop }
+    public get onDrop ():Function|undefined { return this._onDrop_ }
     public set onDrop (newCallback:Function|undefined) {
-      expectFunction('"drop" event handler',newCallback)
+      allowFunction('"onDrop" callback',newCallback)
       this._onDrop = newCallback
+    }
+
+    protected _onDrop_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onDrop != null) { this._onDrop.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onDrop" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onDrop = newCallback
+      }
     }
 
   /**** rerender ****/
@@ -9481,26 +9582,347 @@
   }
   `)
 
-/**** flatListView ****/
+/**** FlatListView ****/
 
-  export class WAT_flatListView extends WAT_Widget {
+  export class WAT_FlatListView extends WAT_Widget {
     public constructor (Page:WAT_Page) { super(Page) }
 
-    public get Type ():string  { return 'flatListView' }
+    public get Type ():string  { return 'FlatListView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** Placeholder ****/
 
+    protected _Placeholder:WAT_Textline|undefined
+
+    public get Placeholder ():WAT_Textline|undefined { return this._Placeholder }
+    public set Placeholder (newSetting:WAT_Textline|undefined) {
+      allowTextline('placeholder',newSetting)
+      if (this._Placeholder !== newSetting) {
+        this._Placeholder = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** List ****/
+
+    protected _List:any[] = []
+
+    public get List ():any[] { return this._List.slice() }
+    public set List (newList:any[]) {
+      expectList('list',newList)
+      if (ValuesDiffer(this._List,newList)) {
+        this._List = newList.slice()
+        this.rerender()
+      }
+    }
+
+  /**** ItemRenderer ****/
+
+    protected _ItemRenderer:Function|undefined
+
+    public get ItemRenderer ():Function|undefined  { return this._ItemRenderer }
+    public set ItemRenderer (newCallback:Function|undefined) {
+      expectFunction('list item rendering callback',newCallback)
+      this._ItemRenderer = newCallback
+    }
+
+  /**** SelectionLimit ****/
+
+    protected _SelectionLimit:number|undefined
+
+    public get SelectionLimit ():number|undefined { return this._SelectionLimit }
+    public set SelectionLimit (newSetting:number|undefined) {
+      allowOrdinal('selection limit',newSetting)
+      if (this._SelectionLimit !== newSetting) {
+        this._SelectionLimit = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** selectedIndices ****/
+
+    protected _selectedIndices:number[] = []
+
+    public get selectedIndices ():number[] {
+      return this._selectedIndices.slice()
+    }
+    public set selectedIndices (newList:number[]) {
+      expectListSatisfying('indicies of selected list elements',newList,ValueIsOrdinal)
+      if (ValuesDiffer(this._selectedIndices,newList)) {
+        const selectedIndexSet:Indexable = Object.create(null)
+        this._selectedIndices = newList.filter((selectedIndex:number) => {
+          if (
+            (selectedIndex < this._List.length) &&
+            ! (selectedIndex in selectedIndexSet)
+          ) {
+            selectedIndexSet[selectedIndex] = true
+            return true
+          } else {
+            return false
+          }
+        })
+        this.rerender()
+      }
+    }
+
+  /**** onSelectionChange ****/
+
+    protected _onSelectionChange:Function|undefined
+
+    public get onSelectionChange ():Function|undefined { return this._onSelectionChange_ }
+    public set onSelectionChange (newCallback:Function|undefined) {
+      allowFunction('"onSelectionChange" callback',newCallback)
+      this._onSelectionChange = newCallback
+    }
+
+    protected _onSelectionChange_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onSelectionChange != null) { this._onSelectionChange.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onSelectionChange" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onSelectionChange = newCallback
+      }
+    }
+
+  /**** onItemSelected ****/
+
+    protected _onItemSelected:Function|undefined
+
+    public get onItemSelected ():Function|undefined { return this._onItemSelected_ }
+    public set onItemSelected (newCallback:Function|undefined) {
+      allowFunction('"onItemSelected" callback',newCallback)
+      this._onItemSelected = newCallback
+    }
+
+    protected _onItemSelected_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onItemSelected != null) { this._onItemSelected.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onItemSelected" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onItemSelected = newCallback
+      }
+    }
+
+  /**** onItemDeselected ****/
+
+    protected _onItemDeselected:Function|undefined
+
+    public get onItemDeselected ():Function|undefined { return this._onItemDeselected_ }
+    public set onItemDeselected (newCallback:Function|undefined) {
+      allowFunction('"onItemDeselected" callback',newCallback)
+      this._onItemDeselected = newCallback
+    }
+
+    protected _onItemDeselected_ (newCallback:Function|undefined):void {
+      if (newCallback == null) {                          // callback invocation
+        try {
+          if (this._onItemDeselected != null) { this._onItemDeselected.call(this) }
+        } catch (Signal:any) {
+          setErrorReport(this,{
+            Type:'"onItemDeselected" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      } else {                                          // definition invocation
+        this._onItemDeselected = newCallback
+      }
+    }
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'Placeholder','SelectionLimit',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._Placeholder    = acceptableOptionalTextline(Serialization.Placeholder)
+      this._SelectionLimit = acceptableOptionalOrdinal (Serialization.SelectionLimit)
+    }
 
   /**** Renderer ****/
 
-    protected _Renderer = () => {
-      return html`<div class="WAT Content flatListView">${this.Value}</div>`
+    protected _Renderer = (PropSet:Indexable) => {
+      let List              = acceptableList            (this._List, [])
+      let ItemRenderer      = acceptableOptionalFunction(this._ItemRenderer)
+      let Placeholder       = acceptableTextline        (this._Placeholder,     '(empty)')
+      let selectedIndices   = acceptableListSatisfying  (this._selectedIndices, [], ValueIsOrdinal)
+      let SelectionLimit    = acceptableOrdinal         (this._SelectionLimit,  1)
+      let onClick           = acceptableOptionalFunction(this._onClick)
+      let onDblClick        = acceptableOptionalFunction(this._onDblClick)
+      let onSelectionChange = acceptableOptionalFunction(this._onSelectionChange)
+      let onItemSelected    = acceptableOptionalFunction(this._onItemSelected)
+      let onItemDeselected  = acceptableOptionalFunction(this._onItemDeselected)
+
+      if (ItemRenderer == null) {
+        ItemRenderer = (Item:any) => html`${Item+''}`
+      }
+
+      const selectedIndexSet:Indexable = Object.create(null)
+        selectedIndices = selectedIndices.filter((selectedIndex:number) => {
+          if (
+            (selectedIndex < List.length) &&
+            ! (selectedIndex in selectedIndexSet)
+          ) {
+            selectedIndexSet[selectedIndex] = true
+            return true
+          } else {
+            return false
+          }
+        })
+      if (selectedIndices.length > SelectionLimit) {
+        const deselectedIndices = selectedIndices.slice(SelectionLimit)
+
+        selectedIndices.length = SelectionLimit
+        if (onSelectionChange != null) {
+          onSelectionChange(selectedIndices)
+        }
+
+        if (onItemDeselected != null) {
+          deselectedIndices.forEach((deselectedIndex:number) => {
+            onItemDeselected(List[deselectedIndex],deselectedIndex)
+          })
+        }
+      }
+
+      function _onClick (Event:PointerEvent, Index:number):void {
+        Event.stopImmediatePropagation()
+        Event.preventDefault()
+
+        if (SelectionLimit === 0) { return }
+
+        let SelectionChanged:boolean = false
+        let IndicesToSelect:number[], IndicesToDeselect:number[]
+        if (Event.shiftKey || Event.metaKey) {
+          SelectionChanged = true
+          if (ItemIsSelected(Index)) {
+            IndicesToDeselect = [Index]
+            selectedIndices   = selectedIndices.filter(
+              (selectedIndex:number) => (selectedIndex !== Index)
+            )
+          } else {
+            if (selectedIndices.length === SelectionLimit) {
+              IndicesToDeselect = [selectedIndices.shift()]
+            }
+            IndicesToSelect = [Index]
+            selectedIndices.push(Index)
+          }
+        } else {
+          IndicesToDeselect = selectedIndices.filter(
+            (selectedIndex:number) => (selectedIndex !== Index)
+          )
+          SelectionChanged = ! ItemIsSelected(Index)
+          IndicesToSelect  = (SelectionChanged ? [Index] : [])
+          selectedIndices  = [Index]
+        }
+
+        if (SelectionChanged && (onSelectionChange != null)) {
+          onSelectionChange(selectedIndices)
+        }
+
+// @ts-ignore TS2454 let's check IF variables were assigned
+        if ((IndicesToDeselect != null) && (onItemDeselected != null)) {
+          IndicesToDeselect.forEach((deselectedIndex:number) => {
+            onItemDeselected(List[deselectedIndex],deselectedIndex)
+          })
+        }
+
+// @ts-ignore TS2454 let's check IF variables were assigned
+        if ((IndicesToSelect != null) && (onItemSelected != null)) {
+          IndicesToSelect.forEach((selectedIndex:number) => {
+            onItemSelected(List[selectedIndex],selectedIndex)
+          })
+        }
+
+        if (onClick != null) { onClick(Event,Index) }
+      }
+
+      function _onDblClick (Event:PointerEvent, Index:number):void {
+        if (onDblClick != null) { onDblClick(Event,Index) }
+      }
+
+      function ItemIsSelected (Index:number):boolean {
+        return (Index in selectedIndexSet)
+      }
+
+      return html`<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView"
+        ...${PropSet}
+      >
+        ${
+          List.length === 0
+          ? html`<div class="Placeholder"><div>${Placeholder}</></>`
+          : List.map((Item:any, Index:number) => html`<div
+              class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
+              dangerouslySetInnerHTML=${{
+                __html:ItemRenderer(Item, Index, ItemIsSelected(Index))
+              }}
+              onClick=${(Event:PointerEvent) => _onClick(Event,Index)}
+              onDblClick=${(Event:PointerEvent) => _onDblClick(Event,Index)}
+            />`)
+        }
+      </>`
     }
   }
-  builtInWidgetTypes['flatListView'] = WAT_flatListView
+  builtInWidgetTypes['FlatListView'] = WAT_FlatListView
 
   appendStyle(`
-  .WAT.Widget > .WAT.flatListView {
+/**** FlatListView ****/
+
+  .WAT.Widget > .WAT.FlatListView {
+    display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
+    overflow:scroll; overflow-x:auto; overflow-y:scroll;
+    border:solid 1px #888888; border-radius:2px;
+    background:#e8f0ff; padding:0px 2px 0px 4px;
+  }
+
+  .WAT.Widget > .WAT.FlatListView.empty {
+    overflow:hidden;
+    background-color:#EEEEEE;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.Placeholder {
+    display:flex; position:relative;
+      flex-flow:column nowrap; align-items:center; justify-content:center;
+    width:100%; height:100%;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.Placeholder > * {
+    position:relative;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.ListItem {
+    display:block; position:relative; overflow:hidden; flex:0 0 auto;
+    left:0px; top:0px; width:auto; height:22px; line-height:22px;
+    background:none;
+    border:none; border-bottom:solid 1px lightgray;
+    white-space:nowrap; text-overflow:ellipsis;
+    user-select:none; pointer-events:auto;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.ListItem:last-child {
+    border:none; border-bottom:solid 1px transparent;
+  }
+
+  .WAT.Widget > .WAT.FlatListView > div.ListItem.selected {
+    background:dodgerblue; color:white;
   }
   `)
 
