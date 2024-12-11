@@ -1772,6 +1772,9 @@ export class WAT_Visual {
         }
         else { // definition invocation
             this._onMount = newCallback;
+            if (this.isMounted) {
+                this._onMount_();
+            }
         }
     }
     get onUnmount() { return this._onUnmount_; }
@@ -1795,6 +1798,7 @@ export class WAT_Visual {
         }
         else { // definition invocation
             this._onUnmount = newCallback;
+            //      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
         }
     }
     /**** _serializeConfigurationInto ****/
@@ -9628,6 +9632,8 @@ async function startWAT() {
         document.body.appendChild(AppletElement);
     }
     let AppletName = acceptableName(AppletElement.getAttribute('name'), 'WAT-Applet');
+    /**** read applet script - if stored separately ****/
+    let ScriptElement = document.querySelector('script[type="wat/applet-script"]');
     /**** deserialize applet ****/
     let SerializationElement = document.querySelector('script[type="wat/applet"]');
     let Applet = undefined;
@@ -9641,26 +9647,24 @@ async function startWAT() {
         }
     }
     if ((Applet == null) && (SerializationElement != null)) {
+        Serialization = SerializationElement.textContent || '';
+        if (ScriptElement != null) {
+            Serialization.activeScript = ScriptElement.textContent || '';
+        }
         try {
-            Applet = WAT_Applet.deserializedFrom(SerializationElement.textContent || '');
+            Applet = WAT_Applet.deserializedFrom(Serialization);
         }
         catch (Signal) {
             console.error(`could not deserialize applet ${quoted(AppletName)}`, Signal);
         }
     }
     if (Applet == null) {
-        Applet = WAT_Applet.deserializedFrom('{"PageList":[]}');
+        Applet = WAT_Applet.deserializedFrom('{"PageList":[{ WidgetList:[] }]}');
     }
     Applet._Name = AppletName;
     if (Applet.visitedPage == null) {
         Applet.visitPage(Applet.PageList[0]);
     }
-    /**** read and activate applet script - if stored separately ****/
-    let ScriptElement = document.querySelector('script[type="wat/applet-script"]');
-    if (ScriptElement != null) {
-        Applet.activeScript = ScriptElement.textContent || '';
-    }
-    Applet.activateScript();
     /**** finally render the applet ****/
     AppletElement.innerHTML = '';
     render(html `<${WAT_combinedView} Applet=${Applet}/>`, AppletElement);
