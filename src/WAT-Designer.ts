@@ -2487,14 +2487,14 @@
   /**** constructor ****/
 
     public constructor (
-      Widgets:WAT_Widget[],  PropertyName:string, PropertyValue:any
+      Widgets:WAT_Widget[],  PropertyName:string, PropertyValues:any[]
     ) {
       super()
 
       this._Widgets      = Widgets.slice()
       this._PropertyName = PropertyName
       this._oldValues    = Widgets.map((Widget:WAT_Widget) => Widget[PropertyName])
-      this._newValues    = Array.from({length:Widgets.length},() => PropertyValue)
+      this._newValues    = PropertyValues.slice()
     }
 
   /**** canExtend ****/
@@ -3021,7 +3021,7 @@
           })
           break
         default:
-          ValuesToSet = Value
+          ValuesToSet = selectedWidgets.map((_:any) => Value)
       }
     doOperation(new WAD_WidgetConfigurationOperation(
       selectedWidgets, Property,ValuesToSet
@@ -3633,7 +3633,7 @@ console.error(Signal)
             'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
             'WidgetPane:Widget Pane',
             '-Accordion','-AccordionFold:Accordion Fold',
-            '-flatListView:flat List View','-nestedListView:nested List View',
+            'FlatListView:flat List View','-NestedListView:nested List View',
             '-NoteSticker'
           ]}
           onInput=${(Event:Indexable) => {
@@ -4757,7 +4757,7 @@ console.error(Signal)
             'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
             'WidgetPane:Widget Pane',
             '-Accordion','-AccordionFold:Accordion Fold',
-            '-flatListView:flat List View','-nestedListView:nested List View',
+            'FlatListView:flat List View','-nestedListView:nested List View',
             '-NoteSticker'
           ]}
           onInput=${(Event:Indexable) => {
@@ -5004,9 +5004,9 @@ console.error(Signal)
             <${WAD_Icon} Icon="${IconFolder}/arrows-left-right.png" style="width:24px"/>
             <${WAD_Gap}/>
             <${WAD_DropDown} style="width:104px"
-              OptionList=${['left-width','left-right','width-right']}
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Anchors[0]))}
+              Options=${['left-width','left-right','width-right']}
               onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Anchors_0',Event.target.value)}
             />
               <div style="width:8px"/>
@@ -5027,9 +5027,9 @@ console.error(Signal)
             <${WAD_Icon} Icon="${IconFolder}/arrows-up-down.png" style="width:24px"/>
             <${WAD_Gap}/>
             <${WAD_DropDown} style="width:104px"
-              OptionList=${['top-height','top-bottom','height-bottom']}
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Anchors[1]))}
+              Options=${['top-height','top-bottom','height-bottom']}
               onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Anchors_1',Event.target.value)}
             />
               <div style="width:8px"/>
@@ -6861,6 +6861,29 @@ console.error(Signal)
           `}
 
           ${(commonType === 'TabStrip') && html`
+
+          `}          ${(commonType === 'FlatListView') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Placeholder</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Placeholder))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('Placeholder',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Selection Limit</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.SelectionLimit))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('SelectionLimit',parseFloat(Event.target.value))}
+              />
+            </>
+
 
           `}
           <${WAD_horizontally}>
