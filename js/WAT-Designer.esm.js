@@ -2999,6 +2999,32 @@ function doImport(FileContent, Type) {
         doOperation(new WAD_WidgetDeserializationOperation(Serialization, visitedPage, 0)); // also selects these widgets
         return;
     }
+    if (looksLikeApplet(Serialization)) {
+        if (OperationWasConfirmed('Applet Import\n\n' +
+            'You are about to replace the complete applet (and only keep its name)')) {
+            const Applet = DesignerState.Applet;
+            const AppletName = Applet.Name;
+            Applet.clear();
+            Applet._deserializeConfigurationFrom(Serialization);
+            Applet._deserializePagesFrom(Serialization);
+            DesignerState.selectedPages = [];
+            selectWidgets([]);
+            Object.assign(DesignerState, {
+                selectedPages: [],
+                selectedWidgets: [],
+                OperationHistory: [],
+                OperationIndex: 0,
+                VisitHistory: [],
+                VisitIndex: -1,
+            });
+            Applet._Name = AppletName;
+            if (Applet.visitedPage == null) {
+                Applet.visitPage(Applet.PageList[0]);
+            }
+            WAT_rerender();
+        }
+        return;
+    }
     window.alert('file does not contain valid WAT serializations');
 }
 /**** doExport ****/
@@ -6469,7 +6495,7 @@ function WAD_ScriptEditor() {
     let ErrorReport, ScriptError;
     // "activeScript" always exists, "pendingScript" may be missing
     const { Scope } = DesignerState.ScriptEditor;
-    switch (Scope) {
+    switch (DesignerState.ScriptEditor.Scope) {
         case 'Applet':
             ;
             ({ activeScript, pendingScript, ErrorReport, ScriptError } = Applet);
@@ -6494,7 +6520,7 @@ function WAD_ScriptEditor() {
         WAT_rerender();
     }, []);
     const setPendingScriptTo = useCallback((newScript) => {
-        switch (Scope) {
+        switch (DesignerState.ScriptEditor.Scope) {
             case 'Applet': return doConfigureApplet('pendingScript', newScript);
             case 'visitedPage': return doConfigureVisitedPage('pendingScript', newScript);
             case 'selectedWidgets': return doConfigureSelectedWidgets('pendingScript', newScript);
