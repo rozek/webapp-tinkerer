@@ -1433,13 +1433,8 @@ export class WAT_Visual {
         if (ValuesDiffer(this._Value, newValue)) {
             this._Value = newValue; // *C* a deep copy may be better
             if (this._onValueChange != null) {
-                try {
-                    this._onValueChange.call(this);
-                }
-                catch (Signal) {
-                    console.error('"onValueChange" Callback Failure', Signal);
-                }
-            }
+                this._onValueChange_();
+            } // no typo!
             this.rerender();
         }
     }
@@ -1448,11 +1443,14 @@ export class WAT_Visual {
         allowFunction('"onValueChange" callback', newCallback);
         this._onValueChange = newCallback;
     }
-    _onValueChange_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onValueChange_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onValueChange = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onValueChange != null) {
-                    this._onValueChange.call(this);
+                    this._onValueChange.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -1461,9 +1459,6 @@ export class WAT_Visual {
                     Sufferer: this, Message: '' + Signal, Cause: Signal
                 });
             }
-        }
-        else { // definition invocation
-            this._onValueChange = newCallback;
         }
     }
     get unobserved() {
@@ -1551,17 +1546,6 @@ export class WAT_Visual {
             });
             if (Mode === 'rethrow-exception') {
                 throw Signal;
-            }
-        }
-        if (this.isMounted && (this._onMount != null)) {
-            try {
-                this._onMount.call(this);
-            }
-            catch (Signal) {
-                setErrorReport(this, {
-                    Type: '"onMount" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
             }
         }
         this.rerender();
@@ -1773,11 +1757,17 @@ export class WAT_Visual {
         allowFunction('"onMount" callback', newCallback);
         this._onMount = newCallback;
     }
-    _onMount_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onMount_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onMount = ArgList[0];
+            if (this.isMounted) {
+                this._onMount_();
+            }
+        }
+        else { // callback invocation
             try {
                 if (this._onMount != null) {
-                    this._onMount.call(this);
+                    this._onMount.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -1787,23 +1777,21 @@ export class WAT_Visual {
                 });
             }
         }
-        else { // definition invocation
-            this._onMount = newCallback;
-            if (this.isMounted) {
-                this._onMount_();
-            }
-        }
     }
     get onUnmount() { return this._onUnmount_; }
     set onUnmount(newCallback) {
         allowFunction('"onUnmount" callback', newCallback);
         this._onUnmount = newCallback;
     }
-    _onUnmount_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onUnmount_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onUnmount = ArgList[0];
+            //      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
+        }
+        else { // callback invocation
             try {
                 if (this._onUnmount != null) {
-                    this._onUnmount.call(this);
+                    this._onUnmount.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -1812,10 +1800,6 @@ export class WAT_Visual {
                     Sufferer: this, Message: '' + Signal, Cause: Signal
                 });
             }
-        }
-        else { // definition invocation
-            this._onUnmount = newCallback;
-            //      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
         }
     }
     /**** _serializeConfigurationInto ****/
@@ -3478,11 +3462,14 @@ export class WAT_Widget extends WAT_Visual {
         allowFunction('"onFocus" callback', newCallback);
         this._onFocus = newCallback;
     }
-    _onFocus_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onFocus_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onFocus = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onFocus != null) {
-                    this._onFocus.call(this);
+                    this._onFocus.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -3492,20 +3479,20 @@ export class WAT_Widget extends WAT_Visual {
                 });
             }
         }
-        else { // definition invocation
-            this._onFocus = newCallback;
-        }
     }
     get onBlur() { return this._onBlur_; }
     set onBlur(newCallback) {
         allowFunction('"onBlur" callback', newCallback);
         this._onBlur = newCallback;
     }
-    _onBlur_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onBlur_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onBlur = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onBlur != null) {
-                    this._onBlur.call(this);
+                    this._onBlur.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -3515,20 +3502,20 @@ export class WAT_Widget extends WAT_Visual {
                 });
             }
         }
-        else { // definition invocation
-            this._onBlur = newCallback;
-        }
     }
     get onClick() { return this._onClick_; }
     set onClick(newCallback) {
         allowFunction('"onClick" callback', newCallback);
         this._onClick = newCallback;
     }
-    _onClick_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onClick_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onClick = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onClick != null) {
-                    this._onClick.call(this);
+                    this._onClick.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -3538,20 +3525,20 @@ export class WAT_Widget extends WAT_Visual {
                 });
             }
         }
-        else { // definition invocation
-            this._onClick = newCallback;
-        }
     }
     get onDblClick() { return this._onDblClick_; }
     set onDblClick(newCallback) {
         allowFunction('"onDblClick" callback', newCallback);
         this._onDblClick = newCallback;
     }
-    _onDblClick_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onDblClick_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onDblClick = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onDblClick != null) {
-                    this._onDblClick.call(this);
+                    this._onDblClick.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -3561,20 +3548,20 @@ export class WAT_Widget extends WAT_Visual {
                 });
             }
         }
-        else { // definition invocation
-            this._onDblClick = newCallback;
-        }
     }
     get onInput() { return this._onInput_; }
     set onInput(newCallback) {
         allowFunction('"onInput" callback', newCallback);
         this._onInput = newCallback;
     }
-    _onInput_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onInput_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onInput = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onInput != null) {
-                    this._onInput.call(this);
+                    this._onInput.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -3584,20 +3571,20 @@ export class WAT_Widget extends WAT_Visual {
                 });
             }
         }
-        else { // definition invocation
-            this._onInput = newCallback;
-        }
     }
     get onDrop() { return this._onDrop_; }
     set onDrop(newCallback) {
         allowFunction('"onDrop" callback', newCallback);
         this._onDrop = newCallback;
     }
-    _onDrop_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onDrop_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onDrop = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onDrop != null) {
-                    this._onDrop.call(this);
+                    this._onDrop.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -3606,9 +3593,6 @@ export class WAT_Widget extends WAT_Visual {
                     Sufferer: this, Message: '' + Signal, Cause: Signal
                 });
             }
-        }
-        else { // definition invocation
-            this._onDrop = newCallback;
         }
     }
     /**** rerender ****/
@@ -4845,8 +4829,8 @@ export class WAT_Icon extends WAT_Widget {
                         return consumingEvent(Event);
                     }
                     if (this._onClick != null) {
-                        this._onClick(Event);
-                    }
+                        this._onClick_(Event);
+                    } // no typo!
                 };
                 const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
                 const Color = acceptableColor(this.Color, 'black');
@@ -4928,8 +4912,8 @@ export class WAT_Button extends WAT_Widget {
                         return consumingEvent(Event);
                     }
                     if (this._onClick != null) {
-                        this._onClick(Event);
-                    }
+                        this._onClick_(Event);
+                    } // no typo!
                 };
                 const Label = acceptableTextline(this.Label || this.Value, '');
                 return html `<button class="WAT Content Button" style="
@@ -4974,8 +4958,8 @@ export class WAT_Checkbox extends WAT_Widget {
                     }
                     this.Value = Event.target.checked;
                     if (this._onClick != null) {
-                        this._onClick(Event);
-                    }
+                        this._onClick_(Event);
+                    } // no typo!
                 };
                 const Value = acceptableOptionalBoolean(this.Value);
                 const checked = (Value == true);
@@ -5012,8 +4996,8 @@ export class WAT_Radiobutton extends WAT_Widget {
                     }
                     this.Value = Event.target.checked;
                     if (this._onClick != null) {
-                        this._onClick(Event);
-                    }
+                        this._onClick_(Event);
+                    } // no typo!
                 };
                 const Value = acceptableBoolean(this.Value, false);
                 return html `<input type="radio" class="WAT Radiobutton"
@@ -5270,8 +5254,8 @@ export class WAT_Slider extends WAT_Widget {
                     }
                     shownValue.current = this.Value = parseFloat(Event.target.value);
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
@@ -5435,14 +5419,14 @@ export class WAT_TextlineInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -5626,14 +5610,14 @@ export class WAT_PasswordInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -5793,14 +5777,14 @@ export class WAT_NumberInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = parseFloat(Event.target.value);
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -5979,14 +5963,14 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -6166,14 +6150,14 @@ export class WAT_EMailAddressInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -6353,14 +6337,14 @@ export class WAT_URLInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -6538,14 +6522,14 @@ export class WAT_TimeInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -6713,14 +6697,14 @@ export class WAT_DateTimeInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -6881,14 +6865,14 @@ export class WAT_DateInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -7038,14 +7022,14 @@ export class WAT_WeekInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -7195,14 +7179,14 @@ export class WAT_MonthInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -7334,8 +7318,8 @@ export class WAT_FileInput extends WAT_Widget {
                     this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 });
                 const _onDragEnter = useCallback((Event) => { return consumingEvent(Event); });
                 const _onDragOver = useCallback((Event) => { return consumingEvent(Event); });
@@ -7346,9 +7330,7 @@ export class WAT_FileInput extends WAT_Widget {
                     }
                     this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-                    if (this.onDrop != null) {
-                        this.onDrop(Event, Event.dataTransfer.files);
-                    }
+                    this._onDrop_(Event, Event.dataTransfer.files);
                 }); // nota bene: "files" is now in "Event.dataTransfer.files"
                 /**** actual rendering ****/
                 return html `<label class="WAT Content FileInput"
@@ -7403,9 +7385,9 @@ export class WAT_FileInput extends WAT_Widget {
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
-        const Placeholder = acceptableTextline(this._Placeholder, '').trim();
-        const acceptableTypes = acceptableTextline(this._acceptableTypes, '*');
-        const allowMultiple = acceptableBoolean(this._allowMultiple, false);
+        this._Placeholder = acceptableTextline(Serialization.Placeholder, '').trim();
+        this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes, '*');
+        this._allowMultiple = acceptableBoolean(Serialization.allowMultiple, false);
     }
 }
 builtInWidgetTypes['FileInput'] = WAT_FileInput;
@@ -7467,8 +7449,8 @@ export class WAT_PseudoFileInput extends WAT_Widget {
                     this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 });
                 return html `<label class="WAT Content PseudoFileInput">
         <div style="
@@ -7519,9 +7501,9 @@ export class WAT_PseudoFileInput extends WAT_Widget {
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
-        const Icon = acceptableURL(this._Icon, `${IconFolder}/arrow-up-from-bracket.png`);
-        const acceptableTypes = acceptableTextline(this._acceptableTypes, '*');
-        const allowMultiple = acceptableBoolean(this._allowMultiple, false);
+        this._Icon = acceptableURL(Serialization.Icon, `${IconFolder}/arrow-up-from-bracket.png`);
+        this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes, '*');
+        this._allowMultiple = acceptableBoolean(Serialization.allowMultiple, false);
     }
 }
 builtInWidgetTypes['PseudoFileInput'] = WAT_PseudoFileInput;
@@ -7574,8 +7556,8 @@ export class WAT_FileDropArea extends WAT_Widget {
                     this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of SNS_Sticker
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 });
                 const _onDragEnter = useCallback((Event) => { return consumingEvent(Event); });
                 const _onDragOver = useCallback((Event) => { return consumingEvent(Event); });
@@ -7586,9 +7568,7 @@ export class WAT_FileDropArea extends WAT_Widget {
                     }
                     this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-                    if (this.onDrop != null) {
-                        this.onDrop(Event, Event.dataTransfer.files);
-                    }
+                    this._onDrop_(Event, Event.dataTransfer.files);
                 }); // nota bene: "files" is now in "Event.dataTransfer.files"
                 return html `<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
@@ -7637,9 +7617,9 @@ export class WAT_FileDropArea extends WAT_Widget {
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
-        const Placeholder = acceptableTextline(this._Placeholder, '').trim();
-        const acceptableTypes = acceptableTextline(this._acceptableTypes, '*');
-        const allowMultiple = acceptableBoolean(this._allowMultiple, false);
+        this._Placeholder = acceptableTextline(Serialization.Placeholder, '').trim();
+        this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes, '*');
+        this._allowMultiple = acceptableBoolean(Serialization.allowMultiple, false);
     }
 }
 builtInWidgetTypes['FileDropArea'] = WAT_FileDropArea;
@@ -7735,14 +7715,14 @@ export class WAT_SearchInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -7894,8 +7874,8 @@ export class WAT_ColorInput extends WAT_Widget {
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, []);
                 return html `<input type="color" class="WAT Content ColorInput"
         value=${Value === '' ? null : Value}
@@ -7959,8 +7939,8 @@ export class WAT_DropDown extends WAT_Widget {
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, []);
                 return html `<select class="WAT Content DropDown"
         disabled=${this.Enabling == false} onInput=${_onInput}
@@ -8043,8 +8023,8 @@ export class WAT_PseudoDropDown extends WAT_Widget {
                 const _onInput = useCallback((Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, []);
                 return html `<div class="WAT Content PseudoDropDown">
         <div style="
@@ -8099,7 +8079,7 @@ export class WAT_PseudoDropDown extends WAT_Widget {
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
         super._deserializeConfigurationFrom(Serialization);
-        const Icon = acceptableURL(this._Icon, `${IconFolder}/menu.png`);
+        this._Icon = acceptableURL(Serialization.Icon, `${IconFolder}/menu.png`);
         this._Options = acceptableListSatisfying(Serialization.Options, [], ValueIsTextline);
     }
 }
@@ -8187,14 +8167,14 @@ export class WAT_TextInput extends WAT_Widget {
                     }
                     shownValue.current = this.Value = Event.target.value;
                     if (this._onInput != null) {
-                        this._onInput(Event);
-                    }
+                        this._onInput_(Event);
+                    } // no typo!
                 }, [Enabling]);
                 const _onBlur = useCallback((Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
-                        this._onBlur(Event);
-                    }
+                        this._onBlur_(Event);
+                    } // no typo!
                 });
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
@@ -8321,8 +8301,8 @@ export class WAT_TextTab extends WAT_Widget {
                         return consumingEvent(Event);
                     }
                     if (this._onClick != null) {
-                        this._onClick(Event);
-                    }
+                        this._onClick_(Event);
+                    } // no typo!
                 };
                 const Value = acceptableTextline(this.Value, '');
                 return html `<div class="WAT ${active} TextTab"
@@ -8384,8 +8364,8 @@ export class WAT_IconTab extends WAT_Widget {
                         return consumingEvent(Event);
                     }
                     if (this._onClick != null) {
-                        this._onClick(Event);
-                    }
+                        this._onClick_(Event);
+                    } // no typo!
                 };
                 const Value = acceptableURL(this._Value, `${IconFolder}/pencil.png`);
                 const Color = acceptableColor(this.Color, 'black');
@@ -8512,13 +8492,8 @@ export class WAT_WidgetPane extends WAT_Widget {
         if (this._Value !== SourcePath) {
             this._Value = SourcePath;
             if (this._onValueChange != null) {
-                try {
-                    this._onValueChange.call(this);
-                }
-                catch (Signal) {
-                    console.error('"onValueChange" Callback Failure', Signal);
-                }
-            }
+                this._onValueChange_();
+            } // no typo!
             this.rerender();
         }
     }
@@ -8706,16 +8681,14 @@ export class WAT_FlatListView extends WAT_Widget {
                 if (selectedIndices.length > SelectionLimit) {
                     const deselectedIndices = selectedIndices.slice(SelectionLimit);
                     selectedIndices.length = SelectionLimit;
-                    if (onSelectionChange != null) {
-                        onSelectionChange(selectedIndices);
-                    }
-                    if (onItemDeselected != null) {
+                    this._onSelectionChange_(selectedIndices);
+                    if (this._onItemDeselected != null) {
                         deselectedIndices.forEach((deselectedIndex) => {
-                            onItemDeselected(List[deselectedIndex], deselectedIndex);
+                            this._onItemDeselected_(List[deselectedIndex], deselectedIndex);
                         });
                     }
                 }
-                function _onClick(Event, Index) {
+                const _onClick = (Event, Index) => {
                     Event.stopImmediatePropagation();
                     Event.preventDefault();
                     if (SelectionLimit === 0) {
@@ -8743,30 +8716,26 @@ export class WAT_FlatListView extends WAT_Widget {
                         IndicesToSelect = (SelectionChanged ? [Index] : []);
                         selectedIndices = [Index];
                     }
-                    if (SelectionChanged && (onSelectionChange != null)) {
-                        onSelectionChange(selectedIndices);
+                    if (SelectionChanged && (this._onSelectionChange != null)) {
+                        this._onSelectionChange_(selectedIndices);
                     }
                     // @ts-ignore TS2454 let's check IF variables were assigned
-                    if ((IndicesToDeselect != null) && (onItemDeselected != null)) {
+                    if ((IndicesToDeselect != null) && (this._onItemDeselected != null)) {
                         IndicesToDeselect.forEach((deselectedIndex) => {
-                            onItemDeselected(List[deselectedIndex], deselectedIndex);
+                            this._onItemDeselected_(List[deselectedIndex], deselectedIndex);
                         });
                     }
                     // @ts-ignore TS2454 let's check IF variables were assigned
-                    if ((IndicesToSelect != null) && (onItemSelected != null)) {
+                    if ((IndicesToSelect != null) && (this._onItemSelected != null)) {
                         IndicesToSelect.forEach((selectedIndex) => {
-                            onItemSelected(List[selectedIndex], selectedIndex);
+                            this._onItemSelected_(List[selectedIndex], selectedIndex);
                         });
                     }
-                    if (onClick != null) {
-                        onClick(Event, Index);
-                    }
-                }
-                function _onDblClick(Event, Index) {
-                    if (onDblClick != null) {
-                        onDblClick(Event, Index);
-                    }
-                }
+                    this._onClick_(Event, Index);
+                };
+                const _onDblClick = (Event, Index) => {
+                    this._onDblClick_(Event, Index);
+                };
                 function ItemIsSelected(Index) {
                     return (Index in selectedIndexSet);
                 }
@@ -8843,11 +8812,14 @@ export class WAT_FlatListView extends WAT_Widget {
         allowFunction('"onSelectionChange" callback', newCallback);
         this._onSelectionChange = newCallback;
     }
-    _onSelectionChange_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onSelectionChange_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onSelectionChange = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onSelectionChange != null) {
-                    this._onSelectionChange.call(this);
+                    this._onSelectionChange.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -8857,20 +8829,20 @@ export class WAT_FlatListView extends WAT_Widget {
                 });
             }
         }
-        else { // definition invocation
-            this._onSelectionChange = newCallback;
-        }
     }
     get onItemSelected() { return this._onItemSelected_; }
     set onItemSelected(newCallback) {
         allowFunction('"onItemSelected" callback', newCallback);
         this._onItemSelected = newCallback;
     }
-    _onItemSelected_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onItemSelected_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onItemSelected = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onItemSelected != null) {
-                    this._onItemSelected.call(this);
+                    this._onItemSelected.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -8880,20 +8852,20 @@ export class WAT_FlatListView extends WAT_Widget {
                 });
             }
         }
-        else { // definition invocation
-            this._onItemSelected = newCallback;
-        }
     }
     get onItemDeselected() { return this._onItemDeselected_; }
     set onItemDeselected(newCallback) {
         allowFunction('"onItemDeselected" callback', newCallback);
         this._onItemDeselected = newCallback;
     }
-    _onItemDeselected_(newCallback) {
-        if (newCallback == null) { // callback invocation
+    _onItemDeselected_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onItemDeselected = ArgList[0];
+        }
+        else { // callback invocation
             try {
                 if (this._onItemDeselected != null) {
-                    this._onItemDeselected.call(this);
+                    this._onItemDeselected.apply(this, ArgList);
                 }
             }
             catch (Signal) {
@@ -8902,9 +8874,6 @@ export class WAT_FlatListView extends WAT_Widget {
                     Sufferer: this, Message: '' + Signal, Cause: Signal
                 });
             }
-        }
-        else { // definition invocation
-            this._onItemDeselected = newCallback;
         }
     }
     /**** _serializeConfigurationInto ****/
