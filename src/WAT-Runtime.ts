@@ -10754,7 +10754,7 @@
         }
       }
     if (Applet == null) {
-      Applet = WAT_Applet.deserializedFrom('{"PageList":[{ WidgetList:[] }]}')
+      Applet = WAT_Applet.deserializedFrom('{"PageList":[{ "WidgetList":[] }]}')
     }
 
     (Applet as Indexable)._Name = AppletName
