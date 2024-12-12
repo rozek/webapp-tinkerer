@@ -9675,7 +9675,7 @@ async function startWAT() {
         }
     }
     if (Applet == null) {
-        Applet = WAT_Applet.deserializedFrom('{"PageList":[{ WidgetList:[] }]}');
+        Applet = WAT_Applet.deserializedFrom('{"PageList":[{ "WidgetList":[] }]}');
     }
     Applet._Name = AppletName;
     if (Applet.visitedPage == null) {
