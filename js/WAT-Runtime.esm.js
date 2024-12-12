@@ -1507,7 +1507,7 @@ export class WAT_Visual {
     /**** activateScript - even if underlying applet is not (yet) attached ****/
     async activateScript(Mode = 'catch-exception') {
         let activeScript = (this._activeScript || '').trim();
-        this._Renderer = () => '';
+        //    this._Renderer = () => '' // not without behaviors!
         unregisterAllReactiveFunctionsFrom(this);
         /**** prepare for script execution ****/
         const reactively = (reactiveFunction) => {
