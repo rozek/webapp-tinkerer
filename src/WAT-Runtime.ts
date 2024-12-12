@@ -2022,7 +2022,7 @@
     public async activateScript (Mode:string = 'catch-exception'):Promise<void> {
       let activeScript:string = (this._activeScript || '').trim()
 
-      this._Renderer = () => ''
+//    this._Renderer = () => '' // not without behaviors!
       unregisterAllReactiveFunctionsFrom(this)
 
     /**** prepare for script execution ****/
