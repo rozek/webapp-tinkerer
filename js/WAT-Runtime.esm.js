@@ -9610,7 +9610,27 @@ export function useDesigner(newDesigner) {
 //--                               WAT Startup                                --
 //------------------------------------------------------------------------------
 let AppletStore;
-let Applet;
+/**** on mobile devices: generate PointerEvents from TouchEvents ****/
+document.addEventListener('touchstart', (Event) => {
+    var _a;
+    const PointerEvent = syntheticPointerEvent('pointerdown', Event);
+    (_a = Event.target) === null || _a === void 0 ? void 0 : _a.dispatchEvent(PointerEvent);
+}, { passive: false });
+document.addEventListener('touchmove', (Event) => {
+    var _a;
+    const PointerEvent = syntheticPointerEvent('pointermove', Event);
+    (_a = Event.target) === null || _a === void 0 ? void 0 : _a.dispatchEvent(PointerEvent);
+}, { passive: false });
+document.addEventListener('touchend', (Event) => {
+    var _a;
+    const PointerEvent = syntheticPointerEvent('pointerup', Event);
+    (_a = Event.target) === null || _a === void 0 ? void 0 : _a.dispatchEvent(PointerEvent);
+}, { passive: false });
+document.addEventListener('touchcancel', (Event) => {
+    var _a;
+    const PointerEvent = syntheticPointerEvent('pointercancel', Event);
+    (_a = Event.target) === null || _a === void 0 ? void 0 : _a.dispatchEvent(PointerEvent);
+}, { passive: false });
 /**** startup ****/
 function startup() {
     localforage.ready(function () {
@@ -9687,6 +9707,37 @@ function IdOfWidget(Widget) {
 }
 /**** newId - uses nanoid with custom dictionary ****/
 export const newId = customAlphabet(nolookalikesSafe, 21);
+/**** syntheticPointerEvent ****/
+function syntheticPointerEvent(EventType, TouchEvent) {
+    const Touch = TouchEvent.changedTouches[0];
+    return new PointerEvent(EventType, {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        detail: 1,
+        screenX: Touch.screenX,
+        screenY: Touch.screenY,
+        clientX: Touch.clientX,
+        clientY: Touch.clientY,
+        ctrlKey: TouchEvent.ctrlKey,
+        altKey: TouchEvent.altKey,
+        shiftKey: TouchEvent.shiftKey,
+        metaKey: TouchEvent.metaKey,
+        button: 0,
+        buttons: 1,
+        relatedTarget: null,
+        pointerId: Touch.identifier,
+        pointerType: 'touch',
+        width: Touch.radiusX * 2 || 1,
+        height: Touch.radiusY * 2 || 1,
+        pressure: Touch.force || 0.5,
+        tangentialPressure: 0,
+        tiltX: 0,
+        tiltY: 0,
+        twist: 0,
+        isPrimary: Touch.identifier === TouchEvent.touches[0].identifier,
+    });
+}
 /**** start WAT up ****/
 localforage.config({
     driver: [localforage.INDEXEDDB, localforage.WEBSQL]
