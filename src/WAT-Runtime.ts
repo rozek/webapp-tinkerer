@@ -51,6 +51,12 @@
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
   import { nolookalikesSafe } from 'nanoid-dictionary'
 
+  import mapTouchToMouseFor from 'svelte-touch-to-mouse'
+    mapTouchToMouseFor('.WAT.Dialog > .Titlebar')
+    mapTouchToMouseFor('.WAT.Dialog > .leftResizer')
+    mapTouchToMouseFor('.WAT.Dialog > .middleResizer')
+    mapTouchToMouseFor('.WAT.Dialog > .rightResizer')
+
   import Conversion from 'svelte-coordinate-conversion'
   const  { fromLocalTo, fromViewportTo, fromDocumentTo } = Conversion
   export { fromLocalTo, fromViewportTo, fromDocumentTo }
@@ -795,6 +801,9 @@
     left:0px; top:0px; right:0px; height:30px;
     background:#EEEEEE; border:none; border-radius:3px 3px 0px 0px;
     user-select:none; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAT.Dialog.withTitlebar > .Titlebar > .Title {
@@ -839,6 +848,9 @@
     border:none; border-top:solid 1px black; border-right:solid 1px black;
     border-radius:0px 0px 0px 3px;
     cursor:nesw-resize; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAT.resizable.Dialog > .middleResizer {
@@ -847,6 +859,9 @@
     border:none; border-top:solid 1px black;
     border-radius:0px;
     cursor:ns-resize; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAT.resizable.Dialog > .rightResizer {
@@ -855,6 +870,9 @@
     border:none; border-left:solid 1px black; border-top:solid 1px black;
     border-radius:0px 0px 3px 0px;
     cursor:nwse-resize; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
 /**** WAT OverlayLayer ****/
@@ -10676,28 +10694,6 @@
 
   let AppletStore:any
 
-/**** on mobile devices: generate PointerEvents from TouchEvents ****/
-
-  document.addEventListener('touchstart', (Event:TouchEvent) => {
-    const PointerEvent = syntheticPointerEvent('pointerdown',Event)
-    Event.target?.dispatchEvent(PointerEvent)
-  }, { passive:false })
-
-  document.addEventListener('touchmove', (Event:TouchEvent) => {
-    const PointerEvent = syntheticPointerEvent('pointermove',Event)
-    Event.target?.dispatchEvent(PointerEvent)
-  }, { passive:false })
-
-  document.addEventListener('touchend', (Event:TouchEvent) => {
-    const PointerEvent = syntheticPointerEvent('pointerup',Event)
-    Event.target?.dispatchEvent(PointerEvent)
-  }, { passive:false })
-
-  document.addEventListener('touchcancel', (Event:TouchEvent) => {
-    const PointerEvent = syntheticPointerEvent('pointercancel',Event)
-    Event.target?.dispatchEvent(PointerEvent)
-  }, { passive:false })
-
 /**** startup ****/
 
   function startup ():void {
@@ -10797,42 +10793,6 @@
 /**** newId - uses nanoid with custom dictionary ****/
 
   export const newId = customAlphabet(nolookalikesSafe,21)
-
-/**** syntheticPointerEvent ****/
-
-  function syntheticPointerEvent (
-    EventType:string, TouchEvent:Indexable
-  ):PointerEvent {
-    const Touch = TouchEvent.changedTouches[0]
-
-    return new PointerEvent(EventType, {
-      bubbles:   true,
-      cancelable:true,
-      view:    window,
-      detail:  1,
-      screenX: Touch.screenX,
-      screenY: Touch.screenY,
-      clientX: Touch.clientX,
-      clientY: Touch.clientY,
-      ctrlKey: TouchEvent.ctrlKey,
-      altKey:  TouchEvent.altKey,
-      shiftKey:TouchEvent.shiftKey,
-      metaKey: TouchEvent.metaKey,
-      button: 0,
-      buttons:1,
-      relatedTarget:null,
-      pointerId:    Touch.identifier,
-      pointerType:  'touch',
-      width:   Touch.radiusX * 2 || 1,
-      height:  Touch.radiusY * 2 || 1,
-      pressure:Touch.force || 0.5,
-      tangentialPressure:0,
-      tiltX: 0,
-      tiltY: 0,
-      twist: 0,
-      isPrimary:Touch.identifier === TouchEvent.touches[0].identifier,
-    })
-  }
 
 /**** start WAT up ****/
 
