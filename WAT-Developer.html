@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+  <meta charset="utf-8">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="format-detection"       content="telephone=no">
+
+  <title>WAT Developer</title>
+
+  <style>
+    html {
+      text-size-adjust:100%;
+      overflow:hidden scroll;
+    }
+
+    html, body {
+      width:100vw; min-height:100vh;
+      margin:0px; padding:0px;
+
+      background-color: #627AC6;
+      background-image: url(/common/BinaryTexture_blue.jpg);
+      background-repeat:repeat;
+
+      font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+      font-size:14px; font-weight:400; color:white;
+      line-height:150%;
+    }
+
+    * {
+      box-sizing:border-box;
+    }
+  </style>
+
+  <script async src="https://rozek.github.io/es-module-shims/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "javascript-interface-library":"/js/javascript-interface-library.esm.js",
+      "JIL":                         "/js/javascript-interface-library.esm.js",
+
+      "svelte-coordinate-conversion":"/js/svelte-coordinate-conversion.esm.js",
+
+      "preact":         "/js/preact-with-htm.esm.js",
+      "htm/preact":     "/js/preact-with-htm.esm.js",
+      "preact-with-htm":"/js/preact-with-htm.esm.js",
+
+      "hyperactiv":      "/js/hyperactiv.esm.js",
+      "rozek/hyperactiv":"/js/hyperactiv.esm.js",
+
+      "nanoid":           "/js/nanoid.esm.js",
+      "nanoid-dictionary":"/js/nanoid-dictionary.esm.js",
+
+      "WAT-Runtime": "/js/WAT-Runtime.esm.js",
+      "WAT-Designer":"/js/WAT-Designer.esm.js"
+    }
+  }
+  </script>
+
+  <script name="localforage" src="/js/localforage.min.js"></script>
+
+  <!-- modified: (typeof exports === 'object') is not enough! -->
+  <script name="download" src="/js/download.min.js"></script>
+
+  <script>
+"use strict";
+/*******************************************************************************
+*                                                                              *
+*                                WAT Developer                                 *
+*                                                                              *
+*******************************************************************************/
+/**** ValueIsName ****/
+const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
+// no ctrl.char.s, no "/", no leading " " or "#"
+function ValueIsName(Value) {
+    return ((typeof Value === 'string') && WAT_NamePattern.test(Value) &&
+        (Value.trim() === Value) &&
+        (Value.trim() !== '.') && (Value.trim() !== '..'));
+}
+/**** exitWith ****/
+function exitWith(Message) {
+    window.alert(Message);
+    throw new Error();
+}
+const URLParameters = new URLSearchParams(window.location.search);
+const Name = URLParameters.get('name');
+if (Name == null)
+    exitWith('No WAT applet name given');
+if (!ValueIsName(Name))
+    exitWith('Invalid WAT applet name given');
+const fullScreen = URLParameters.get('fullscreen');
+if (fullScreen === 'true') {
+    document.write(`
+  <div type="wat/applet" name="${Name}" style="
+    display:block; position:absolute;
+    left:0px; top:0px; width:100vw; height:100vh;
+  "></div>
+    `);
+}
+else {
+    const Width = parseInt(URLParameters.get('width') || '', 10);
+    if (isNaN(Width) || (Width <= 0))
+        exitWith('Invalid applet width given');
+    const Height = parseInt(URLParameters.get('height') || '', 10);
+    if (isNaN(Height) || (Height <= 0))
+        exitWith('Invalid applet height given');
+    const OffsetX = (Width > window.innerWidth - 40 ? 0 : 20);
+    const OffsetY = (Height > window.innerHeight - 40 ? 0 : 20);
+    document.write(`
+  <div type="wat/applet" name="${Name}" style="
+    display:block; position:absolute;
+    left:${OffsetX}px; top:${OffsetY}px; width:${Width}px; height:${Height}px;
+  "></div>
+    `);
+}
+
+  </script>
+
+  <script type="module" src="/js/WAT-Runtime.esm.js"></script>
+  <script type="module" src="/js/WAT-Designer.esm.js"></script>
+ </head>
+ <body>
+ </body>
+</html>
