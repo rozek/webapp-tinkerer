@@ -1909,13 +1909,7 @@
       if (ValuesDiffer(this._Value,newValue)) {
         this._Value = newValue // *C* a deep copy may be better
 
-        if (this._onValueChange != null) {
-          try {
-            this._onValueChange.call(this)
-          } catch (Signal:any) {
-            console.error('"onValueChange" Callback Failure',Signal)
-          }
-        }
+        if (this._onValueChange != null) { this._onValueChange_() }  // no typo!
 
         this.rerender()
       }
@@ -1931,18 +1925,18 @@
       this._onValueChange = newCallback
     }
 
-    protected _onValueChange_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onValueChange_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onValueChange = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onValueChange != null) { this._onValueChange.call(this) }
+          if (this._onValueChange != null) { this._onValueChange.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onValueChange" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onValueChange = newCallback
       }
     }
 
@@ -2075,17 +2069,6 @@
 
           if (Mode === 'rethrow-exception') {
             throw Signal
-          }
-        }
-
-        if (this.isMounted && (this._onMount != null)) {
-          try {
-            this._onMount.call(this)
-          } catch (Signal:any) {
-            setErrorReport(this,{
-              Type:'"onMount" Callback Failure',
-              Sufferer:this, Message:'' + Signal, Cause:Signal
-            })
           }
         }
       this.rerender()
@@ -2319,19 +2302,19 @@
       this._onMount = newCallback
     }
 
-    protected _onMount_ (newCallback?:Function):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onMount_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onMount = ArgList[0]
+        if (this.isMounted) { this._onMount_() }
+      } else {                                            // callback invocation
         try {
-          if (this._onMount != null) { this._onMount.call(this) }
+          if (this._onMount != null) { this._onMount.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onMount" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onMount = newCallback
-        if (this.isMounted) { this._onMount_() }
       }
     }
 
@@ -2345,19 +2328,19 @@
       this._onUnmount = newCallback
     }
 
-    protected _onUnmount_ (newCallback?:Function):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onUnmount_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onUnmount = ArgList[0]
+//      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
+      } else {                                            // callback invocation
         try {
-          if (this._onUnmount != null) { this._onUnmount.call(this) }
+          if (this._onUnmount != null) { this._onUnmount.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onUnmount" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onUnmount = newCallback
-//      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
       }
     }
 
@@ -4194,18 +4177,18 @@
       this._onFocus = newCallback
     }
 
-    protected _onFocus_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onFocus_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onFocus = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onFocus != null) { this._onFocus.call(this) }
+          if (this._onFocus != null) { this._onFocus.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onFocus" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onFocus = newCallback
       }
     }
 
@@ -4219,18 +4202,18 @@
       this._onBlur = newCallback
     }
 
-    protected _onBlur_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onBlur_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onBlur = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onBlur != null) { this._onBlur.call(this) }
+          if (this._onBlur != null) { this._onBlur.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onBlur" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onBlur = newCallback
       }
     }
 
@@ -4244,18 +4227,18 @@
       this._onClick = newCallback
     }
 
-    protected _onClick_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onClick_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onClick = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onClick != null) { this._onClick.call(this) }
+          if (this._onClick != null) { this._onClick.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onClick" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onClick = newCallback
       }
     }
 
@@ -4269,18 +4252,18 @@
       this._onDblClick = newCallback
     }
 
-    protected _onDblClick_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onDblClick_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onDblClick = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onDblClick != null) { this._onDblClick.call(this) }
+          if (this._onDblClick != null) { this._onDblClick.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onDblClick" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onDblClick = newCallback
       }
     }
 
@@ -4295,18 +4278,18 @@
       this._onInput = newCallback
     }
 
-    protected _onInput_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onInput_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onInput = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onInput != null) { this._onInput.call(this) }
+          if (this._onInput != null) { this._onInput.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onInput" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onInput = newCallback
       }
     }
 
@@ -4320,18 +4303,18 @@
       this._onDrop = newCallback
     }
 
-    protected _onDrop_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onDrop_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onDrop = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onDrop != null) { this._onDrop.call(this) }
+          if (this._onDrop != null) { this._onDrop.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onDrop" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onDrop = newCallback
       }
     }
 
@@ -5725,7 +5708,7 @@
     protected _Renderer = () => {
       const _onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (this._onClick != null) { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick_(Event) }         // no typo!
       }
 
       const Value = acceptableURL(this.Value,`${IconFolder}/pencil.png`)
@@ -5811,7 +5794,7 @@
     protected _Renderer = () => {
       const onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (this._onClick != null) { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick_(Event) }         // no typo!
       }
 
       const Label = acceptableTextline(this.Label || this.Value,'')
@@ -5846,7 +5829,7 @@
         if (this.Enabling == false) { return consumingEvent(Event) }
 
         this.Value = Event.target.checked
-        if (this._onClick != null) { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick_(Event) }         // no typo!
       }
 
       const Value = acceptableOptionalBoolean(this.Value)
@@ -5882,7 +5865,7 @@
         if (this.Enabling == false) { return consumingEvent(Event) }
 
         this.Value = Event.target.checked
-        if (this._onClick != null) { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick_(Event) }         // no typo!
       }
 
       const Value = acceptableBoolean(this.Value,false)
@@ -6195,7 +6178,7 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = parseFloat(Event.target.value)
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
@@ -6393,12 +6376,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -6567,12 +6550,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -6746,12 +6729,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = parseFloat(Event.target.value)
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -6936,12 +6919,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -7127,12 +7110,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -7318,12 +7301,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -7502,12 +7485,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -7685,12 +7668,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -7854,12 +7837,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -8021,12 +8004,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -8188,12 +8171,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -8303,9 +8286,9 @@
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
       super._deserializeConfigurationFrom(Serialization)
 
-      const Placeholder     = acceptableTextline(this._Placeholder,'').trim()
-      const acceptableTypes = acceptableTextline(this._acceptableTypes,'*')
-      const allowMultiple   = acceptableBoolean (this._allowMultiple,  false)
+      this._Placeholder     = acceptableTextline(Serialization.Placeholder,'').trim()
+      this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes,'*')
+      this._allowMultiple   = acceptableBoolean (Serialization.allowMultiple,  false)
     }
 
   /**** Renderer ****/
@@ -8321,7 +8304,7 @@
 
         this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       })
 
       const _onDragEnter = useCallback((Event:Event):void => { return consumingEvent(Event) })
@@ -8333,7 +8316,7 @@
 
         this.Value = Array.from(Event.dataTransfer.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-        if (this.onDrop != null) { this.onDrop(Event,Event.dataTransfer.files) }
+        this._onDrop_(Event,Event.dataTransfer.files)
       })              // nota bene: "files" is now in "Event.dataTransfer.files"
 
     /**** actual rendering ****/
@@ -8435,9 +8418,9 @@
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
       super._deserializeConfigurationFrom(Serialization)
 
-      const Icon            = acceptableURL     (this._Icon,`${IconFolder}/arrow-up-from-bracket.png`)
-      const acceptableTypes = acceptableTextline(this._acceptableTypes,'*')
-      const allowMultiple   = acceptableBoolean (this._allowMultiple,  false)
+      this._Icon            = acceptableURL     (Serialization.Icon,`${IconFolder}/arrow-up-from-bracket.png`)
+      this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes,'*')
+      this._allowMultiple   = acceptableBoolean (Serialization.allowMultiple,  false)
     }
 
   /**** Renderer ****/
@@ -8453,7 +8436,7 @@
 
         this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       })
 
       return html`<label class="WAT Content PseudoFileInput">
@@ -8541,9 +8524,9 @@
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
       super._deserializeConfigurationFrom(Serialization)
 
-      const Placeholder     = acceptableTextline(this._Placeholder,'').trim()
-      const acceptableTypes = acceptableTextline(this._acceptableTypes,'*')
-      const allowMultiple   = acceptableBoolean (this._allowMultiple,  false)
+      this._Placeholder     = acceptableTextline(Serialization.Placeholder,'').trim()
+      this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes,'*')
+      this._allowMultiple   = acceptableBoolean (Serialization.allowMultiple,  false)
     }
 
   /**** Renderer ****/
@@ -8558,7 +8541,7 @@
 
         this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of SNS_Sticker
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       })
 
       const _onDragEnter = useCallback((Event:Event) => { return consumingEvent(Event) })
@@ -8570,7 +8553,7 @@
 
         this.Value = Array.from(Event.dataTransfer.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-        if (this.onDrop != null) { this.onDrop(Event,Event.dataTransfer.files) }
+        this._onDrop_(Event,Event.dataTransfer.files)
       })              // nota bene: "files" is now in "Event.dataTransfer.files"
 
       return html`<label class="WAT Content FileDropArea"
@@ -8752,12 +8735,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -8871,7 +8854,7 @@
 
       const _onInput = useCallback((Event:any) => {
         this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[])
 
       return html`<input type="color" class="WAT Content ColorInput"
@@ -8943,7 +8926,7 @@
 
       const _onInput = useCallback((Event:any) => {
         this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[])
 
       return html`<select class="WAT Content DropDown"
@@ -9024,7 +9007,7 @@
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
       super._deserializeConfigurationFrom(Serialization)
 
-      const Icon = acceptableURL(this._Icon,`${IconFolder}/menu.png`)
+      this._Icon = acceptableURL(Serialization.Icon,`${IconFolder}/menu.png`)
 
       this._Options = acceptableListSatisfying(
         Serialization.Options, [], ValueIsTextline
@@ -9044,7 +9027,7 @@
 
       const _onInput = useCallback((Event:any) => {
         this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[])
 
       return html`<div class="WAT Content PseudoDropDown">
@@ -9219,12 +9202,12 @@
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = Event.target.value
-        if (this._onInput != null) { this._onInput(Event) }
+        if (this._onInput != null) { this._onInput_(Event) }         // no typo!
       },[ Enabling ])
 
       const _onBlur = useCallback((Event:any) => {
         this.rerender()
-        if (this._onBlur != null) { this._onBlur(Event) }
+        if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
       })
 
     /**** process any other parameters ****/
@@ -9307,7 +9290,7 @@
 
       const _onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (this._onClick != null) { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick_(Event) }         // no typo!
       }
 
       const Value = acceptableTextline(this.Value,'')
@@ -9371,7 +9354,7 @@
 
       const _onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-        if (this._onClick != null) { this._onClick(Event) }
+        if (this._onClick != null) { this._onClick_(Event) }         // no typo!
       }
 
       const Value = acceptableURL(this._Value,`${IconFolder}/pencil.png`)
@@ -9445,13 +9428,7 @@
       if (this._Value !== SourcePath) {
         this._Value = SourcePath
 
-        if (this._onValueChange != null) {
-          try {
-            this._onValueChange.call(this)
-          } catch (Signal:any) {
-            console.error('"onValueChange" Callback Failure',Signal)
-          }
-        }
+        if (this._onValueChange != null) { this._onValueChange_() }  // no typo!
 
         this.rerender()
       }
@@ -9695,18 +9672,18 @@
       this._onSelectionChange = newCallback
     }
 
-    protected _onSelectionChange_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onSelectionChange_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onSelectionChange = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onSelectionChange != null) { this._onSelectionChange.call(this) }
+          if (this._onSelectionChange != null) { this._onSelectionChange.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onSelectionChange" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onSelectionChange = newCallback
       }
     }
 
@@ -9720,18 +9697,18 @@
       this._onItemSelected = newCallback
     }
 
-    protected _onItemSelected_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onItemSelected_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onItemSelected = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onItemSelected != null) { this._onItemSelected.call(this) }
+          if (this._onItemSelected != null) { this._onItemSelected.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onItemSelected" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onItemSelected = newCallback
       }
     }
 
@@ -9745,20 +9722,21 @@
       this._onItemDeselected = newCallback
     }
 
-    protected _onItemDeselected_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
+    protected _onItemDeselected_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onItemDeselected = ArgList[0]
+      } else {                                            // callback invocation
         try {
-          if (this._onItemDeselected != null) { this._onItemDeselected.call(this) }
+          if (this._onItemDeselected != null) { this._onItemDeselected.apply(this,ArgList) }
         } catch (Signal:any) {
           setErrorReport(this,{
             Type:'"onItemDeselected" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
           })
         }
-      } else {                                          // definition invocation
-        this._onItemDeselected = newCallback
       }
     }
+
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
@@ -9812,18 +9790,16 @@
         const deselectedIndices = selectedIndices.slice(SelectionLimit)
 
         selectedIndices.length = SelectionLimit
-        if (onSelectionChange != null) {
-          onSelectionChange(selectedIndices)
-        }
+        this._onSelectionChange_(selectedIndices)
 
-        if (onItemDeselected != null) {
+        if (this._onItemDeselected != null) {
           deselectedIndices.forEach((deselectedIndex:number) => {
-            onItemDeselected(List[deselectedIndex],deselectedIndex)
+            this._onItemDeselected_(List[deselectedIndex],deselectedIndex)
           })
         }
       }
 
-      function _onClick (Event:PointerEvent, Index:number):void {
+      const _onClick = (Event:PointerEvent, Index:number):void => {
         Event.stopImmediatePropagation()
         Event.preventDefault()
 
@@ -9854,29 +9830,29 @@
           selectedIndices  = [Index]
         }
 
-        if (SelectionChanged && (onSelectionChange != null)) {
-          onSelectionChange(selectedIndices)
+        if (SelectionChanged && (this._onSelectionChange != null)) {
+          this._onSelectionChange_(selectedIndices)
         }
 
 // @ts-ignore TS2454 let's check IF variables were assigned
-        if ((IndicesToDeselect != null) && (onItemDeselected != null)) {
+        if ((IndicesToDeselect != null) && (this._onItemDeselected != null)) {
           IndicesToDeselect.forEach((deselectedIndex:number) => {
-            onItemDeselected(List[deselectedIndex],deselectedIndex)
+            this._onItemDeselected_(List[deselectedIndex],deselectedIndex)
           })
         }
 
 // @ts-ignore TS2454 let's check IF variables were assigned
-        if ((IndicesToSelect != null) && (onItemSelected != null)) {
+        if ((IndicesToSelect != null) && (this._onItemSelected != null)) {
           IndicesToSelect.forEach((selectedIndex:number) => {
-            onItemSelected(List[selectedIndex],selectedIndex)
+            this._onItemSelected_(List[selectedIndex],selectedIndex)
           })
         }
 
-        if (onClick != null) { onClick(Event,Index) }
+        this._onClick_(Event,Index)
       }
 
-      function _onDblClick (Event:PointerEvent, Index:number):void {
-        if (onDblClick != null) { onDblClick(Event,Index) }
+      const _onDblClick = (Event:PointerEvent, Index:number):void => {
+        this._onDblClick_(Event,Index)
       }
 
       function ItemIsSelected (Index:number):boolean {
