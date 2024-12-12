@@ -3319,6 +3319,39 @@ console.error(Signal)
       return
     }
 
+    if (looksLikeApplet(Serialization)) {
+      if (OperationWasConfirmed(
+        'Applet Import\n\n' +
+        'You are about to replace the complete applet (and only keep its name)'
+      )) {
+        const Applet = DesignerState.Applet
+          const AppletName = Applet.Name
+
+          Applet.clear()
+          Applet._deserializeConfigurationFrom(Serialization)
+          Applet._deserializePagesFrom(Serialization)
+        DesignerState.selectedPages = []
+        selectWidgets([])
+
+        Object.assign(DesignerState, {
+          selectedPages:  [],
+          selectedWidgets:[],
+          OperationHistory:[],
+          OperationIndex:  0,
+          VisitHistory:[],
+          VisitIndex:  -1,
+        })
+
+        ;(Applet as Indexable)._Name = AppletName
+        if (Applet.visitedPage == null) {
+          Applet.visitPage(Applet.PageList[0])
+        }
+
+        WAT_rerender()
+      }
+      return
+    }
+
     window.alert('file does not contain valid WAT serializations')
   }
 
@@ -7022,7 +7055,7 @@ console.error(Signal)
                  // "activeScript" always exists, "pendingScript" may be missing
 
     const { Scope } = DesignerState.ScriptEditor
-    switch (Scope) {
+    switch (DesignerState.ScriptEditor.Scope) {
       case 'Applet':
         ;({ activeScript,pendingScript, ErrorReport,ScriptError } = Applet)
         break
@@ -7048,7 +7081,7 @@ console.error(Signal)
     },[])
 
     const setPendingScriptTo = useCallback((newScript:WAT_Text) => {
-      switch (Scope) {
+      switch (DesignerState.ScriptEditor.Scope) {
         case 'Applet':          return doConfigureApplet         ('pendingScript',newScript)
         case 'visitedPage':     return doConfigureVisitedPage    ('pendingScript',newScript)
         case 'selectedWidgets': return doConfigureSelectedWidgets('pendingScript',newScript)
