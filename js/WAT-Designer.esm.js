@@ -25,6 +25,15 @@ import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
 import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_ImageScalings, WAT_ImageAlignments, WAT_ReferrerPolicies, WAT_TimePattern, WAT_DateTimePattern, WAT_DatePattern, WAT_WeekPattern, WAT_MonthPattern, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsWidgetType, ValueIsErrorReport, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import mapTouchToMouseFor from 'svelte-touch-to-mouse';
+mapTouchToMouseFor('.WAD.DesignerButton');
+mapTouchToMouseFor('.WAD.Dialog > .Titlebar');
+mapTouchToMouseFor('.WAD.Dialog > .leftResizer');
+mapTouchToMouseFor('.WAD.Dialog > .middleResizer');
+mapTouchToMouseFor('.WAD.Dialog > .rightResizer');
+mapTouchToMouseFor('.WAD.LayouterLayer');
+mapTouchToMouseFor('.WAD.Cover');
+mapTouchToMouseFor('.WAD.ShapeHandle');
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -79,6 +88,9 @@ appendStyle(`
     border:solid 2px black; border-radius:50%;
     outline:solid 1px white;
     pointer-events:auto; cursor:grab;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
   .WAD.DesignerButton > img {
     display:block; position:absolute;
@@ -378,6 +390,9 @@ appendStyle(`
     left:0px; top:0px; right:0px; height:30px;
     background:#EEEEEE; border:none; border-radius:3px 3px 0px 0px;
     user-select:none; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAD.Dialog > .Titlebar > .Title {
@@ -413,6 +428,9 @@ appendStyle(`
     border:none; border-top:solid 1px black; border-right:solid 1px black;
     border-radius:0px 0px 0px 3px;
     cursor:nesw-resize; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAD.resizable.Dialog > .middleResizer {
@@ -421,6 +439,9 @@ appendStyle(`
     border:none; border-top:solid 1px black;
     border-radius:0px;
     cursor:ns-resize; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAD.resizable.Dialog > .rightResizer {
@@ -429,6 +450,9 @@ appendStyle(`
     border:none; border-left:solid 1px black; border-top:solid 1px black;
     border-radius:0px 0px 3px 0px;
     cursor:nwse-resize; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
 /**** ErrorView ****/
@@ -459,12 +483,18 @@ appendStyle(`
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px;
     pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
   .WAD.Cover {
     display:block; position:absolute;
     z-index:1000000;
     user-select:none; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
 /**** Selection Markers ****/
@@ -484,6 +514,9 @@ appendStyle(`
     background:orangered; border:solid 1px darkgray;
     z-index:1000001; /* above .WAD.Cover */
     user-select:none; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
 
 /**** Selection Lasso ****/
