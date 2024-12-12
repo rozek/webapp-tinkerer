@@ -10676,7 +10676,27 @@
 
   let AppletStore:any
 
-  let Applet:WAT_Applet
+/**** on mobile devices: generate PointerEvents from TouchEvents ****/
+
+  document.addEventListener('touchstart', (Event:TouchEvent) => {
+    const PointerEvent = syntheticPointerEvent('pointerdown',Event)
+    Event.target?.dispatchEvent(PointerEvent)
+  }, { passive:false })
+
+  document.addEventListener('touchmove', (Event:TouchEvent) => {
+    const PointerEvent = syntheticPointerEvent('pointermove',Event)
+    Event.target?.dispatchEvent(PointerEvent)
+  }, { passive:false })
+
+  document.addEventListener('touchend', (Event:TouchEvent) => {
+    const PointerEvent = syntheticPointerEvent('pointerup',Event)
+    Event.target?.dispatchEvent(PointerEvent)
+  }, { passive:false })
+
+  document.addEventListener('touchcancel', (Event:TouchEvent) => {
+    const PointerEvent = syntheticPointerEvent('pointercancel',Event)
+    Event.target?.dispatchEvent(PointerEvent)
+  }, { passive:false })
 
 /**** startup ****/
 
@@ -10777,6 +10797,42 @@
 /**** newId - uses nanoid with custom dictionary ****/
 
   export const newId = customAlphabet(nolookalikesSafe,21)
+
+/**** syntheticPointerEvent ****/
+
+  function syntheticPointerEvent (
+    EventType:string, TouchEvent:Indexable
+  ):PointerEvent {
+    const Touch = TouchEvent.changedTouches[0]
+
+    return new PointerEvent(EventType, {
+      bubbles:   true,
+      cancelable:true,
+      view:    window,
+      detail:  1,
+      screenX: Touch.screenX,
+      screenY: Touch.screenY,
+      clientX: Touch.clientX,
+      clientY: Touch.clientY,
+      ctrlKey: TouchEvent.ctrlKey,
+      altKey:  TouchEvent.altKey,
+      shiftKey:TouchEvent.shiftKey,
+      metaKey: TouchEvent.metaKey,
+      button: 0,
+      buttons:1,
+      relatedTarget:null,
+      pointerId:    Touch.identifier,
+      pointerType:  'touch',
+      width:   Touch.radiusX * 2 || 1,
+      height:  Touch.radiusY * 2 || 1,
+      pressure:Touch.force || 0.5,
+      tangentialPressure:0,
+      tiltX: 0,
+      tiltY: 0,
+      twist: 0,
+      isPrimary:Touch.identifier === TouchEvent.touches[0].identifier,
+    })
+  }
 
 /**** start WAT up ****/
 
