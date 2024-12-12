@@ -3320,7 +3320,7 @@
   /**** preserve ****/
 
     public async preserve ():Promise<void> {
-      await AppletStore.setItem('WAT-Applet',JSON.stringify(this.Serialization))
+      await AppletStore.setItem(this.Name,JSON.stringify(this.Serialization))
     }
   }
 
