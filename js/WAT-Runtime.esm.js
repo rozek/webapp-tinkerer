@@ -516,6 +516,7 @@ appendStyle(`
     left:0px; top:0px; width:24px; height:24px;
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
+    z-index:1000001;
   }
 
 /**** common Settings ****/
@@ -1454,6 +1455,7 @@ export class WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onValueChange" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onValueChange" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -1513,7 +1515,11 @@ export class WAT_Visual {
                     reactiveFunction();
                 }
                 catch (Signal) {
-                    console.error('WAT: execution error in reactive function', Signal);
+                    console.warn('execution error in reactive function', Signal);
+                    setErrorReport(this, {
+                        Type: 'execution error in reactive function',
+                        Sufferer: this, Message: '' + Signal, Cause: Signal
+                    });
                 }
             }));
         };
@@ -1530,6 +1536,7 @@ export class WAT_Visual {
             compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange', activeScript);
         }
         catch (Signal) {
+            console.warn('Script Compilation Failure', Signal);
             setErrorReport(this, {
                 Type: 'Script Compilation Failure',
                 Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -1540,6 +1547,7 @@ export class WAT_Visual {
             await compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange);
         }
         catch (Signal) {
+            console.warn('Script Execution Failure', Signal);
             setErrorReport(this, {
                 Type: 'Script Execution Failure',
                 Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -1617,6 +1625,7 @@ export class WAT_Visual {
                 newRenderer.call(this);
             }
             catch (Signal) {
+                console.warn('Rendering Failure', Signal);
                 setErrorReport(this, {
                     Type: 'Rendering Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -1639,6 +1648,7 @@ export class WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('Rendering Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: 'Rendering Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -1771,6 +1781,7 @@ export class WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onMount" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onMount" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -1795,6 +1806,7 @@ export class WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onUnmount" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onUnmount" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -2643,13 +2655,37 @@ export class WAT_Applet extends WAT_Visual {
         if (!ValueIsPlainObject(Serialization))
             throwError('InvalidArgument: the given "Serialization" is no valid WAT applet serialization');
         const Applet = new WAT_Applet();
+        const AppletName = Serialization.Name;
+        delete Serialization.Name;
         Applet._deserializeConfigurationFrom(Serialization);
         Applet._deserializePagesFrom(Serialization);
+        if (ValueIsName(AppletName)) {
+            Applet._Name = AppletName;
+        }
         return Applet;
     }
     /**** preserve ****/
     async preserve() {
         await AppletStore.setItem(this.Name, JSON.stringify(this.Serialization));
+    }
+    /**** replaceWith ****/
+    replaceWith(Serialization) {
+        const AppletView = this._View;
+        delete this._View;
+        const AppletName = this._Name;
+        delete Serialization.Name;
+        this.clear();
+        this._deserializeConfigurationFrom(Serialization);
+        this._deserializePagesFrom(Serialization);
+        this._Name = AppletName;
+        this._View = AppletView;
+        if (this._onMount != null) {
+            this._onMount_();
+        } // no typo!
+        if (this.visitedPage == null) {
+            this.visitPage(this.PageList[0]);
+        }
+        this.rerender();
     }
 }
 //------------------------------------------------------------------------------
@@ -3473,6 +3509,7 @@ export class WAT_Widget extends WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onFocus" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onFocus" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -3496,6 +3533,7 @@ export class WAT_Widget extends WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onBlur" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onBlur" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -3519,6 +3557,7 @@ export class WAT_Widget extends WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onClick" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onClick" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -3542,6 +3581,7 @@ export class WAT_Widget extends WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onDblClick" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onDblClick" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -3565,6 +3605,7 @@ export class WAT_Widget extends WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onInput" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onInput" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -3588,6 +3629,7 @@ export class WAT_Widget extends WAT_Visual {
                 }
             }
             catch (Signal) {
+                console.warn('"onDrop" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onDrop" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -8964,6 +9006,7 @@ export class WAT_FlatListView extends WAT_Widget {
                 }
             }
             catch (Signal) {
+                console.warn('"onSelectionChange" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onSelectionChange" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -8987,6 +9030,7 @@ export class WAT_FlatListView extends WAT_Widget {
                 }
             }
             catch (Signal) {
+                console.warn('"onItemSelected" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onItemSelected" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -9010,6 +9054,7 @@ export class WAT_FlatListView extends WAT_Widget {
                 }
             }
             catch (Signal) {
+                console.warn('"onItemDeselected" Callback Failure', Signal);
                 setErrorReport(this, {
                     Type: '"onItemDeselected" Callback Failure',
                     Sufferer: this, Message: '' + Signal, Cause: Signal
@@ -9146,10 +9191,7 @@ class WAT_AppletView extends Component {
         const Applet = this._Applet;
         Applet['_View'] = this.base;
         if (Applet['_onMount'] != null) {
-            try {
-                Applet['_onMount']();
-            }
-            catch (Signal) { /* nop */ }
+            Applet._onMount_(); // no typo!
         }
         rerender();
     }
@@ -9158,10 +9200,7 @@ class WAT_AppletView extends Component {
         const Applet = this._Applet;
         Applet['_View'] = undefined;
         if (Applet['_onUnmount'] != null) {
-            try {
-                Applet['_onUnmount']();
-            }
-            catch (Signal) { /* nop */ }
+            Applet._onUnmount_(); // no typo!
         }
     }
     /**** render ****/
@@ -9216,7 +9255,16 @@ class WAT_PageView extends Component {
         const Page = this._Page;
         Page['_View'] = this.base;
         if (Page['_onMount'] != null) {
-            Page['_onMount']();
+            Page._onMount_(); // no typo!
+        }
+    }
+    /**** componentWillUnmount ****/
+    componentWillUnmount() {
+        this._releaseWidgets(this._shownWidgets);
+        const Page = this._Page;
+        Page['_View'] = undefined;
+        if (Page['_onUnmount'] != null) {
+            Page._onUnmount_(); // no typo!
         }
     }
     /**** _releaseWidgets ****/
@@ -9227,15 +9275,6 @@ class WAT_PageView extends Component {
                 Widget._releaseWidgets();
             }
         });
-    }
-    /**** componentWillUnmount ****/
-    componentWillUnmount() {
-        this._releaseWidgets(this._shownWidgets);
-        const Page = this._Page;
-        Page['_View'] = undefined;
-        if (Page['_onUnmount'] != null) {
-            Page['_onUnmount']();
-        }
     }
     /**** render ****/
     render(PropSet) {
@@ -9274,7 +9313,7 @@ class WAT_WidgetView extends Component {
         const Widget = this._Widget;
         Widget['_View'] = this.base;
         if (Widget['_onMount'] != null) {
-            Widget['_onMount']();
+            Widget._onMount_(); // no typo!
         }
     }
     /**** componentWillUnmount ****/
@@ -9282,7 +9321,7 @@ class WAT_WidgetView extends Component {
         const Widget = this._Widget;
         Widget['_View'] = undefined;
         if (Widget['_onUnmount'] != null) {
-            Widget['_onUnmount']();
+            Widget._onUnmount_(); // no typo!
         }
     }
     /**** render ****/
