@@ -40,7 +40,7 @@
   const ValueIsPhoneNumber = ValueIsTextline // *C* should be implemented
 
   import {
-    render, html, Component,
+    render, html, Component, createRef,
     useRef, useEffect, useCallback
   } from 'htm/preact'
 
@@ -6174,16 +6174,16 @@
         shownValue.current = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
         shownValue.current = this.Value = parseFloat(Event.target.value)
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -6357,32 +6357,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableTextline(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -6531,32 +6534,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableTextline(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -6708,34 +6714,37 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:number = 0
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:number = acceptableNumber(
         ValueIsString(Value) ? parseFloat(Value as string) : Value, 0
       )
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = parseFloat(Event.target.value)
+        this._shownValue = this.Value = parseFloat(Event.target.value)
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -6900,32 +6909,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptablePhoneNumber(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -7091,32 +7103,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableEMailAddress(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -7282,32 +7297,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableURL(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -7466,32 +7484,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableStringMatching(Value,'',WAT_TimeRegExp)
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -7649,32 +7670,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableStringMatching(Value,'',WAT_DateTimeRegExp)
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -7818,32 +7842,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableStringMatching(Value,'',WAT_DateRegExp)
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -7985,32 +8012,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableStringMatching(Value,'',WAT_WeekRegExp)
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -8152,32 +8182,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableStringMatching(Value,'',WAT_MonthRegExp)
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -8299,25 +8332,25 @@
       const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes,'*')
       const allowMultiple   = acceptableOptionalBoolean (this._allowMultiple)
 
-      const _onInput = useCallback((Event:any):void => {
+      const _onInput = (Event:any):void => {
         if (this.Enabling === false) { return consumingEvent(Event) }
 
         this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      })
+      }
 
-      const _onDragEnter = useCallback((Event:Event):void => { return consumingEvent(Event) })
-      const _onDragOver  = useCallback((Event:Event):void => { return consumingEvent(Event) })
+      const _onDragEnter = (Event:Event):void => { return consumingEvent(Event) }
+      const _onDragOver  = (Event:Event):void => { return consumingEvent(Event) }
 
-      const _onDrop = useCallback((Event:any):void => {
+      const _onDrop = (Event:any):void => {
         consumeEvent(Event)
         if (this.Enabling === false) { return }
 
         this.Value = Array.from(Event.dataTransfer.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
         this._onDrop_(Event,Event.dataTransfer.files)
-      })              // nota bene: "files" is now in "Event.dataTransfer.files"
+      }               // nota bene: "files" is now in "Event.dataTransfer.files"
 
     /**** actual rendering ****/
 
@@ -8431,13 +8464,13 @@
       const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes,'*')
       const allowMultiple   = acceptableOptionalBoolean (this._allowMultiple)
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
 
         this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      })
+      }
 
       return html`<label class="WAT Content PseudoFileInput">
         <div style="
@@ -8536,25 +8569,25 @@
       const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes,'*')
       const allowMultiple   = acceptableOptionalBoolean (this._allowMultiple)
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
 
         this.Value = Array.from(Event.target.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of SNS_Sticker
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      })
+      }
 
-      const _onDragEnter = useCallback((Event:Event) => { return consumingEvent(Event) })
-      const _onDragOver  = useCallback((Event:Event) => { return consumingEvent(Event) })
+      const _onDragEnter = (Event:Event) => { return consumingEvent(Event) }
+      const _onDragOver  = (Event:Event) => { return consumingEvent(Event) }
 
-      const _onDrop = useCallback((Event:any) => {
+      const _onDrop = (Event:any) => {
         consumeEvent(Event)
         if (this.Enabling == false) { return }
 
         this.Value = Array.from(Event.dataTransfer.files).map((File:any) => File.name).join('\n')
 // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
         this._onDrop_(Event,Event.dataTransfer.files)
-      })              // nota bene: "files" is now in "Event.dataTransfer.files"
+      }               // nota bene: "files" is now in "Event.dataTransfer.files"
 
       return html`<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
@@ -8716,32 +8749,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableTextline(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -8852,10 +8888,10 @@
 
     /**** actual rendering ****/
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[])
+      }
 
       return html`<input type="color" class="WAT Content ColorInput"
         value=${Value === '' ? null : Value}
@@ -8924,10 +8960,10 @@
         this._Options, [], ValueIsTextline
       )
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[])
+      }
 
       return html`<select class="WAT Content DropDown"
         disabled=${this.Enabling == false} onInput=${_onInput}
@@ -9025,10 +9061,10 @@
         this._Options, [], ValueIsTextline
       )
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[])
+      }
 
       return html`<div class="WAT Content PseudoDropDown">
         <div style="
@@ -9183,32 +9219,35 @@
 
   /**** Renderer ****/
 
+    protected _shownValue:string = ''
+    protected _InputElement:any  = createRef()
+
     protected _Renderer = () => {
       const { Value, Enabling } = this
 
     /**** handle external changes ****/
 
-      const shownValue   = useRef('')
-      const InputElement = useRef(null)
-
       let ValueToShow:string = acceptableText(Value,'')
-      if (document.activeElement === InputElement.current) {
-        ValueToShow = shownValue.current
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
       } else {
-        shownValue.current = ValueToShow
+        this._shownValue = ValueToShow
       }
 
-      const _onInput = useCallback((Event:any) => {
+      const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
 
-        shownValue.current = this.Value = Event.target.value
+        this._shownValue = this.Value = Event.target.value
         if (this._onInput != null) { this._onInput_(Event) }         // no typo!
-      },[ Enabling ])
+      }
 
-      const _onBlur = useCallback((Event:any) => {
+      const _onBlur = (Event:any) => {
         this.rerender()
         if (this._onBlur != null) { this._onBlur_(Event) }           // no typo!
-      })
+      }
 
     /**** process any other parameters ****/
 
@@ -9226,8 +9265,8 @@
         readOnly=${readonly} placeholder=${Placeholder}
         spellcheck=${SpellChecking} style="resize:none; ${
           LineWrapping == true
-          ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
-          : undefined
+          ? 'overflow-wrap:break-word; hyphens:auto'
+          : 'white-space:pre'
         }"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
       />`
@@ -9492,6 +9531,10 @@
       this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
     }
 
+    public componentDidUnmount () {
+      this._releaseWidgets()
+    }
+
   /**** Renderer ****/
 
     protected _Renderer = () => {
@@ -9511,10 +9554,6 @@
       ))
         WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
       this._shownWidgets = WidgetsToShow
-
-      useEffect(() => { return () => {
-        this._releaseWidgets()
-      } },[])
 
       const PaneGeometry = this.Geometry
       const BaseGeometry = SourceWidget.Geometry
@@ -10181,33 +10220,32 @@
 //--                              WAT_ModalLayer                              --
 //------------------------------------------------------------------------------
 
+  const WAT_ModalLayer_EventTypes = [
+    'click', 'dblclick',
+    'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout',
+    'mouseenter', 'mouseleave',
+    'touchstart', 'touchend', 'touchmove', 'touchcancel',
+    'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+    'pointerenter', 'pointerleave', 'pointercancel',
+    'keydown', 'keyup', 'keypress',
+    'wheel', 'contextmenu', 'focus', 'blur'
+  ]
+
   class WAT_ModalLayer extends Component {
-    public render (PropSet:Indexable):any {
-      const EventTypes = [
-        'click', 'dblclick',
-        'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout',
-        'mouseenter', 'mouseleave',
-        'touchstart', 'touchend', 'touchmove', 'touchcancel',
-        'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
-        'pointerenter', 'pointerleave', 'pointercancel',
-        'keydown', 'keyup', 'keypress',
-        'wheel', 'contextmenu', 'focus', 'blur'
-      ]
-
-      const DOMElement = useRef(null)
-
-      useEffect(() => {
-        EventTypes.forEach((EventType:string) => {
-          DOMElement.current.addEventListener(EventType,consumeEvent)
-        })
-        return () => {
-          EventTypes.forEach((EventType:string) => {
-            DOMElement.current.removeEventListener(EventType,consumeEvent)
-          })
-        }
+    public componentDidMount () {
+      WAT_ModalLayer_EventTypes.forEach((EventType:string) => {
+        (this as Component).base.addEventListener(EventType,consumeEvent)
       })
+    }
 
-      return html`<div class="WAT ModalLayer" ref=${DOMElement}/>`
+    public componentWillUnmount () {
+      WAT_ModalLayer_EventTypes.forEach((EventType:string) => {
+        (this as Component).base.removeEventListener(EventType,consumeEvent)
+      })
+    }
+
+    public render (PropSet:Indexable):any {
+      return html`<div class="WAT ModalLayer"/>`
     }
   }
 
@@ -10466,42 +10504,41 @@
 //--                               WAT_Underlay                               --
 //------------------------------------------------------------------------------
 
+  const WAT_Underlay_EventTypes = [
+    'click', 'dblclick',
+    /*'mousedown',*/ 'mouseup', 'mousemove', 'mouseover', 'mouseout',
+    'mouseenter', 'mouseleave',
+    /*'touchstart',*/ 'touchend', 'touchmove', 'touchcancel',
+    /*'pointerdown',*/ 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+    'pointerenter', 'pointerleave', 'pointercancel',
+    'keydown', 'keyup', 'keypress',
+    'wheel', 'contextmenu', 'focus', 'blur'
+  ]
+
   class WAT_Underlay extends Component {
+    public componentDidMount () {
+      WAT_Underlay_EventTypes.forEach((EventType:string) => {
+        (this as Component).base.addEventListener(EventType,consumeEvent)
+      })
+    }
+
+    public componentWillUnmount () {
+      WAT_Underlay_EventTypes.forEach((EventType:string) => {
+        (this as Component).base.removeEventListener(EventType,consumeEvent)
+      })
+    }
+
     public render (PropSet:Indexable):any {
       const { Widget, Overlay } = PropSet
 
-      const EventTypes = [
-        'click', 'dblclick',
-        /*'mousedown',*/ 'mouseup', 'mousemove', 'mouseover', 'mouseout',
-        'mouseenter', 'mouseleave',
-        /*'touchstart',*/ 'touchend', 'touchmove', 'touchcancel',
-        /*'pointerdown',*/ 'pointerup', 'pointermove', 'pointerover', 'pointerout',
-        'pointerenter', 'pointerleave', 'pointercancel',
-        'keydown', 'keyup', 'keypress',
-        'wheel', 'contextmenu', 'focus', 'blur'
-      ]
-
-      const DOMElement = useRef(null)
-
-      useEffect(() => {
-        EventTypes.forEach((EventType:string) => {
-          DOMElement.current.addEventListener(EventType,consumeEvent)
-        })
-        return () => {
-          EventTypes.forEach((EventType:string) => {
-            DOMElement.current.removeEventListener(EventType,consumeEvent)
-          })
-        }
-      })
-
-      const handleEvent = useCallback((Event:Event) => {
+      const handleEvent = (Event:Event) => {
         consumeEvent(Event)
         if (! Overlay.isModal) { Widget.closeOverlay(Overlay.Name) }
-      })
+      }
 
       const modal = (Overlay.isModal ? 'modal' : '')
 
-      return html`<div class="WAT ${modal} Underlay" ref=${DOMElement}
+      return html`<div class="WAT ${modal} Underlay"
         onMouseDown=${handleEvent} onPointerDown=${handleEvent}
         onTouchStart=${handleEvent}
       />`
