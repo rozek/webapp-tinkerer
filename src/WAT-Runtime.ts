@@ -9444,7 +9444,7 @@ console.warn('"onDrop" Callback Failure',Signal)
   appendStyle(`
   .WAT.Widget > .WAT.TextTab {
     display:block; position:absolute;
-    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
+    left:0px; top:0px; right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
     font-weight:bold;
   }
