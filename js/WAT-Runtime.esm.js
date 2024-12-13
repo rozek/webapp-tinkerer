@@ -8,7 +8,7 @@ import {
 //  throwError,
 quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
-import { render, html, Component, useRef, useEffect, useCallback } from 'htm/preact';
+import { render, html, Component, createRef, useRef } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
@@ -5248,7 +5248,7 @@ export class WAT_Slider extends WAT_Widget {
                 else {
                     shownValue.current = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
@@ -5256,10 +5256,10 @@ export class WAT_Slider extends WAT_Widget {
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
-                });
+                };
                 /**** process any other parameters ****/
                 const Minimum = acceptableOptionalNumber(this._Minimum);
                 const Stepping = acceptableOptionalNumberInRange(this._Stepping, undefined, 0);
@@ -5397,6 +5397,18 @@ export class WAT_TextlineInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5404,30 +5416,29 @@ export class WAT_TextlineInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableTextline(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -5588,6 +5599,18 @@ export class WAT_PasswordInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5595,30 +5618,29 @@ export class WAT_PasswordInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableTextline(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -5755,6 +5777,18 @@ export class WAT_NumberInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5762,30 +5796,29 @@ export class WAT_NumberInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableNumber(ValueIsString(Value) ? parseFloat(Value) : Value, 0);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = parseFloat(Event.target.value);
+                    this._shownValue = this.Value = parseFloat(Event.target.value);
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -5941,6 +5974,18 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -5948,30 +5993,29 @@ export class WAT_PhoneNumberInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptablePhoneNumber(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -6128,6 +6172,18 @@ export class WAT_EMailAddressInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6135,30 +6191,29 @@ export class WAT_EMailAddressInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableEMailAddress(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -6315,6 +6370,18 @@ export class WAT_URLInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6322,30 +6389,29 @@ export class WAT_URLInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableURL(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -6500,6 +6566,18 @@ export class WAT_TimeInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6507,30 +6585,29 @@ export class WAT_TimeInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableStringMatching(Value, '', WAT_TimeRegExp);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const withSeconds = acceptableOptionalBoolean(this._withSeconds);
@@ -6675,6 +6752,18 @@ export class WAT_DateTimeInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6682,30 +6771,29 @@ export class WAT_DateTimeInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableStringMatching(Value, '', WAT_DateTimeRegExp);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const withSeconds = acceptableOptionalBoolean(this._withSeconds);
@@ -6843,6 +6931,18 @@ export class WAT_DateInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -6850,30 +6950,29 @@ export class WAT_DateInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableStringMatching(Value, '', WAT_DateRegExp);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateRegExp);
@@ -7000,6 +7099,18 @@ export class WAT_WeekInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -7007,30 +7118,29 @@ export class WAT_WeekInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableStringMatching(Value, '', WAT_WeekRegExp);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_WeekRegExp);
@@ -7157,6 +7267,18 @@ export class WAT_MonthInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -7164,30 +7286,29 @@ export class WAT_MonthInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableStringMatching(Value, '', WAT_MonthRegExp);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const readonly = acceptableOptionalBoolean(this._readonly);
                 const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_MonthRegExp);
@@ -7311,7 +7432,7 @@ export class WAT_FileInput extends WAT_Widget {
                 const Placeholder = acceptableTextline(this._Placeholder, '').trim();
                 const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
                 const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (this.Enabling === false) {
                         return consumingEvent(Event);
                     }
@@ -7320,10 +7441,10 @@ export class WAT_FileInput extends WAT_Widget {
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                });
-                const _onDragEnter = useCallback((Event) => { return consumingEvent(Event); });
-                const _onDragOver = useCallback((Event) => { return consumingEvent(Event); });
-                const _onDrop = useCallback((Event) => {
+                };
+                const _onDragEnter = (Event) => { return consumingEvent(Event); };
+                const _onDragOver = (Event) => { return consumingEvent(Event); };
+                const _onDrop = (Event) => {
                     consumeEvent(Event);
                     if (this.Enabling === false) {
                         return;
@@ -7331,7 +7452,7 @@ export class WAT_FileInput extends WAT_Widget {
                     this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
                     this._onDrop_(Event, Event.dataTransfer.files);
-                }); // nota bene: "files" is now in "Event.dataTransfer.files"
+                }; // nota bene: "files" is now in "Event.dataTransfer.files"
                 /**** actual rendering ****/
                 return html `<label class="WAT Content FileInput"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
@@ -7442,7 +7563,7 @@ export class WAT_PseudoFileInput extends WAT_Widget {
                 const Color = acceptableColor(this._Color, 'black');
                 const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
                 const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
                     }
@@ -7451,7 +7572,7 @@ export class WAT_PseudoFileInput extends WAT_Widget {
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                });
+                };
                 return html `<label class="WAT Content PseudoFileInput">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
@@ -7549,7 +7670,7 @@ export class WAT_FileDropArea extends WAT_Widget {
                 const Placeholder = acceptableTextline(this._Placeholder, '').trim();
                 const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
                 const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (this.Enabling == false) {
                         return consumingEvent(Event);
                     }
@@ -7558,10 +7679,10 @@ export class WAT_FileDropArea extends WAT_Widget {
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                });
-                const _onDragEnter = useCallback((Event) => { return consumingEvent(Event); });
-                const _onDragOver = useCallback((Event) => { return consumingEvent(Event); });
-                const _onDrop = useCallback((Event) => {
+                };
+                const _onDragEnter = (Event) => { return consumingEvent(Event); };
+                const _onDragOver = (Event) => { return consumingEvent(Event); };
+                const _onDrop = (Event) => {
                     consumeEvent(Event);
                     if (this.Enabling == false) {
                         return;
@@ -7569,7 +7690,7 @@ export class WAT_FileDropArea extends WAT_Widget {
                     this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
                     // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
                     this._onDrop_(Event, Event.dataTransfer.files);
-                }); // nota bene: "files" is now in "Event.dataTransfer.files"
+                }; // nota bene: "files" is now in "Event.dataTransfer.files"
                 return html `<label class="WAT Content FileDropArea"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
         <span>${Placeholder}</span>
@@ -7693,6 +7814,18 @@ export class WAT_SearchInput extends WAT_Widget {
             value: void 0
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -7700,30 +7833,29 @@ export class WAT_SearchInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableTextline(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -7871,12 +8003,12 @@ export class WAT_ColorInput extends WAT_Widget {
         </datalist>`;
                 }
                 /**** actual rendering ****/
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, []);
+                };
                 return html `<input type="color" class="WAT Content ColorInput"
         value=${Value === '' ? null : Value}
         disabled=${this.Enabling == false} onInput=${_onInput}
@@ -7936,12 +8068,12 @@ export class WAT_DropDown extends WAT_Widget {
             value: () => {
                 let Value = acceptableTextline(this._Value, '');
                 const Options = acceptableListSatisfying(this._Options, [], ValueIsTextline);
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, []);
+                };
                 return html `<select class="WAT Content DropDown"
         disabled=${this.Enabling == false} onInput=${_onInput}
       >${Options.map((Option) => {
@@ -8020,12 +8152,12 @@ export class WAT_PseudoDropDown extends WAT_Widget {
                 const Icon = acceptableURL(this._Icon, `${IconFolder}/menu.png`);
                 const Color = acceptableColor(this._Color, 'black');
                 const Options = acceptableListSatisfying(this._Options, [], ValueIsTextline);
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, []);
+                };
                 return html `<div class="WAT Content PseudoDropDown">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
@@ -8145,6 +8277,18 @@ export class WAT_TextInput extends WAT_Widget {
             value: false
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_shownValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
+        });
+        Object.defineProperty(this, "_InputElement", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -8152,30 +8296,29 @@ export class WAT_TextInput extends WAT_Widget {
             value: () => {
                 const { Value, Enabling } = this;
                 /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
                 let ValueToShow = acceptableText(Value, '');
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
+                if ((this._InputElement.current != null) &&
+                    (document.activeElement === this._InputElement.current)) {
+                    ValueToShow = this._shownValue;
                 }
                 else {
-                    shownValue.current = ValueToShow;
+                    this._shownValue = ValueToShow;
                 }
-                const _onInput = useCallback((Event) => {
+                const _onInput = (Event) => {
                     if (Enabling === false) {
                         return consumingEvent(Event);
                     }
-                    shownValue.current = this.Value = Event.target.value;
+                    this._shownValue = this.Value = Event.target.value;
                     if (this._onInput != null) {
                         this._onInput_(Event);
                     } // no typo!
-                }, [Enabling]);
-                const _onBlur = useCallback((Event) => {
+                };
+                const _onBlur = (Event) => {
                     this.rerender();
                     if (this._onBlur != null) {
                         this._onBlur_(Event);
                     } // no typo!
-                });
+                };
                 /**** process any other parameters ****/
                 const Placeholder = acceptableOptionalTextline(this._Placeholder);
                 const readonly = acceptableOptionalBoolean(this._readonly);
@@ -8188,8 +8331,8 @@ export class WAT_TextInput extends WAT_Widget {
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         spellcheck=${SpellChecking} style="resize:none; ${LineWrapping == true
-                    ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
-                    : undefined}"
+                    ? 'overflow-wrap:break-word; hyphens:auto'
+                    : 'white-space:pre'}"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
       />`;
             }
@@ -8440,11 +8583,6 @@ export class WAT_WidgetPane extends WAT_Widget {
                     : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
                 WidgetsToShow.forEach((Widget) => Widget._Pane = this);
                 this._shownWidgets = WidgetsToShow;
-                useEffect(() => {
-                    return () => {
-                        this._releaseWidgets();
-                    };
-                }, []);
                 const PaneGeometry = this.Geometry;
                 const BaseGeometry = SourceWidget.Geometry;
                 return html `<div class="WAT Content WidgetPane">
@@ -8536,6 +8674,9 @@ export class WAT_WidgetPane extends WAT_Widget {
     }
     _releaseWidgets() {
         this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+    }
+    componentDidUnmount() {
+        this._releaseWidgets();
     }
 }
 builtInWidgetTypes['WidgetPane'] = WAT_WidgetPane;
@@ -9174,30 +9315,29 @@ class WAT_WidgetView extends Component {
 //------------------------------------------------------------------------------
 //--                              WAT_ModalLayer                              --
 //------------------------------------------------------------------------------
+const WAT_ModalLayer_EventTypes = [
+    'click', 'dblclick',
+    'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout',
+    'mouseenter', 'mouseleave',
+    'touchstart', 'touchend', 'touchmove', 'touchcancel',
+    'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+    'pointerenter', 'pointerleave', 'pointercancel',
+    'keydown', 'keyup', 'keypress',
+    'wheel', 'contextmenu', 'focus', 'blur'
+];
 class WAT_ModalLayer extends Component {
-    render(PropSet) {
-        const EventTypes = [
-            'click', 'dblclick',
-            'mousedown', 'mouseup', 'mousemove', 'mouseover', 'mouseout',
-            'mouseenter', 'mouseleave',
-            'touchstart', 'touchend', 'touchmove', 'touchcancel',
-            'pointerdown', 'pointerup', 'pointermove', 'pointerover', 'pointerout',
-            'pointerenter', 'pointerleave', 'pointercancel',
-            'keydown', 'keyup', 'keypress',
-            'wheel', 'contextmenu', 'focus', 'blur'
-        ];
-        const DOMElement = useRef(null);
-        useEffect(() => {
-            EventTypes.forEach((EventType) => {
-                DOMElement.current.addEventListener(EventType, consumeEvent);
-            });
-            return () => {
-                EventTypes.forEach((EventType) => {
-                    DOMElement.current.removeEventListener(EventType, consumeEvent);
-                });
-            };
+    componentDidMount() {
+        WAT_ModalLayer_EventTypes.forEach((EventType) => {
+            this.base.addEventListener(EventType, consumeEvent);
         });
-        return html `<div class="WAT ModalLayer" ref=${DOMElement}/>`;
+    }
+    componentWillUnmount() {
+        WAT_ModalLayer_EventTypes.forEach((EventType) => {
+            this.base.removeEventListener(EventType, consumeEvent);
+        });
+    }
+    render(PropSet) {
+        return html `<div class="WAT ModalLayer"/>`;
     }
 }
 //------------------------------------------------------------------------------
@@ -9434,38 +9574,37 @@ class WAT_DialogView extends Component {
 //------------------------------------------------------------------------------
 //--                               WAT_Underlay                               --
 //------------------------------------------------------------------------------
+const WAT_Underlay_EventTypes = [
+    'click', 'dblclick',
+    /*'mousedown',*/ 'mouseup', 'mousemove', 'mouseover', 'mouseout',
+    'mouseenter', 'mouseleave',
+    /*'touchstart',*/ 'touchend', 'touchmove', 'touchcancel',
+    /*'pointerdown',*/ 'pointerup', 'pointermove', 'pointerover', 'pointerout',
+    'pointerenter', 'pointerleave', 'pointercancel',
+    'keydown', 'keyup', 'keypress',
+    'wheel', 'contextmenu', 'focus', 'blur'
+];
 class WAT_Underlay extends Component {
+    componentDidMount() {
+        WAT_Underlay_EventTypes.forEach((EventType) => {
+            this.base.addEventListener(EventType, consumeEvent);
+        });
+    }
+    componentWillUnmount() {
+        WAT_Underlay_EventTypes.forEach((EventType) => {
+            this.base.removeEventListener(EventType, consumeEvent);
+        });
+    }
     render(PropSet) {
         const { Widget, Overlay } = PropSet;
-        const EventTypes = [
-            'click', 'dblclick',
-            /*'mousedown',*/ 'mouseup', 'mousemove', 'mouseover', 'mouseout',
-            'mouseenter', 'mouseleave',
-            /*'touchstart',*/ 'touchend', 'touchmove', 'touchcancel',
-            /*'pointerdown',*/ 'pointerup', 'pointermove', 'pointerover', 'pointerout',
-            'pointerenter', 'pointerleave', 'pointercancel',
-            'keydown', 'keyup', 'keypress',
-            'wheel', 'contextmenu', 'focus', 'blur'
-        ];
-        const DOMElement = useRef(null);
-        useEffect(() => {
-            EventTypes.forEach((EventType) => {
-                DOMElement.current.addEventListener(EventType, consumeEvent);
-            });
-            return () => {
-                EventTypes.forEach((EventType) => {
-                    DOMElement.current.removeEventListener(EventType, consumeEvent);
-                });
-            };
-        });
-        const handleEvent = useCallback((Event) => {
+        const handleEvent = (Event) => {
             consumeEvent(Event);
             if (!Overlay.isModal) {
                 Widget.closeOverlay(Overlay.Name);
             }
-        });
+        };
         const modal = (Overlay.isModal ? 'modal' : '');
-        return html `<div class="WAT ${modal} Underlay" ref=${DOMElement}
+        return html `<div class="WAT ${modal} Underlay"
         onMouseDown=${handleEvent} onPointerDown=${handleEvent}
         onTouchStart=${handleEvent}
       />`;
