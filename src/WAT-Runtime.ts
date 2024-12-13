@@ -904,6 +904,7 @@
     left:0px; top:0px; width:24px; height:24px;
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
+    z-index:1000001;
   }
 
 /**** common Settings ****/
@@ -1932,6 +1933,7 @@
         try {
           if (this._onValueChange != null) { this._onValueChange.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onValueChange" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onValueChange" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -2028,7 +2030,11 @@
           try {
             reactiveFunction()
           } catch (Signal:any) {
-            console.error('WAT: execution error in reactive function',Signal)
+console.warn('execution error in reactive function',Signal)
+            setErrorReport(this,{
+              Type:'execution error in reactive function',
+              Sufferer:this, Message:'' + Signal, Cause:Signal
+            })
           }
         }))
       }
@@ -2050,6 +2056,7 @@
             activeScript
           )
         } catch (Signal:any) {
+console.warn('Script Compilation Failure',Signal)
           setErrorReport(this,{
             Type:'Script Compilation Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -2059,9 +2066,11 @@
 
         try {
           await compiledScript.call(this,
-            this,this, html,reactively, onRender,onMount,onUnmount,onValueChange
+            this,this, html,reactively,
+            onRender,onMount,onUnmount,onValueChange
           )
         } catch (Signal:any) {
+console.warn('Script Execution Failure',Signal)
           setErrorReport(this,{
             Type:'Script Execution Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -2158,6 +2167,7 @@
         try {
           newRenderer.call(this)
         } catch (Signal:any) {
+console.warn('Rendering Failure',Signal)
           setErrorReport(this,{
             Type:'Rendering Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -2180,6 +2190,7 @@
         try {
           if (this._Renderer != null) { this._Renderer.call(this) }
         } catch (Signal:any) {
+console.warn('Rendering Callback Failure',Signal)
           setErrorReport(this,{
             Type:'Rendering Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -2310,6 +2321,7 @@
         try {
           if (this._onMount != null) { this._onMount.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onMount" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onMount" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -2336,6 +2348,7 @@
         try {
           if (this._onUnmount != null) { this._onUnmount.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onUnmount" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onUnmount" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -3313,8 +3326,15 @@
       )
 
       const Applet = new WAT_Applet()
+        const AppletName = Serialization.Name
+        delete Serialization.Name
+
         Applet._deserializeConfigurationFrom(Serialization)
         Applet._deserializePagesFrom(Serialization)
+
+        if (ValueIsName(AppletName)) {
+          (Applet as Indexable)._Name = AppletName
+        }
       return Applet
     }
 
@@ -3322,6 +3342,27 @@
 
     public async preserve ():Promise<void> {
       await AppletStore.setItem(this.Name,JSON.stringify(this.Serialization))
+    }
+
+  /**** replaceWith ****/
+
+    public replaceWith (Serialization:Serializable):void {
+      const AppletView = this._View; delete this._View
+      const AppletName = this._Name; delete Serialization.Name
+        this.clear()
+
+        this._deserializeConfigurationFrom(Serialization)
+        this._deserializePagesFrom(Serialization)
+      this._Name = AppletName
+      this._View = AppletView
+
+      if (this._onMount != null) { this._onMount_() }                // no typo!
+
+      if (this.visitedPage == null) {
+        this.visitPage(this.PageList[0])
+      }
+
+      this.rerender()
     }
   }
 
@@ -4184,6 +4225,7 @@
         try {
           if (this._onFocus != null) { this._onFocus.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onFocus" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onFocus" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -4209,6 +4251,7 @@
         try {
           if (this._onBlur != null) { this._onBlur.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onBlur" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onBlur" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -4234,6 +4277,7 @@
         try {
           if (this._onClick != null) { this._onClick.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onClick" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onClick" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -4259,6 +4303,7 @@
         try {
           if (this._onDblClick != null) { this._onDblClick.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onDblClick" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onDblClick" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -4285,6 +4330,7 @@
         try {
           if (this._onInput != null) { this._onInput.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onInput" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onInput" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -4310,6 +4356,7 @@
         try {
           if (this._onDrop != null) { this._onDrop.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onDrop" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onDrop" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -9718,6 +9765,7 @@
         try {
           if (this._onSelectionChange != null) { this._onSelectionChange.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onSelectionChange" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onSelectionChange" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -9743,6 +9791,7 @@
         try {
           if (this._onItemSelected != null) { this._onItemSelected.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onItemSelected" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onItemSelected" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -9768,6 +9817,7 @@
         try {
           if (this._onItemDeselected != null) { this._onItemDeselected.apply(this,ArgList) }
         } catch (Signal:any) {
+console.warn('"onItemDeselected" Callback Failure',Signal)
           setErrorReport(this,{
             Type:'"onItemDeselected" Callback Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -10031,7 +10081,7 @@
 
       Applet['_View'] = (this as Component).base
       if (Applet['_onMount'] != null) {
-        try { Applet['_onMount']() } catch (Signal) { /* nop */ }
+        (Applet as Indexable)._onMount_()                            // no typo!
       }
 
       rerender()
@@ -10044,7 +10094,7 @@
 
       Applet['_View'] = undefined
       if (Applet['_onUnmount'] != null) {
-        try { Applet['_onUnmount']() } catch (Signal) { /* nop */ }
+        (Applet as Indexable)._onUnmount_()                          // no typo!
       }
     }
 
@@ -10096,7 +10146,20 @@
 
       Page['_View'] = (this as Component).base
       if (Page['_onMount'] != null) {
-        Page['_onMount']()
+        (Page as Indexable)._onMount_()                              // no typo!
+      }
+    }
+
+  /**** componentWillUnmount ****/
+
+    public componentWillUnmount ():void {
+      this._releaseWidgets(this._shownWidgets)
+
+      const Page = this._Page as WAT_Page
+
+      Page['_View'] = undefined
+      if (Page['_onUnmount'] != null) {
+        (Page as Indexable)._onUnmount_()                            // no typo!
       }
     }
 
@@ -10109,19 +10172,6 @@
           (Widget as Indexable)._releaseWidgets()
         }
       })
-    }
-
-  /**** componentWillUnmount ****/
-
-    public componentWillUnmount ():void {
-      this._releaseWidgets(this._shownWidgets)
-
-      const Page = this._Page as WAT_Page
-
-      Page['_View'] = undefined
-      if (Page['_onUnmount'] != null) {
-        Page['_onUnmount']()
-      }
     }
 
   /**** render ****/
@@ -10165,7 +10215,7 @@
 
       Widget['_View'] = (this as Component).base
       if (Widget['_onMount'] != null) {
-        Widget['_onMount']()
+        (Widget as Indexable)._onMount_()                            // no typo!
       }
     }
 
@@ -10176,7 +10226,7 @@
 
       Widget['_View'] = undefined
       if (Widget['_onUnmount'] != null) {
-        Widget['_onUnmount']()
+        (Widget as Indexable)._onUnmount_()                          // no typo!
       }
     }
 
