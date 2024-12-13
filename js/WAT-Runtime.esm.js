@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, createRef, useRef } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -1918,6 +1918,41 @@ export class WAT_Applet extends WAT_Visual {
             writable: true,
             value: -1
         }); // dto.
+        /**** minWidth ****/
+        Object.defineProperty(this, "_minWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** maxWidth ****/
+        Object.defineProperty(this, "_maxWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** minHeight ****/
+        Object.defineProperty(this, "_minHeight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** maxHeight ****/
+        Object.defineProperty(this, "_maxHeight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** toBeCentered ****/
+        Object.defineProperty(this, "_toBeCentered", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: true
+        });
         /**** SnapToGrid ****/
         Object.defineProperty(this, "_SnapToGrid", {
             enumerable: true,
@@ -2078,6 +2113,32 @@ export class WAT_Applet extends WAT_Visual {
             }
         }
     }
+    get minWidth() {
+        return (this._minWidth == null ? 0 : this._minWidth);
+    }
+    set minWidth(_) {
+        throwReadOnlyError('minWidth');
+    }
+    get maxWidth() {
+        return this._maxWidth;
+    }
+    set maxWidth(_) {
+        throwReadOnlyError('maxWidth');
+    }
+    get minHeight() {
+        return (this._minHeight == null ? 0 : this._minHeight);
+    }
+    set minHeight(_) {
+        throwReadOnlyError('minHeight');
+    }
+    get maxHeight() {
+        return this._maxHeight;
+    }
+    set maxHeight(_) {
+        throwReadOnlyError('maxHeight');
+    }
+    get toBeCentered() { return this._toBeCentered; }
+    set toBeCentered(_) { throwReadOnlyError('toBeCentered'); }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
     set x(_) { throwReadOnlyError('x'); }
@@ -2609,7 +2670,8 @@ export class WAT_Applet extends WAT_Visual {
         /**** additional properties used by the "WAT Applet Manager" ****/
         ;
         [
-            'fullScreen', 'Width', 'Height',
+            'toBeCentered',
+            'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
     /**** _deserializeConfigurationFrom ****/
@@ -2632,14 +2694,20 @@ export class WAT_Applet extends WAT_Visual {
             'SnapToGrid', 'GridWidth', 'GridHeight',
         ].forEach((Name) => deserializeProperty(Name));
         /**** additional properties used by the "WAT Applet Manager" ****/
-        if (ValueIsBoolean(Serialization.fullScreen)) {
-            this._fullScreen = Serialization.fullScreen;
+        if (ValueIsBoolean(Serialization.toBeCentered)) {
+            this._toBeCentered = Serialization.fullScreen;
         }
-        if (ValueIsCardinal(Serialization.Width)) {
-            this._Width = Serialization.Width;
+        if (ValueIsOrdinal(Serialization.minWidth)) {
+            this._minWidth = Serialization.minWidth;
         }
-        if (ValueIsCardinal(Serialization.Height)) {
-            this._Height = Serialization.Height;
+        if (ValueIsOrdinal(Serialization.minHeight)) {
+            this._minHeight = Serialization.minHeight;
+        }
+        if (ValueIsOrdinal(Serialization.maxWidth)) {
+            this._maxWidth = Serialization.maxWidth;
+        }
+        if (ValueIsOrdinal(Serialization.maxHeight)) {
+            this._maxHeight = Serialization.maxHeight;
         }
     }
     /**** deserializedFrom ****/
@@ -8584,7 +8652,7 @@ export class WAT_IconTab extends WAT_Widget {
 builtInWidgetTypes['IconTab'] = WAT_IconTab;
 appendStyle(`
   .WAT.Widget > .WAT.IconTab {
-    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
+    left:0px; top:0px; right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
 
     -webkit-mask-size:contain;           mask-size:contain;
