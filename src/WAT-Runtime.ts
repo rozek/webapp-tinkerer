@@ -2593,6 +2593,57 @@ console.warn('"onUnmount" Callback Failure',Signal)
       }
     }
 
+  /**** minWidth ****/
+
+    protected _minWidth:WAT_Dimension|undefined = undefined
+
+    public get minWidth ():WAT_Dimension {
+      return (this._minWidth == null ? 0 : this._minWidth)
+    }
+    public set minWidth (_:WAT_Dimension|undefined) {
+      throwReadOnlyError('minWidth')
+    }
+
+  /**** maxWidth ****/
+
+    protected _maxWidth:WAT_Dimension|undefined = undefined
+
+    public get maxWidth ():WAT_Dimension|undefined {
+      return this._maxWidth
+    }
+    public set maxWidth (_:WAT_Dimension|undefined) {
+      throwReadOnlyError('maxWidth')
+    }
+
+  /**** minHeight ****/
+
+    protected _minHeight:WAT_Dimension|undefined = undefined
+
+    public get minHeight ():WAT_Dimension {
+      return (this._minHeight == null ? 0 : this._minHeight)
+    }
+    public set minHeight (_:WAT_Dimension|undefined) {
+      throwReadOnlyError('minHeight')
+    }
+
+  /**** maxHeight ****/
+
+    protected _maxHeight:WAT_Dimension|undefined = undefined
+
+    public get maxHeight ():WAT_Dimension|undefined {
+      return this._maxHeight
+    }
+    public set maxHeight (_:WAT_Dimension|undefined) {
+      throwReadOnlyError('maxHeight')
+    }
+
+  /**** toBeCentered ****/
+
+    protected _toBeCentered:boolean = true
+
+    public get toBeCentered ():boolean  { return this._toBeCentered }
+    public set toBeCentered (_:boolean) { throwReadOnlyError('toBeCentered') }
+
   /**** x/y ****/
 
     public get x ():WAT_Location  { return this.Geometry.x }
@@ -3274,7 +3325,8 @@ console.warn('"onUnmount" Callback Failure',Signal)
     /**** additional properties used by the "WAT Applet Manager" ****/
 
       ;[
-        'fullScreen','Width','Height',
+        'toBeCentered',
+        'minWidth','minHeight','maxWidth','maxHeight',
       ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
     }
 
@@ -3304,9 +3356,11 @@ console.warn('"onUnmount" Callback Failure',Signal)
 
     /**** additional properties used by the "WAT Applet Manager" ****/
 
-      if (ValueIsBoolean (Serialization.fullScreen)) { this._fullScreen = Serialization.fullScreen as boolean }
-      if (ValueIsCardinal(Serialization.Width))      { this._Width      = Serialization.Width      as number }
-      if (ValueIsCardinal(Serialization.Height))     { this._Height     = Serialization.Height     as number }
+      if (ValueIsBoolean(Serialization.toBeCentered)) { this._toBeCentered = Serialization.fullScreen as boolean }
+      if (ValueIsOrdinal(Serialization.minWidth))     { this._minWidth     = Serialization.minWidth   as number }
+      if (ValueIsOrdinal(Serialization.minHeight))    { this._minHeight    = Serialization.minHeight  as number }
+      if (ValueIsOrdinal(Serialization.maxWidth))     { this._maxWidth     = Serialization.maxWidth   as number }
+      if (ValueIsOrdinal(Serialization.maxHeight))    { this._maxHeight    = Serialization.maxHeight  as number }
     }
 
   /**** deserializedFrom ****/
@@ -4502,7 +4556,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
     protected _maxWidth:WAT_Dimension|undefined = undefined
 
-    public get maxWidth ():WAT_Dimension|undefined  {
+    public get maxWidth ():WAT_Dimension|undefined {
       return this._maxWidth
     }
     public set maxWidth (newMaxWidth:WAT_Dimension|undefined) {
@@ -4523,7 +4577,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
     protected _minHeight:WAT_Dimension|undefined = undefined
 
-    public get minHeight ():WAT_Dimension  {
+    public get minHeight ():WAT_Dimension {
       return (this._minHeight == null ? 0 : this._minHeight)
     }
     public set minHeight (newMinHeight:WAT_Dimension|undefined) {
@@ -4546,7 +4600,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
     protected _maxHeight:WAT_Dimension|undefined = undefined
 
-    public get maxHeight ():WAT_Dimension|undefined  {
+    public get maxHeight ():WAT_Dimension|undefined {
       return this._maxHeight
     }
     public set maxHeight (newMaxHeight:WAT_Dimension|undefined) {
@@ -9457,7 +9511,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
   appendStyle(`
   .WAT.Widget > .WAT.IconTab {
-    left:0px; top:0px: right:auto; bottom:0px; width:auto; height:auto;
+    left:0px; top:0px; right:auto; bottom:0px; width:auto; height:auto;
     border:none; border-bottom:solid 2px transparent;
 
     -webkit-mask-size:contain;           mask-size:contain;
