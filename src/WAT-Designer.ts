@@ -3324,12 +3324,6 @@ console.error(Signal)
         'Applet Import\n\n' +
         'You are about to replace the complete applet (and only keep its name)'
       )) {
-        const Applet = DesignerState.Applet
-          const AppletName = Applet.Name
-
-          Applet.clear()
-          Applet._deserializeConfigurationFrom(Serialization)
-          Applet._deserializePagesFrom(Serialization)
         DesignerState.selectedPages = []
         selectWidgets([])
 
@@ -3342,12 +3336,14 @@ console.error(Signal)
           VisitIndex:  -1,
         })
 
-        ;(Applet as Indexable)._Name = AppletName
-        if (Applet.visitedPage == null) {
-          Applet.visitPage(Applet.PageList[0])
-        }
+        DesignerState.Applet.replaceWith(Serialization)
 
-        WAT_rerender()
+        setTimeout(() => {
+          window.alert(
+            'Applet was imported\n\n' +
+            'The import will be persisted with the next change you make'
+          )
+        },100)
       }
       return
     }
