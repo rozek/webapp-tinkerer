@@ -3538,6 +3538,41 @@ function WAD_AppletConfigurationPane() {
               Value=${Applet.Height}
             />
           </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Limits</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">min. Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.minWidth}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.minHeight}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">max. Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.maxWidth}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} readonly style="width:60px"
+              Value=${Applet.maxHeight}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>to be centered</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${false}
+              Value=${Applet.toBeCentered}
+            />
+          </>
         </>
 
         <${WAD_Fold} Label="Typography"
@@ -4631,6 +4666,40 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Offsets[3]))}
               onInput=${(Event) => doConfigureSelectedWidgets('Offsets_3', parseFloat(Event.target.value))}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Limits</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">min. Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minWidth))}
+              onInput=${(Event) => doConfigureSelectedWidgets('minWidth', parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minHeight))}
+              onInput=${(Event) => doConfigureSelectedWidgets('minHeight', parseFloat(Event.target.value))}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">max. Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxWidth))}
+              onInput=${(Event) => doConfigureSelectedWidgets('maxWidth', parseFloat(Event.target.value))}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxHeight))}
+              onInput=${(Event) => doConfigureSelectedWidgets('maxHeight', parseFloat(Event.target.value))}
             />
           </>
         </>
