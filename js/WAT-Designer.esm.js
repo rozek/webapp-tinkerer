@@ -3002,11 +3002,6 @@ function doImport(FileContent, Type) {
     if (looksLikeApplet(Serialization)) {
         if (OperationWasConfirmed('Applet Import\n\n' +
             'You are about to replace the complete applet (and only keep its name)')) {
-            const Applet = DesignerState.Applet;
-            const AppletName = Applet.Name;
-            Applet.clear();
-            Applet._deserializeConfigurationFrom(Serialization);
-            Applet._deserializePagesFrom(Serialization);
             DesignerState.selectedPages = [];
             selectWidgets([]);
             Object.assign(DesignerState, {
@@ -3017,11 +3012,11 @@ function doImport(FileContent, Type) {
                 VisitHistory: [],
                 VisitIndex: -1,
             });
-            Applet._Name = AppletName;
-            if (Applet.visitedPage == null) {
-                Applet.visitPage(Applet.PageList[0]);
-            }
-            WAT_rerender();
+            DesignerState.Applet.replaceWith(Serialization);
+            setTimeout(() => {
+                window.alert('Applet was imported\n\n' +
+                    'The import will be persisted with the next change you make');
+            }, 100);
         }
         return;
     }
