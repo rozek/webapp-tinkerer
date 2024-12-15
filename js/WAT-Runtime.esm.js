@@ -8532,26 +8532,56 @@ appendStyle(`
   }
   `);
 /**** MarkdownView ****/
+import { Marked } from 'marked';
 export class WAT_MarkdownView extends WAT_Widget {
     constructor(Page) {
         super(Page);
+        Object.defineProperty(this, "state", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_marked", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: () => {
-                return '';
+                return html `<div class="WAT Content MarkdownView"
+        dangerouslySetInnerHTML=${{ __html: this.state.HTMLContent }}
+      />`;
             }
+        });
+        this.state = { HTMLContent: '' };
+        this._marked = new Marked();
+        this._marked.setOptions({
+            gfm: true,
+            breaks: true,
+            headerIds: true,
+            langPrefix: 'language-'
         });
     }
     get Type() { return 'MarkdownView'; }
     set Type(_) { throwReadOnlyError('Type'); }
+    componentDidMount() {
+        this._renderMarkdown();
+    }
+    /**** _renderMarkdown ****/
+    _renderMarkdown() {
+        const Markdown = acceptableText(this._Value, '');
+        this.setState({ HTMLContent: this._marked(Markdown) });
+    }
 }
 builtInWidgetTypes['MarkdownView'] = WAT_MarkdownView;
 appendStyle(`
   .WAT.Widget > .WAT.MarkdownView {
-    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
   `);
 /**** TextTab ****/
