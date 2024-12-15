@@ -8531,6 +8531,29 @@ appendStyle(`
     background:#F0F0F0;
   }
   `);
+/**** MarkdownView ****/
+export class WAT_MarkdownView extends WAT_Widget {
+    constructor(Page) {
+        super(Page);
+        /**** Renderer ****/
+        Object.defineProperty(this, "_Renderer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: () => {
+                return '';
+            }
+        });
+    }
+    get Type() { return 'MarkdownView'; }
+    set Type(_) { throwReadOnlyError('Type'); }
+}
+builtInWidgetTypes['MarkdownView'] = WAT_MarkdownView;
+appendStyle(`
+  .WAT.Widget > .WAT.MarkdownView {
+    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
+  }
+  `);
 /**** TextTab ****/
 export class WAT_TextTab extends WAT_Widget {
     constructor(Page) {
