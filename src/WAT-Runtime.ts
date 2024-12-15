@@ -9389,6 +9389,30 @@ console.warn('"onDrop" Callback Failure',Signal)
   }
   `)
 
+/**** MarkdownView ****/
+
+  export class WAT_MarkdownView extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'MarkdownView' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+
+
+  /**** Renderer ****/
+
+    protected _Renderer = () => {
+      return ''
+    }
+  }
+  builtInWidgetTypes['MarkdownView'] = WAT_MarkdownView
+
+  appendStyle(`
+  .WAT.Widget > .WAT.MarkdownView {
+    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
+  }
+  `)
+
 /**** TextTab ****/
 
   export class WAT_TextTab extends WAT_Widget {
