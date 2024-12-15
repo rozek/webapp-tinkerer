@@ -72,6 +72,50 @@
 *                                WAT Developer                                 *
 *                                                                              *
 *******************************************************************************/
+/**** ValueIsBoolean ****/
+function ValueIsBoolean(Value) {
+    return (typeof Value === 'boolean');
+}
+/**** acceptableBoolean ****/
+function acceptableBoolean(Value, Default) {
+    switch (Value) {
+        case 'false': return false;
+        case 'true': return true;
+        default: return Default;
+    }
+}
+/**** ValueIsOrdinal ****/
+function ValueIsOrdinal(Value) {
+    return ((typeof Value === 'number') &&
+        (Math.floor(Value) === Value) &&
+        (Value >= 0));
+}
+/**** acceptableOrdinal ****/
+function acceptableOrdinal(Value, Default, ErrorMessage) {
+    if ((Value == null) || (Value.trim() === '')) {
+        return Default;
+    }
+    const Candidate = parseFloat(Value);
+    if (ValueIsOrdinal(Candidate)) {
+        return Candidate;
+    }
+    else {
+        exitWith(ErrorMessage);
+    }
+}
+/**** acceptableOptionalOrdinal ****/
+function acceptableOptionalOrdinal(Value, ErrorMessage) {
+    if ((Value == null) || (Value.trim() === '')) {
+        return undefined;
+    }
+    const Candidate = parseFloat(Value);
+    if (ValueIsOrdinal(Candidate)) {
+        return Candidate;
+    }
+    else {
+        exitWith(ErrorMessage);
+    }
+}
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
 // no ctrl.char.s, no "/", no leading " " or "#"
@@ -91,31 +135,34 @@ if (Name == null)
     exitWith('No WAT applet name given');
 if (!ValueIsName(Name))
     exitWith('Invalid WAT applet name given');
-const fullScreen = URLParameters.get('fullscreen');
-if (fullScreen === 'true') {
-    document.write(`
-  <div type="wat/applet" name="${Name}" style="
-    display:block; position:absolute;
-    left:0px; top:0px; width:100vw; height:100vh;
-  "></div>
-    `);
-}
-else {
-    const Width = parseInt(URLParameters.get('width') || '', 10);
-    if (isNaN(Width) || (Width <= 0))
-        exitWith('Invalid applet width given');
-    const Height = parseInt(URLParameters.get('height') || '', 10);
-    if (isNaN(Height) || (Height <= 0))
-        exitWith('Invalid applet height given');
-    const OffsetX = (Width > window.innerWidth - 40 ? 0 : 20);
-    const OffsetY = (Height > window.innerHeight - 40 ? 0 : 20);
-    document.write(`
+const minWidth = acceptableOrdinal(URLParameters.get('min-width'), 0, 'Invalid minimal applet width given');
+const maxWidth = acceptableOptionalOrdinal(URLParameters.get('max-width'), 'Invalid maximal applet width given');
+const minHeight = acceptableOrdinal(URLParameters.get('min-height'), 0, 'Invalid minimal applet height given');
+const maxHeight = acceptableOptionalOrdinal(URLParameters.get('max-height'), 'Invalid maximal applet height given');
+const toBeCentered = acceptableBoolean(URLParameters.get('center'), false);
+const toBeOffset = acceptableBoolean(URLParameters.get('offset'), false);
+const ViewportWidth = window.innerWidth;
+const ViewportHeight = window.innerHeight;
+const Width = Math.max(minWidth, Math.min(ViewportWidth, maxWidth == null ? Infinity : maxWidth));
+const Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight));
+const OffsetX = (Width < ViewportWidth
+    ? toBeCentered
+        ? Math.floor((ViewportWidth - Width) / 2)
+        : (toBeOffset ? 20 : 0)
+    : 0);
+const OffsetY = (Height < ViewportHeight
+    ? toBeCentered
+        ? Math.floor((ViewportHeight - Height) / 2)
+        : (toBeOffset ? 20 : 0)
+    : 0);
+document.write(`
   <div type="wat/applet" name="${Name}" style="
     display:block; position:absolute;
     left:${OffsetX}px; top:${OffsetY}px; width:${Width}px; height:${Height}px;
+    min-width:${minWidth}px;   ${maxWidth == null ? '' : `max-width:${maxWidth}px; `}
+    min-height:${minHeight}px; ${maxHeight == null ? '' : `max-height:${maxHeight}px; `}
   "></div>
-    `);
-}
+  `);
 
   </script>
 
