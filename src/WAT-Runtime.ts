@@ -9391,25 +9391,53 @@ console.warn('"onDrop" Callback Failure',Signal)
 
 /**** MarkdownView ****/
 
+  import { Marked } from 'marked'
+
   export class WAT_MarkdownView extends WAT_Widget {
-    public constructor (Page:WAT_Page) { super(Page) }
+    protected state:Indexable
+    protected _marked:any
+
+    public constructor (Page:WAT_Page) {
+      super(Page)
+      this.state   = { HTMLContent:'' }
+      this._marked = new Marked()
+
+      this._marked.setOptions({
+        gfm: true,
+        breaks: true,
+        headerIds: true,
+        langPrefix: 'language-'
+      })
+    }
 
     public get Type ():string  { return 'MarkdownView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+    public componentDidMount () {
+      this._renderMarkdown()
+    }
 
+
+
+  /**** _renderMarkdown ****/
+
+    protected _renderMarkdown ():void {
+      const Markdown = acceptableText(this._Value,'')
+      ;(this as Component).setState({ HTMLContent:this._marked(Markdown) })
+    }
 
   /**** Renderer ****/
 
     protected _Renderer = () => {
-      return ''
+      return html`<div class="WAT Content MarkdownView"
+        dangerouslySetInnerHTML=${{__html:this.state.HTMLContent}}
+      />`
     }
   }
   builtInWidgetTypes['MarkdownView'] = WAT_MarkdownView
 
   appendStyle(`
   .WAT.Widget > .WAT.MarkdownView {
-    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
   `)
 
