@@ -8536,11 +8536,11 @@ import { Marked } from 'marked';
 export class WAT_MarkdownView extends WAT_Widget {
     constructor(Page) {
         super(Page);
-        Object.defineProperty(this, "state", {
+        Object.defineProperty(this, "_HTMLContent", {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: void 0
+            value: ''
         });
         Object.defineProperty(this, "_marked", {
             enumerable: true,
@@ -8555,11 +8555,10 @@ export class WAT_MarkdownView extends WAT_Widget {
             writable: true,
             value: () => {
                 return html `<div class="WAT Content MarkdownView"
-        dangerouslySetInnerHTML=${{ __html: this.state.HTMLContent }}
+        dangerouslySetInnerHTML=${{ __html: this._HTMLContent }}
       />`;
             }
         });
-        this.state = { HTMLContent: '' };
         this._marked = new Marked();
         this._marked.setOptions({
             gfm: true,
@@ -8570,18 +8569,24 @@ export class WAT_MarkdownView extends WAT_Widget {
     }
     get Type() { return 'MarkdownView'; }
     set Type(_) { throwReadOnlyError('Type'); }
-    componentDidMount() {
-        this._renderMarkdown();
-    }
-    /**** _renderMarkdown ****/
-    _renderMarkdown() {
-        const Markdown = acceptableText(this._Value, '');
-        this.setState({ HTMLContent: this._marked(Markdown) });
+    /**** Value ****/
+    get Value() { return this._Value; }
+    set Value(newValue) {
+        allowText('value', newValue);
+        if (ValuesDiffer(this._Value, newValue)) {
+            this._Value = newValue;
+            this._HTMLContent = this._marked.parse(newValue);
+            if (this._onValueChange != null) {
+                this._onValueChange_();
+            } // no typo!
+            this.rerender();
+        }
     }
 }
 builtInWidgetTypes['MarkdownView'] = WAT_MarkdownView;
 appendStyle(`
   .WAT.Widget > .WAT.MarkdownView {
+    overflow-y:scroll;
   }
   `);
 /**** TextTab ****/
