@@ -9394,12 +9394,11 @@ console.warn('"onDrop" Callback Failure',Signal)
   import { Marked } from 'marked'
 
   export class WAT_MarkdownView extends WAT_Widget {
-    protected state:Indexable
+    protected _HTMLContent:WAT_Text = ''
     protected _marked:any
 
     public constructor (Page:WAT_Page) {
       super(Page)
-      this.state   = { HTMLContent:'' }
       this._marked = new Marked()
 
       this._marked.setOptions({
@@ -9413,24 +9412,29 @@ console.warn('"onDrop" Callback Failure',Signal)
     public get Type ():string  { return 'MarkdownView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
-    public componentDidMount () {
-      this._renderMarkdown()
+  /**** Value ****/
+
+    public get Value ():serializableValue|undefined { return this._Value }
+    public set Value (newValue:serializableValue|undefined) {
+      allowText('value',newValue)
+
+      if (ValuesDiffer(this._Value,newValue)) {
+        this._Value       = newValue
+        this._HTMLContent = this._marked.parse(newValue)
+
+        if (this._onValueChange != null) { this._onValueChange_() }  // no typo!
+
+        this.rerender()
+      }
     }
 
 
-
-  /**** _renderMarkdown ****/
-
-    protected _renderMarkdown ():void {
-      const Markdown = acceptableText(this._Value,'')
-      ;(this as Component).setState({ HTMLContent:this._marked(Markdown) })
-    }
 
   /**** Renderer ****/
 
     protected _Renderer = () => {
       return html`<div class="WAT Content MarkdownView"
-        dangerouslySetInnerHTML=${{__html:this.state.HTMLContent}}
+        dangerouslySetInnerHTML=${{__html:this._HTMLContent}}
       />`
     }
   }
@@ -9438,6 +9442,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
   appendStyle(`
   .WAT.Widget > .WAT.MarkdownView {
+    overflow-y:scroll;
   }
   `)
 
