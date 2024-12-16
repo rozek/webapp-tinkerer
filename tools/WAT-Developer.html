@@ -128,6 +128,14 @@ function acceptableOptionalOrdinal(Value, ErrorMessage) {
         exitWith(ErrorMessage);
     }
 }
+/**** ValueIsOneOf ****/
+function ValueIsOneOf(Value, allowedItems) {
+    return (allowedItems.indexOf(Value) >= 0);
+}
+/**** acceptableOneOf ****/
+function acceptableOneOf(Value, allowedItems, Default) {
+    return (ValueIsOneOf(Value, allowedItems) ? Value : Default);
+}
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
 // no ctrl.char.s, no "/", no leading " " or "#"
@@ -147,16 +155,27 @@ if (Name == null)
     exitWith('No WAT applet name given');
 if (!ValueIsName(Name))
     exitWith('Invalid WAT applet name given');
-const minWidth = acceptableOrdinal(URLParameters.get('min-width'), 0, 'Invalid minimal applet width given');
-const maxWidth = acceptableOptionalOrdinal(URLParameters.get('max-width'), 'Invalid maximal applet width given');
-const minHeight = acceptableOrdinal(URLParameters.get('min-height'), 0, 'Invalid minimal applet height given');
-const maxHeight = acceptableOptionalOrdinal(URLParameters.get('max-height'), 'Invalid maximal applet height given');
+let withMobileFrame = acceptableBoolean(URLParameters.get('with-mobile-frame'), false);
+let minWidth = acceptableOrdinal(URLParameters.get('min-width'), 0, 'Invalid minimal applet width given');
+let maxWidth = acceptableOptionalOrdinal(URLParameters.get('max-width'), 'Invalid maximal applet width given');
+let minHeight = acceptableOrdinal(URLParameters.get('min-height'), 0, 'Invalid minimal applet height given');
+let maxHeight = acceptableOptionalOrdinal(URLParameters.get('max-height'), 'Invalid maximal applet height given');
 const toBeCentered = acceptableBoolean(URLParameters.get('center'), false);
 const toBeOffset = acceptableBoolean(URLParameters.get('offset'), false);
+const expectedOrientation = acceptableOneOf('expected-orientation', ['any', 'portrait', 'landscape'], 'any');
 const ViewportWidth = window.innerWidth;
 const ViewportHeight = window.innerHeight;
-const Width = Math.max(minWidth, Math.min(ViewportWidth, maxWidth == null ? Infinity : maxWidth));
-const Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight));
+let Width = Math.max(minWidth, Math.min(ViewportWidth, maxWidth == null ? Infinity : maxWidth));
+let Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight));
+if ((Width < ViewportWidth - 10) && (Height < ViewportHeight - 10)) {
+    if (withMobileFrame) {
+        Width += 10;
+        Height += 10;
+    }
+}
+else {
+    withMobileFrame = false;
+}
 const OffsetX = (Width < ViewportWidth
     ? toBeCentered
         ? Math.floor((ViewportWidth - Width) / 2)
@@ -173,6 +192,8 @@ document.write(`
     left:${OffsetX}px; top:${OffsetY}px; width:${Width}px; height:${Height}px;
     min-width:${minWidth}px;   ${maxWidth == null ? '' : `max-width:${maxWidth}px; `}
     min-height:${minHeight}px; ${maxHeight == null ? '' : `max-height:${maxHeight}px; `}
+    ${withMobileFrame ? 'border:solid 5px black; border-radius:5px;' : ''}
+    box-shadow:0px 0px 10px 0px black;
   "></div>
   `);
 
