@@ -129,6 +129,9 @@
     WAT_Location|WAT_Dimension, WAT_Location|WAT_Dimension
   ]
 
+  export const WAT_Orientations = [ 'any','portrait','landscape' ]
+  export type  WAT_Orientation  = typeof WAT_Orientations[number]
+
 /**** configuration-related types ****/
 
   export const WAT_FontWeights = [
@@ -2645,6 +2648,20 @@ console.warn('"onUnmount" Callback Failure',Signal)
     public get toBeCentered ():boolean  { return this._toBeCentered }
     public set toBeCentered (_:boolean) { throwReadOnlyError('toBeCentered') }
 
+  /**** withMobileFrame ****/
+
+    protected _withMobileFrame:boolean = false
+
+    public get withMobileFrame ():boolean  { return this._withMobileFrame }
+    public set withMobileFrame (_:boolean) { throwReadOnlyError('withMobileFrame') }
+
+  /**** expectedOrientation ****/
+
+    protected _expectedOrientation:WAT_Orientation = 'any'
+
+    public get expectedOrientation ():WAT_Orientation  { return this._expectedOrientation }
+    public set expectedOrientation (_:WAT_Orientation) { throwReadOnlyError('expectedOrientation') }
+
   /**** x/y ****/
 
     public get x ():WAT_Location  { return this.Geometry.x }
@@ -2737,6 +2754,22 @@ console.warn('"onUnmount" Callback Failure',Signal)
       if (this._GridHeight !== newHeight) {
         this._GridHeight = newHeight
 //      this.rerender()
+      }
+    }
+
+  /**** HeadExtensions ****/
+
+    protected _HeadExtensions:WAT_Text = ''
+
+    public get HeadExtensions ():WAT_Text  { return this._HeadExtensions }
+    public set HeadExtensions (newValue:WAT_Text) {
+      allowText('head extension',newValue)
+      if (newValue == null) { newValue = '' }
+
+      newValue = newValue.trim()
+      if (this._HeadExtensions !== newValue) {
+        this._HeadExtensions = newValue
+//      this.rerender()                                   // no need to rerender
       }
     }
 
@@ -3314,6 +3347,7 @@ console.warn('"onUnmount" Callback Failure',Signal)
       ;[
         'Name',
         'SnapToGrid','GridWidth','GridHeight',
+        'HeadExtensions',
       ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
 
     /**** "activeScript" needs special treatment ****/
@@ -3326,7 +3360,7 @@ console.warn('"onUnmount" Callback Failure',Signal)
     /**** additional properties used by the "WAT Applet Manager" ****/
 
       ;[
-        'toBeCentered',
+        'toBeCentered', 'withMobileFrame', 'expectedOrientation',
         'minWidth','minHeight','maxWidth','maxHeight',
       ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
     }
@@ -3353,15 +3387,20 @@ console.warn('"onUnmount" Callback Failure',Signal)
       ;[
         'Name',
         'SnapToGrid','GridWidth','GridHeight',
+        'HeadExtensions',
       ].forEach((Name:string) => deserializeProperty(Name))
 
     /**** additional properties used by the "WAT Applet Manager" ****/
 
-      if (ValueIsBoolean(Serialization.toBeCentered)) { this._toBeCentered = Serialization.fullScreen as boolean }
-      if (ValueIsOrdinal(Serialization.minWidth))     { this._minWidth     = Serialization.minWidth   as number }
-      if (ValueIsOrdinal(Serialization.minHeight))    { this._minHeight    = Serialization.minHeight  as number }
-      if (ValueIsOrdinal(Serialization.maxWidth))     { this._maxWidth     = Serialization.maxWidth   as number }
-      if (ValueIsOrdinal(Serialization.maxHeight))    { this._maxHeight    = Serialization.maxHeight  as number }
+      if (ValueIsBoolean(Serialization.toBeCentered))    { this._toBeCentered    = Serialization.toBeCentered as boolean }
+      if (ValueIsOrdinal(Serialization.minWidth))        { this._minWidth        = Serialization.minWidth   as number }
+      if (ValueIsOrdinal(Serialization.minHeight))       { this._minHeight       = Serialization.minHeight  as number }
+      if (ValueIsOrdinal(Serialization.maxWidth))        { this._maxWidth        = Serialization.maxWidth   as number }
+      if (ValueIsOrdinal(Serialization.maxHeight))       { this._maxHeight       = Serialization.maxHeight  as number }
+      if (ValueIsBoolean(Serialization.withMobileFrame)) { this._withMobileFrame = Serialization.withMobileFrame as boolean }
+      if (ValueIsOneOf(Serialization.expectedOrientation,WAT_Orientations)) {
+        this._expectedOrientation = Serialization.expectedOrientation as WAT_Orientation
+      }
     }
 
   /**** deserializedFrom ****/
