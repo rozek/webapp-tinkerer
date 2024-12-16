@@ -64,11 +64,12 @@ export const WAT_Cursors = [
 export const WAT_ErrorTypes = [
     //  'missing Behaviour',         'Behaviour Execution Failure',
     'Script Compilation Failure', 'Script Execution Failure',
-    'Rendering Failure', 'Event Handling Failure',
+    '"Value" Setting Failure', 'Rendering Failure',
     '"onMount" Callback Failure', '"onUnmount" Callback Failure',
     '"onFocus" Callback Failure', '"onBlur" Callback Failure',
     '"onClick" Callback Failure', '"onInput" Callback Failure',
-    '"onDrop" Callback Failure', '"onValueChange" Callback Failure'
+    '"onDrop" Callback Failure', '"onValueChange" Callback Failure',
+    'Event Handling Failure',
 ];
 export function throwError(Message) {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
@@ -8533,6 +8534,20 @@ appendStyle(`
   `);
 /**** MarkdownView ****/
 import { Marked } from 'marked';
+import hljs from 'highlight.js/lib/core';
+import { default as _css } from 'highlight.js/lib/languages/css';
+hljs.registerLanguage('html', _css);
+import { default as _javascript } from 'highlight.js/lib/languages/javascript';
+hljs.registerLanguage('javascript', _javascript);
+import { default as _java } from 'highlight.js/lib/languages/java';
+hljs.registerLanguage('java', _java);
+import { default as _json } from 'highlight.js/lib/languages/json';
+hljs.registerLanguage('json', _json);
+import { default as _typescript } from 'highlight.js/lib/languages/typescript';
+hljs.registerLanguage('typescript', _typescript);
+import { default as _xml } from 'highlight.js/lib/languages/xml';
+hljs.registerLanguage('html', _xml);
+hljs.registerLanguage('xml', _xml);
 export class WAT_MarkdownView extends WAT_Widget {
     constructor(Page) {
         super(Page);
@@ -8561,11 +8576,9 @@ export class WAT_MarkdownView extends WAT_Widget {
         });
         this._marked = new Marked();
         this._marked.setOptions({
-            gfm: true,
-            breaks: true,
-            headerIds: true,
-            langPrefix: 'language-'
+            gfm: true, breaks: true,
         });
+        //    this._marked.use(markedKatex({ nonStandard:true }))
     }
     get Type() { return 'MarkdownView'; }
     set Type(_) { throwReadOnlyError('Type'); }
@@ -8575,7 +8588,16 @@ export class WAT_MarkdownView extends WAT_Widget {
         allowText('value', newValue);
         if (ValuesDiffer(this._Value, newValue)) {
             this._Value = newValue;
-            this._HTMLContent = this._marked.parse(newValue);
+            try {
+                this._HTMLContent = this._marked.parse(newValue);
+            }
+            catch (Signal) {
+                console.warn('"Value" Setting Failure', Signal);
+                setErrorReport(this, {
+                    Type: '"Value" Setting Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
             if (this._onValueChange != null) {
                 this._onValueChange_();
             } // no typo!
