@@ -60,6 +60,7 @@
       "marked":                "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js",
       "marked-katex-extension":"https://cdn.jsdelivr.net/npm/marked-katex-extension/+esm",
       "marked-highlight":      "https://cdn.jsdelivr.net/npm/marked-highlight/+esm",
+
       "highlight.js/lib/core":                "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/highlight.min.js",
       "highlight.js/lib/languages/css":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/css.min.js",
       "highlight.js/lib/languages/javascript":"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/javascript.min.js",
@@ -156,6 +157,10 @@ if (Name == null)
 if (!ValueIsName(Name))
     exitWith('Invalid WAT applet name given');
 let withMobileFrame = acceptableBoolean(URLParameters.get('with-mobile-frame'), false);
+const ViewportWidth = window.innerWidth;
+const ViewportHeight = window.innerHeight;
+let Width = acceptableOrdinal(URLParameters.get('width'), ViewportWidth, 'Invalid applet width given');
+let Height = acceptableOrdinal(URLParameters.get('height'), ViewportHeight, 'Invalid applet height given');
 let minWidth = acceptableOrdinal(URLParameters.get('min-width'), 0, 'Invalid minimal applet width given');
 let maxWidth = acceptableOptionalOrdinal(URLParameters.get('max-width'), 'Invalid maximal applet width given');
 let minHeight = acceptableOrdinal(URLParameters.get('min-height'), 0, 'Invalid minimal applet height given');
@@ -163,10 +168,8 @@ let maxHeight = acceptableOptionalOrdinal(URLParameters.get('max-height'), 'Inva
 const toBeCentered = acceptableBoolean(URLParameters.get('center'), false);
 const toBeOffset = acceptableBoolean(URLParameters.get('offset'), false);
 const expectedOrientation = acceptableOneOf('expected-orientation', ['any', 'portrait', 'landscape'], 'any');
-const ViewportWidth = window.innerWidth;
-const ViewportHeight = window.innerHeight;
-let Width = Math.max(minWidth, Math.min(ViewportWidth, maxWidth == null ? Infinity : maxWidth));
-let Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight));
+Width = Math.max(minWidth, Math.min(Width, ViewportWidth, maxWidth == null ? Infinity : maxWidth));
+Height = Math.max(minHeight, Math.min(Height, ViewportHeight, maxHeight == null ? Infinity : maxHeight));
 if ((Width < ViewportWidth - 10) && (Height < ViewportHeight - 10)) {
     if (withMobileFrame) {
         Width += 10;
