@@ -34,6 +34,7 @@ if (!Array.prototype.toReversed) {
 }
 export const WAT_horizontalAnchorses = ['left-width', 'left-right', 'width-right'];
 export const WAT_verticalAnchorses = ['top-height', 'top-bottom', 'height-bottom'];
+export const WAT_Orientations = ['any', 'portrait', 'landscape'];
 /**** configuration-related types ****/
 export const WAT_FontWeights = [
     'thin', 'extra-light', 'light', 'normal', 'medium', 'semi-bold',
@@ -1954,6 +1955,20 @@ export class WAT_Applet extends WAT_Visual {
             writable: true,
             value: true
         });
+        /**** withMobileFrame ****/
+        Object.defineProperty(this, "_withMobileFrame", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** expectedOrientation ****/
+        Object.defineProperty(this, "_expectedOrientation", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 'any'
+        });
         /**** SnapToGrid ****/
         Object.defineProperty(this, "_SnapToGrid", {
             enumerable: true,
@@ -1974,6 +1989,13 @@ export class WAT_Applet extends WAT_Visual {
             configurable: true,
             writable: true,
             value: 10
+        });
+        /**** HeadExtensions ****/
+        Object.defineProperty(this, "_HeadExtensions", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: ''
         });
         /**** PageList ****/
         Object.defineProperty(this, "_PageList", {
@@ -2140,6 +2162,10 @@ export class WAT_Applet extends WAT_Visual {
     }
     get toBeCentered() { return this._toBeCentered; }
     set toBeCentered(_) { throwReadOnlyError('toBeCentered'); }
+    get withMobileFrame() { return this._withMobileFrame; }
+    set withMobileFrame(_) { throwReadOnlyError('withMobileFrame'); }
+    get expectedOrientation() { return this._expectedOrientation; }
+    set expectedOrientation(_) { throwReadOnlyError('expectedOrientation'); }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
     set x(_) { throwReadOnlyError('x'); }
@@ -2200,6 +2226,18 @@ export class WAT_Applet extends WAT_Visual {
         if (this._GridHeight !== newHeight) {
             this._GridHeight = newHeight;
             //      this.rerender()
+        }
+    }
+    get HeadExtensions() { return this._HeadExtensions; }
+    set HeadExtensions(newValue) {
+        allowText('head extension', newValue);
+        if (newValue == null) {
+            newValue = '';
+        }
+        newValue = newValue.trim();
+        if (this._HeadExtensions !== newValue) {
+            this._HeadExtensions = newValue;
+            //      this.rerender()                                   // no need to rerender
         }
     }
     /**** rerender ****/
@@ -2662,6 +2700,7 @@ export class WAT_Applet extends WAT_Visual {
         [
             'Name',
             'SnapToGrid', 'GridWidth', 'GridHeight',
+            'HeadExtensions',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
         /**** "activeScript" needs special treatment ****/
         // @ts-ignore TS2339 if it exists "Serialization.activeScript" is a string
@@ -2671,7 +2710,7 @@ export class WAT_Applet extends WAT_Visual {
         /**** additional properties used by the "WAT Applet Manager" ****/
         ;
         [
-            'toBeCentered',
+            'toBeCentered', 'withMobileFrame', 'expectedOrientation',
             'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
@@ -2693,10 +2732,11 @@ export class WAT_Applet extends WAT_Visual {
         [
             'Name',
             'SnapToGrid', 'GridWidth', 'GridHeight',
+            'HeadExtensions',
         ].forEach((Name) => deserializeProperty(Name));
         /**** additional properties used by the "WAT Applet Manager" ****/
         if (ValueIsBoolean(Serialization.toBeCentered)) {
-            this._toBeCentered = Serialization.fullScreen;
+            this._toBeCentered = Serialization.toBeCentered;
         }
         if (ValueIsOrdinal(Serialization.minWidth)) {
             this._minWidth = Serialization.minWidth;
@@ -2709,6 +2749,12 @@ export class WAT_Applet extends WAT_Visual {
         }
         if (ValueIsOrdinal(Serialization.maxHeight)) {
             this._maxHeight = Serialization.maxHeight;
+        }
+        if (ValueIsBoolean(Serialization.withMobileFrame)) {
+            this._withMobileFrame = Serialization.withMobileFrame;
+        }
+        if (ValueIsOneOf(Serialization.expectedOrientation, WAT_Orientations)) {
+            this._expectedOrientation = Serialization.expectedOrientation;
         }
     }
     /**** deserializedFrom ****/
