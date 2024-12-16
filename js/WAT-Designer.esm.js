@@ -1595,6 +1595,7 @@ function generateStandaloneWebApp(withDesigner = false) {
     const Serialization = Applet.Serialization;
     const AppletScript = Serialization.Script;
     delete Serialization.Script;
+    const { HeadExtensions, minWidth, maxWidth, minHeight, maxHeight, toBeCentered, withMobileFrame, expectedOrientation } = Applet;
     const AppletSource = `
 <!DOCTYPE html>
 <html lang="en" charset="utf-8" style="width:100%">
@@ -1620,8 +1621,22 @@ function generateStandaloneWebApp(withDesigner = false) {
       "nanoid":                      "https://rozek.github.io/nanoid/dist/nanoid.esm.js",
       "nanoid-dictionary":           "https://rozek.github.io/nanoid-dictionary/dist/nanoid-dictionary.esm.js",
       "svelte-coordinate-conversion":"https://rozek.github.io/svelte-coordinate-conversion/dist/svelte-coordinate-conversion.esm.js",
+      "svelte-touch-to-mouse":       "https://rozek.github.io/svelte-touch-to-mouse/dist/svelte-touch-to-mouse.esm.js",
       "wat-runtime":                 "https://rozek.github.io/webapp-tinkerer/js/wat-runtime.esm.js",
-      "wat-designer":                "https://rozek.github.io/webapp-tinkerer/js/wat-designer.esm.js"
+      "wat-designer":                "https://rozek.github.io/webapp-tinkerer/js/wat-designer.esm.js",
+
+      "marked":                "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js",
+      "marked-katex-extension":"https://cdn.jsdelivr.net/npm/marked-katex-extension/+esm",
+      "marked-highlight":      "https://cdn.jsdelivr.net/npm/marked-highlight/+esm",
+      "highlight.js/lib/core":                "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/highlight.min.js",
+      "highlight.js/lib/languages/css":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/css.min.js",
+      "highlight.js/lib/languages/javascript":"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/javascript.min.js",
+      "highlight.js/lib/languages/java":      "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/java.min.js",
+      "highlight.js/lib/languages/json":      "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/json.min.js",
+      "highlight.js/lib/languages/typescript":"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/typescript.min.js",
+      "highlight.js/lib/languages/xml":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/xml.min.js",
+
+      "katex": "https://cdn.jsdelivr.net/npm/katex/+esm"
     }
   }
   ${'<'}/script>
@@ -1629,6 +1644,52 @@ function generateStandaloneWebApp(withDesigner = false) {
   ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>
   ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js"  type="module">${'<'}/script>
   ${withDesigner ? `${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js" type="module">${'<'}/script>` : ''}
+
+  ${HeadExtensions}
+
+  ${'<'}script>
+  let [
+    minWidth,maxWidth, minHeight,maxHeight, toBeCentered,
+    withMobileFrame,expectedOrientation
+  ] = [
+    ${minWidth},${maxWidth}, ${minHeight},${maxHeight}, ${toBeCentered},
+    ${withMobileFrame},'${expectedOrientation}'
+  ]
+
+  const ViewportWidth  = window.innerWidth
+  const ViewportHeight = window.innerHeight
+
+  let Width  = Math.max(minWidth,  Math.min(ViewportWidth,  maxWidth  == null ? Infinity : maxWidth))
+  let Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight))
+
+  if ((Width < ViewportWidth-10) && (Height < ViewportHeight-10)) {
+    if (withMobileFrame) { Width += 10; Height += 10 }
+  } else {
+    withMobileFrame = false
+  }
+
+  const OffsetX = (
+    (Width < ViewportWidth) && toBeCentered
+    ? Math.floor((ViewportWidth-Width)/2)
+    : 0
+  )
+  const OffsetY = (
+    (Height < ViewportHeight) && toBeCentered
+    ? Math.floor((ViewportHeight-Height)/2)
+    : 0
+  )
+
+  document.write(\`
+  <div type="wat/applet" name="${AppletName}" style="
+    display:block; position:absolute;
+    left:\${OffsetX}px; top:\${OffsetY}px; width:\${Width}px; height:\${Height}px;
+    min-width:\${minWidth}px;   \${maxWidth  == null ? '' : \`max-width:\${maxWidth}px; \`}
+    min-height:\${minHeight}px; \${maxHeight == null ? '' : \`max-height:\${maxHeight}px; \`}
+    \${withMobileFrame ? 'border:solid 5px black; border-radius:5px;' : ''}
+    box-shadow:0px 0px 10px 0px black;
+  "></div>
+  \`)
+  ${'<'}/script>
 
   ${'<'}script type="wat/applet">${JSON.stringify(Serialization)}${'<'}/script>
   ${(AppletScript || '').trim() === ''
@@ -3574,6 +3635,15 @@ function WAD_AppletConfigurationPane() {
               Value=${Applet.toBeCentered}
             />
           </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>with mobile Frame</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${false}
+              Value=${Applet.withMobileFrame}
+            />
+          </>
         </>
 
         <${WAD_Fold} Label="Typography"
@@ -3826,6 +3896,19 @@ function WAD_AppletConfigurationPane() {
               onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
             />
           </>
+        </>        <${WAD_Fold} Label="Head Extensions"
+          Expansion=${Expansions.HeadExtensions}
+          toggleExpansion=${() => toggleExpansion('HeadExtensions')}
+        >
+          <${WAD_horizontally}>
+            <${WAD_Label}>${'<'}head${'>'} Exensions</>
+          </>
+
+          <${WAD_TextInput} Placeholder="(enter <head> extensions)" LineWrapping=${false} style="
+            flex:1 0 auto; padding-top:4px; min-height:60px;
+          " Value=${Applet.HeadExtensions}
+            onInput=${(Event) => doConfigureApplet('HeadExtensions', Event.target.value)}
+          />
         </>        <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
           toggleExpansion=${() => toggleExpansion('Scripting')}
@@ -3854,7 +3937,7 @@ function WAD_AppletConfigurationPane() {
             />
           </>
 
-          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${false} style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
@@ -4301,7 +4384,7 @@ function WAD_PageConfigurationPane() {
             />
           </>
 
-          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${false} style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
@@ -5401,7 +5484,7 @@ function WAD_WidgetConfigurationPane() {
             />
           </>
 
-          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${false} style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
