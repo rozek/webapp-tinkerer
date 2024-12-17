@@ -365,7 +365,12 @@ appendStyle(`
     text-align:left; text-shadow:none;
   }
 
-  .WAT.Applet.fullscreen{
+  .withMobileFrame {
+    border:solid 5px black;
+    border-radius:5px;
+  }
+
+  .WAT.Applet.fullscreen {
     display:block; position:absolute; margin:0px;
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
