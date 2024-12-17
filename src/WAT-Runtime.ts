@@ -5516,8 +5516,106 @@ console.warn('"onDrop" Callback Failure',Signal)
     public get Type ():string  { return 'HTMLView' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
+  /**** readonly ****/
+
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** acceptableFileTypes ****/
+
+    protected _acceptableFileTypes:WAT_Textline[] = []
+
+    public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
+    public set acceptableFileTypes (newSetting:WAT_Textline[]) {
+      allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
+      if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
+        this._acceptableFileTypes = newSetting.slice()
+        this.rerender()
+      }
+    }
+
+
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly', 'acceptableFileTypes',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly            = acceptableBoolean       (Serialization.readonly, false)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextline)
+    }
+
+  /**** Renderer ****/
+
     protected _Renderer = () => {
+      const { Enabling,readonly } = this
+
+      const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextline)
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this.Value = Value
+            if (this._onInput != null) { this._onInput_(Event) }     // no typo!
+          } else {
+            for (let Item of Event.dataTransfer.items) {
+              if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                if (this._onInput != null) { this._onInput_(Event) } // no typo!
+                break
+              }
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
+
       return html`<div class="WAT Content HTMLView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
         dangerouslySetInnerHTML=${{__html:acceptableText(this.Value,'')}}
       />`
     }
@@ -5526,6 +5624,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
   appendStyle(`
   .WAT.Widget > .WAT.HTMLView {
+    overflow-y:scroll;
   }
   `)
 
@@ -9456,21 +9555,13 @@ console.warn('"onDrop" Callback Failure',Signal)
           } else {
             for (let Item of Event.dataTransfer.items) {
               if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                _readFile(Item.getAsFile())
+                this._shownValue = this.Value = await FileReadAsText(Item.getAsFile(),Item.type)
+                if (this._onInput != null) { this._onInput_(Event) } // no typo!
                 break
               }
             }
           }
         }
-      }
-
-      const _readFile = (File:any) => {
-        const Reader = new FileReader()
-          Reader.onload = (Event:Indexable) => {
-            this._shownValue = this.Value = Event.target.result
-            if (this._onInput != null) { this._onInput_(Event) }     // no typo!
-          }
-        Reader.readAsText(File)
       }
 
     /**** actual rendering ****/
@@ -9567,12 +9658,107 @@ console.warn('"Value" Setting Failure',Signal)
       }
     }
 
+  /**** readonly ****/
 
+    protected _readonly:boolean = false
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** acceptableFileTypes ****/
+
+    protected _acceptableFileTypes:WAT_Textline[] = []
+
+    public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
+    public set acceptableFileTypes (newSetting:WAT_Textline[]) {
+      allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
+      if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
+        this._acceptableFileTypes = newSetting.slice()
+        this.rerender()
+      }
+    }
+
+
+
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'readonly', 'acceptableFileTypes',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._readonly            = acceptableBoolean       (Serialization.readonly, false)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextline)
+    }
 
   /**** Renderer ****/
 
     protected _Renderer = () => {
+      const { Enabling,readonly } = this
+
+      const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextline)
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this.Value = Value
+            if (this._onInput != null) { this._onInput_(Event) }     // no typo!
+          } else {
+            for (let Item of Event.dataTransfer.items) {
+              if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                this.Value = await FileReadAsMarkdown(Item.getAsFile(),Item.type)
+                if (this._onInput != null) { this._onInput_(Event) } // no typo!
+                break
+              }
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
+
       return html`<div class="WAT Content MarkdownView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
         dangerouslySetInnerHTML=${{__html:this._HTMLContent}}
       />`
     }
@@ -10283,6 +10469,202 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
   .WAT.Widget > .WAT.nestedListView {
   }
   `)
+
+/**** readTextFile ****/
+
+  async function readTextFile (File:any):Promise<WAT_Text> {
+    return new Promise((resolve,reject) => {
+      const Reader = new FileReader()
+        Reader.onload  = (Event:Indexable) => resolve(Event.target.result)
+        Reader.onerror = (Event:Indexable) => reject(Event.target.error)
+        Reader.onabort = (Event:Indexable) => reject(new Error('Loading was aborted'))
+      Reader.readAsText(File)
+    })
+  }
+
+/**** readBinaryFile ****/
+
+  async function readBinaryFile (File:any):Promise<ArrayBuffer> {
+    return new Promise((resolve,reject) => {
+      const Reader = new FileReader()
+        Reader.onload  = (Event:Indexable) => resolve(Event.target.result)
+        Reader.onerror = (Event:Indexable) => reject(Event.target.error)
+        Reader.onabort = (Event:Indexable) => reject(new Error('Loading was aborted'))
+      Reader.readAsArrayBuffer(File)
+    })
+  }
+
+/**** FileReadAsText ****/
+
+  async function FileReadAsText (File:any, FileType:string):Promise<WAT_Text> {
+    switch (FileType) {
+      case 'text/plain':
+      case 'application/javascript':
+      case 'application/typescript':
+      case 'application/json':       return await readTextFile(File)
+      case 'text/markdown':          return await MarkdownFileReadAsText(File)
+      case 'text/html':              return await HTMLFileReadAsText(File)
+      case 'application/pdf':        return await PDFFileReadAsText(File)
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                              return await DOCXFileReadAsText(File)
+      default: throwError('UnsupportedFileFormat: cannot read the given file as text')
+    }
+  }
+
+/**** FileReadAsMarkdown ****/
+
+  async function FileReadAsMarkdown (File:any, FileType:string):Promise<WAT_Text> {
+    switch (FileType) {
+      case 'text/plain':
+      case 'text/markdown':   return await readTextFile(File)
+      case 'application/pdf': return await PDFFileReadAsMarkdown(File)
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                              return await DOCXFileReadAsMarkdown(File)
+      default: throwError('UnsupportedFileFormat: cannot read the given file as Markdown')
+    }
+  }
+
+/**** FileReadAsHTML ****/
+
+  async function FileReadAsHTML (File:any, FileType:string):Promise<WAT_Text> {
+    switch (FileType) {
+      case 'text/plain':
+      case 'text/html':       return await readTextFile(File)
+      case 'text/markdown':   return await MarkdownFileReadAsHTML(File)
+      case 'application/pdf': return await PDFFileReadAsHTML(File)
+      case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
+                              return await DOCXFileReadAsHTML(File)
+      default: throwError('UnsupportedFileFormat: cannot read the given file as HTML')
+    }
+  }
+
+/**** HTMLFileReadAsText ****/
+
+  async function HTMLFileReadAsText (File:any):Promise<WAT_Text> {
+    const HTMLContent = await readTextFile(File)
+    try {
+      const { default:HTMLtoText } = await import('https://cdn.jsdelivr.net/npm/@blac-sheep/html-to-text/+esm')
+      return HTMLtoText(HTMLContent)
+    } catch (Signal) {
+      throwError('ConversionError: could not convert the given HTML file into plain text, reason: ' + Signal)
+    }
+  }
+
+/**** MarkdownFileReadAsText (see https://marked.js.org/using_pro#renderer) ****/
+
+  async function MarkdownFileReadAsText (File:any):Promise<WAT_Text> {
+    const Markdown = await readTextFile(File)
+    try {
+      const { default:PlainTextRenderer } = await import('https://cdn.jsdelivr.net/npm/marked-plaintext/+esm')
+      const marked = new Marked()
+
+      const Renderer = new PlainTextRenderer()
+        Renderer.heading    = (Text:string) => `\n${Text}\n\n`
+        Renderer.paragraph  = (Text:string) => `${Text}\n\n`
+        Renderer.list       = (Text:string) => `${Text}\n`
+        Renderer.listitem   = (Text:string) => `- ${Text}\n`
+        Renderer.link       = (HRef:string, Title:string, Text:string) => `${Text}`
+        Renderer.image      = (HRef:string, Title:string, Text:string) => `[${Text}]`
+        Renderer.code       = (Code:string)  => `${Code}\n\n`
+        Renderer.blockquote = (Quote:string) => `${Quote}\n\n`
+        Renderer.br         = () => `\n`
+      marked.setOptions({
+        renderer:Renderer,
+        gfm:true, breaks:true,
+      })
+//    marked.use(markedKatex({ nonStandard:true }))
+
+      return marked.parse(Markdown)
+    } catch (Signal:any) {
+      throwError('ConversionError: could not convert the given Markdown file into plain text, reason: ' + Signal)
+    }
+  }
+
+/**** MarkdownFileReadAsHTML ****/
+
+  async function MarkdownFileReadAsHTML (File:any):Promise<WAT_Text> {
+    const Markdown = await readTextFile(File)
+    try {
+      const marked = new Marked()
+        marked.setOptions({
+          gfm:true, breaks:true,
+        })
+//    marked.use(markedKatex({ nonStandard:true }))
+
+      return marked.parse(Markdown)
+    } catch (Signal:any) {
+      throwError('ConversionError: could not convert the given Markdown file into HTML, reason: ' + Signal)
+    }
+  }
+
+/**** DOCXFileReadAsText ****/
+
+  async function DOCXFileReadAsText (File:any):Promise<WAT_Text> {
+    const Buffer = await readBinaryFile(File)
+    try {
+      const mammoth = (await import('https://rozek.github.io/mammoth.js/mammoth.browser.esm.js')).default
+      return (await mammoth.extractRawText({ arrayBuffer:Buffer })).value
+    } catch (Signal:any) {
+      throwError('ConversionError: could not convert the given DOCX file into plain text, reason: ' + Signal)
+    }
+  }
+
+/**** DOCXFileReadAsHTML ****/
+
+  async function DOCXFileReadAsHTML (File:any):Promise<WAT_Text> {
+    const Buffer = await readBinaryFile(File)
+    try {
+      const mammoth = (await import('https://rozek.github.io/mammoth.js/mammoth.browser.esm.js')).default
+      return (await mammoth.convertToHtml({ arrayBuffer:Buffer })).value
+    } catch (Signal:any) {
+      throwError('ConversionError: could not convert the given DOCX file into HTML, reason: ' + Signal)
+    }
+  }
+
+/**** DOCXFileReadAsMarkdown ****/
+
+  async function DOCXFileReadAsMarkdown (File:any):Promise<WAT_Text> {
+    const Buffer = await readBinaryFile(File)
+    try {
+      const mammoth = (await import('https://rozek.github.io/mammoth.js/mammoth.browser.esm.js')).default
+      return (await mammoth.convertToMarkdown({ arrayBuffer:Buffer })).value
+    } catch (Signal:any) {
+      throwError('ConversionError: could not convert the given DOCX file into Markdown, reason: ' + Signal)
+    }
+  }
+
+/**** PDFFileReadAsText ****/
+
+  async function PDFFileReadAsText (File:any):Promise<WAT_Text> {
+    const Buffer = await readBinaryFile(File)
+    try {
+      const { getDocument,GlobalWorkerOptions } = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.min.mjs')
+      GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.worker.min.mjs'
+
+      const PDF = await getDocument(Buffer).promise
+      let Text = ''
+        for (let i = 1; i <= PDF.numPages; i++) {
+          const Page    = await PDF.getPage(i)
+          const Content = await Page.getTextContent()
+          Text += Content.items.map((Item:any) => Item.str).join('') + '\n'
+        }
+      return Text
+    } catch (Signal) {
+      throwError('ConversionError: could not convert the given PDF file into plain text, reason: ' + Signal)
+    }
+  }
+
+/**** PDFFileReadAsHTML ****/
+
+  async function PDFFileReadAsHTML (File:any):Promise<WAT_Text> {
+    return await PDFFileReadAsText(File)
+  }
+
+/**** PDFFileReadAsMarkdown ****/
+
+  async function PDFFileReadAsMarkdown (File:any):Promise<WAT_Text> {
+    return await PDFFileReadAsText(File)
+  }
 
 //------------------------------------------------------------------------------
 //--                WAT_combinedView (for Applet and Designer)                --
