@@ -1664,6 +1664,7 @@ function generateStandaloneWebApp(withDesigner = false) {
 
   let Width  = Math.max(minWidth,  Math.min(ViewportWidth,  maxWidth  == null ? Infinity : maxWidth))
   let Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight))
+                        // uses any available space - does not use designer size
 
   if ((Width >= ViewportWidth) && (Height >= ViewportHeight)) {
     withMobileFrame = false
