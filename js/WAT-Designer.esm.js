@@ -5733,6 +5733,52 @@ function WAD_WidgetConfigurationPane() {
           Expansion=${Expansions.TypeSpecific}
           toggleExpansion=${() => toggleExpansion('TypeSpecific')}
         >
+          ${(['HTMLView'].indexOf(commonType) >= 0) && html `
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
+                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>acceptable File Types (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter type list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.acceptableFileTypes))}
+                onInput=${(Event) => doConfigureSelectedWidgets('acceptableFileTypes', Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
+          ${(['MarkdownView'].indexOf(commonType) >= 0) && html `
+            <${WAD_horizontally}>
+              <${WAD_Label}>read-only</>
+              <${WAD_Gap}/>
+              <${WAD_Checkbox}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
+                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>acceptable File Types (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter type list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.acceptableFileTypes))}
+                onInput=${(Event) => doConfigureSelectedWidgets('acceptableFileTypes', Event.target.value.trim().split(/\s*\n\s*/))}
+            />
+
+          `}
+
           ${(['ImageView', 'SVGView'].indexOf(commonType) >= 0) && html `
             <${WAD_horizontally}>
               <${WAD_Label}>Image Scaling</>
