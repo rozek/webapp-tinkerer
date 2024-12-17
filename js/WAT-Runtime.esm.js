@@ -359,7 +359,7 @@ appendStyle(`
 /**** WAT Applet ****/
 
   .WAT.Applet {
-    background:white; color:black;
+    color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size:14px; font-weight:normal; line-height:1.4; color:black;
     text-align:left; text-shadow:none;
@@ -2710,8 +2710,9 @@ export class WAT_Applet extends WAT_Visual {
         /**** additional properties used by the "WAT Applet Manager" ****/
         ;
         [
-            'toBeCentered', 'withMobileFrame', 'expectedOrientation',
+            'Width', 'Height',
             'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
+            'toBeCentered', 'withMobileFrame', 'expectedOrientation',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
     /**** _deserializeConfigurationFrom ****/
