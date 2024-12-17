@@ -9341,6 +9341,19 @@ console.warn('"onDrop" Callback Failure',Signal)
       }
     }
 
+  /**** acceptableFileTypes ****/
+
+    protected _acceptableFileTypes:WAT_Textline[] = []
+
+    public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
+    public set acceptableFileTypes (newSetting:WAT_Textline[]) {
+      allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
+      if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
+        this._acceptableFileTypes = newSetting.slice()
+        this.rerender()
+      }
+    }
+
 
   /**** _serializeConfigurationInto ****/
 
@@ -9349,7 +9362,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
       ;[
         'Placeholder','readonly','minLength','maxLength','LineWrapping',
-        'SpellChecking',
+        'SpellChecking', 'acceptableFileTypes',
       ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
     }
 
@@ -9364,6 +9377,7 @@ console.warn('"onDrop" Callback Failure',Signal)
       this._maxLength     = acceptableOptionalOrdinal (Serialization.maxLength)
       this._LineWrapping  = acceptableBoolean         (Serialization.LineWrapping,  true)
       this._SpellChecking = acceptableBoolean         (Serialization.SpellChecking, false)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextline)
     }
 
   /**** Renderer ****/
@@ -9406,6 +9420,58 @@ console.warn('"onDrop" Callback Failure',Signal)
       const maxLength     = acceptableOptionalOrdinal (this._maxLength)
       const LineWrapping  = acceptableOptionalBoolean (this._LineWrapping)
       const SpellChecking = acceptableOptionalBoolean (this._SpellChecking)
+      const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextline)
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this._shownValue = this.Value = Value
+            if (this._onInput != null) { this._onInput_(Event) }     // no typo!
+          } else {
+            for (let Item of Event.dataTransfer.items) {
+              if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                _readFile(Item.getAsFile())
+                break
+              }
+            }
+          }
+        }
+      }
+
+      const _readFile = (File:any) => {
+        const Reader = new FileReader()
+          Reader.onload = (Event:Indexable) => {
+            this._shownValue = this.Value = Event.target.result
+            if (this._onInput != null) { this._onInput_(Event) }     // no typo!
+          }
+        Reader.readAsText(File)
+      }
 
     /**** actual rendering ****/
 
@@ -9418,6 +9484,7 @@ console.warn('"onDrop" Callback Failure',Signal)
           : 'white-space:pre'
         }"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
       />`
     }
   }
