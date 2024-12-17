@@ -6743,6 +6743,15 @@ function WAD_WidgetConfigurationPane() {
                 Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
                 onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
             />
+            <${WAD_horizontally}>
+              <${WAD_Label}>acceptable File Types (one per line)</>
+            </>
+
+            <${WAD_TextInput} Placeholder="(enter type list)" style="min-height:60px"
+              enabled=${selectedWidgets.length > 0}
+                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.acceptableFileTypes))}
+                onInput=${(Event) => doConfigureSelectedWidgets('acceptableFileTypes', Event.target.value.trim().split(/\s*\n\s*/))}
+            />
 
           `}
 
