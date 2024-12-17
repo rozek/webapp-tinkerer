@@ -155,6 +155,7 @@ appendStyle(`
     width:auto; height:30px;
     border:solid 1px black; border-radius:4px;
     background:white; color:black;
+    font-weight:bold;
   }
 
 /**** Checkbox ****/
@@ -575,8 +576,8 @@ const DesignerState = {
     },
     Inspector: {
         Title: 'Inspector', View: undefined,
-        x: NaN, y: NaN, Width: 360, Height: 550,
-        minWidth: 360, minHeight: 550,
+        x: NaN, y: NaN, Width: 380, Height: 550,
+        minWidth: 380, minHeight: 550,
         ReportToShow: undefined, // workaround for strange closure problem
         ScrollPositions: {
             AppletConfiguration: 0,
@@ -996,10 +997,12 @@ function WAD_Checkbox(PropSet) {
             break;
         default: checked = Value;
     }
+    const CheckboxRef = useRef(null);
+    useEffect(() => CheckboxRef.current.indeterminate = indeterminate, [indeterminate]);
     return html `<div class="WAD Checkbox" style=${style}>
-      <input type="checkbox"
+      <input type="checkbox" ref=${CheckboxRef}
         disabled=${enabled === false}
-        checked=${checked} indeterminate=${indeterminate}
+        checked=${checked}
         ...${otherProps}
       />
     </>`;
@@ -1640,10 +1643,10 @@ function generateStandaloneWebApp(withDesigner = false) {
     }
   }
   ${'<'}/script>
-  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/download.min.js">${'<'}/script>
   ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>
   ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js"  type="module">${'<'}/script>
   ${withDesigner ? `${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js" type="module">${'<'}/script>` : ''}
+  ${withDesigner ? `${'<'}script src="https://rozek.github.io/download/download.min.js">${'<'}/script>` : ''}
 
   ${HeadExtensions}
 
@@ -1662,30 +1665,40 @@ function generateStandaloneWebApp(withDesigner = false) {
   let Width  = Math.max(minWidth,  Math.min(ViewportWidth,  maxWidth  == null ? Infinity : maxWidth))
   let Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight))
 
-  if ((Width < ViewportWidth-10) && (Height < ViewportHeight-10)) {
-    if (withMobileFrame) { Width += 10; Height += 10 }
-  } else {
+  if ((Width >= ViewportWidth) && (Height >= ViewportHeight)) {
     withMobileFrame = false
   }
 
-  const OffsetX = (
+  let OffsetX = (
     (Width < ViewportWidth) && toBeCentered
     ? Math.floor((ViewportWidth-Width)/2)
     : 0
   )
-  const OffsetY = (
+  let OffsetY = (
     (Height < ViewportHeight) && toBeCentered
     ? Math.floor((ViewportHeight-Height)/2)
     : 0
   )
 
+  if (withMobileFrame) {
+    Width  += 10;  OffsetX -= 5
+    Height += 10;  OffsetY -= 5
+
+    if (minWidth  != null) { minWidth  += 10 }
+    if (minHeight != null) { minHeight += 10 }
+
+    if (maxWidth  != null) { maxWidth  += 10 }
+    if (maxHeight != null) { maxHeight += 10 }
+  }
+
   document.write(\`
-  <div type="wat/applet" name="${AppletName}" style="
+  <div type="wat/applet" name="${AppletName}" class="${withMobileFrame ? 'withMobileFrame' : ''}" style="
     display:block; position:absolute;
     left:\${OffsetX}px; top:\${OffsetY}px; width:\${Width}px; height:\${Height}px;
-    min-width:\${minWidth}px;   \${maxWidth  == null ? '' : \`max-width:\${maxWidth}px; \`}
-    min-height:\${minHeight}px; \${maxHeight == null ? '' : \`max-height:\${maxHeight}px; \`}
-    \${withMobileFrame ? 'border:solid 5px black; border-radius:5px;' : ''}
+    \${minWidth  == null ? '' : \`min-width:\${minWidth}px; \`}
+    \${maxWidth  == null ? '' : \`max-width:\${maxWidth}px; \`}
+    \${minHeight == null ? '' : \`min-height:\${minHeight}px; \`}
+    \${maxHeight == null ? '' : \`max-height:\${maxHeight}px; \`}
     box-shadow:0px 0px 10px 0px black;
   "></div>
   \`)
@@ -3246,7 +3259,133 @@ function selectedWidgetsMayBeShiftedDown() {
     const StartIndex = DesignerState.Applet.visitedPage.WidgetCount - selectedWidgets.length;
     return selectedWidgets.some((Widget, i) => Widget.Index < StartIndex + i);
 }
-//------------------------------------------------------------------------------
+//----------------------------------------------------------------------------//
+//                               Applet Resizer                               //
+//----------------------------------------------------------------------------//
+Object.assign(DesignerState, {
+    AppletResizer: {
+        Width: undefined, Height: undefined,
+        minWidth: undefined, minHeight: undefined,
+        maxWidth: undefined, maxHeight: undefined,
+        keepGeometries: true,
+        PaddingX: undefined, PaddingY: undefined,
+    },
+});
+console.log('DesignerState', DesignerState);
+/**** resizeApplet ****/
+function resizeApplet() {
+    const Applet = DesignerState.Applet;
+    let { Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries } = DesignerState.AppletResizer;
+    if ((Width || 0) === 0) {
+        Width = Applet.Width;
+    }
+    if ((Height || 0) === 0) {
+        Height = Applet.Height;
+    }
+    if ((minWidth || 0) === 0) {
+        minWidth = Applet.minWidth;
+    }
+    if ((minHeight || 0) === 0) {
+        minHeight = Applet.minHeight;
+    }
+    if ((maxWidth || 0) === 0) {
+        maxWidth = Applet.maxWidth;
+    }
+    if ((maxHeight || 0) === 0) {
+        maxHeight = Applet.maxHeight;
+    }
+    Width = Math.max(minWidth, Math.min(Width, maxWidth == null ? Infinity : maxWidth));
+    Height = Math.max(minHeight, Math.min(Height, maxHeight == null ? Infinity : maxHeight));
+    resizeAppletTo(Applet, Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries);
+}
+/**** shrinkApplet ****/
+function shrinkApplet() {
+    const Applet = DesignerState.Applet;
+    let minX = Infinity, maxX = 0;
+    let minY = Infinity, maxY = 0;
+    Applet.PageList.forEach((Page) => {
+        Page.WidgetList.forEach((Widget) => {
+            const { x, y, Width, Height } = Widget.Geometry;
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            maxX = Math.max(maxX, x + Width);
+            maxY = Math.max(maxY, y + Height);
+        });
+    });
+    if (minX === Infinity) {
+        return;
+    } // no widgets yet
+    let { PaddingX, PaddingY } = DesignerState.AppletResizer;
+    if ((PaddingX == null) || (PaddingX < 0)) {
+        PaddingX = minX;
+    }
+    if ((PaddingY == null) || (PaddingY < 0)) {
+        PaddingY = minY;
+    }
+    maxX += PaddingX;
+    maxY += PaddingY;
+    resizeAppletTo(Applet, maxX, maxY, maxX, maxY, undefined, undefined, true);
+}
+/**** resizeAppletTo ****/
+function resizeAppletTo(Applet, Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries) {
+    if (keepGeometries) {
+        const WidgetGeometrySet = {};
+        Applet.PageList.forEach((Page) => {
+            Page.WidgetList.forEach((Widget) => {
+                WidgetGeometrySet[IdOfWidget(Widget)] = Widget.Geometry;
+            });
+        });
+        _resizeApplet();
+        Applet.PageList.forEach((Page) => {
+            Page.WidgetList.forEach((Widget) => {
+                Widget.Geometry = WidgetGeometrySet[IdOfWidget(Widget)];
+            });
+        });
+    }
+    else {
+        _resizeApplet();
+    }
+    Applet.preserve();
+    function _resizeApplet() {
+        var _a, _b;
+        Applet._Width = Width;
+        Applet._Height = Height;
+        Applet._minWidth = minWidth;
+        Applet._minHeight = minHeight;
+        Applet._maxWidth = maxWidth;
+        Applet._maxHeight = maxHeight;
+        if (Applet.withMobileFrame) {
+            Width += 10;
+            Height += 10;
+            if (minWidth != null) {
+                minWidth += 10;
+            }
+            if (minHeight != null) {
+                minHeight += 10;
+            }
+            if (maxWidth != null) {
+                maxWidth += 10;
+            }
+            if (maxHeight != null) {
+                maxHeight += 10;
+            }
+        }
+        const HostElement = (_b = (_a = Applet.View) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.parentElement;
+        HostElement.style.width = Width + 'px';
+        HostElement.style.height = Height + 'px';
+        HostElement.style.minWidth = (minWidth == null ? 'none' : minWidth + 'px');
+        HostElement.style.minHeight = (minHeight == null ? 'none' : minHeight + 'px');
+        HostElement.style.maxWidth = (maxWidth == null ? 'none' : maxWidth + 'px');
+        HostElement.style.maxHeight = (maxHeight == null ? 'none' : maxHeight + 'px');
+        if (Applet.withMobileFrame) {
+            HostElement.classList.add('withMobileFrame');
+        }
+        else {
+            HostElement.classList.remove('withMobileFrame');
+        }
+        WAT_rerender();
+    }
+} //------------------------------------------------------------------------------
 //--                            WAD_DesignerLayer                             --
 //------------------------------------------------------------------------------
 function WAD_DesignerLayer(PropSet) {
@@ -3522,7 +3661,7 @@ DesignerState.Inspector.View = WAD_Inspector;
 /**** WAD_AppletConfigurationPane ****/
 function WAD_AppletConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
-    const { Applet, Inspector } = DesignerState;
+    const { Applet, Inspector, AppletResizer } = DesignerState;
     /**** remember fold expansions ****/
     const Expansions = Inspector.Expansions.AppletConfiguration;
     function toggleExpansion(Name) {
@@ -3628,20 +3767,116 @@ function WAD_AppletConfigurationPane() {
           </>
 
           <${WAD_horizontally}>
-            <${WAD_Label}>to be centered</>
+            <${WAD_Label}>center in Viewport</>
             <${WAD_Gap}/>
             <${WAD_Checkbox}
-              enabled=${false}
               Value=${Applet.toBeCentered}
+              onInput=${(Event) => doConfigureApplet('toBeCentered', Event.target.checked)}
             />
           </>
 
           <${WAD_horizontally}>
-            <${WAD_Label}>with mobile Frame</>
+            <${WAD_Label}>draw Frame in large Viewports</>
             <${WAD_Gap}/>
             <${WAD_Checkbox}
-              enabled=${false}
               Value=${Applet.withMobileFrame}
+              onInput=${(Event) => doConfigureApplet('toBeCentered', Event.target.checked)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>expected mobile Orientation</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              Value=${Applet.expectedOrientation}
+              onInput=${(Event) => doConfigureApplet('expectedOrientation', Event.target.checked)}
+            />
+          </>
+        </>
+
+        <${WAD_Fold} Label="Applet Resizing"
+          Expansion=${Expansions.AppletResizing}
+          toggleExpansion=${() => toggleExpansion('AppletResizing')}
+        >
+          <${WAD_horizontally}>
+            <${WAD_Label} style="color:red">Warning: no undo possible!</>
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>new Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.Width}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.Width = parseFloat(Event.target.value)}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.Height}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.Height = parseFloat(Event.target.value)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>new Limits</>
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">min. Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.minWidth}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.minWidth = parseFloat(Event.target.value)}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.minHeight}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.minHeight = parseFloat(Event.target.value)}
+            />
+          </>
+          <${WAD_horizontally}>
+            <${WAD_Label} style="padding-left:10px">max. Size (w,h) [px]</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.maxWidth}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.maxWidth = parseFloat(Event.target.value)}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.maxHeight}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.maxHeight = parseFloat(Event.target.value)}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Button} style="width:100px" onClick=${resizeApplet}>Update</>
+              <div style="width:10px"/>
+            <${WAD_Label}>keeping Widget Geometries</>
+            <${WAD_Checkbox}
+              Value=${AppletResizer.keepGeometries}
+              onInput=${(Event) => AppletResizer.keepGeometries = Event.target.checked}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Button} style="width:100px" onClick=${shrinkApplet}>Shrink to fit</>
+              <div style="width:10px"/>
+            <${WAD_Label}>w/ padding</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.PaddingX}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.PaddingX = parseFloat(Event.target.value)}
+            />
+              <div style="width:20px; padding-top:4px; text-align:center">x</div>
+            <${WAD_IntegerInput} style="width:60px"
+              Value=${AppletResizer.PaddingY}
+              Minimum=${0}
+              onInput=${(Event) => AppletResizer.PaddingY = parseFloat(Event.target.value)}
             />
           </>
         </>
@@ -3904,8 +4139,9 @@ function WAD_AppletConfigurationPane() {
             <${WAD_Label}>${'<'}head${'>'} Exensions</>
           </>
 
-          <${WAD_TextInput} Placeholder="(enter <head> extensions)" LineWrapping=${false} style="
+          <${WAD_TextInput} Placeholder="(enter <head> extensions)" style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
+            white-space:pre;
           " Value=${Applet.HeadExtensions}
             onInput=${(Event) => doConfigureApplet('HeadExtensions', Event.target.value)}
           />
@@ -3937,8 +4173,9 @@ function WAD_AppletConfigurationPane() {
             />
           </>
 
-          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${false} style="
+          <${WAD_TextInput} Placeholder="(enter script)" style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
+            white-space:pre;
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
           />
@@ -4384,8 +4621,9 @@ function WAD_PageConfigurationPane() {
             />
           </>
 
-          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${false} style="
+          <${WAD_TextInput} Placeholder="(enter script)" style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
+            white-space:pre;
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
           />
@@ -5484,8 +5722,9 @@ function WAD_WidgetConfigurationPane() {
             />
           </>
 
-          <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${false} style="
+          <${WAD_TextInput} Placeholder="(enter script)" style="
             flex:1 0 auto; padding-top:4px; min-height:60px;
+            white-space:pre;
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
           />
