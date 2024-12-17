@@ -755,7 +755,12 @@
     text-align:left; text-shadow:none;
   }
 
-  .WAT.Applet.fullscreen{
+  .withMobileFrame {
+    border:solid 5px black;
+    border-radius:5px;
+  }
+
+  .WAT.Applet.fullscreen {
     display:block; position:absolute; margin:0px;
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
@@ -5701,7 +5706,7 @@ console.warn('"onDrop" Callback Failure',Signal)
     'same-origin', 'strict-origin', 'strict-origin','strict-origin-when-cross-origin',
     'unsafe-url'
   ]
-  export type  WAT_ReferrerPolicy   = typeof WAT_ReferrerPolicies[number]
+  export type  WAT_ReferrerPolicy = typeof WAT_ReferrerPolicies[number]
 
   export class WAT_WebView extends WAT_Widget {
     public constructor (Page:WAT_Page) { super(Page) }
