@@ -8441,6 +8441,13 @@ export class WAT_TextInput extends WAT_Widget {
             writable: true,
             value: false
         });
+        /**** acceptableFileTypes ****/
+        Object.defineProperty(this, "_acceptableFileTypes", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
         /**** Renderer ****/
         Object.defineProperty(this, "_shownValue", {
             enumerable: true,
@@ -8491,6 +8498,56 @@ export class WAT_TextInput extends WAT_Widget {
                 const maxLength = acceptableOptionalOrdinal(this._maxLength);
                 const LineWrapping = acceptableOptionalBoolean(this._LineWrapping);
                 const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
+                const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes, [], ValueIsTextline);
+                /**** prepare file dropping ****/
+                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+                function _acceptableDataIn(Event) {
+                    if (Event.dataTransfer.types.includes('text/plain')) {
+                        return true;
+                    }
+                    for (let Item of Event.dataTransfer.items) {
+                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                const _onDragOver = (Event) => {
+                    if (_acceptableDataIn(Event)) {
+                        Event.preventDefault();
+                        Event.dataTransfer.dropEffect = 'copy';
+                    }
+                };
+                const _onDrop = async (Event) => {
+                    if (_acceptableDataIn(Event)) {
+                        Event.preventDefault();
+                        if (Event.dataTransfer.types.includes('text/plain')) {
+                            const Value = Event.dataTransfer.getData('text');
+                            this._shownValue = this.Value = Value;
+                            if (this._onInput != null) {
+                                this._onInput_(Event);
+                            } // no typo!
+                        }
+                        else {
+                            for (let Item of Event.dataTransfer.items) {
+                                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                                    _readFile(Item.getAsFile());
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                };
+                const _readFile = (File) => {
+                    const Reader = new FileReader();
+                    Reader.onload = (Event) => {
+                        this._shownValue = this.Value = Event.target.result;
+                        if (this._onInput != null) {
+                            this._onInput_(Event);
+                        } // no typo!
+                    };
+                    Reader.readAsText(File);
+                };
                 /**** actual rendering ****/
                 return html `<textarea class="WAT Content TextInput"
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
@@ -8499,6 +8556,7 @@ export class WAT_TextInput extends WAT_Widget {
                     ? 'overflow-wrap:break-word; hyphens:auto'
                     : 'white-space:pre'}"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
       />`;
             }
         });
@@ -8553,12 +8611,20 @@ export class WAT_TextInput extends WAT_Widget {
             this.rerender();
         }
     }
+    get acceptableFileTypes() { return this._acceptableFileTypes.slice(); }
+    set acceptableFileTypes(newSetting) {
+        allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
+        if (ValuesDiffer(this._acceptableFileTypes, newSetting)) {
+            this._acceptableFileTypes = newSetting.slice();
+            this.rerender();
+        }
+    }
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
         super._serializeConfigurationInto(Serialization);
         [
             'Placeholder', 'readonly', 'minLength', 'maxLength', 'LineWrapping',
-            'SpellChecking',
+            'SpellChecking', 'acceptableFileTypes',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
     /**** _deserializeConfigurationFrom ****/
@@ -8570,6 +8636,7 @@ export class WAT_TextInput extends WAT_Widget {
         this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
         this._LineWrapping = acceptableBoolean(Serialization.LineWrapping, true);
         this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
+        this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes, [], ValueIsTextline);
     }
 }
 builtInWidgetTypes['TextInput'] = WAT_TextInput;
