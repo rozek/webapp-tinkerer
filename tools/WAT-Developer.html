@@ -170,32 +170,36 @@ const toBeOffset = acceptableBoolean(URLParameters.get('offset'), false);
 const expectedOrientation = acceptableOneOf('expected-orientation', ['any', 'portrait', 'landscape'], 'any');
 Width = Math.max(minWidth, Math.min(Width, ViewportWidth, maxWidth == null ? Infinity : maxWidth));
 Height = Math.max(minHeight, Math.min(Height, ViewportHeight, maxHeight == null ? Infinity : maxHeight));
-if ((Width < ViewportWidth - 10) && (Height < ViewportHeight - 10)) {
-    if (withMobileFrame) {
-        Width += 10;
-        Height += 10;
-    }
-}
-else {
+// tries to use designer size
+if ((Width >= ViewportWidth) || (Height >= ViewportHeight)) {
     withMobileFrame = false;
 }
-const OffsetX = (Width < ViewportWidth
-    ? toBeCentered
-        ? Math.floor((ViewportWidth - Width) / 2)
-        : (toBeOffset ? 20 : 0)
-    : 0);
-const OffsetY = (Height < ViewportHeight
-    ? toBeCentered
-        ? Math.floor((ViewportHeight - Height) / 2)
-        : (toBeOffset ? 20 : 0)
-    : 0);
+let OffsetX = ((Width < ViewportWidth) && toBeOffset ? 20 : 0);
+let OffsetY = ((Height < ViewportHeight) && toBeOffset ? 20 : 0);
+if (withMobileFrame) {
+    Width += 10;
+    OffsetX -= 5;
+    Height += 10;
+    OffsetY -= 5;
+    if (minWidth != null) {
+        minWidth += 10;
+    }
+    if (minHeight != null) {
+        minHeight += 10;
+    }
+    if (maxWidth != null) {
+        maxWidth += 10;
+    }
+    if (maxHeight != null) {
+        maxHeight += 10;
+    }
+}
 document.write(`
-  <div type="wat/applet" name="${Name}" style="
+  <div type="wat/applet" name="${Name}" class=${withMobileFrame ? "withMobileFrame" : ''} style="
     display:block; position:absolute;
     left:${OffsetX}px; top:${OffsetY}px; width:${Width}px; height:${Height}px;
     min-width:${minWidth}px;   ${maxWidth == null ? '' : `max-width:${maxWidth}px; `}
     min-height:${minHeight}px; ${maxHeight == null ? '' : `max-height:${maxHeight}px; `}
-    ${withMobileFrame ? 'border:solid 5px black; border-radius:5px;' : ''}
     box-shadow:0px 0px 10px 0px black;
   "></div>
   `);
