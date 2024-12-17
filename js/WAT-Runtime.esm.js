@@ -338,6 +338,8 @@ appendStyle(`
 
   div[type="wat/applet"] { overflow:visible }       /* important for designer */
 
+  div[type="wat/applet"] { box-sizing:border-box }
+
 /**** all WAT elements are absolutely positioned ****/
 
   .WAT {
