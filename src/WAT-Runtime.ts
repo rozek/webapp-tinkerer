@@ -12,7 +12,7 @@
   import {
 //  throwError,
     quoted,
-    ValuesDiffer,
+    ValuesAreEqual, ValuesDiffer,
     ValueIsBoolean,
     ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange,
       ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal,
@@ -218,7 +218,8 @@
     '"onMount" Callback Failure','"onUnmount" Callback Failure',
     '"onFocus" Callback Failure','"onBlur" Callback Failure',
     '"onClick" Callback Failure','"onInput" Callback Failure',
-    '"onDrop" Callback Failure', '"onValueChange" Callback Failure',
+    '"onDrop" Callback Failure', '"onDropError" Callback Failure',
+    '"onValueChange" Callback Failure',
     'Event Handling Failure',
   ]
   export type WAT_ErrorType = typeof WAT_ErrorTypes[number]
@@ -4467,6 +4468,32 @@ console.warn('"onDrop" Callback Failure',Signal)
       }
     }
 
+  /**** onDropError ****/
+
+    protected _onDropError:Function|undefined
+
+    public get onDropError ():Function|undefined { return this._onDropError_ }
+    public set onDropError (newCallback:Function|undefined) {
+      allowFunction('"onDropError" callback',newCallback)
+      this._onDropError = newCallback
+    }
+
+    protected _onDropError_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onDropError = ArgList[0]
+      } else {                                            // callback invocation
+        try {
+          if (this._onDropError != null) { this._onDropError.apply(this,ArgList) }
+        } catch (Signal:any) {
+console.warn('"onDropError" Callback Failure',Signal)
+          setErrorReport(this,{
+            Type:'"onDropError" Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      }
+    }
+
   /**** rerender ****/
 
     public rerender ():void {
@@ -5518,7 +5545,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
   /**** readonly ****/
 
-    protected _readonly:boolean = false
+    protected _readonly:boolean = true
 
     public get readonly ():boolean { return this._readonly }
     public set readonly (newSetting:boolean) {
@@ -5535,7 +5562,9 @@ console.warn('"onDrop" Callback Failure',Signal)
 
     public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
     public set acceptableFileTypes (newSetting:WAT_Textline[]) {
-      allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
+      allowListSatisfying('acceptable file types',newSetting, ValueIsHTMLFormat)
+      if (newSetting == null) { newSetting = [] }
+
       if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
         this._acceptableFileTypes = newSetting.slice()
         this.rerender()
@@ -5559,7 +5588,7 @@ console.warn('"onDrop" Callback Failure',Signal)
       super._deserializeConfigurationFrom(Serialization)
 
       this._readonly            = acceptableBoolean       (Serialization.readonly, false)
-      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextline)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsHTMLFormat)
     }
 
   /**** Renderer ****/
@@ -5567,7 +5596,8 @@ console.warn('"onDrop" Callback Failure',Signal)
     protected _Renderer = () => {
       const { Enabling,readonly } = this
 
-      const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextline)
+      let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsHTMLFormat)
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedHTMLFormats.slice() }
 
     /**** prepare file dropping ****/
 
@@ -5601,12 +5631,17 @@ console.warn('"onDrop" Callback Failure',Signal)
             this.Value = Value
             if (this._onInput != null) { this._onInput_(Event) }     // no typo!
           } else {
-            for (let Item of Event.dataTransfer.items) {
-              if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
-                if (this._onInput != null) { this._onInput_(Event) } // no typo!
-                break
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                  if (this._onInput != null) { this._onInput_(Event) } // no typo!
+                  break
+                }
               }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              if (this._onDropError != null) { this._onDropError_(Signal) }
             }
           }
         }
@@ -5675,15 +5710,45 @@ console.warn('"onDrop" Callback Failure',Signal)
         this._ImageAlignment = newSetting
         this.rerender()
       }
+    }  /**** readonly ****/
+
+    protected _readonly:boolean = true
+
+    public get readonly ():boolean { return this._readonly }
+    public set readonly (newSetting:boolean) {
+      allowBoolean('readonly setting',newSetting)
+      if (this._readonly !== newSetting) {
+        this._readonly = newSetting
+        this.rerender()
+      }
     }
+
+  /**** acceptableFileTypes ****/
+
+    protected _acceptableFileTypes:WAT_Textline[] = []
+
+    public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
+    public set acceptableFileTypes (newSetting:WAT_Textline[]) {
+      allowListSatisfying('acceptable file types',newSetting, ValueIsImageFormat)
+      if (newSetting == null) { newSetting = [] }
+
+      if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
+        this._acceptableFileTypes = newSetting.slice()
+        this.rerender()
+      }
+    }
+
+
 
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
       super._serializeConfigurationInto(Serialization)
 
-      this._serializePropertyInto('ImageScaling',  Serialization)
-      this._serializePropertyInto('ImageAlignment',Serialization)
+      ;[
+        'ImageScaling', 'ImageAlignment',
+        'readonly', 'acceptableFileTypes',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
     }
 
   /**** _deserializeConfigurationFrom ****/
@@ -5691,8 +5756,10 @@ console.warn('"onDrop" Callback Failure',Signal)
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
       super._deserializeConfigurationFrom(Serialization)
 
-      this._ImageScaling   = acceptableOneOf(Serialization.ImageScaling,  'contain', WAT_ImageScalings)
-      this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment,'center',  WAT_ImageAlignments)
+      this._ImageScaling        = acceptableOneOf         (Serialization.ImageScaling,  'contain', WAT_ImageScalings)
+      this._ImageAlignment      = acceptableOneOf         (Serialization.ImageAlignment,'center',  WAT_ImageAlignments)
+      this._readonly            = acceptableBoolean       (Serialization.readonly, false)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsImageFormat)
     }
 
   /**** Renderer ****/
@@ -5700,10 +5767,74 @@ console.warn('"onDrop" Callback Failure',Signal)
     protected _Renderer = () => {
       const ImageScaling   = acceptableOneOf(this._ImageScaling,  'contain', WAT_ImageScalings)
       const ImageAlignment = acceptableOneOf(this._ImageAlignment,'center',  WAT_ImageAlignments)
+      const { Enabling,readonly } = this
+
+      let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsImageFormat)
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedImageFormats.slice() }
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.some((Type:string) => (
+          (Type === 'text/html') &&
+          Event.dataTransfer.getData('text/html').includes('<img')
+        ))) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.some((Type:string) => (
+            (Type === 'text/html') &&
+            Event.dataTransfer.getData('text/html').includes('<img')
+          ))) {
+            const HTML = Event.dataTransfer.getData('text/html')
+              const Parser = new DOMParser()
+              const Doc    = Parser.parseFromString(HTML,'text/html')
+              const ImageSource = Doc.querySelector('img')?.src
+            this.Value = ImageSource
+            if (this._onInput != null) { this._onInput_(Event) }     // no typo!
+          } else {
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsImage(Item.getAsFile(),Item.type)
+                  if (this._onInput != null) { this._onInput_(Event) } // no typo!
+                  break
+                }
+              }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              if (this._onDropError != null) { this._onDropError_(Signal) }
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
 
       return html`<img class="WAT Content ImageView"
         src=${acceptableURL(this.Value,'')}
         style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
       />`
     }
   }
@@ -9377,7 +9508,7 @@ console.warn('"onDrop" Callback Failure',Signal)
 
   /**** readonly ****/
 
-    protected _readonly:boolean = false
+    protected _readonly:boolean = true
 
     public get readonly ():boolean { return this._readonly }
     public set readonly (newSetting:boolean) {
@@ -9446,7 +9577,9 @@ console.warn('"onDrop" Callback Failure',Signal)
 
     public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
     public set acceptableFileTypes (newSetting:WAT_Textline[]) {
-      allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
+      allowListSatisfying('acceptable file types',newSetting, ValueIsTextFormat)
+      if (newSetting == null) { newSetting = [] }
+
       if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
         this._acceptableFileTypes = newSetting.slice()
         this.rerender()
@@ -9476,7 +9609,7 @@ console.warn('"onDrop" Callback Failure',Signal)
       this._maxLength     = acceptableOptionalOrdinal (Serialization.maxLength)
       this._LineWrapping  = acceptableBoolean         (Serialization.LineWrapping,  true)
       this._SpellChecking = acceptableBoolean         (Serialization.SpellChecking, false)
-      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextline)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextFormat)
     }
 
   /**** Renderer ****/
@@ -9519,7 +9652,9 @@ console.warn('"onDrop" Callback Failure',Signal)
       const maxLength     = acceptableOptionalOrdinal (this._maxLength)
       const LineWrapping  = acceptableOptionalBoolean (this._LineWrapping)
       const SpellChecking = acceptableOptionalBoolean (this._SpellChecking)
-      const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextline)
+
+      let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextFormat)
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedTextFormats.slice() }
 
     /**** prepare file dropping ****/
 
@@ -9553,12 +9688,17 @@ console.warn('"onDrop" Callback Failure',Signal)
             this._shownValue = this.Value = Value
             if (this._onInput != null) { this._onInput_(Event) }     // no typo!
           } else {
-            for (let Item of Event.dataTransfer.items) {
-              if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                this._shownValue = this.Value = await FileReadAsText(Item.getAsFile(),Item.type)
-                if (this._onInput != null) { this._onInput_(Event) } // no typo!
-                break
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this._shownValue = this.Value = await FileReadAsText(Item.getAsFile(),Item.type)
+                  if (this._onInput != null) { this._onInput_(Event) } // no typo!
+                  break
+                }
               }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              if (this._onDropError != null) { this._onDropError_(Signal) }
             }
           }
         }
@@ -9660,7 +9800,7 @@ console.warn('"Value" Setting Failure',Signal)
 
   /**** readonly ****/
 
-    protected _readonly:boolean = false
+    protected _readonly:boolean = true
 
     public get readonly ():boolean { return this._readonly }
     public set readonly (newSetting:boolean) {
@@ -9677,7 +9817,9 @@ console.warn('"Value" Setting Failure',Signal)
 
     public get acceptableFileTypes ():WAT_Textline[] { return this._acceptableFileTypes.slice() }
     public set acceptableFileTypes (newSetting:WAT_Textline[]) {
-      allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
+      allowListSatisfying('acceptable file types',newSetting, ValueIsMarkdownFormat)
+      if (newSetting == null) { newSetting = [] }
+
       if (ValuesDiffer(this._acceptableFileTypes,newSetting)) {
         this._acceptableFileTypes = newSetting.slice()
         this.rerender()
@@ -9702,7 +9844,7 @@ console.warn('"Value" Setting Failure',Signal)
       super._deserializeConfigurationFrom(Serialization)
 
       this._readonly            = acceptableBoolean       (Serialization.readonly, false)
-      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsTextline)
+      this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes,[],ValueIsMarkdownFormat)
     }
 
   /**** Renderer ****/
@@ -9710,7 +9852,8 @@ console.warn('"Value" Setting Failure',Signal)
     protected _Renderer = () => {
       const { Enabling,readonly } = this
 
-      const acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsTextline)
+      let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes,[],ValueIsMarkdownFormat)
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedMarkdownFormats.slice() }
 
     /**** prepare file dropping ****/
 
@@ -9744,12 +9887,17 @@ console.warn('"Value" Setting Failure',Signal)
             this.Value = Value
             if (this._onInput != null) { this._onInput_(Event) }     // no typo!
           } else {
-            for (let Item of Event.dataTransfer.items) {
-              if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                this.Value = await FileReadAsMarkdown(Item.getAsFile(),Item.type)
-                if (this._onInput != null) { this._onInput_(Event) } // no typo!
-                break
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsMarkdown(Item.getAsFile(),Item.type)
+                  if (this._onInput != null) { this._onInput_(Event) } // no typo!
+                  break
+                }
               }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              if (this._onDropError != null) { this._onDropError_(Signal) }
             }
           }
         }
@@ -10470,6 +10618,52 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
   }
   `)
 
+/**** ValueIsTextFormat ****/
+
+  export const WAT_supportedTextFormats = [
+    'application/javascript', 'application/typescript', 'application/json',
+    'application/pdf',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/html', 'text/markdown', 'text/plain'
+  ]
+
+  export function ValueIsTextFormat (Value:any):boolean {
+    return ValueIsOneOf(Value,WAT_supportedTextFormats)
+  }
+
+/**** ValueIsHTMLFormat ****/
+
+  export const WAT_supportedHTMLFormats = [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/html', 'text/markdown', 'text/plain'
+  ]
+
+  export function ValueIsHTMLFormat (Value:any):boolean {
+    return ValueIsOneOf(Value,WAT_supportedHTMLFormats)
+  }
+
+/**** ValueIsMarkdownFormat ****/
+
+  export const WAT_supportedMarkdownFormats = [
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/markdown', 'text/plain'
+  ]
+
+  export function ValueIsMarkdownFormat (Value:any):boolean {
+    return ValueIsOneOf(Value,WAT_supportedMarkdownFormats)
+  }
+
+/**** ValueIsImageFormat ****/
+
+  export const WAT_supportedImageFormats = [
+    'image/apng', 'image/avif', 'image/bmp', 'image/gif', 'image/jpeg',
+    'image/png', 'image/svg+xml', 'image/webp'
+  ]
+
+  export function ValueIsImageFormat (Value:any):boolean {
+    return ValueIsOneOf(Value,WAT_supportedImageFormats)
+  }
+
 /**** readTextFile ****/
 
   async function readTextFile (File:any):Promise<WAT_Text> {
@@ -10491,6 +10685,18 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
         Reader.onerror = (Event:Indexable) => reject(Event.target.error)
         Reader.onabort = (Event:Indexable) => reject(new Error('Loading was aborted'))
       Reader.readAsArrayBuffer(File)
+    })
+  }
+
+/**** readDataURLFile ****/
+
+  async function readDataURLFile (File:any):Promise<string> {
+    return new Promise((resolve,reject) => {
+      const Reader = new FileReader()
+        Reader.onload  = (Event:Indexable) => resolve(Event.target.result)
+        Reader.onerror = (Event:Indexable) => reject(Event.target.error)
+        Reader.onabort = (Event:Indexable) => reject(new Error('Loading was aborted'))
+      Reader.readAsDataURL(File)
     })
   }
 
@@ -10516,10 +10722,9 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
   async function FileReadAsMarkdown (File:any, FileType:string):Promise<WAT_Text> {
     switch (FileType) {
       case 'text/plain':
-      case 'text/markdown':   return await readTextFile(File)
-      case 'application/pdf': return await PDFFileReadAsMarkdown(File)
+      case 'text/markdown': return await readTextFile(File)
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                              return await DOCXFileReadAsMarkdown(File)
+                            return await DOCXFileReadAsMarkdown(File)
       default: throwError('UnsupportedFileFormat: cannot read the given file as Markdown')
     }
   }
@@ -10529,12 +10734,21 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
   async function FileReadAsHTML (File:any, FileType:string):Promise<WAT_Text> {
     switch (FileType) {
       case 'text/plain':
-      case 'text/html':       return await readTextFile(File)
-      case 'text/markdown':   return await MarkdownFileReadAsHTML(File)
-      case 'application/pdf': return await PDFFileReadAsHTML(File)
+      case 'text/html':     return await readTextFile(File)
+      case 'text/markdown': return await MarkdownFileReadAsHTML(File)
       case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document':
-                              return await DOCXFileReadAsHTML(File)
+                            return await DOCXFileReadAsHTML(File)
       default: throwError('UnsupportedFileFormat: cannot read the given file as HTML')
+    }
+  }
+
+/**** FileReadAsImage ****/
+
+  async function FileReadAsImage (File:any, FileType:string):Promise<WAT_Text> {
+    if (WAT_supportedImageFormats.indexOf(FileType) >= 0) {
+      return await readDataURLFile(File)
+    } else {
+      throwError('UnsupportedFileFormat: cannot read the given file as an image')
     }
   }
 
@@ -10652,18 +10866,6 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
     } catch (Signal) {
       throwError('ConversionError: could not convert the given PDF file into plain text, reason: ' + Signal)
     }
-  }
-
-/**** PDFFileReadAsHTML ****/
-
-  async function PDFFileReadAsHTML (File:any):Promise<WAT_Text> {
-    return await PDFFileReadAsText(File)
-  }
-
-/**** PDFFileReadAsMarkdown ****/
-
-  async function PDFFileReadAsMarkdown (File:any):Promise<WAT_Text> {
-    return await PDFFileReadAsText(File)
   }
 
 //------------------------------------------------------------------------------
