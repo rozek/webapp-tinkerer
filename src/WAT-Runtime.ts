@@ -1229,6 +1229,24 @@
     return (ValueIsName(Value) ? Value : Default)
   }
 
+/**** acceptableOptionalName ****/
+
+  export function acceptableOptionalName (Value:any):WAT_Name|undefined {
+    return (ValueIsName(Value) ? Value : undefined)
+  }
+
+/**** acceptablePath ****/
+
+  export function acceptablePath (Value:any, Default:WAT_Path):WAT_Path {
+    return (ValueIsPath(Value) ? Value : Default)
+  }
+
+/**** acceptableOptionalPath ****/
+
+  export function acceptableOptionalPath (Value:any):WAT_Path|undefined {
+    return (ValueIsPath(Value) ? Value : undefined)
+  }
+
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -10162,7 +10180,7 @@ console.warn('file drop error',Signal)
       this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
     }
 
-    public componentDidUnmount () {
+    public componentWillUnmount () {
       this._releaseWidgets()
     }
 
@@ -10213,12 +10231,12 @@ console.warn('file drop error',Signal)
     public get Type ():string  { return 'DoubleWidgetPane' }
     public set Type (_:string) { throwReadOnlyError('Type') }
 
-  /**** primaryWidget ****/
+  /**** primaryWidgetPath ****/
 
-    protected _primaryWidget:WAT_Path|undefined = undefined
+    protected _primaryWidgetPath:WAT_Path|undefined = undefined
 
-    public get primaryWidget ():WAT_Path|undefined { return this._primaryWidget as WAT_Path }
-    public set primaryWidget (newPath:WAT_Path|WAT_Widget|undefined) {
+    public get primaryWidgetPath ():WAT_Path|undefined { return this._primaryWidgetPath }
+    public set primaryWidgetPath (newPath:WAT_Path|WAT_Widget|undefined) {
       let SourceWidget:WAT_Widget|undefined, SourcePath:WAT_Path|undefined
       if (ValueIsWidget(newPath)) {
         SourceWidget = newPath as WAT_Widget
@@ -10235,33 +10253,35 @@ console.warn('file drop error',Signal)
       }
 
       if (SourceWidget == null) {
-        if (this._primaryWidget != null) {
-          this._primaryWidget = undefined
+        if (this._primaryWidgetPath != null) {
+          this._primaryWidgetPath = undefined
           this.rerender()
         }
+        this._primaryWidgetPath = SourcePath
         return
       }
 
-      if (SourceWidget === this) throwError(
-        'InvalidArgument: a DoubleWidgetPane can not show itself'
-      )
+      if (this._primaryWidgetPath !== SourcePath) {
+        this._primaryWidgetPath = SourcePath
 
-      if (SourceWidget.Page === this.Page) throwError(
-        'InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page'
-      )
+        if (SourceWidget === this) throwError(
+          'InvalidArgument: a DoubleWidgetPane can not show itself'
+        )
 
-      if (this._primaryWidget !== SourcePath) {
-        this._primaryWidget = SourcePath
+        if (SourceWidget.Page === this.Page) throwError(
+          'InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page'
+        )
+
         this.rerender()
       }
     }
 
-  /**** secondaryWidget ****/
+  /**** secondaryWidgetPath ****/
 
-    protected _secondaryWidget:WAT_Path|undefined = undefined
+    protected _secondaryWidgetPath:WAT_Path|undefined = undefined
 
-    public get secondaryWidget ():WAT_Path|undefined { return this._secondaryWidget as WAT_Path }
-    public set secondaryWidget (newPath:WAT_Path|WAT_Widget|undefined) {
+    public get secondaryWidgetPath ():WAT_Path|undefined { return this._secondaryWidgetPath }
+    public set secondaryWidgetPath (newPath:WAT_Path|WAT_Widget|undefined) {
       let SourceWidget:WAT_Widget|undefined, SourcePath:WAT_Path|undefined
       if (ValueIsWidget(newPath)) {
         SourceWidget = newPath as WAT_Widget
@@ -10278,23 +10298,25 @@ console.warn('file drop error',Signal)
       }
 
       if (SourceWidget == null) {
-        if (this._secondaryWidget != null) {
-          this._secondaryWidget = undefined
+        if (this._secondaryWidgetPath != null) {
+          this._secondaryWidgetPath = undefined
           this.rerender()
         }
+        this._secondaryWidgetPath = SourcePath
         return
       }
 
-      if (SourceWidget === this) throwError(
-        'InvalidArgument: a DoubleWidgetPane can not show itself'
-      )
+      if (this._secondaryWidgetPath !== SourcePath) {
+        this._secondaryWidgetPath = SourcePath
 
-      if (SourceWidget.Page === this.Page) throwError(
-        'InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page'
-      )
+        if (SourceWidget === this) throwError(
+          'InvalidArgument: a DoubleWidgetPane can not show itself'
+        )
 
-      if (this._secondaryWidget !== SourcePath) {
-        this._secondaryWidget = SourcePath
+        if (SourceWidget.Page === this.Page) throwError(
+          'InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page'
+        )
+
         this.rerender()
       }
     }
@@ -10401,6 +10423,25 @@ console.warn('"onVisibilityChange" Callback Failure',Signal)
 // @ts-ignore TS5905 all variables will be assigned by now
       return { x,y, Width,Height }
     }
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'primaryWidgetPath','secondaryWidgetPath','minPaneWidth',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._primaryWidgetPath   = acceptableOptionalPath(Serialization.primaryWidgetPath)
+      this._secondaryWidgetPath = acceptableOptionalPath(Serialization.secondaryWidgetPath)
+      this._minPaneWidth        = acceptableOrdinal     (Serialization.minPaneWidth,200)
+    }
 
   /**** _releaseWidgets ****/
 
@@ -10410,11 +10451,25 @@ console.warn('"onVisibilityChange" Callback Failure',Signal)
       this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
     }
 
-    public componentDidUnmount () {
+    public componentWillUnmount () {
       this._releaseWidgets()
     }
 
   /**** Renderer ****/
+
+    protected _VisibilityChanged:boolean = false
+
+    public componentDidMount () {
+      if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+        this._onVisibilityChange_()
+      }
+    }
+
+    public componentDidUpdate () {
+      if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+        this._onVisibilityChange_()
+      }
+    }
 
     protected _Renderer = () => {
       this._releaseWidgets()
@@ -10427,7 +10482,7 @@ console.warn('"onVisibilityChange" Callback Failure',Signal)
 
       const Value = acceptableOneOf(this._Value,'primary',['primary','secondary'])
 
-      const VisibilityChanged = (bothPanesVisible
+      this._VisibilityChanged = (bothPanesVisible
         ? ! this._primaryPaneIsVisible || ! this._secondaryPaneIsVisible
         : (this._primaryPaneIsVisible   !== (Value === 'primary')) ||
           (this._secondaryPaneIsVisible !== (Value === 'secondary'))
@@ -10438,9 +10493,9 @@ console.warn('"onVisibilityChange" Callback Failure',Signal)
       this._shownWidgets = []
         let primaryWidget:WAT_Widget|undefined
         let primaryWidgetsToShow:WAT_Widget[] = []
-        if (this._primaryPaneIsVisible && (this._primaryWidget != null)) {
-          primaryWidget = this.Applet?.WidgetAtPath(this._primaryWidget as WAT_Path)
-          if ((primaryWidget != null) || (primaryWidget !== this)) {
+        if (this._primaryPaneIsVisible && (this._primaryWidgetPath != null)) {
+          primaryWidget = this.Applet?.WidgetAtPath(this._primaryWidgetPath)
+          if ((primaryWidget != null) && (primaryWidget !== this)) {
             primaryWidgetsToShow = (
               (primaryWidget as WAT_Widget).Type === 'Outline'
               ? (primaryWidget as Indexable).bundledWidgets()
@@ -10455,9 +10510,9 @@ console.warn('"onVisibilityChange" Callback Failure',Signal)
 
         let secondaryWidget:WAT_Widget|undefined
         let secondaryWidgetsToShow:WAT_Widget[] = []
-        if (this._secondaryPaneIsVisible && (this._secondaryWidget != null)) {
-          secondaryWidget = this.Applet?.WidgetAtPath(this._secondaryWidget as WAT_Path)
-          if ((secondaryWidget != null) || (secondaryWidget !== this)) {
+        if (this._secondaryPaneIsVisible && (this._secondaryWidgetPath != null)) {
+          secondaryWidget = this.Applet?.WidgetAtPath(this._secondaryWidgetPath)
+          if ((secondaryWidget != null) && (secondaryWidget !== this)) {
             secondaryWidgetsToShow = (
               (secondaryWidget as WAT_Widget).Type === 'Outline'
               ? (secondaryWidget as Indexable).bundledWidgets()
@@ -10523,6 +10578,437 @@ console.warn('"onVisibilityChange" Callback Failure',Signal)
   .WAT.Widget > .WAT.DoubleWidgetPane > .secondaryPane {
     display:block; position:absolute;
     top:0px; right:auto; bottom:0px; height:auto;
+  }
+  `)
+
+/**** SidebarWidgetPane ****/
+
+  export const WAT_SidebarStates = ['hidden','overlaid','visible']
+  export type  WAT_SidebarState  = typeof WAT_SidebarStates[number]
+
+  export class WAT_SidebarWidgetPane extends WAT_Widget {
+    public constructor (Page:WAT_Page) { super(Page) }
+
+    public get Type ():string  { return 'SidebarWidgetPane' }
+    public set Type (_:string) { throwReadOnlyError('Type') }
+
+  /**** primaryWidgetPath ****/
+
+    protected _primaryWidgetPath:WAT_Path|undefined = undefined
+
+    public get primaryWidgetPath ():WAT_Path|undefined { return this._primaryWidgetPath }
+    public set primaryWidgetPath (newPath:WAT_Path|WAT_Widget|undefined) {
+      let SourceWidget:WAT_Widget|undefined, SourcePath:WAT_Path|undefined
+      if (ValueIsWidget(newPath)) {
+        SourceWidget = newPath as WAT_Widget
+        SourcePath   = SourceWidget.Path
+      } else {
+        allowPath('primary widget source path',newPath)
+        if ((newPath == null) || ((newPath as string).trim() === '')) {
+          SourceWidget = undefined
+          SourcePath   = undefined
+        } else {
+          SourceWidget = this.Applet?.WidgetAtPath(newPath as WAT_Path)
+          SourcePath   = newPath as WAT_Path
+        }
+      }
+
+      if (SourceWidget == null) {
+        if (this._primaryWidgetPath != null) {
+          this._primaryWidgetPath = undefined
+          this.rerender()
+        }
+        this._primaryWidgetPath = SourcePath
+        return
+      }
+
+      if (this._primaryWidgetPath !== SourcePath) {
+        this._primaryWidgetPath = SourcePath
+
+        if (SourceWidget === this) throwError(
+          'InvalidArgument: a SidebarWidgetPane can not show itself'
+        )
+
+        if (SourceWidget.Page === this.Page) throwError(
+          'InvalidArgument: a SidebarWidgetPane can not show other widgets from the same page'
+        )
+
+        this.rerender()
+      }
+    }
+
+  /**** SidebarWidgetPath ****/
+
+    protected _SidebarWidgetPath:WAT_Path|undefined = undefined
+
+    public get SidebarWidgetPath ():WAT_Path|undefined { return this._SidebarWidgetPath }
+    public set SidebarWidgetPath (newPath:WAT_Path|WAT_Widget|undefined) {
+      let SourceWidget:WAT_Widget|undefined, SourcePath:WAT_Path|undefined
+      if (ValueIsWidget(newPath)) {
+        SourceWidget = newPath as WAT_Widget
+        SourcePath   = SourceWidget.Path
+      } else {
+        allowPath('sidebar widget source path',newPath)
+        if ((newPath == null) || ((newPath as string).trim() === '')) {
+          SourceWidget = undefined
+          SourcePath   = undefined
+        } else {
+          SourceWidget = this.Applet?.WidgetAtPath(newPath as WAT_Path)
+          SourcePath   = newPath as WAT_Path
+        }
+      }
+
+      if (SourceWidget == null) {
+        if (this._SidebarWidgetPath != null) {
+          this._SidebarWidgetPath = undefined
+          this.rerender()
+        }
+        this._SidebarWidgetPath = SourcePath
+        return
+      }
+
+      if (this._SidebarWidgetPath !== SourcePath) {
+        this._SidebarWidgetPath = SourcePath
+
+        if (SourceWidget === this) throwError(
+          'InvalidArgument: a SidebarWidgetPane can not show itself'
+        )
+
+        if (SourceWidget.Page === this.Page) throwError(
+          'InvalidArgument: a SidebarWidgetPane can not show other widgets from the same page'
+        )
+
+        this.rerender()
+      }
+    }
+
+  /**** minPaneWidth ****/
+
+    protected _minPaneWidth:number|undefined
+
+    public get minPaneWidth ():number|undefined { return this._minPaneWidth }
+    public set minPaneWidth (newSetting:number|undefined) {
+      allowOrdinal('minimal pane width',newSetting)
+      if (this._minPaneWidth !== newSetting) {
+        this._minPaneWidth = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** minSidebarWidth ****/
+
+    protected _minSidebarWidth:number|undefined
+
+    public get minSidebarWidth ():number|undefined { return this._minSidebarWidth }
+    public set minSidebarWidth (newSetting:number|undefined) {
+      allowOrdinal('minimal sidebar width',newSetting)
+      if (this._minSidebarWidth !== newSetting) {
+        this._minSidebarWidth = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** maxSidebarWidth ****/
+
+    protected _maxSidebarWidth:number|undefined
+
+    public get maxSidebarWidth ():number|undefined { return this._maxSidebarWidth }
+    public set maxSidebarWidth (newSetting:number|undefined) {
+      allowOrdinal('maximal sidebar width',newSetting)
+      if (this._maxSidebarWidth !== newSetting) {
+        this._maxSidebarWidth = newSetting
+        this.rerender()
+      }
+    }
+
+  /**** openSidebar ****/
+
+    public openSidebar ():void {
+      switch (this._SidebarState) {
+        case 'hidden':   this._SidebarState = 'overlaid'
+                         this.rerender()
+                         if (this._onVisibilityChange != null) { this._onVisibilityChange_() }
+                         return
+        case 'overlaid':
+        case 'visible':  return
+      }
+    }
+
+  /**** closeSidebar ****/
+
+    public closeSidebar ():void {
+      switch (this._SidebarState) {
+        case 'hidden':   return
+        case 'overlaid': this._SidebarState = 'hidden'
+                         this.rerender()
+                         if (this._onVisibilityChange != null) { this._onVisibilityChange_() }
+                         return
+        case 'visible':  return
+      }
+    }
+
+  /**** SidebarState ****/
+
+    protected _SidebarState:WAT_SidebarState = 'hidden'
+
+    public get SidebarState ():WAT_SidebarState  { return this._SidebarState }
+    public set SidebarState (_:WAT_SidebarState) { throwReadOnlyError('SidebarState') }
+
+  /**** onVisibilityChange ****/
+
+    protected _onVisibilityChange:Function|undefined
+
+    public get onVisibilityChange ():Function|undefined { return this._onVisibilityChange_ }
+    public set onVisibilityChange (newCallback:Function|undefined) {
+      allowFunction('"onVisibilityChange" callback',newCallback)
+      this._onVisibilityChange = newCallback
+    }
+
+    protected _onVisibilityChange_ (...ArgList:any[]):void {
+      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+        this._onVisibilityChange = ArgList[0]
+      } else {                                            // callback invocation
+        try {
+          if (this._onVisibilityChange != null) { this._onVisibilityChange.apply(this,ArgList) }
+        } catch (Signal:any) {
+console.warn('"onVisibilityChange" Callback Failure',Signal)
+          setErrorReport(this,{
+            Type:'Custom Callback Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+        }
+      }
+    }
+
+  /**** _GeometryRelativeTo  ****/
+
+    private _GeometryOfWidgetRelativeTo (
+      Widget:WAT_Widget, BaseGeometry:WAT_Geometry, PaneGeometry:WAT_Geometry
+    ):WAT_Geometry {
+      const WidgetAnchors = Widget.Anchors
+
+      const {
+        x:WidgetX, y:WidgetY, Width:WidgetWidth, Height:WidgetHeight
+      } = Widget.Geometry
+
+      const {
+        minWidth,minHeight, maxWidth,maxHeight
+      } = Widget
+
+      const { x:BaseX, y:BaseY, Width:BaseWidth, Height:BaseHeight } = BaseGeometry
+      const { x:PaneX, y:PaneY, Width:PaneWidth, Height:PaneHeight } = PaneGeometry
+
+      let x:number,y:number, Width:number,Height:number
+        switch (WidgetAnchors[0]) {
+          case 'left-width':
+            x     = WidgetX-BaseX
+            Width = WidgetWidth
+            break
+          case 'width-right':
+            x     = PaneWidth - (BaseX+BaseWidth - (WidgetX+WidgetWidth)) - WidgetWidth
+            Width = WidgetWidth
+            break
+          case 'left-right':
+            x     = WidgetX-BaseX
+            Width = Math.max(minWidth || 0, Math.min(PaneWidth-BaseWidth+WidgetWidth, maxWidth || Infinity))
+        }
+
+        switch (WidgetAnchors[1]) {
+          case 'top-height':
+            y      = WidgetY-BaseY
+            Height = WidgetHeight
+            break
+          case 'height-bottom':
+            y      = PaneHeight - (BaseY+BaseHeight - (WidgetY+WidgetHeight)) - WidgetHeight
+            Height = WidgetHeight
+            break
+          case 'top-bottom':
+            y      = WidgetY-BaseY
+            Height = Math.max(minHeight || 0, Math.min(PaneHeight-BaseHeight+WidgetHeight, maxHeight || Infinity))
+        }
+// @ts-ignore TS5905 all variables will be assigned by now
+      return { x,y, Width,Height }
+    }
+  /**** _serializeConfigurationInto ****/
+
+    protected _serializeConfigurationInto (Serialization:Serializable):void {
+      super._serializeConfigurationInto(Serialization)
+
+      ;[
+        'primaryWidgetPath','SidebarWidgetPath',
+        'minPaneWidth','minSidebarWidth','maxSidebarWidth',
+      ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
+    }
+
+  /**** _deserializeConfigurationFrom ****/
+
+    protected _deserializeConfigurationFrom (Serialization:Serializable):void {
+      super._deserializeConfigurationFrom(Serialization)
+
+      this._primaryWidgetPath = acceptableOptionalPath(Serialization.primaryWidgetPath)
+      this._SidebarWidgetPath = acceptableOptionalPath(Serialization.SidebarWidgetPath)
+      this._minPaneWidth      = acceptableOrdinal     (Serialization.minPaneWidth,   200)
+      this._minSidebarWidth   = acceptableOrdinal     (Serialization.minSidebarWidth,100)
+      this._maxSidebarWidth   = acceptableOrdinal     (Serialization.maxSidebarWidth,200)
+    }
+
+  /**** _releaseWidgets ****/
+
+    protected _shownWidgets:WAT_Widget[] = []
+
+    protected _releaseWidgets ():void {
+      this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
+    }
+
+    public componentWillUnmount () {
+      this._releaseWidgets()
+    }
+
+  /**** Renderer ****/
+
+    protected _VisibilityChanged:boolean = false
+
+    public componentDidMount () {
+      if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+        this._onVisibilityChange_()
+      }
+    }
+
+    public componentDidUpdate () {
+      if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+        this._onVisibilityChange_()
+      }
+    }
+
+    protected _Renderer = () => {
+      this._releaseWidgets()
+
+      const totalWidth = this.Width
+
+      const minPaneWidth    = acceptableOrdinal(this._minPaneWidth,   200)
+      const minSidebarWidth = acceptableOrdinal(this._minSidebarWidth,100)
+      const maxSidebarWidth = acceptableOrdinal(this._maxSidebarWidth,100)
+
+      this._VisibilityChanged = false
+      if (totalWidth < minPaneWidth + minSidebarWidth) {
+        if (this._SidebarState === 'visible') {
+          this._VisibilityChanged = true
+          this._SidebarState      = 'hidden'
+        }
+      } else {
+        if (this._SidebarState === 'hidden') {
+          this._VisibilityChanged = true
+          this._SidebarState      = 'visible'
+        }
+      }
+
+      let PaneWidth:number = 0, SidebarWidth:number = 0
+      switch (this._SidebarState) {
+        case 'hidden':   PaneWidth = totalWidth; SidebarWidth = 0; break
+        case 'overlaid': PaneWidth = totalWidth
+                         SidebarWidth = Math.max(minSidebarWidth, Math.min(PaneWidth-40,maxSidebarWidth))
+                         break
+        case 'visible':  SidebarWidth = Math.max(minSidebarWidth, Math.min(totalWidth-minPaneWidth,maxSidebarWidth))
+                         PaneWidth = totalWidth - SidebarWidth
+      }
+
+      this._shownWidgets = []
+        let primaryWidget:WAT_Widget|undefined
+        let primaryWidgetsToShow:WAT_Widget[] = []
+        if (this._primaryWidgetPath != null) {
+          primaryWidget = this.Applet?.WidgetAtPath(this._primaryWidgetPath)
+          if ((primaryWidget != null) && (primaryWidget !== this)) {
+            primaryWidgetsToShow = (
+              (primaryWidget as WAT_Widget).Type === 'Outline'
+              ? (primaryWidget as Indexable).bundledWidgets()
+              : [primaryWidget]
+            ).filter((Widget:Indexable) => (
+              Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))
+            ))
+              primaryWidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
+            this._shownWidgets.push(...primaryWidgetsToShow)
+          }
+        }
+
+        let SidebarWidget:WAT_Widget|undefined
+        let SidebarWidgetsToShow:WAT_Widget[] = []
+        if ((this._SidebarState !== 'hidden') && (this._SidebarWidgetPath != null)) {
+          SidebarWidget = this.Applet?.WidgetAtPath(this._SidebarWidgetPath)
+          if ((SidebarWidget != null) && (SidebarWidget !== this)) {
+            SidebarWidgetsToShow = (
+              (SidebarWidget as WAT_Widget).Type === 'Outline'
+              ? (SidebarWidget as Indexable).bundledWidgets()
+              : [SidebarWidget]
+            ).filter((Widget:Indexable) => (
+              Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))
+            ))
+              SidebarWidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
+            this._shownWidgets.push(...SidebarWidgetsToShow)
+          }
+        }
+      const { x,y, Width,Height } = this.Geometry
+
+      const primaryPaneGeometry = {
+        x:x + (this._SidebarState === 'visible' ? SidebarWidth : 0),y, Width:PaneWidth,Height
+      }
+      const primaryBaseGeometry = (
+        primaryWidget == null ? undefined : (primaryWidget as WAT_Widget).Geometry
+      )
+
+      const SidebarPaneGeometry = { x,y, Width:SidebarWidth,Height }
+      const SidebarBaseGeometry = (
+        SidebarWidget == null ? undefined : (SidebarWidget as WAT_Widget).Geometry
+      )
+
+      return html`<div class="WAT Content SidebarWidgetPane">
+       <div class="primaryPane" style="
+         left:${this._SidebarState === 'visible' ? SidebarWidth : 0}px;
+         width:${PaneWidth}px
+       ">
+        ${(primaryWidgetsToShow as any).toReversed().map((Widget:WAT_Widget) => {
+          let Geometry = this._GeometryOfWidgetRelativeTo(
+            Widget, primaryBaseGeometry as WAT_Geometry, primaryPaneGeometry
+          )
+          return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`
+        })}
+       </>
+
+       ${(this._SidebarState === 'overlaid') && html`
+         <div class="SidebarUnderlay" onClick=${() => this.closeSidebar()}/>
+       `}
+
+       <div class="Sidebar" style="
+         width:${this._SidebarState === 'hidden' ? 0 : SidebarWidth}px
+       ">
+        ${(SidebarWidgetsToShow as any).toReversed().map((Widget:WAT_Widget) => {
+          let Geometry = this._GeometryOfWidgetRelativeTo(
+            Widget, SidebarBaseGeometry as WAT_Geometry, SidebarPaneGeometry
+          )
+          return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`
+        })}
+       </>
+      </div>`
+    }
+  }
+  builtInWidgetTypes['SidebarWidgetPane'] = WAT_SidebarWidgetPane
+
+  appendStyle(`
+  .WAT.Widget > .WAT.SidebarWidgetPane {
+    overflow:hidden;
+  }
+  .WAT.Widget > .WAT.SidebarWidgetPane > .mainPane {
+    display:block; position:absolute;
+    top:0px; right:0px; bottom:0px; width:auto; height:auto;
+  }
+  .WAT.Widget > .WAT.SidebarWidgetPane > .SidebarUnderlay {
+    display:block; position:absolute;
+    left:0px; top:0px; right:0px; bottom:0px;
+    background:black; opacity:0.1;
+    pointer-events:auto;
+  }
+  .WAT.Widget > .WAT.SidebarWidgetPane > .Sidebar {
+    display:block; position:absolute;
+    left:0px; top:0px; right:auto; bottom:0px; height:auto;
   }
   `)
 
@@ -11323,7 +11809,11 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
     protected _releaseWidgets (WidgetList:WAT_Widget[]):void {
       WidgetList.forEach((Widget:Indexable) => {
         Widget._Pane = undefined
-        if (Widget instanceof WAT_WidgetPane) {
+        if (
+          (Widget instanceof WAT_WidgetPane)       ||
+          (Widget instanceof WAT_DoubleWidgetPane) ||
+          (Widget instanceof WAT_SidebarWidgetPane)
+        ) {
           (Widget as Indexable)._releaseWidgets()
         }
       })
