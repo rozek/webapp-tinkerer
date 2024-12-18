@@ -3919,6 +3919,7 @@ console.log('DesignerState',DesignerState)
             '----',
             'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
             'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
+            'SidebarWidgetPane:Sidebar Widget Pane',
             '-Accordion','-AccordionFold:Accordion Fold',
             'FlatListView:flat List View','-NestedListView:nested List View',
             '-NoteSticker'
@@ -5200,6 +5201,7 @@ console.log('DesignerState',DesignerState)
             '----',
             'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
             'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
+            'SidebarWidgetPane:Sidebar Widget Pane',
             '-Accordion','-AccordionFold:Accordion Fold',
             'FlatListView:flat List View','-nestedListView:nested List View',
             '-NoteSticker'
@@ -7410,6 +7412,26 @@ console.log('DesignerState',DesignerState)
 
           ${(commonType === 'DoubleWidgetPane') && html`
             <${WAD_horizontally}>
+              <${WAD_Label}>primary Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.primaryWidgetPath))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('primaryWidgetPath',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>secondary Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.secondaryWidgetPath))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('secondaryWidgetPath',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
               <${WAD_Label}>min. Pane Width</>
               <${WAD_Gap}/>
               <${WAD_IntegerInput} style="width:60px"
@@ -7417,6 +7439,63 @@ console.log('DesignerState',DesignerState)
                 Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minPaneWidth))}
                 Minimum=${0}
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minPaneWidth',parseFloat(Event.target.value))}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'SidebarWidgetPane') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>primary Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.primaryWidgetPath))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('primaryWidgetPath',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Sidebar Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.SidebarWidgetPath))}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('SidebarWidgetPath',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Pane Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minPaneWidth))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minPaneWidth',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Sidebar Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minSidebarWidth))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minSidebarWidth',parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Sidebar Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.maxSidebarWidth))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('maxSidebarWidth',parseFloat(Event.target.value))}
               />
             </>
 
