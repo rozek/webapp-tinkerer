@@ -3515,6 +3515,7 @@ function WAD_Toolbox() {
         '----',
         'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
         'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
+        'SidebarWidgetPane:Sidebar Widget Pane',
         '-Accordion', '-AccordionFold:Accordion Fold',
         'FlatListView:flat List View', '-NestedListView:nested List View',
         '-NoteSticker'
@@ -4712,6 +4713,7 @@ function WAD_WidgetBrowserPane() {
         '----',
         'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
         'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
+        'SidebarWidgetPane:Sidebar Widget Pane',
         '-Accordion', '-AccordionFold:Accordion Fold',
         'FlatListView:flat List View', '-nestedListView:nested List View',
         '-NoteSticker'
@@ -6829,6 +6831,26 @@ function WAD_WidgetConfigurationPane() {
 
           ${(commonType === 'DoubleWidgetPane') && html `
             <${WAD_horizontally}>
+              <${WAD_Label}>primary Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.primaryWidgetPath))}
+                onInput=${(Event) => doConfigureSelectedWidgets('primaryWidgetPath', Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>secondary Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.secondaryWidgetPath))}
+                onInput=${(Event) => doConfigureSelectedWidgets('secondaryWidgetPath', Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
               <${WAD_Label}>min. Pane Width</>
               <${WAD_Gap}/>
               <${WAD_IntegerInput} style="width:60px"
@@ -6836,6 +6858,63 @@ function WAD_WidgetConfigurationPane() {
                 Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minPaneWidth))}
                 Minimum=${0}
                 onInput=${(Event) => doConfigureSelectedWidgets('minPaneWidth', parseFloat(Event.target.value))}
+              />
+            </>
+
+
+          `}
+
+          ${(commonType === 'SidebarWidgetPane') && html `
+            <${WAD_horizontally}>
+              <${WAD_Label}>primary Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.primaryWidgetPath))}
+                onInput=${(Event) => doConfigureSelectedWidgets('primaryWidgetPath', Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Sidebar Widget Path</>
+              <${WAD_Gap}/>
+              <${WAD_TextlineInput} style="flex:1 0 auto"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.SidebarWidgetPath))}
+                onInput=${(Event) => doConfigureSelectedWidgets('SidebarWidgetPath', Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Pane Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minPaneWidth))}
+                Minimum=${0}
+                onInput=${(Event) => doConfigureSelectedWidgets('minPaneWidth', parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Sidebar Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minSidebarWidth))}
+                Minimum=${0}
+                onInput=${(Event) => doConfigureSelectedWidgets('minSidebarWidth', parseFloat(Event.target.value))}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>max. Sidebar Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxSidebarWidth))}
+                Minimum=${0}
+                onInput=${(Event) => doConfigureSelectedWidgets('maxSidebarWidth', parseFloat(Event.target.value))}
               />
             </>
 
