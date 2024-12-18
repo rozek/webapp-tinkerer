@@ -6314,7 +6314,7 @@ console.log('DesignerState',DesignerState)
           Expansion=${Expansions.TypeSpecific}
           toggleExpansion=${() => toggleExpansion('TypeSpecific')}
         >
-          ${(['HTMLView'].indexOf(commonType) >= 0) && html`
+          ${(commonType === 'HTMLView') && html`
             <${WAD_horizontally}>
               <${WAD_Label}>read-only</>
               <${WAD_Gap}/>
@@ -6329,7 +6329,7 @@ console.log('DesignerState',DesignerState)
               <${WAD_Label}>acceptable File Types (one per line)</>
             </>
 
-            <${WAD_TextInput} Placeholder="(enter type list)" style="min-height:60px"
+            <${WAD_TextInput} Placeholder="(enter type list or leave empty for all supported)" style="min-height:60px"
               enabled=${selectedWidgets.length > 0}
                 Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.acceptableFileTypes))}
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('acceptableFileTypes',Event.target.value.trim().split(/\s*\n\s*/))}
@@ -6337,7 +6337,7 @@ console.log('DesignerState',DesignerState)
 
           `}
 
-          ${(['MarkdownView'].indexOf(commonType) >= 0) && html`
+          ${(commonType === 'MarkdownView') && html`
             <${WAD_horizontally}>
               <${WAD_Label}>read-only</>
               <${WAD_Gap}/>
@@ -6352,7 +6352,7 @@ console.log('DesignerState',DesignerState)
               <${WAD_Label}>acceptable File Types (one per line)</>
             </>
 
-            <${WAD_TextInput} Placeholder="(enter type list)" style="min-height:60px"
+            <${WAD_TextInput} Placeholder="(enter type list or leave empty for all supported)" style="min-height:60px"
               enabled=${selectedWidgets.length > 0}
                 Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.acceptableFileTypes))}
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('acceptableFileTypes',Event.target.value.trim().split(/\s*\n\s*/))}
@@ -6360,7 +6360,7 @@ console.log('DesignerState',DesignerState)
 
           `}
 
-          ${(['ImageView','SVGView'].indexOf(commonType) >= 0) && html`
+          ${(commonType === 'ImageView') && html`
             <${WAD_horizontally}>
               <${WAD_Label}>Image Scaling</>
               <${WAD_Gap}/>
@@ -6382,6 +6382,32 @@ console.log('DesignerState',DesignerState)
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('ImageAlignment',Event.target.value)}
               />
             </>
+          `}
+
+          ${(commonType === 'SVGView') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>Image Scaling</>
+              <${WAD_Gap}/>
+              <${WAD_DropDown}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:Indexable) => Widget.ImageScaling))}
+                Options=${WAT_ImageScalings}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('ImageScaling',Event.target.value)}
+              />
+            </>
+
+            <${WAD_horizontally}>
+              <${WAD_Label}>Image Alignment</>
+              <${WAD_Gap}/>
+              <${WAD_DropDown}
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:Indexable) => Widget.ImageAlignment))}
+                Options=${WAT_ImageAlignments}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('ImageAlignment',Event.target.value)}
+              />
+            </>
+
+
           `}
 
           ${(commonType === 'WebView') && html`
@@ -7374,7 +7400,7 @@ console.log('DesignerState',DesignerState)
               <${WAD_Label}>acceptable File Types (one per line)</>
             </>
 
-            <${WAD_TextInput} Placeholder="(enter type list)" style="min-height:60px"
+            <${WAD_TextInput} Placeholder="(enter type list or leave empty for all supported)" style="min-height:60px"
               enabled=${selectedWidgets.length > 0}
                 Value=${commonListLiteralOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.acceptableFileTypes))}
                 onInput=${(Event:Indexable) => doConfigureSelectedWidgets('acceptableFileTypes',Event.target.value.trim().split(/\s*\n\s*/))}
