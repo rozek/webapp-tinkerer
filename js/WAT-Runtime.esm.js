@@ -70,7 +70,7 @@ export const WAT_ErrorTypes = [
     '"onFocus" Callback Failure', '"onBlur" Callback Failure',
     '"onClick" Callback Failure', '"onInput" Callback Failure',
     '"onDrop" Callback Failure', '"onDropError" Callback Failure',
-    '"onValueChange" Callback Failure',
+    '"onValueChange" Callback Failure', 'Custom Callback Failure',
     'Event Handling Failure',
 ];
 export function throwError(Message) {
@@ -9340,6 +9340,299 @@ builtInWidgetTypes['WidgetPane'] = WAT_WidgetPane;
 appendStyle(`
   .WAT.Widget > .WAT.WidgetPane {
     overflow:hidden;
+  }
+  `);
+/**** DoubleWidgetPane ****/
+export class WAT_DoubleWidgetPane extends WAT_Widget {
+    constructor(Page) {
+        super(Page);
+        /**** primaryWidget ****/
+        Object.defineProperty(this, "_primaryWidget", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** secondaryWidget ****/
+        Object.defineProperty(this, "_secondaryWidget", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** minPaneWidth ****/
+        Object.defineProperty(this, "_minPaneWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** onVisibilityChange ****/
+        Object.defineProperty(this, "_onVisibilityChange", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** primaryPaneIsVisible ****/
+        Object.defineProperty(this, "_primaryPaneIsVisible", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** secondaryPaneIsVisible ****/
+        Object.defineProperty(this, "_secondaryPaneIsVisible", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        /**** _releaseWidgets ****/
+        Object.defineProperty(this, "_shownWidgets", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        /**** Renderer ****/
+        Object.defineProperty(this, "_Renderer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: () => {
+                var _a, _b;
+                this._releaseWidgets();
+                const totalWidth = this.Width;
+                const minPaneWidth = acceptableOrdinal(this._minPaneWidth, 200);
+                const bothPanesVisible = totalWidth >= 2 * minPaneWidth;
+                const PaneWidth = (bothPanesVisible ? Math.floor(totalWidth / 2) : totalWidth);
+                const Value = acceptableOneOf(this._Value, 'primary', ['primary', 'secondary']);
+                const VisibilityChanged = (bothPanesVisible
+                    ? !this._primaryPaneIsVisible || !this._secondaryPaneIsVisible
+                    : (this._primaryPaneIsVisible !== (Value === 'primary')) ||
+                        (this._secondaryPaneIsVisible !== (Value === 'secondary')));
+                this._primaryPaneIsVisible = bothPanesVisible || (Value === 'primary');
+                this._secondaryPaneIsVisible = bothPanesVisible || (Value === 'secondary');
+                this._shownWidgets = [];
+                let primaryWidget;
+                let primaryWidgetsToShow = [];
+                if (this._primaryPaneIsVisible && (this._primaryWidget != null)) {
+                    primaryWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._primaryWidget);
+                    if ((primaryWidget != null) || (primaryWidget !== this)) {
+                        primaryWidgetsToShow = (primaryWidget.Type === 'Outline'
+                            ? primaryWidget.bundledWidgets()
+                            : [primaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+                        primaryWidgetsToShow.forEach((Widget) => Widget._Pane = this);
+                        this._shownWidgets.push(...primaryWidgetsToShow);
+                    }
+                }
+                let secondaryWidget;
+                let secondaryWidgetsToShow = [];
+                if (this._secondaryPaneIsVisible && (this._secondaryWidget != null)) {
+                    secondaryWidget = (_b = this.Applet) === null || _b === void 0 ? void 0 : _b.WidgetAtPath(this._secondaryWidget);
+                    if ((secondaryWidget != null) || (secondaryWidget !== this)) {
+                        secondaryWidgetsToShow = (secondaryWidget.Type === 'Outline'
+                            ? secondaryWidget.bundledWidgets()
+                            : [secondaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+                        secondaryWidgetsToShow.forEach((Widget) => Widget._Pane = this);
+                        this._shownWidgets.push(...secondaryWidgetsToShow);
+                    }
+                }
+                const { x, y, Width, Height } = this.Geometry;
+                const primaryPaneGeometry = { x, y, Width: PaneWidth, Height };
+                const primaryBaseGeometry = (primaryWidget == null ? undefined : primaryWidget.Geometry);
+                const secondaryPaneGeometry = (bothPanesVisible
+                    ? { x: x + PaneWidth, y, Width: PaneWidth, Height }
+                    : { x, y, Width: PaneWidth, Height });
+                const secondaryBaseGeometry = (secondaryWidget == null ? undefined : secondaryWidget.Geometry);
+                return html `<div class="WAT Content DoubleWidgetPane">
+       <div class="primaryPane" style="
+         width:${this._primaryPaneIsVisible ? PaneWidth : 0}px
+       ">
+        ${primaryWidgetsToShow.toReversed().map((Widget) => {
+                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, primaryBaseGeometry, primaryPaneGeometry);
+                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+                })}
+       </>
+
+       <div class="secondaryPane" style="
+         left:${bothPanesVisible ? PaneWidth : 0}px;
+         width:${this._secondaryPaneIsVisible ? PaneWidth : 0}px
+       ">
+        ${secondaryWidgetsToShow.toReversed().map((Widget) => {
+                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, secondaryBaseGeometry, secondaryPaneGeometry);
+                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+                })}
+       </>
+      </div>`;
+            }
+        });
+    }
+    get Type() { return 'DoubleWidgetPane'; }
+    set Type(_) { throwReadOnlyError('Type'); }
+    get primaryWidget() { return this._primaryWidget; }
+    set primaryWidget(newPath) {
+        var _a;
+        let SourceWidget, SourcePath;
+        if (ValueIsWidget(newPath)) {
+            SourceWidget = newPath;
+            SourcePath = SourceWidget.Path;
+        }
+        else {
+            allowPath('primary pane widget source path', newPath);
+            if ((newPath == null) || (newPath.trim() === '')) {
+                SourceWidget = undefined;
+                SourcePath = undefined;
+            }
+            else {
+                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
+                SourcePath = newPath;
+            }
+        }
+        if (SourceWidget == null) {
+            if (this._primaryWidget != null) {
+                this._primaryWidget = undefined;
+                this.rerender();
+            }
+            return;
+        }
+        if (SourceWidget === this)
+            throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
+        if (SourceWidget.Page === this.Page)
+            throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
+        if (this._primaryWidget !== SourcePath) {
+            this._primaryWidget = SourcePath;
+            this.rerender();
+        }
+    }
+    get secondaryWidget() { return this._secondaryWidget; }
+    set secondaryWidget(newPath) {
+        var _a;
+        let SourceWidget, SourcePath;
+        if (ValueIsWidget(newPath)) {
+            SourceWidget = newPath;
+            SourcePath = SourceWidget.Path;
+        }
+        else {
+            allowPath('secondary pane widget source path', newPath);
+            if ((newPath == null) || (newPath.trim() === '')) {
+                SourceWidget = undefined;
+                SourcePath = undefined;
+            }
+            else {
+                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
+                SourcePath = newPath;
+            }
+        }
+        if (SourceWidget == null) {
+            if (this._secondaryWidget != null) {
+                this._secondaryWidget = undefined;
+                this.rerender();
+            }
+            return;
+        }
+        if (SourceWidget === this)
+            throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
+        if (SourceWidget.Page === this.Page)
+            throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
+        if (this._secondaryWidget !== SourcePath) {
+            this._secondaryWidget = SourcePath;
+            this.rerender();
+        }
+    }
+    get minPaneWidth() { return this._minPaneWidth; }
+    set minPaneWidth(newSetting) {
+        allowOrdinal('minimal pane width', newSetting);
+        if (this._minPaneWidth !== newSetting) {
+            this._minPaneWidth = newSetting;
+            this.rerender();
+        }
+    }
+    get onVisibilityChange() { return this._onVisibilityChange_; }
+    set onVisibilityChange(newCallback) {
+        allowFunction('"onVisibilityChange" callback', newCallback);
+        this._onVisibilityChange = newCallback;
+    }
+    _onVisibilityChange_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onVisibilityChange = ArgList[0];
+        }
+        else { // callback invocation
+            try {
+                if (this._onVisibilityChange != null) {
+                    this._onVisibilityChange.apply(this, ArgList);
+                }
+            }
+            catch (Signal) {
+                console.warn('"onVisibilityChange" Callback Failure', Signal);
+                setErrorReport(this, {
+                    Type: 'Custom Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+    }
+    get primaryPaneIsVisible() { return this._primaryPaneIsVisible; }
+    set primaryPaneIsVisible(_) { throwReadOnlyError('primaryPaneIsVisible'); }
+    get secondaryPaneIsVisible() { return this._secondaryPaneIsVisible; }
+    set secondaryPaneIsVisible(_) { throwReadOnlyError('secondaryPaneIsVisible'); }
+    /**** _GeometryRelativeTo  ****/
+    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
+        const WidgetAnchors = Widget.Anchors;
+        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
+        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
+        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
+        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
+        let x, y, Width, Height;
+        switch (WidgetAnchors[0]) {
+            case 'left-width':
+                x = WidgetX - BaseX;
+                Width = WidgetWidth;
+                break;
+            case 'width-right':
+                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
+                Width = WidgetWidth;
+                break;
+            case 'left-right':
+                x = WidgetX - BaseX;
+                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
+        }
+        switch (WidgetAnchors[1]) {
+            case 'top-height':
+                y = WidgetY - BaseY;
+                Height = WidgetHeight;
+                break;
+            case 'height-bottom':
+                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
+                Height = WidgetHeight;
+                break;
+            case 'top-bottom':
+                y = WidgetY - BaseY;
+                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
+        }
+        // @ts-ignore TS5905 all variables will be assigned by now
+        return { x, y, Width, Height };
+    }
+    _releaseWidgets() {
+        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+    }
+    componentDidUnmount() {
+        this._releaseWidgets();
+    }
+}
+builtInWidgetTypes['DoubleWidgetPane'] = WAT_DoubleWidgetPane;
+appendStyle(`
+  .WAT.Widget > .WAT.DoubleWidgetPane {
+    overflow:hidden;
+  }
+  .WAT.Widget > .WAT.DoubleWidgetPane > .primaryPane {
+    display:block; position:absolute;
+    left:0px; top:0px; right:auto; bottom:0px; height:auto;
+  }
+  .WAT.Widget > .WAT.DoubleWidgetPane > .secondaryPane {
+    display:block; position:absolute;
+    top:0px; right:auto; bottom:0px; height:auto;
   }
   `);
 /**** Accordion ****/
