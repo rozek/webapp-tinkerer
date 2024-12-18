@@ -709,6 +709,18 @@ export function acceptableURL(Value, Default) {
 export function acceptableName(Value, Default) {
     return (ValueIsName(Value) ? Value : Default);
 }
+/**** acceptableOptionalName ****/
+export function acceptableOptionalName(Value) {
+    return (ValueIsName(Value) ? Value : undefined);
+}
+/**** acceptablePath ****/
+export function acceptablePath(Value, Default) {
+    return (ValueIsPath(Value) ? Value : Default);
+}
+/**** acceptableOptionalPath ****/
+export function acceptableOptionalPath(Value) {
+    return (ValueIsPath(Value) ? Value : undefined);
+}
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -9332,7 +9344,7 @@ export class WAT_WidgetPane extends WAT_Widget {
     _releaseWidgets() {
         this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
     }
-    componentDidUnmount() {
+    componentWillUnmount() {
         this._releaseWidgets();
     }
 }
@@ -9346,15 +9358,15 @@ appendStyle(`
 export class WAT_DoubleWidgetPane extends WAT_Widget {
     constructor(Page) {
         super(Page);
-        /**** primaryWidget ****/
-        Object.defineProperty(this, "_primaryWidget", {
+        /**** primaryWidgetPath ****/
+        Object.defineProperty(this, "_primaryWidgetPath", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: undefined
         });
-        /**** secondaryWidget ****/
-        Object.defineProperty(this, "_secondaryWidget", {
+        /**** secondaryWidgetPath ****/
+        Object.defineProperty(this, "_secondaryWidgetPath", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -9396,6 +9408,12 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
             value: []
         });
         /**** Renderer ****/
+        Object.defineProperty(this, "_VisibilityChanged", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         Object.defineProperty(this, "_Renderer", {
             enumerable: true,
             configurable: true,
@@ -9408,7 +9426,7 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
                 const bothPanesVisible = totalWidth >= 2 * minPaneWidth;
                 const PaneWidth = (bothPanesVisible ? Math.floor(totalWidth / 2) : totalWidth);
                 const Value = acceptableOneOf(this._Value, 'primary', ['primary', 'secondary']);
-                const VisibilityChanged = (bothPanesVisible
+                this._VisibilityChanged = (bothPanesVisible
                     ? !this._primaryPaneIsVisible || !this._secondaryPaneIsVisible
                     : (this._primaryPaneIsVisible !== (Value === 'primary')) ||
                         (this._secondaryPaneIsVisible !== (Value === 'secondary')));
@@ -9417,9 +9435,9 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
                 this._shownWidgets = [];
                 let primaryWidget;
                 let primaryWidgetsToShow = [];
-                if (this._primaryPaneIsVisible && (this._primaryWidget != null)) {
-                    primaryWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._primaryWidget);
-                    if ((primaryWidget != null) || (primaryWidget !== this)) {
+                if (this._primaryPaneIsVisible && (this._primaryWidgetPath != null)) {
+                    primaryWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._primaryWidgetPath);
+                    if ((primaryWidget != null) && (primaryWidget !== this)) {
                         primaryWidgetsToShow = (primaryWidget.Type === 'Outline'
                             ? primaryWidget.bundledWidgets()
                             : [primaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
@@ -9429,9 +9447,9 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
                 }
                 let secondaryWidget;
                 let secondaryWidgetsToShow = [];
-                if (this._secondaryPaneIsVisible && (this._secondaryWidget != null)) {
-                    secondaryWidget = (_b = this.Applet) === null || _b === void 0 ? void 0 : _b.WidgetAtPath(this._secondaryWidget);
-                    if ((secondaryWidget != null) || (secondaryWidget !== this)) {
+                if (this._secondaryPaneIsVisible && (this._secondaryWidgetPath != null)) {
+                    secondaryWidget = (_b = this.Applet) === null || _b === void 0 ? void 0 : _b.WidgetAtPath(this._secondaryWidgetPath);
+                    if ((secondaryWidget != null) && (secondaryWidget !== this)) {
                         secondaryWidgetsToShow = (secondaryWidget.Type === 'Outline'
                             ? secondaryWidget.bundledWidgets()
                             : [secondaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
@@ -9471,8 +9489,8 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
     }
     get Type() { return 'DoubleWidgetPane'; }
     set Type(_) { throwReadOnlyError('Type'); }
-    get primaryWidget() { return this._primaryWidget; }
-    set primaryWidget(newPath) {
+    get primaryWidgetPath() { return this._primaryWidgetPath; }
+    set primaryWidgetPath(newPath) {
         var _a;
         let SourceWidget, SourcePath;
         if (ValueIsWidget(newPath)) {
@@ -9491,23 +9509,24 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
             }
         }
         if (SourceWidget == null) {
-            if (this._primaryWidget != null) {
-                this._primaryWidget = undefined;
+            if (this._primaryWidgetPath != null) {
+                this._primaryWidgetPath = undefined;
                 this.rerender();
             }
+            this._primaryWidgetPath = SourcePath;
             return;
         }
-        if (SourceWidget === this)
-            throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
-        if (SourceWidget.Page === this.Page)
-            throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
-        if (this._primaryWidget !== SourcePath) {
-            this._primaryWidget = SourcePath;
+        if (this._primaryWidgetPath !== SourcePath) {
+            this._primaryWidgetPath = SourcePath;
+            if (SourceWidget === this)
+                throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
+            if (SourceWidget.Page === this.Page)
+                throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
             this.rerender();
         }
     }
-    get secondaryWidget() { return this._secondaryWidget; }
-    set secondaryWidget(newPath) {
+    get secondaryWidgetPath() { return this._secondaryWidgetPath; }
+    set secondaryWidgetPath(newPath) {
         var _a;
         let SourceWidget, SourcePath;
         if (ValueIsWidget(newPath)) {
@@ -9526,18 +9545,19 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
             }
         }
         if (SourceWidget == null) {
-            if (this._secondaryWidget != null) {
-                this._secondaryWidget = undefined;
+            if (this._secondaryWidgetPath != null) {
+                this._secondaryWidgetPath = undefined;
                 this.rerender();
             }
+            this._secondaryWidgetPath = SourcePath;
             return;
         }
-        if (SourceWidget === this)
-            throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
-        if (SourceWidget.Page === this.Page)
-            throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
-        if (this._secondaryWidget !== SourcePath) {
-            this._secondaryWidget = SourcePath;
+        if (this._secondaryWidgetPath !== SourcePath) {
+            this._secondaryWidgetPath = SourcePath;
+            if (SourceWidget === this)
+                throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
+            if (SourceWidget.Page === this.Page)
+                throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
             this.rerender();
         }
     }
@@ -9614,11 +9634,35 @@ export class WAT_DoubleWidgetPane extends WAT_Widget {
         // @ts-ignore TS5905 all variables will be assigned by now
         return { x, y, Width, Height };
     }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'primaryWidgetPath', 'secondaryWidgetPath', 'minPaneWidth',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._primaryWidgetPath = acceptableOptionalPath(Serialization.primaryWidgetPath);
+        this._secondaryWidgetPath = acceptableOptionalPath(Serialization.secondaryWidgetPath);
+        this._minPaneWidth = acceptableOrdinal(Serialization.minPaneWidth, 200);
+    }
     _releaseWidgets() {
         this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
     }
-    componentDidUnmount() {
+    componentWillUnmount() {
         this._releaseWidgets();
+    }
+    componentDidMount() {
+        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+            this._onVisibilityChange_();
+        }
+    }
+    componentDidUpdate() {
+        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+            this._onVisibilityChange_();
+        }
     }
 }
 builtInWidgetTypes['DoubleWidgetPane'] = WAT_DoubleWidgetPane;
@@ -9633,6 +9677,414 @@ appendStyle(`
   .WAT.Widget > .WAT.DoubleWidgetPane > .secondaryPane {
     display:block; position:absolute;
     top:0px; right:auto; bottom:0px; height:auto;
+  }
+  `);
+/**** SidebarWidgetPane ****/
+export const WAT_SidebarStates = ['hidden', 'overlaid', 'visible'];
+export class WAT_SidebarWidgetPane extends WAT_Widget {
+    constructor(Page) {
+        super(Page);
+        /**** primaryWidgetPath ****/
+        Object.defineProperty(this, "_primaryWidgetPath", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** SidebarWidgetPath ****/
+        Object.defineProperty(this, "_SidebarWidgetPath", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        /**** minPaneWidth ****/
+        Object.defineProperty(this, "_minPaneWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** minSidebarWidth ****/
+        Object.defineProperty(this, "_minSidebarWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** maxSidebarWidth ****/
+        Object.defineProperty(this, "_maxSidebarWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** SidebarState ****/
+        Object.defineProperty(this, "_SidebarState", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 'hidden'
+        });
+        /**** onVisibilityChange ****/
+        Object.defineProperty(this, "_onVisibilityChange", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** _releaseWidgets ****/
+        Object.defineProperty(this, "_shownWidgets", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
+        });
+        /**** Renderer ****/
+        Object.defineProperty(this, "_VisibilityChanged", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
+        Object.defineProperty(this, "_Renderer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: () => {
+                var _a, _b;
+                this._releaseWidgets();
+                const totalWidth = this.Width;
+                const minPaneWidth = acceptableOrdinal(this._minPaneWidth, 200);
+                const minSidebarWidth = acceptableOrdinal(this._minSidebarWidth, 100);
+                const maxSidebarWidth = acceptableOrdinal(this._maxSidebarWidth, 100);
+                this._VisibilityChanged = false;
+                if (totalWidth < minPaneWidth + minSidebarWidth) {
+                    if (this._SidebarState === 'visible') {
+                        this._VisibilityChanged = true;
+                        this._SidebarState = 'hidden';
+                    }
+                }
+                else {
+                    if (this._SidebarState === 'hidden') {
+                        this._VisibilityChanged = true;
+                        this._SidebarState = 'visible';
+                    }
+                }
+                let PaneWidth = 0, SidebarWidth = 0;
+                switch (this._SidebarState) {
+                    case 'hidden':
+                        PaneWidth = totalWidth;
+                        SidebarWidth = 0;
+                        break;
+                    case 'overlaid':
+                        PaneWidth = totalWidth;
+                        SidebarWidth = Math.max(minSidebarWidth, Math.min(PaneWidth - 40, maxSidebarWidth));
+                        break;
+                    case 'visible':
+                        SidebarWidth = Math.max(minSidebarWidth, Math.min(totalWidth - minPaneWidth, maxSidebarWidth));
+                        PaneWidth = totalWidth - SidebarWidth;
+                }
+                this._shownWidgets = [];
+                let primaryWidget;
+                let primaryWidgetsToShow = [];
+                if (this._primaryWidgetPath != null) {
+                    primaryWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._primaryWidgetPath);
+                    if ((primaryWidget != null) && (primaryWidget !== this)) {
+                        primaryWidgetsToShow = (primaryWidget.Type === 'Outline'
+                            ? primaryWidget.bundledWidgets()
+                            : [primaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+                        primaryWidgetsToShow.forEach((Widget) => Widget._Pane = this);
+                        this._shownWidgets.push(...primaryWidgetsToShow);
+                    }
+                }
+                let SidebarWidget;
+                let SidebarWidgetsToShow = [];
+                if ((this._SidebarState !== 'hidden') && (this._SidebarWidgetPath != null)) {
+                    SidebarWidget = (_b = this.Applet) === null || _b === void 0 ? void 0 : _b.WidgetAtPath(this._SidebarWidgetPath);
+                    if ((SidebarWidget != null) && (SidebarWidget !== this)) {
+                        SidebarWidgetsToShow = (SidebarWidget.Type === 'Outline'
+                            ? SidebarWidget.bundledWidgets()
+                            : [SidebarWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+                        SidebarWidgetsToShow.forEach((Widget) => Widget._Pane = this);
+                        this._shownWidgets.push(...SidebarWidgetsToShow);
+                    }
+                }
+                const { x, y, Width, Height } = this.Geometry;
+                const primaryPaneGeometry = {
+                    x: x + (this._SidebarState === 'visible' ? SidebarWidth : 0), y, Width: PaneWidth, Height
+                };
+                const primaryBaseGeometry = (primaryWidget == null ? undefined : primaryWidget.Geometry);
+                const SidebarPaneGeometry = { x, y, Width: SidebarWidth, Height };
+                const SidebarBaseGeometry = (SidebarWidget == null ? undefined : SidebarWidget.Geometry);
+                return html `<div class="WAT Content SidebarWidgetPane">
+       <div class="primaryPane" style="
+         left:${this._SidebarState === 'visible' ? SidebarWidth : 0}px;
+         width:${PaneWidth}px
+       ">
+        ${primaryWidgetsToShow.toReversed().map((Widget) => {
+                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, primaryBaseGeometry, primaryPaneGeometry);
+                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+                })}
+       </>
+
+       ${(this._SidebarState === 'overlaid') && html `
+         <div class="SidebarUnderlay" onClick=${() => this.closeSidebar()}/>
+       `}
+
+       <div class="Sidebar" style="
+         width:${this._SidebarState === 'hidden' ? 0 : SidebarWidth}px
+       ">
+        ${SidebarWidgetsToShow.toReversed().map((Widget) => {
+                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, SidebarBaseGeometry, SidebarPaneGeometry);
+                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+                })}
+       </>
+      </div>`;
+            }
+        });
+    }
+    get Type() { return 'SidebarWidgetPane'; }
+    set Type(_) { throwReadOnlyError('Type'); }
+    get primaryWidgetPath() { return this._primaryWidgetPath; }
+    set primaryWidgetPath(newPath) {
+        var _a;
+        let SourceWidget, SourcePath;
+        if (ValueIsWidget(newPath)) {
+            SourceWidget = newPath;
+            SourcePath = SourceWidget.Path;
+        }
+        else {
+            allowPath('primary widget source path', newPath);
+            if ((newPath == null) || (newPath.trim() === '')) {
+                SourceWidget = undefined;
+                SourcePath = undefined;
+            }
+            else {
+                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
+                SourcePath = newPath;
+            }
+        }
+        if (SourceWidget == null) {
+            if (this._primaryWidgetPath != null) {
+                this._primaryWidgetPath = undefined;
+                this.rerender();
+            }
+            this._primaryWidgetPath = SourcePath;
+            return;
+        }
+        if (this._primaryWidgetPath !== SourcePath) {
+            this._primaryWidgetPath = SourcePath;
+            if (SourceWidget === this)
+                throwError('InvalidArgument: a SidebarWidgetPane can not show itself');
+            if (SourceWidget.Page === this.Page)
+                throwError('InvalidArgument: a SidebarWidgetPane can not show other widgets from the same page');
+            this.rerender();
+        }
+    }
+    get SidebarWidgetPath() { return this._SidebarWidgetPath; }
+    set SidebarWidgetPath(newPath) {
+        var _a;
+        let SourceWidget, SourcePath;
+        if (ValueIsWidget(newPath)) {
+            SourceWidget = newPath;
+            SourcePath = SourceWidget.Path;
+        }
+        else {
+            allowPath('sidebar widget source path', newPath);
+            if ((newPath == null) || (newPath.trim() === '')) {
+                SourceWidget = undefined;
+                SourcePath = undefined;
+            }
+            else {
+                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
+                SourcePath = newPath;
+            }
+        }
+        if (SourceWidget == null) {
+            if (this._SidebarWidgetPath != null) {
+                this._SidebarWidgetPath = undefined;
+                this.rerender();
+            }
+            this._SidebarWidgetPath = SourcePath;
+            return;
+        }
+        if (this._SidebarWidgetPath !== SourcePath) {
+            this._SidebarWidgetPath = SourcePath;
+            if (SourceWidget === this)
+                throwError('InvalidArgument: a SidebarWidgetPane can not show itself');
+            if (SourceWidget.Page === this.Page)
+                throwError('InvalidArgument: a SidebarWidgetPane can not show other widgets from the same page');
+            this.rerender();
+        }
+    }
+    get minPaneWidth() { return this._minPaneWidth; }
+    set minPaneWidth(newSetting) {
+        allowOrdinal('minimal pane width', newSetting);
+        if (this._minPaneWidth !== newSetting) {
+            this._minPaneWidth = newSetting;
+            this.rerender();
+        }
+    }
+    get minSidebarWidth() { return this._minSidebarWidth; }
+    set minSidebarWidth(newSetting) {
+        allowOrdinal('minimal sidebar width', newSetting);
+        if (this._minSidebarWidth !== newSetting) {
+            this._minSidebarWidth = newSetting;
+            this.rerender();
+        }
+    }
+    get maxSidebarWidth() { return this._maxSidebarWidth; }
+    set maxSidebarWidth(newSetting) {
+        allowOrdinal('maximal sidebar width', newSetting);
+        if (this._maxSidebarWidth !== newSetting) {
+            this._maxSidebarWidth = newSetting;
+            this.rerender();
+        }
+    }
+    /**** openSidebar ****/
+    openSidebar() {
+        switch (this._SidebarState) {
+            case 'hidden':
+                this._SidebarState = 'overlaid';
+                this.rerender();
+                if (this._onVisibilityChange != null) {
+                    this._onVisibilityChange_();
+                }
+                return;
+            case 'overlaid':
+            case 'visible': return;
+        }
+    }
+    /**** closeSidebar ****/
+    closeSidebar() {
+        switch (this._SidebarState) {
+            case 'hidden': return;
+            case 'overlaid':
+                this._SidebarState = 'hidden';
+                this.rerender();
+                if (this._onVisibilityChange != null) {
+                    this._onVisibilityChange_();
+                }
+                return;
+            case 'visible': return;
+        }
+    }
+    get SidebarState() { return this._SidebarState; }
+    set SidebarState(_) { throwReadOnlyError('SidebarState'); }
+    get onVisibilityChange() { return this._onVisibilityChange_; }
+    set onVisibilityChange(newCallback) {
+        allowFunction('"onVisibilityChange" callback', newCallback);
+        this._onVisibilityChange = newCallback;
+    }
+    _onVisibilityChange_(...ArgList) {
+        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
+            this._onVisibilityChange = ArgList[0];
+        }
+        else { // callback invocation
+            try {
+                if (this._onVisibilityChange != null) {
+                    this._onVisibilityChange.apply(this, ArgList);
+                }
+            }
+            catch (Signal) {
+                console.warn('"onVisibilityChange" Callback Failure', Signal);
+                setErrorReport(this, {
+                    Type: 'Custom Callback Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+        }
+    }
+    /**** _GeometryRelativeTo  ****/
+    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
+        const WidgetAnchors = Widget.Anchors;
+        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
+        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
+        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
+        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
+        let x, y, Width, Height;
+        switch (WidgetAnchors[0]) {
+            case 'left-width':
+                x = WidgetX - BaseX;
+                Width = WidgetWidth;
+                break;
+            case 'width-right':
+                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
+                Width = WidgetWidth;
+                break;
+            case 'left-right':
+                x = WidgetX - BaseX;
+                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
+        }
+        switch (WidgetAnchors[1]) {
+            case 'top-height':
+                y = WidgetY - BaseY;
+                Height = WidgetHeight;
+                break;
+            case 'height-bottom':
+                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
+                Height = WidgetHeight;
+                break;
+            case 'top-bottom':
+                y = WidgetY - BaseY;
+                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
+        }
+        // @ts-ignore TS5905 all variables will be assigned by now
+        return { x, y, Width, Height };
+    }
+    /**** _serializeConfigurationInto ****/
+    _serializeConfigurationInto(Serialization) {
+        super._serializeConfigurationInto(Serialization);
+        [
+            'primaryWidgetPath', 'SidebarWidgetPath',
+            'minPaneWidth', 'minSidebarWidth', 'maxSidebarWidth',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+    }
+    /**** _deserializeConfigurationFrom ****/
+    _deserializeConfigurationFrom(Serialization) {
+        super._deserializeConfigurationFrom(Serialization);
+        this._primaryWidgetPath = acceptableOptionalPath(Serialization.primaryWidgetPath);
+        this._SidebarWidgetPath = acceptableOptionalPath(Serialization.SidebarWidgetPath);
+        this._minPaneWidth = acceptableOrdinal(Serialization.minPaneWidth, 200);
+        this._minSidebarWidth = acceptableOrdinal(Serialization.minSidebarWidth, 100);
+        this._maxSidebarWidth = acceptableOrdinal(Serialization.maxSidebarWidth, 200);
+    }
+    _releaseWidgets() {
+        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+    }
+    componentWillUnmount() {
+        this._releaseWidgets();
+    }
+    componentDidMount() {
+        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+            this._onVisibilityChange_();
+        }
+    }
+    componentDidUpdate() {
+        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
+            this._onVisibilityChange_();
+        }
+    }
+}
+builtInWidgetTypes['SidebarWidgetPane'] = WAT_SidebarWidgetPane;
+appendStyle(`
+  .WAT.Widget > .WAT.SidebarWidgetPane {
+    overflow:hidden;
+  }
+  .WAT.Widget > .WAT.SidebarWidgetPane > .mainPane {
+    display:block; position:absolute;
+    top:0px; right:0px; bottom:0px; width:auto; height:auto;
+  }
+  .WAT.Widget > .WAT.SidebarWidgetPane > .SidebarUnderlay {
+    display:block; position:absolute;
+    left:0px; top:0px; right:0px; bottom:0px;
+    background:black; opacity:0.1;
+    pointer-events:auto;
+  }
+  .WAT.Widget > .WAT.SidebarWidgetPane > .Sidebar {
+    display:block; position:absolute;
+    left:0px; top:0px; right:auto; bottom:0px; height:auto;
   }
   `);
 /**** Accordion ****/
@@ -10393,7 +10845,9 @@ class WAT_PageView extends Component {
     _releaseWidgets(WidgetList) {
         WidgetList.forEach((Widget) => {
             Widget._Pane = undefined;
-            if (Widget instanceof WAT_WidgetPane) {
+            if ((Widget instanceof WAT_WidgetPane) ||
+                (Widget instanceof WAT_DoubleWidgetPane) ||
+                (Widget instanceof WAT_SidebarWidgetPane)) {
                 Widget._releaseWidgets();
             }
         });
