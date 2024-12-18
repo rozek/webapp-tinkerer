@@ -3918,7 +3918,7 @@ console.log('DesignerState',DesignerState)
             'FileDropArea:File Drop Area',
             '----',
             'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
-            'WidgetPane:Widget Pane',
+            'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
             '-Accordion','-AccordionFold:Accordion Fold',
             'FlatListView:flat List View','-NestedListView:nested List View',
             '-NoteSticker'
@@ -5199,7 +5199,7 @@ console.log('DesignerState',DesignerState)
             'FileDropArea:File Drop Area',
             '----',
             'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
-            'WidgetPane:Widget Pane',
+            'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
             '-Accordion','-AccordionFold:Accordion Fold',
             'FlatListView:flat List View','-nestedListView:nested List View',
             '-NoteSticker'
@@ -7408,6 +7408,21 @@ console.log('DesignerState',DesignerState)
 
           `}
 
+          ${(commonType === 'DoubleWidgetPane') && html`
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Pane Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.minPaneWidth))}
+                Minimum=${0}
+                onInput=${(Event:Indexable) => doConfigureSelectedWidgets('minPaneWidth',parseFloat(Event.target.value))}
+              />
+            </>
+
+
+          `}
+
           ${(['TextTab','IconTab'].indexOf(commonType) >= 0) && html`
             <${WAD_horizontally}>
               <${WAD_Label}>active</>
@@ -7422,7 +7437,9 @@ console.log('DesignerState',DesignerState)
 
           ${(commonType === 'TabStrip') && html`
 
-          `}          ${(commonType === 'FlatListView') && html`
+          `}
+
+          ${(commonType === 'FlatListView') && html`
             <${WAD_horizontally}>
               <${WAD_Label}>Placeholder</>
               <${WAD_Gap}/>
