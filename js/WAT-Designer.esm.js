@@ -3514,7 +3514,7 @@ function WAD_Toolbox() {
         'FileDropArea:File Drop Area',
         '----',
         'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
-        'WidgetPane:Widget Pane',
+        'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
         '-Accordion', '-AccordionFold:Accordion Fold',
         'FlatListView:flat List View', '-NestedListView:nested List View',
         '-NoteSticker'
@@ -4711,7 +4711,7 @@ function WAD_WidgetBrowserPane() {
         'FileDropArea:File Drop Area',
         '----',
         'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
-        'WidgetPane:Widget Pane',
+        'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
         '-Accordion', '-AccordionFold:Accordion Fold',
         'FlatListView:flat List View', '-nestedListView:nested List View',
         '-NoteSticker'
@@ -6827,6 +6827,21 @@ function WAD_WidgetConfigurationPane() {
 
           `}
 
+          ${(commonType === 'DoubleWidgetPane') && html `
+            <${WAD_horizontally}>
+              <${WAD_Label}>min. Pane Width</>
+              <${WAD_Gap}/>
+              <${WAD_IntegerInput} style="width:60px"
+                enabled=${selectedWidgets.length > 0}
+                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minPaneWidth))}
+                Minimum=${0}
+                onInput=${(Event) => doConfigureSelectedWidgets('minPaneWidth', parseFloat(Event.target.value))}
+              />
+            </>
+
+
+          `}
+
           ${(['TextTab', 'IconTab'].indexOf(commonType) >= 0) && html `
             <${WAD_horizontally}>
               <${WAD_Label}>active</>
@@ -6841,7 +6856,9 @@ function WAD_WidgetConfigurationPane() {
 
           ${(commonType === 'TabStrip') && html `
 
-          `}          ${(commonType === 'FlatListView') && html `
+          `}
+
+          ${(commonType === 'FlatListView') && html `
             <${WAD_horizontally}>
               <${WAD_Label}>Placeholder</>
               <${WAD_Gap}/>
