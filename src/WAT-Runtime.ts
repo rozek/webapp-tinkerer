@@ -28,7 +28,8 @@
     allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange,
       allowInteger, expectInteger, allowIntegerInRange,
       allowOrdinal, expectCardinal,
-    allowString, expectString, allowStringMatching, allowText, allowTextline,
+    allowString, expectString, allowStringMatching,
+      allowText, expectText, allowTextline,
     expectPlainObject,
     expectList, allowListSatisfying, expectListSatisfying,
     allowFunction, expectFunction,
@@ -11575,6 +11576,11 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
 
   async function MarkdownFileReadAsText (File:any):Promise<WAT_Text> {
     const Markdown = await readTextFile(File)
+    return await MarkdownAsText(Markdown)
+  }
+
+  export async function MarkdownAsText (Markdown:WAT_Text):Promise<WAT_Text> {
+    expectText('markdown document',Markdown)
     try {
       const { default:PlainTextRenderer } = await import('https://cdn.jsdelivr.net/npm/marked-plaintext/+esm')
       const marked = new Marked()
@@ -11605,6 +11611,11 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
 
   async function MarkdownFileReadAsHTML (File:any):Promise<WAT_Text> {
     const Markdown = await readTextFile(File)
+    return await MarkdownAsHTML(Markdown)
+  }
+
+  export async function MarkdownAsHTML (Markdown:WAT_Text):Promise<WAT_Text> {
+    expectText('markdown document',Markdown)
     try {
       const marked = new Marked()
         marked.setOptions({
@@ -12501,6 +12512,11 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
 /**** newId - uses nanoid with custom dictionary ****/
 
   export const newId = customAlphabet(nolookalikesSafe,21)
+
+  const global = (new Function('return this'))() as Indexable
+  global.WAT = {
+    MarkdownAsText, MarkdownAsHTML
+  }
 
 /**** start WAT up ****/
 
