@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, expectText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, createRef, useRef } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
@@ -10624,6 +10624,10 @@ async function HTMLFileReadAsText(File) {
 /**** MarkdownFileReadAsText (see https://marked.js.org/using_pro#renderer) ****/
 async function MarkdownFileReadAsText(File) {
     const Markdown = await readTextFile(File);
+    return await MarkdownAsText(Markdown);
+}
+export async function MarkdownAsText(Markdown) {
+    expectText('markdown document', Markdown);
     try {
         const { default: PlainTextRenderer } = await import('https://cdn.jsdelivr.net/npm/marked-plaintext/+esm');
         const marked = new Marked();
@@ -10651,6 +10655,10 @@ async function MarkdownFileReadAsText(File) {
 /**** MarkdownFileReadAsHTML ****/
 async function MarkdownFileReadAsHTML(File) {
     const Markdown = await readTextFile(File);
+    return await MarkdownAsHTML(Markdown);
+}
+export async function MarkdownAsHTML(Markdown) {
+    expectText('markdown document', Markdown);
     try {
         const marked = new Marked();
         marked.setOptions({
@@ -11426,6 +11434,10 @@ function IdOfWidget(Widget) {
 }
 /**** newId - uses nanoid with custom dictionary ****/
 export const newId = customAlphabet(nolookalikesSafe, 21);
+const global = (new Function('return this'))();
+global.WAT = {
+    MarkdownAsText, MarkdownAsHTML
+};
 /**** start WAT up ****/
 localforage.config({
     driver: [localforage.INDEXEDDB, localforage.WEBSQL]
