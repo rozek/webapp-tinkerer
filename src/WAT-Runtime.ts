@@ -12517,6 +12517,7 @@ console.warn('"onItemDeselected" Callback Failure',Signal)
   global.WAT = {
     MarkdownAsText, MarkdownAsHTML
   }
+  global.JIL = JIL
 
 /**** start WAT up ****/
 
