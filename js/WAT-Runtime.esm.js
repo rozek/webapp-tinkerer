@@ -5837,6 +5837,108 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WidgetPane', WAT_WidgetPane);
+    /**** TextView ****/
+    const WAT_TextView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.TextView {
+        overflow-y:scroll;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter text)' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, true);
+            },
+            set readonly(newSetting) {
+                allowBoolean('readonly setting', newSetting);
+                if (this.memoized.readonly !== newSetting) {
+                    this.memoized.readonly = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** acceptableFileTypes ****/
+            get acceptableFileTypes() {
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat).slice();
+            },
+            set acceptableFileTypes(newSetting) {
+                allowListSatisfying('acceptable file types', newSetting, ValueIsTextFormat);
+                if (newSetting == null) {
+                    newSetting = [];
+                }
+                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
+                    this.memoized.acceptableFileTypes = newSetting.slice();
+                    this.rerender();
+                }
+            }, /**** Renderer ****/
+            _Renderer: function () {
+                const { Enabling, readonly } = this;
+                let acceptableFileTypes = this.acceptableFileTypes;
+                if (acceptableFileTypes.length === 0) {
+                    acceptableFileTypes = WAT_supportedTextFormats.slice();
+                }
+                /**** prepare file dropping ****/
+                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+                function _acceptableDataIn(Event) {
+                    if (Event.dataTransfer.types.includes('text/plain')) {
+                        return true;
+                    }
+                    for (let Item of Event.dataTransfer.items) {
+                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                const _onDragOver = (Event) => {
+                    if (_acceptableDataIn(Event)) {
+                        Event.preventDefault();
+                        Event.dataTransfer.dropEffect = 'copy';
+                    }
+                };
+                const _onDrop = async (Event) => {
+                    if (_acceptableDataIn(Event)) {
+                        Event.preventDefault();
+                        if (Event.dataTransfer.types.includes('text/plain')) {
+                            const Value = Event.dataTransfer.getData('text');
+                            this.Value = Value;
+                            if (this._onInput != null) {
+                                this._onInput_(Event);
+                            } // no typo!
+                        }
+                        else {
+                            try {
+                                for (let Item of Event.dataTransfer.items) {
+                                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                                        this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
+                                        if (this._onInput != null) {
+                                            this._onInput_(Event);
+                                        } // no typo!
+                                        break;
+                                    }
+                                }
+                            }
+                            catch (Signal) {
+                                console.warn('file drop error', Signal);
+                                if (this._onDropError != null) {
+                                    this._onDropError_(Signal);
+                                }
+                            }
+                        }
+                    }
+                };
+                /**** actual rendering ****/
+                return html `<div class="WAT Content TextView"
+          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        >${this.Value}</>`;
+            },
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TextView', WAT_TextView);
     /**** HTMLView ****/
     const WAT_HTMLView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
