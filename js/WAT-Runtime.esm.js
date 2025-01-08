@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component } from 'htm/preact';
@@ -70,12 +70,7 @@ export const WAT_ErrorTypes = [
     'Behaviour Compilation Failure', 'Behaviour Execution Failure',
     'Script Compilation Failure', 'Script Execution Failure',
     '"Value" Setting Failure', 'Rendering Failure',
-    '"onMount" Callback Failure', '"onUnmount" Callback Failure',
-    '"onFocus" Callback Failure', '"onBlur" Callback Failure',
-    '"onClick" Callback Failure', '"onInput" Callback Failure',
-    '"onDrop" Callback Failure', '"onDropError" Callback Failure',
-    '"onValueChange" Callback Failure', 'Custom Callback Failure',
-    'Event Handling Failure',
+    'Callback Failure',
 ];
 export function throwError(Message) {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
@@ -1134,6 +1129,10 @@ function normalizedPropertyDescriptor(Value) {
     }
     return Descriptor;
 }
+//----------------------------------------------------------------------------//
+//                              Callback Support                              //
+//----------------------------------------------------------------------------//
+function noCallback() { }
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -1578,13 +1577,6 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** onValueChange ****/
-        Object.defineProperty(this, "_onValueChange", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
         /**** unobserved ****/
         // @ts-ignore TS2564 allow "_unobserved" to be assigned upon first use
         Object.defineProperty(this, "_unobserved", {
@@ -1637,8 +1629,8 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
+        /**** on ****/
+        Object.defineProperty(this, "_CallbackRegistry", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -1646,20 +1638,6 @@ export class WAT_Visual {
         });
         /**** View ****/
         Object.defineProperty(this, "_View", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onMount ****/
-        Object.defineProperty(this, "_onMount", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onUnmount ****/
-        Object.defineProperty(this, "_onUnmount", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -1945,34 +1923,8 @@ export class WAT_Visual {
         allowSerializableValue('value', newValue);
         if (ValuesDiffer(this._Value, newValue)) {
             this._Value = newValue; // *C* a deep copy may be better
-            if (this._onValueChange != null) {
-                this._onValueChange_();
-            } // no typo!
+            this.on('value-change')(newValue);
             this.rerender();
-        }
-    }
-    get onValueChange() { return this._onValueChange_; }
-    set onValueChange(newCallback) {
-        allowFunction('"onValueChange" callback', newCallback);
-        this._onValueChange = newCallback;
-    }
-    _onValueChange_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onValueChange = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onValueChange != null) {
-                    this._onValueChange.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onValueChange" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onValueChange" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
         }
     }
     get unobserved() {
@@ -2016,7 +1968,7 @@ export class WAT_Visual {
     /**** activateScript - even if underlying applet is not (yet) attached ****/
     async activateScript(Mode = 'catch-exception') {
         let activeScript = (this._activeScript || '').trim();
-        //    this._Renderer = () => '' // not without behaviors!
+        this._CallbackRegistry = undefined;
         unregisterAllReactiveFunctionsFrom(this);
         /**** prepare for script execution ****/
         const reactively = (reactiveFunction) => {
@@ -2035,10 +1987,10 @@ export class WAT_Visual {
                 }
             }));
         };
-        const onRender = this._onRender_.bind(this);
-        const onMount = this._onMount_.bind(this);
-        const onUnmount = this._onUnmount_.bind(this);
-        const onValueChange = this._onValueChange_.bind(this);
+        const onRender = this.on.bind(this, 'render');
+        const onMount = this.on.bind(this, 'mount');
+        const onUnmount = this.on.bind(this, 'unmount');
+        const onValueChange = this.on.bind(this, 'value-change');
         function installStylesheet(Stylesheet) {
             throwError('NotForVisualScripts: visual scripts must not install behavior stylesheets');
         }
@@ -2168,63 +2120,59 @@ export class WAT_Visual {
     /**** isBroken ****/
     get isBroken() { return (this._ErrorReport != null); }
     set isBroken(_) { throwReadOnlyError('isBroken'); }
-    get Renderer() { return this._Renderer; }
+    on(CallbackName, newCallback) {
+        var _a;
+        expectTextline('callback name', CallbackName);
+        const normalizedCallbackName = CallbackName.toLowerCase();
+        if (arguments.length === 1) {
+            return ((_a = this._CallbackRegistry) === null || _a === void 0 ? void 0 : _a[normalizedCallbackName]) || noCallback;
+        }
+        else {
+            allowFunction('callback', newCallback);
+            if (newCallback == null) {
+                if (this._CallbackRegistry != null) {
+                    delete this._CallbackRegistry[normalizedCallbackName];
+                }
+            }
+            else {
+                if (this._CallbackRegistry == null) {
+                    this._CallbackRegistry = Object.create(null);
+                }
+                // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
+                this._CallbackRegistry[normalizedCallbackName] = this._Callback.bind(this, CallbackName, newCallback);
+                if ((normalizedCallbackName === 'mount') && this.isMounted) {
+                    // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
+                    this._CallbackRegistry['mount'](); // very special case
+                }
+            }
+            return newCallback || noCallback;
+        }
+    }
+    _Callback(CallbackName, Callback, ...ArgList) {
+        try {
+            return Callback.apply(this, ArgList);
+        }
+        catch (Signal) {
+            console.warn(`callback ${quoted(CallbackName)} failed`, Signal);
+            setErrorReport(this, {
+                Type: 'Callback Handling Failure',
+                Sufferer: this, Message: '' + Signal, Cause: Signal
+            });
+        }
+    }
+    /**** Renderer ****/
+    get Renderer() { return this.on('render'); }
     set Renderer(newRenderer) {
         allowFunction('renderer', newRenderer);
         if (newRenderer == null) {
             newRenderer = () => '';
         }
-        this._Renderer = () => {
-            try {
-                newRenderer.call(this);
-            }
-            catch (Signal) {
-                console.warn('Rendering Failure', Signal);
-                setErrorReport(this, {
-                    Type: 'Rendering Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        };
+        this.on('render', newRenderer);
         this.rerender();
-    }
-    /**** onRender ****/
-    get onRender() { return this._onRender_; }
-    set onRender(newCallback) {
-        allowFunction('rendering callback', newCallback);
-        this._Renderer = newCallback;
-    }
-    _onRender_(newCallback) {
-        if (newCallback == null) { // callback invocation
-            try {
-                if (this._Renderer != null) {
-                    this._Renderer.call(this);
-                }
-            }
-            catch (Signal) {
-                console.warn('Rendering Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: 'Rendering Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-        else { // definition invocation
-            this._Renderer = newCallback;
-        }
     }
     /**** Rendering - generates the rendering for this widget ****/
     Rendering() {
-        let Renderer = this._Renderer;
-        if (Renderer == null) {
-            return '';
-        }
-        try {
-            return Renderer.call(this);
-        }
-        catch (Signal) {
-            console.error('Rendering Failure', Signal);
-        }
+        return this.on('render')();
     }
     /**** CSSStyle ****/
     get CSSStyle() {
@@ -2316,58 +2264,6 @@ export class WAT_Visual {
     /**** isMounted ****/
     get isMounted() { return (this._View != null); }
     set isMounted(_) { throwReadOnlyError('isMounted'); }
-    get onMount() { return this._onMount_; }
-    set onMount(newCallback) {
-        allowFunction('"onMount" callback', newCallback);
-        this._onMount = newCallback;
-    }
-    _onMount_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onMount = ArgList[0];
-            if (this.isMounted) {
-                this._onMount_();
-            }
-        }
-        else { // callback invocation
-            try {
-                if (this._onMount != null) {
-                    this._onMount.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onMount" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onMount" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onUnmount() { return this._onUnmount_; }
-    set onUnmount(newCallback) {
-        allowFunction('"onUnmount" callback', newCallback);
-        this._onUnmount = newCallback;
-    }
-    _onUnmount_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onUnmount = ArgList[0];
-            //      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
-        }
-        else { // callback invocation
-            try {
-                if (this._onUnmount != null) {
-                    this._onUnmount.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onUnmount" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onUnmount" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
         if (this._Value != null) { // test serializability of "Value" first
@@ -3897,9 +3793,7 @@ export class WAT_Applet extends WAT_Visual {
         this._deserializePagesFrom(Serialization);
         this._Name = AppletName;
         this._View = AppletView;
-        if (this._onMount != null) {
-            this._onMount_();
-        } // no typo!
+        this.on('mount')();
         if (this.visitedPage == null) {
             this.visitPage(this.PageList[0]);
         }
@@ -4366,55 +4260,6 @@ export class WAT_Widget extends WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** onFocus ****/
-        Object.defineProperty(this, "_onFocus", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onBlur ****/
-        Object.defineProperty(this, "_onBlur", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onClick ****/
-        Object.defineProperty(this, "_onClick", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onDblClick ****/
-        Object.defineProperty(this, "_onDblClick", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onInput ****/
-        Object.defineProperty(this, "_onInput", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onDrop ****/
-        Object.defineProperty(this, "_onDrop", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onDropError ****/
-        Object.defineProperty(this, "_onDropError", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
         /**** minWidth ****/
         Object.defineProperty(this, "_minWidth", {
             enumerable: true,
@@ -4736,174 +4581,6 @@ export class WAT_Widget extends WAT_Visual {
         if (this._OverflowVisibility !== newOverflowVisibility) {
             this._OverflowVisibility = newOverflowVisibility;
             this.rerender();
-        }
-    }
-    get onFocus() { return this._onFocus_; }
-    set onFocus(newCallback) {
-        allowFunction('"onFocus" callback', newCallback);
-        this._onFocus = newCallback;
-    }
-    _onFocus_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onFocus = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onFocus != null) {
-                    this._onFocus.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onFocus" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onFocus" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onBlur() { return this._onBlur_; }
-    set onBlur(newCallback) {
-        allowFunction('"onBlur" callback', newCallback);
-        this._onBlur = newCallback;
-    }
-    _onBlur_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onBlur = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onBlur != null) {
-                    this._onBlur.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onBlur" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onBlur" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onClick() { return this._onClick_; }
-    set onClick(newCallback) {
-        allowFunction('"onClick" callback', newCallback);
-        this._onClick = newCallback;
-    }
-    _onClick_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onClick = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onClick != null) {
-                    this._onClick.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onClick" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onClick" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onDblClick() { return this._onDblClick_; }
-    set onDblClick(newCallback) {
-        allowFunction('"onDblClick" callback', newCallback);
-        this._onDblClick = newCallback;
-    }
-    _onDblClick_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onDblClick = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onDblClick != null) {
-                    this._onDblClick.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onDblClick" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onDblClick" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onInput() { return this._onInput_; }
-    set onInput(newCallback) {
-        allowFunction('"onInput" callback', newCallback);
-        this._onInput = newCallback;
-    }
-    _onInput_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onInput = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onInput != null) {
-                    this._onInput.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onInput" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onInput" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onDrop() { return this._onDrop_; }
-    set onDrop(newCallback) {
-        allowFunction('"onDrop" callback', newCallback);
-        this._onDrop = newCallback;
-    }
-    _onDrop_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onDrop = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onDrop != null) {
-                    this._onDrop.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onDrop" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onDrop" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onDropError() { return this._onDropError_; }
-    set onDropError(newCallback) {
-        allowFunction('"onDropError" callback', newCallback);
-        this._onDropError = newCallback;
-    }
-    _onDropError_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onDropError = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onDropError != null) {
-                    this._onDropError.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onDropError" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onDropError" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
         }
     }
     /**** rerender ****/
@@ -5688,6 +5365,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         outline-offset:2px;
       }
     `);
+        /**** custom Properties ****/
         Object_assign(me, {
             /**** bundledWidgets ****/
             bundledWidgets: function () {
@@ -5706,11 +5384,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         (y >= minY) && (y + Height <= maxY));
                 });
             },
-            /**** Renderer ****/
-            _Renderer: function () {
-                return html `<div class="WAT Content Outline"/>`;
-            },
         });
+        /**** Renderer ****/
+        onRender(() => html `<div class="WAT Content Outline"/>`);
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
     /**** WidgetPane ****/
@@ -5720,6 +5396,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         overflow:hidden;
       }
     `);
+        /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'textline-input', Placeholder: '(enter content path)' }
         ];
@@ -5809,31 +5486,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 // @ts-ignore TS5905 all variables will be assigned by now
                 return { x, y, Width, Height };
-            }, /**** Renderer ****/
-            _Renderer: function () {
-                var _a;
-                this._releaseWidgets();
-                if (this._Value == null) {
-                    return '';
-                }
-                const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._Value);
-                if ((SourceWidget == null) || (SourceWidget === me)) {
-                    return '';
-                }
-                const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
-                    ? SourceWidget.bundledWidgets()
-                    : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-                WidgetsToShow.forEach((Widget) => Widget._Pane = this);
-                this._shownWidgets = WidgetsToShow;
-                const PaneGeometry = this.Geometry;
-                const BaseGeometry = SourceWidget.Geometry;
-                return html `<div class="WAT Content WidgetPane">
-          ${WidgetsToShow.toReversed().map((Widget) => {
-                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
-                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
-                })}
-        </div>`;
             },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            var _a;
+            this._releaseWidgets();
+            if (this._Value == null) {
+                return '';
+            }
+            const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._Value);
+            if ((SourceWidget == null) || (SourceWidget === me)) {
+                return '';
+            }
+            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
+                ? SourceWidget.bundledWidgets()
+                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+            WidgetsToShow.forEach((Widget) => Widget._Pane = this);
+            this._shownWidgets = WidgetsToShow;
+            const PaneGeometry = this.Geometry;
+            const BaseGeometry = SourceWidget.Geometry;
+            return html `<div class="WAT Content WidgetPane">
+        ${WidgetsToShow.toReversed().map((Widget) => {
+                let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
+                return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+            })}
+      </div>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WidgetPane', WAT_WidgetPane);
@@ -5844,6 +5522,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         overflow-y:scroll;
       }
     `);
+        /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter text)' },
             { Name: 'readonly', EditorType: 'checkbox' },
@@ -5874,68 +5553,63 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.memoized.acceptableFileTypes = newSetting.slice();
                     this.rerender();
                 }
-            }, /**** Renderer ****/
-            _Renderer: function () {
-                const { Enabling, readonly } = this;
-                let acceptableFileTypes = this.acceptableFileTypes;
-                if (acceptableFileTypes.length === 0) {
-                    acceptableFileTypes = WAT_supportedTextFormats.slice();
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, readonly } = this;
+            let acceptableFileTypes = this.acceptableFileTypes;
+            if (acceptableFileTypes.length === 0) {
+                acceptableFileTypes = WAT_supportedTextFormats.slice();
+            }
+            /**** prepare file dropping ****/
+            const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+            function _acceptableDataIn(Event) {
+                if (Event.dataTransfer.types.includes('text/plain')) {
+                    return true;
                 }
-                /**** prepare file dropping ****/
-                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
-                function _acceptableDataIn(Event) {
-                    if (Event.dataTransfer.types.includes('text/plain')) {
+                for (let Item of Event.dataTransfer.items) {
+                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
                         return true;
                     }
-                    for (let Item of Event.dataTransfer.items) {
-                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                            return true;
-                        }
-                    }
-                    return false;
                 }
-                const _onDragOver = (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        Event.dataTransfer.dropEffect = 'copy';
+                return false;
+            }
+            const _onDragOver = (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    Event.dataTransfer.dropEffect = 'copy';
+                }
+            };
+            const _onDrop = async (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    if (Event.dataTransfer.types.includes('text/plain')) {
+                        const Value = Event.dataTransfer.getData('text');
+                        this.Value = Value;
+                        this.on('input')(Event);
                     }
-                };
-                const _onDrop = async (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        if (Event.dataTransfer.types.includes('text/plain')) {
-                            const Value = Event.dataTransfer.getData('text');
-                            this.Value = Value;
-                            if (this._onInput != null) {
-                                this._onInput_(Event);
-                            } // no typo!
-                        }
-                        else {
-                            try {
-                                for (let Item of Event.dataTransfer.items) {
-                                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                        this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
-                                        if (this._onInput != null) {
-                                            this._onInput_(Event);
-                                        } // no typo!
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Signal) {
-                                console.warn('file drop error', Signal);
-                                if (this._onDropError != null) {
-                                    this._onDropError_(Signal);
+                    else {
+                        try {
+                            for (let Item of Event.dataTransfer.items) {
+                                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                                    this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
+                                    this.on('input')(Event);
+                                    break;
                                 }
                             }
                         }
+                        catch (Signal) {
+                            console.warn('file drop error', Signal);
+                            this.on('drop-error')(Signal);
+                        }
                     }
-                };
-                /**** actual rendering ****/
-                return html `<div class="WAT Content TextView"
-          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        >${this.Value}</>`;
-            },
+                }
+            };
+            /**** actual rendering ****/
+            return html `<div class="WAT Content TextView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+      >${this.Value}</>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TextView', WAT_TextView);
@@ -5946,6 +5620,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         overflow-y:scroll;
       }
     `);
+        /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter HTML)' },
             { Name: 'readonly', EditorType: 'checkbox' },
@@ -5976,69 +5651,64 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.memoized.acceptableFileTypes = newSetting.slice();
                     this.rerender();
                 }
-            }, /**** Renderer ****/
-            _Renderer: function () {
-                const { Enabling, readonly } = this;
-                let acceptableFileTypes = this.acceptableFileTypes;
-                if (acceptableFileTypes.length === 0) {
-                    acceptableFileTypes = WAT_supportedHTMLFormats.slice();
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, readonly } = this;
+            let acceptableFileTypes = this.acceptableFileTypes;
+            if (acceptableFileTypes.length === 0) {
+                acceptableFileTypes = WAT_supportedHTMLFormats.slice();
+            }
+            /**** prepare file dropping ****/
+            const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+            function _acceptableDataIn(Event) {
+                if (Event.dataTransfer.types.includes('text/plain')) {
+                    return true;
                 }
-                /**** prepare file dropping ****/
-                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
-                function _acceptableDataIn(Event) {
-                    if (Event.dataTransfer.types.includes('text/plain')) {
+                for (let Item of Event.dataTransfer.items) {
+                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
                         return true;
                     }
-                    for (let Item of Event.dataTransfer.items) {
-                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                            return true;
-                        }
-                    }
-                    return false;
                 }
-                const _onDragOver = (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        Event.dataTransfer.dropEffect = 'copy';
+                return false;
+            }
+            const _onDragOver = (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    Event.dataTransfer.dropEffect = 'copy';
+                }
+            };
+            const _onDrop = async (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    if (Event.dataTransfer.types.includes('text/plain')) {
+                        const Value = Event.dataTransfer.getData('text');
+                        this.Value = Value;
+                        this.on('input')(Event);
                     }
-                };
-                const _onDrop = async (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        if (Event.dataTransfer.types.includes('text/plain')) {
-                            const Value = Event.dataTransfer.getData('text');
-                            this.Value = Value;
-                            if (this._onInput != null) {
-                                this._onInput_(Event);
-                            } // no typo!
-                        }
-                        else {
-                            try {
-                                for (let Item of Event.dataTransfer.items) {
-                                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                        this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
-                                        if (this._onInput != null) {
-                                            this._onInput_(Event);
-                                        } // no typo!
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Signal) {
-                                console.warn('file drop error', Signal);
-                                if (this._onDropError != null) {
-                                    this._onDropError_(Signal);
+                    else {
+                        try {
+                            for (let Item of Event.dataTransfer.items) {
+                                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                                    this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
+                                    this.on('input')(Event);
+                                    break;
                                 }
                             }
                         }
+                        catch (Signal) {
+                            console.warn('file drop error', Signal);
+                            this.on('drop-error')(Event);
+                        }
                     }
-                };
-                /**** actual rendering ****/
-                return html `<div class="WAT Content HTMLView"
-          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-          dangerouslySetInnerHTML=${{ __html: acceptableText(this.Value, '') }}
-        />`;
-            },
+                }
+            };
+            /**** actual rendering ****/
+            return html `<div class="WAT Content HTMLView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        dangerouslySetInnerHTML=${{ __html: acceptableText(this.Value, '') }}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.HTMLView', WAT_HTMLView);
@@ -6049,6 +5719,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         object-fit:contain; object-position:center;
       }
     `);
+        /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'url-input', Placeholder: '(enter Image URL)' },
             { Name: 'readonly', EditorType: 'checkbox' },
@@ -6103,76 +5774,71 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.memoized.acceptableFileTypes = newSetting.slice();
                     this.rerender();
                 }
-            }, /**** Renderer ****/
-            _Renderer: function () {
-                const { ImageScaling, ImageAlignment, Enabling, readonly } = this;
-                let acceptableFileTypes = this.acceptableFileTypes;
-                if (acceptableFileTypes.length === 0) {
-                    acceptableFileTypes = WAT_supportedImageFormats.slice();
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { ImageScaling, ImageAlignment, Enabling, readonly } = this;
+            let acceptableFileTypes = this.acceptableFileTypes;
+            if (acceptableFileTypes.length === 0) {
+                acceptableFileTypes = WAT_supportedImageFormats.slice();
+            }
+            /**** prepare file dropping ****/
+            const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+            function _acceptableDataIn(Event) {
+                if (Event.dataTransfer.types.some((Type) => ((Type === 'text/html') &&
+                    Event.dataTransfer.getData('text/html').includes('<img')))) {
+                    return true;
                 }
-                /**** prepare file dropping ****/
-                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
-                function _acceptableDataIn(Event) {
-                    if (Event.dataTransfer.types.some((Type) => ((Type === 'text/html') &&
-                        Event.dataTransfer.getData('text/html').includes('<img')))) {
+                for (let Item of Event.dataTransfer.items) {
+                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
                         return true;
                     }
-                    for (let Item of Event.dataTransfer.items) {
-                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                            return true;
-                        }
-                    }
-                    return false;
                 }
-                const _onDragOver = (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        Event.dataTransfer.dropEffect = 'copy';
+                return false;
+            }
+            const _onDragOver = (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    Event.dataTransfer.dropEffect = 'copy';
+                }
+            };
+            const _onDrop = async (Event) => {
+                var _a;
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    if (Event.dataTransfer.types.some((Type) => ((Type === 'text/html') &&
+                        Event.dataTransfer.getData('text/html').includes('<img')))) {
+                        const HTML = Event.dataTransfer.getData('text/html');
+                        const Parser = new DOMParser();
+                        const Doc = Parser.parseFromString(HTML, 'text/html');
+                        const ImageSource = (_a = Doc.querySelector('img')) === null || _a === void 0 ? void 0 : _a.src;
+                        this.Value = ImageSource;
+                        this.on('input')(Event);
                     }
-                };
-                const _onDrop = async (Event) => {
-                    var _a;
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        if (Event.dataTransfer.types.some((Type) => ((Type === 'text/html') &&
-                            Event.dataTransfer.getData('text/html').includes('<img')))) {
-                            const HTML = Event.dataTransfer.getData('text/html');
-                            const Parser = new DOMParser();
-                            const Doc = Parser.parseFromString(HTML, 'text/html');
-                            const ImageSource = (_a = Doc.querySelector('img')) === null || _a === void 0 ? void 0 : _a.src;
-                            this.Value = ImageSource;
-                            if (this._onInput != null) {
-                                this._onInput_(Event);
-                            } // no typo!
-                        }
-                        else {
-                            try {
-                                for (let Item of Event.dataTransfer.items) {
-                                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                        this.Value = await FileReadAsImage(Item.getAsFile(), Item.type);
-                                        if (this._onInput != null) {
-                                            this._onInput_(Event);
-                                        } // no typo!
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Signal) {
-                                console.warn('file drop error', Signal);
-                                if (this._onDropError != null) {
-                                    this._onDropError_(Signal);
+                    else {
+                        try {
+                            for (let Item of Event.dataTransfer.items) {
+                                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                                    this.Value = await FileReadAsImage(Item.getAsFile(), Item.type);
+                                    this.on('input')(Event);
+                                    break;
                                 }
                             }
                         }
+                        catch (Signal) {
+                            console.warn('file drop error', Signal);
+                            this.on('drop-error')(Event);
+                        }
                     }
-                };
-                /**** actual rendering ****/
-                return html `<img class="WAT Content ImageView"
-          src=${acceptableURL(this.Value, '')}
-          style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        />`;
-            },
+                }
+            };
+            /**** actual rendering ****/
+            return html `<img class="WAT Content ImageView"
+        src=${acceptableURL(this.Value, '')}
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.ImageView', WAT_ImageView);
@@ -6183,6 +5849,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         object-fit:contain; object-position:center;
       }
     `);
+        /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter SVG)' },
             { Name: 'ImageScaling', EditorType: 'drop-down', ValueList: WAT_ImageScalings },
@@ -6211,20 +5878,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.rerender();
                 }
             },
-            /**** Renderer ****/
-            _Renderer: function () {
-                const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value, ''));
-                const { ImageScaling, ImageAlignment } = this;
-                return html `<img class="WAT Content SVGView"
-          src=${DataURL}
-          style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-        />`;
-            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value, ''));
+            const { ImageScaling, ImageAlignment } = this;
+            return html `<img class="WAT Content SVGView"
+        src=${DataURL}
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SVGView', WAT_SVGView);
     /**** WebView ****/
     const WAT_WebView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'url-input', Placeholder: '(enter URL)' },
             { Name: 'PermissionsPolicy', EditorType: 'textline-input' },
@@ -6276,18 +5944,62 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.memoized.ReferrerPolicy = newSetting;
                     this.rerender();
                 }
-            }, /**** Renderer ****/
-            _Renderer: function () {
-                const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this;
-                return html `<iframe class="WAT Content WebView"
-          src=${acceptableURL(my.Value, '')}
-          allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
-          sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
-        />`;
             },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this;
+            return html `<iframe class="WAT Content WebView"
+        src=${acceptableURL(this.Value, '')}
+        allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
+        sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
+    /**** Button ****/
+    const WAT_Button = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Button {
+        border:solid 1px black; border-radius:4px;
+        background:white;
+        font-weight:bold; color:black;
+        text-align:center;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Label', EditorType: 'textline-input', Placeholder: '(enter label)' },
+        ];
+        Object_assign(me, {
+            /**** Label ****/
+            get Label() {
+                return acceptableTextline(this.memoized.Label, 'Button');
+            },
+            set Label(newValue) {
+                allowTextline('button label', newValue);
+                if (this.memoized.Label !== newValue) {
+                    this.memoized.Label = newValue;
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const onClick = (Event) => {
+                if (this.Enabling == false) {
+                    return consumingEvent(Event);
+                }
+                this.on('click')(Event);
+            };
+            const Label = acceptableTextline(this.Label, 'Button');
+            return html `<button class="WAT Content Button" style="
+        line-height:${this.LineHeight || this.Height}px;
+      " disabled=${this.Enabling == false} onClick=${onClick}
+      >${Label}</>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Button', WAT_Button);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
@@ -6560,18 +6272,13 @@ class WAT_AppletView extends Component {
     componentDidMount() {
         const Applet = this._Applet;
         Applet['_View'] = this.base;
-        if (Applet['_onMount'] != null) {
-            Applet._onMount_(); // no typo!
-        }
-        rerender();
+        Applet.on('mount')();
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
         const Applet = this._Applet;
         Applet['_View'] = undefined;
-        if (Applet['_onUnmount'] != null) {
-            Applet._onUnmount_(); // no typo!
-        }
+        Applet.on('unmount')();
     }
     /**** render ****/
     render(PropSet) {
@@ -6624,18 +6331,14 @@ class WAT_PageView extends Component {
     componentDidMount() {
         const Page = this._Page;
         Page['_View'] = this.base;
-        if (Page['_onMount'] != null) {
-            Page._onMount_(); // no typo!
-        }
+        Page.on('mount')();
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
         this._releaseWidgets(this._shownWidgets);
         const Page = this._Page;
         Page['_View'] = undefined;
-        if (Page['_onUnmount'] != null) {
-            Page._onUnmount_(); // no typo!
-        }
+        Page.on('unmount')();
     }
     /**** _releaseWidgets ****/
     _releaseWidgets(WidgetList) {
@@ -6682,17 +6385,13 @@ class WAT_WidgetView extends Component {
     componentDidMount() {
         const Widget = this._Widget;
         Widget['_View'] = this.base;
-        if (Widget['_onMount'] != null) {
-            Widget._onMount_(); // no typo!
-        }
+        Widget.on('mount')();
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
         const Widget = this._Widget;
         Widget['_View'] = undefined;
-        if (Widget['_onUnmount'] != null) {
-            Widget._onUnmount_(); // no typo!
-        }
+        Widget.on('unmount')();
     }
     /**** render ****/
     render(PropSet) {
