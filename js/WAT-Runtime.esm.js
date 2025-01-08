@@ -4,12 +4,12 @@
 *                                                                              *
 *******************************************************************************/
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
-import { 
+import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, expectText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
-import { render, html, Component, createRef, useRef } from 'htm/preact';
+import { render, html, Component } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
@@ -33,6 +33,8 @@ if (!Array.prototype.toReversed) {
         return Array.from(this).reverse();
     };
 }
+/**** WAT Visual Categories ****/
+const WAT_Categories = ['applet', 'page', 'widget'];
 export const WAT_horizontalAnchorses = ['left-width', 'left-right', 'width-right'];
 export const WAT_verticalAnchorses = ['top-height', 'top-bottom', 'height-bottom'];
 export const WAT_Orientations = ['any', 'portrait', 'landscape'];
@@ -64,7 +66,8 @@ export const WAT_Cursors = [
 ];
 /**** Error Report ****/
 export const WAT_ErrorTypes = [
-    //  'missing Behaviour',         'Behaviour Execution Failure',
+    'missing Behaviour',
+    'Behaviour Compilation Failure', 'Behaviour Execution Failure',
     'Script Compilation Failure', 'Script Execution Failure',
     '"Value" Setting Failure', 'Rendering Failure',
     '"onMount" Callback Failure', '"onUnmount" Callback Failure',
@@ -93,6 +96,14 @@ export function throwReadOnlyError(Name) {
 //------------------------------------------------------------------------------
 //--                 Classification and Validation Functions                  --
 //------------------------------------------------------------------------------
+/**** ValueIsIdentifier ****/
+const WAT_IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i;
+export function ValueIsIdentifier(Value) {
+    return ValueIsStringMatching(Value, WAT_IdentifierPattern);
+}
+/**** allow/expect[ed]Identifier ****/
+export const allowIdentifier = ValidatorForClassifier(ValueIsIdentifier, acceptNil, 'WAT identifier'), allowedIdentifier = allowIdentifier;
+export const expectIdentifier = ValidatorForClassifier(ValueIsIdentifier, rejectNil, 'WAT identifier'), expectedIdentifier = expectIdentifier;
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
 // no ctrl.char.s, no "/", no leading " " or "#"
@@ -116,6 +127,22 @@ export function StringIsPathItem(Value) {
 /**** allow/expect[ed]Path ****/
 export const allowPath = ValidatorForClassifier(ValueIsPath, acceptNil, 'WAT path'), allowedPath = allowPath;
 export const expectPath = ValidatorForClassifier(ValueIsPath, rejectNil, 'WAT path'), expectedPath = expectPath;
+/**** ValueIsCategory ****/
+export function ValueIsCategory(Value) {
+    return ValueIsOneOf(Value, WAT_Categories);
+}
+/**** allow/expect[ed]Category ****/
+export const allowCategory = ValidatorForClassifier(ValueIsCategory, acceptNil, 'WAT behavior category'), allowedCategory = allowCategory;
+export const expectCategory = ValidatorForClassifier(ValueIsCategory, rejectNil, 'WAT behavior category'), expectedCategory = expectCategory;
+/**** ValueIsBehavior ****/
+const WAT_BehaviorPattern = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i;
+export function ValueIsBehavior(Value) {
+    return (ValueIsStringMatching(Value, WAT_BehaviorPattern) &&
+        (Value.trim() === Value));
+}
+/**** allow/expect[ed]Behavior ****/
+export const allowBehavior = ValidatorForClassifier(ValueIsBehavior, acceptNil, 'WAT behavior name'), allowedBehavior = allowBehavior;
+export const expectBehavior = ValidatorForClassifier(ValueIsBehavior, rejectNil, 'WAT behavior name'), expectedBehavior = expectBehavior;
 /**** ValueIsVisual ****/
 export function ValueIsVisual(Value) {
     return (Value instanceof WAT_Visual);
@@ -144,13 +171,6 @@ export function ValueIsWidget(Value) {
 /**** allow/expect[ed]Widget ****/
 export const allowWidget = ValidatorForClassifier(ValueIsWidget, acceptNil, 'WAT widget'), allowedWidget = allowWidget;
 export const expectWidget = ValidatorForClassifier(ValueIsWidget, rejectNil, 'WAT widget'), expectedWidget = expectWidget;
-/**** ValueIsWidgetType ****/
-export function ValueIsWidgetType(Value) {
-    return ValueIsString(Value) && (Value in builtInWidgetTypes);
-}
-/**** allow/expect[ed]WidgetType ****/
-export const allowWidgetType = ValidatorForClassifier(ValueIsWidgetType, acceptNil, 'WAT widget type'), allowedWidgetType = allowWidgetType;
-export const expectWidgetType = ValidatorForClassifier(ValueIsWidgetType, rejectNil, 'WAT widget type'), expectedWidgetType = expectWidgetType;
 /**** ValueIsLocation ****/
 export function ValueIsLocation(Value) {
     return ValueIsFiniteNumber(Value);
@@ -319,19 +339,11 @@ export const expectSerializableObject = ValidatorForClassifier(ValueIsSerializab
 //------------------------------------------------------------------------------
 //--                           Stylesheet Handling                            --
 //------------------------------------------------------------------------------
-let StyleElement = document.getElementById('WAT-Stylesheet');
-if (StyleElement == null) {
-    StyleElement = document.createElement('style');
-    StyleElement.id = 'WAT-Stylesheet';
-    StyleElement.textContent = '';
-    document.head.appendChild(StyleElement);
-}
-/**** appendStyle ****/
-function appendStyle(Style) {
-    // @ts-ignore TS18047 no, "StyleElement" is not null
-    StyleElement.textContent += Style;
-}
-appendStyle(`
+let WATStyleElement = document.getElementById('WAT-Stylesheet');
+if (WATStyleElement == null) {
+    WATStyleElement = document.createElement('style');
+    WATStyleElement.id = 'WAT-Stylesheet';
+    WATStyleElement.textContent = `
 /*******************************************************************************
 *                                                                              *
 *                        WebApp Tinkerer (WAT) Runtime                         *
@@ -365,7 +377,7 @@ appendStyle(`
   .WAT.Applet {
     color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
-    font-size:14px; font-weight:normal; line-height:1.4; color:black;
+    font-size:14px; font-weight:400; line-height:1.4; color:black;
     text-align:left; text-shadow:none;
   }
 
@@ -554,7 +566,44 @@ appendStyle(`
   .scrollable-x { overflow-x:scroll; overflow-y:hidden }
   .scrollable-y { overflow-x:hidden; overflow-y:scroll }
 
-`.trimLeft());
+`.trimLeft();
+    document.head.appendChild(WATStyleElement);
+}
+/**** installStylesheetForBehavior ****/
+function installStylesheetForBehavior(Applet, Category, Behavior, Stylesheet) {
+    allowText('stylesheet', Stylesheet);
+    // @ts-ignore TS7053 allow indexing
+    let Registration = Applet._BehaviorPool[Category][Behavior.toLowerCase()];
+    if (Registration == null)
+        throwError(`InternalError: no registration for ${Category} behaviour ${quoted(Behavior)} found`);
+    if (!Registration.isNew) {
+        return;
+    }
+    const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior}`;
+    if ((Stylesheet == null) || (Stylesheet.trim() === '')) {
+        let StyleElement = document.getElementById(StylesheetId);
+        if (StyleElement != null) {
+            StyleElement.remove();
+        }
+    }
+    else {
+        let StyleElement = document.getElementById(StylesheetId);
+        if (StyleElement == null) {
+            StyleElement = document.createElement('style');
+            StyleElement.id = StylesheetId;
+            document.head.appendChild(StyleElement);
+        }
+        StyleElement.textContent = Stylesheet;
+    }
+}
+/**** uninstallStylesheetForBehavior ****/
+function uninstallStylesheetForBehavior(Applet, Category, Behavior) {
+    const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior.toLowerCase()}`;
+    let StyleElement = document.getElementById(StylesheetId);
+    if (StyleElement != null) {
+        StyleElement.remove();
+    }
+}
 //------------------------------------------------------------------------------
 //--                               Acceptables                                --
 //------------------------------------------------------------------------------
@@ -706,6 +755,14 @@ export function acceptablePhoneNumber(Value, Default) {
 export function acceptableURL(Value, Default) {
     return (ValueIsURL(Value) ? Value : Default);
 }
+/**** acceptableBehavior ****/
+export function acceptableBehavior(Value, Default) {
+    return (ValueIsBehavior(Value) ? Value : Default);
+}
+/**** acceptableOptionalBehavior ****/
+export function acceptableOptionalBehavior(Value) {
+    return (ValueIsBehavior(Value) ? Value : undefined);
+}
 /**** acceptableName ****/
 export function acceptableName(Value, Default) {
     return (ValueIsName(Value) ? Value : Default);
@@ -721,6 +778,361 @@ export function acceptablePath(Value, Default) {
 /**** acceptableOptionalPath ****/
 export function acceptableOptionalPath(Value) {
     return (ValueIsPath(Value) ? Value : undefined);
+}
+//------------------------------------------------------------------------------
+//--                             Behavior Support                             --
+//------------------------------------------------------------------------------
+/**** BehaviorIsIntrinsic ****/
+export function BehaviorIsIntrinsic(Behavior) {
+    expectBehavior('behavior', Behavior);
+    return /^(basic|native|traditional|mobile|wearable)_controls\./.test(Behavior.toLowerCase());
+}
+/**** registerIntrinsicBehavior ****/
+function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
+    expectApplet('applet', Applet);
+    expectCategory('behavior category', Category);
+    expectBehavior('behavior', Name);
+    expectFunction('behavior function', compiledScript);
+    const normalizedName = Name.toLowerCase();
+    // @ts-ignore TS7053 allow indexing
+    if (Applet._BehaviorPool[Category][normalizedName] != null)
+        throwError(`InvalidArgument:a behaviour for ${Category}s with the name ${Name} has already been registered`);
+    const activeScript = compiledScript.toString()
+        .replace(/^[^\n]+\n/, '') // removes first line (i.e., function head)
+        .replace(/\n[^\n]+$/, ''); // removes last line (with trailing "}")
+    // @ts-ignore TS7053 allow indexing
+    Applet._BehaviorPool[Category][normalizedName] = {
+        Category, Name, activeScript, compiledScript
+    };
+}
+/**** brokenBehavior ****/
+async function brokenBehavior(Visual) {
+    const Applet = Visual.Applet;
+    const Category = Visual.Category;
+    const Behavior = Visual.Behavior;
+    // @ts-ignore TS7053 allow indexing
+    const Signal = Applet._BehaviorPool[Category][Behavior.toLowerCase()].Error;
+    setErrorReport(Visual, {
+        Type: 'Behaviour Compilation Failure',
+        Sufferer: Visual, Message: '' + Signal, Cause: Error
+    });
+}
+/**** missingBehavior ****/
+function missingBehavior(Visual) {
+    setErrorReport(Visual, {
+        Type: 'missing Behaviour',
+        Sufferer: Visual, Message: `missing Behaviour ${quoted(Visual.Behavior)}`, Cause: undefined
+    });
+}
+//----------------------------------------------------------------------------//
+//                       configurable Property Support                        //
+//----------------------------------------------------------------------------//
+export const WAT_PropertyEditorTypes = [
+    'checkbox', 'choice',
+    'textline-input', 'password-input', 'number-input', 'integer-input', 'search-input',
+    'phone-number-input', 'email-address-input', 'url-input',
+    'time-input', 'date-time-input', 'date-input', 'month-input', 'week-input',
+    'color-input', 'drop-down', 'slider',
+    'text-input', 'html-input', 'css-input', 'javascript-input', 'json-input',
+    'linelist-input', 'numberlist-input'
+];
+/**** forbiddenPropertyNames ****/
+const forbiddenPropertyNames = Object.create(null);
+function collectInternalNames() {
+    // @ts-ignore TS2345 allow abstract class as argument
+    collectInternalNamesFrom(WAT_Visual);
+    collectInternalNamesFrom(WAT_Applet);
+    collectInternalNamesFrom(WAT_Page);
+    collectInternalNamesFrom(WAT_Widget);
+    delete forbiddenPropertyNames['Value']; // "Value" may be customized
+}
+function collectInternalNamesFrom(WAT_Class) {
+    Object.getOwnPropertyNames(WAT_Class.prototype).forEach((Name) => {
+        if (!Name.startsWith('_')) {
+            forbiddenPropertyNames[Name] = true;
+        }
+    });
+}
+/**** validatePropertyName ****/
+function validatePropertyName(Name) {
+    if (Name in forbiddenPropertyNames)
+        throwError('InvalidArgument: forbidden property name ' + quoted(Name));
+}
+/**** ValueIsPropertyDescriptor ****/
+function ValueIsPropertyDescriptor(Value) {
+    if (!ValueIsPlainObject(Value) ||
+        !ValueIsIdentifier(Value.Name) ||
+        (Value.Name in forbiddenPropertyNames) ||
+        (Value.Label != null) && !ValueIsTextline(Value.Label) ||
+        (Value.EditorType == null) ||
+        !ValueIsOneOf(Value.EditorType, WAT_PropertyEditorTypes) ||
+        (Value.readonly != null) && !ValueIsBoolean(Value.readonly)) {
+        return false;
+    }
+    /**** validate editor-specific settings ****/
+    const { EditorType, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, StepValue, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+    switch (EditorType) {
+        case 'checkbox':
+            break;
+        case 'choice': // drop-down for boolean properties
+            if (!ValueIsTextline(FalseValue) || !ValueIsTextline(TrueValue)) {
+                return false;
+            }
+            break;
+        case 'textline-input':
+        case 'password-input':
+        case 'email-address-input':
+        case 'phone-number-input':
+        case 'url-input':
+        case 'search-input':
+            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
+                (minLength != null) && !ValueIsOrdinal(minLength) ||
+                (maxLength != null) && !ValueIsOrdinal(maxLength) ||
+                (multiple != null) && !ValueIsBoolean(multiple) && (EditorType === 'email-address-input') ||
+                (SpellChecking != null) && !ValueIsBoolean(SpellChecking) && (EditorType === 'textline-input') ||
+                (Pattern != null) && !ValueIsTextline(Pattern) ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsTextline)) {
+                return false;
+            }
+            break;
+        case 'number-input':
+            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
+                (minValue != null) && !ValueIsFiniteNumber(minValue) ||
+                (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
+                (StepValue != null) && !ValueIsNumberInRange(StepValue, 0, Infinity, false) && (StepValue !== 'any') ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsFiniteNumber)) {
+                return false;
+            }
+            break;
+        case 'integer-input':
+            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
+                (minValue != null) && !ValueIsInteger(minValue) ||
+                (maxValue != null) && !ValueIsInteger(maxValue) ||
+                (StepValue != null) && !ValueIsIntegerInRange(StepValue, 0, Infinity) && (StepValue !== 'any') ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsInteger)) {
+                return false;
+            }
+            break;
+        case 'time-input':
+            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_TimeRegExp) ||
+                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_TimeRegExp) ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_TimeMatcher)) {
+                return false;
+            }
+            break;
+        case 'date-time-input':
+            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_DateTimeRegExp) ||
+                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_DateTimeRegExp) ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_DateTimeMatcher)) {
+                return false;
+            }
+            break;
+        case 'date-input':
+            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_DateRegExp) ||
+                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_DateRegExp) ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_DateMatcher)) {
+                return false;
+            }
+            break;
+        case 'month-input':
+            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_MonthRegExp) ||
+                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_MonthRegExp) ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_MonthMatcher)) {
+                return false;
+            }
+            break;
+        case 'week-input':
+            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_WeekRegExp) ||
+                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_WeekRegExp) ||
+                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_WeekMatcher)) {
+                return false;
+            }
+            break;
+        case 'color-input':
+            break;
+        case 'drop-down':
+            if (!ValueIsListSatisfying(ValueList, ValueIsTextline)) {
+                return false;
+            }
+            break;
+        case 'slider':
+            if ((minValue != null) && !ValueIsFiniteNumber(minValue) ||
+                (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
+                (StepValue != null) && !ValueIsNumberInRange(StepValue, 0, Infinity, false) && (StepValue !== 'any') ||
+                (Hashmarks != null) && !ValueIsListSatisfying(Hashmarks, HashmarkMatcher)) {
+                return false;
+            }
+            break;
+        case 'text-input':
+            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
+                (minLength != null) && !ValueIsOrdinal(minLength) ||
+                (maxLength != null) && !ValueIsOrdinal(maxLength) ||
+                (SpellChecking != null) && !ValueIsBoolean(SpellChecking) ||
+                (Resizability != null) && !ValueIsOneOf(Resizability, ['none', 'horizontal', 'vertical', 'both']) ||
+                (LineWrapping != null) && !ValueIsBoolean(LineWrapping)) {
+                return false;
+            }
+            break;
+        case 'html-input':
+        case 'css-input':
+        case 'javascript-input':
+        case 'json-input':
+        case 'linelist-input':
+        case 'numberlist-input':
+            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
+                (minLength != null) && !ValueIsOrdinal(minLength) ||
+                (maxLength != null) && !ValueIsOrdinal(maxLength) ||
+                (Resizability != null) && !ValueIsOneOf(Resizability, ['none', 'horizontal', 'vertical', 'both']) ||
+                (LineWrapping != null) && !ValueIsBoolean(LineWrapping)) {
+                return false;
+            }
+            break;
+    }
+    return true;
+}
+/**** normalizedPropertyDescriptor ****/
+function normalizedPropertyDescriptor(Value) {
+    if (!ValueIsPropertyDescriptor(Value))
+        throwError(`InvalidArgument: invalid property ${Value.Name == null ? '' : quoted('' + Value.Name)}`);
+    let { Name, Label, EditorType, readonly, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, StepValue, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+    if (Label == null) {
+        Label = Name;
+    }
+    let Descriptor = { Name, Label, EditorType };
+    if (readonly != null) {
+        Descriptor.readonly = readonly;
+    }
+    switch (Value.EditorType) {
+        case 'checkbox':
+            break;
+        case 'choice': // drop-down for boolean properties
+            Descriptor.FalseValue = FalseValue;
+            Descriptor.TrueValue = TrueValue;
+            break;
+        case 'textline-input':
+        case 'password-input':
+        case 'email-address-input':
+        case 'phone-number-input':
+        case 'url-input':
+        case 'search-input':
+            if (Placeholder != null) {
+                Descriptor.Placeholder = Placeholder;
+            }
+            if (minLength != null) {
+                Descriptor.minLength = minLength;
+            }
+            if (maxLength != null) {
+                Descriptor.maxLength = maxLength;
+            }
+            if (multiple != null) {
+                Descriptor.multiple = multiple;
+            }
+            if (SpellChecking != null) {
+                Descriptor.SpellChecking = SpellChecking;
+            }
+            if (Pattern != null) {
+                Descriptor.Pattern = Pattern;
+            }
+            if (Suggestions != null) {
+                Descriptor.Suggestions = Suggestions.slice();
+            }
+            break;
+        case 'number-input':
+        case 'integer-input':
+            if (Placeholder != null) {
+                Descriptor.Placeholder = Placeholder;
+            }
+            if (minValue != null) {
+                Descriptor.minValue = minValue;
+            }
+            if (maxValue != null) {
+                Descriptor.maxValue = maxValue;
+            }
+            if (StepValue != null) {
+                Descriptor.StepValue = StepValue;
+            }
+            if (Suggestions != null) {
+                Descriptor.Suggestions = Suggestions.slice();
+            }
+            break;
+        case 'time-input':
+        case 'date-time-input':
+        case 'date-input':
+        case 'month-input':
+        case 'week-input':
+            if (minValue != null) {
+                Descriptor.minValue = minValue;
+            }
+            if (maxValue != null) {
+                Descriptor.maxValue = maxValue;
+            }
+            if (Suggestions != null) {
+                Descriptor.Suggestions = Suggestions.slice();
+            }
+            break;
+        case 'color-input':
+            break;
+        case 'drop-down':
+            Descriptor.ValueList = ValueList;
+            break;
+        case 'slider':
+            if (minValue != null) {
+                Descriptor.minValue = minValue;
+            }
+            if (maxValue != null) {
+                Descriptor.maxValue = maxValue;
+            }
+            if (StepValue != null) {
+                Descriptor.StepValue = StepValue;
+            }
+            if (Hashmarks != null) {
+                Descriptor.Hashmarks = Hashmarks.slice();
+            }
+            break;
+        case 'text-input':
+            if (Placeholder != null) {
+                Descriptor.Placeholder = Placeholder;
+            }
+            if (minLength != null) {
+                Descriptor.minLength = minLength;
+            }
+            if (maxLength != null) {
+                Descriptor.maxLength = maxLength;
+            }
+            if (SpellChecking != null) {
+                Descriptor.SpellChecking = SpellChecking;
+            }
+            if (Resizability != null) {
+                Descriptor.Resizability = Resizability;
+            }
+            if (LineWrapping != null) {
+                Descriptor.LineWrapping = LineWrapping;
+            }
+            break;
+        case 'html-input':
+        case 'css-input':
+        case 'javascript-input':
+        case 'json-input':
+        case 'linelist-input':
+        case 'numberlist-input':
+            if (Placeholder != null) {
+                Descriptor.Placeholder = Placeholder;
+            }
+            if (minLength != null) {
+                Descriptor.minLength = minLength;
+            }
+            if (maxLength != null) {
+                Descriptor.maxLength = maxLength;
+            }
+            if (Resizability != null) {
+                Descriptor.Resizability = Resizability;
+            }
+            if (LineWrapping != null) {
+                Descriptor.LineWrapping = LineWrapping;
+            }
+            break;
+    }
+    return Descriptor;
 }
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
@@ -1020,8 +1432,21 @@ export function GestureRecognizer(OptionSet) {
 //--                                WAT_Visual                                --
 //------------------------------------------------------------------------------
 export class WAT_Visual {
-    constructor(Container) {
+    constructor(Behavior, Container) {
         Object.defineProperty(this, "_Container", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** Behavior ****/
+        Object.defineProperty(this, "_Behavior", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_normalizedBehavior", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -1033,6 +1458,20 @@ export class WAT_Visual {
             configurable: true,
             writable: true,
             value: void 0
+        });
+        /**** Synopsis ****/
+        Object.defineProperty(this, "_Synopsis", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        /**** configurableProperties ****/
+        Object.defineProperty(this, "_configurableProperties", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: []
         });
         /**** FontFamily - inheritable ****/
         Object.defineProperty(this, "_FontFamily", {
@@ -1226,8 +1665,20 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
+        allowBehavior('visual behavior', Behavior);
+        this._Behavior = Behavior;
+        this._normalizedBehavior = (Behavior == null ? undefined : Behavior.toLowerCase());
         this._Container = Container;
     }
+    /**** Category - to be overwritten ****/
+    // @ts-ignore TS2378 this getter throws
+    get Category() { throwError('InternalError: "Category" has to be overwritten'); }
+    set Category(_) { throwReadOnlyError('Category'); }
+    get Behavior() { return this._Behavior; }
+    set Behavior(_) { throwReadOnlyError('Behavior'); }
+    /**** normalizedBehavior ****/
+    get normalizedBehavior() { return this._normalizedBehavior; }
+    set normalizedBehavior(_) { throwReadOnlyError('normalizedBehavior'); }
     get Name() { return this._Name; }
     set Name(newName) {
         if (ValueIsString(newName)) {
@@ -1247,6 +1698,10 @@ export class WAT_Visual {
         return (this._Name == null ? undefined : this._Name.toLowerCase());
     }
     set normalizedName(_) { throwReadOnlyError('normalizedName'); }
+    /**** Applet ****/
+    // @ts-ignore TS2378 this getter throws
+    get Applet() { throwError('InternalError: "Applet" has to be overwritten'); }
+    set Applet(_) { throwReadOnlyError('Applet'); }
     /**** Path - to be overwritten ****/
     // @ts-ignore TS2378 this getter throws
     get Path() { throwError('InternalError: "Path" has to be overwritten'); }
@@ -1255,6 +1710,40 @@ export class WAT_Visual {
     // @ts-ignore TS2378 this getter throws
     get isAttached() { throwError('InternalError: "isAttached" has to be overwritten'); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    get Synopsis() { return this._Synopsis; }
+    set Synopsis(newSynopsis) {
+        allowText('visual synopsis', newSynopsis);
+        if ((newSynopsis != null) && (newSynopsis.trim() === '')) {
+            newSynopsis = undefined;
+        }
+        if (this._Synopsis !== newSynopsis) {
+            this._Synopsis = newSynopsis;
+            this.rerender();
+        }
+    }
+    get configurableProperties() {
+        return this._configurableProperties.map((Descriptor) => (Object.assign({}, Descriptor)));
+    }
+    set configurableProperties(newProperties) {
+        allowListSatisfying('configurable properties', newProperties, ValueIsPropertyDescriptor);
+        if (newProperties == null) {
+            newProperties = [];
+        }
+        const PropertySet = Object.create(null);
+        newProperties = newProperties.filter((Descriptor) => {
+            if (Descriptor.Name in PropertySet) {
+                return false;
+            }
+            else {
+                PropertySet[Descriptor.Name] = normalizedPropertyDescriptor(Descriptor);
+                return true;
+            }
+        }).map((Descriptor) => PropertySet[Descriptor.Name]);
+        if (ValuesDiffer(this._configurableProperties, newProperties)) {
+            this._configurableProperties = newProperties;
+            this.rerender();
+        }
+    }
     /**** configure ****/
     configure(OptionSet) {
         expectPlainObject('options set', OptionSet);
@@ -1550,13 +2039,51 @@ export class WAT_Visual {
         const onMount = this._onMount_.bind(this);
         const onUnmount = this._onUnmount_.bind(this);
         const onValueChange = this._onValueChange_.bind(this);
-        /**** compile and run the script ****/
+        function installStylesheet(Stylesheet) {
+            throwError('NotForVisualScripts: visual scripts must not install behavior stylesheets');
+        }
+        /**** run behavior script first ****/
         this._ErrorReport = undefined;
+        const Applet = this.Applet;
+        if (Applet == null)
+            throwError('NotAttached: this visual is not attached');
+        const Category = this.Category;
+        const Behavior = this.Behavior;
+        if (Behavior != null) {
+            // @ts-ignore TS7053 allow indexing
+            const Registration = Applet._BehaviorPool[Category][Behavior.toLowerCase()];
+            if (Registration == null) {
+                missingBehavior(this);
+            }
+            else {
+                try {
+                    await Registration.compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), (Registration === null || Registration === void 0 ? void 0 : Registration.isNew) || false);
+                    Registration.isNew = false;
+                }
+                catch (Signal) {
+                    Registration.isNew = false;
+                    console.warn('Behavior Execution Failure', Signal);
+                    setErrorReport(this, {
+                        Type: 'Behaviour Execution Failure',
+                        Sufferer: this, Message: '' + Signal, Cause: Signal
+                    });
+                    if (Mode === 'rethrow-exception') {
+                        throw Signal;
+                    }
+                    return;
+                }
+            }
+            if (this._ErrorReport != null) {
+                return;
+            }
+        }
+        /**** compile and run the script ****/
         this._ScriptError = undefined; // only to be set by "applyPendingScript"
         let compiledScript;
         try {
             // @ts-ignore TS2351 AsyncFunction *is* constructible
-            compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange', activeScript);
+            compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+                'installStylesheet,BehaviorIsNew', activeScript);
         }
         catch (Signal) {
             console.warn('Script Compilation Failure', Signal);
@@ -1564,10 +2091,14 @@ export class WAT_Visual {
                 Type: 'Script Compilation Failure',
                 Sufferer: this, Message: '' + Signal, Cause: Signal
             });
+            if (Mode === 'rethrow-exception') {
+                throw Signal;
+            }
             return;
         }
         try {
-            await compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange);
+            await compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, false // Behavior.isNew
+            );
         }
         catch (Signal) {
             console.warn('Script Execution Failure', Signal);
@@ -1595,7 +2126,7 @@ export class WAT_Visual {
             let compiledScript; // try compiling pending script first
             try {
                 // @ts-ignore TS2351 AsyncFunction *is* constructible
-                compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange', pendingScript);
+                compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, BehaviorIsNew', pendingScript);
             }
             catch (Signal) {
                 setScriptError(this, {
@@ -1860,7 +2391,7 @@ export class WAT_Visual {
         /**** then perform the actual serialization ****/
         ;
         [
-            'Name',
+            'Behavior', 'Name', 'Synopsis',
             'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
             'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
             'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
@@ -1869,6 +2400,9 @@ export class WAT_Visual {
             'activeScript', 'pendingScript',
             'memoized', 'Value',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+        if (this._configurableProperties.length > 0) {
+            Serialization.configurableProperties = this._configurableProperties.map((Descriptor) => (Object.assign({}, Descriptor)));
+        }
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -1884,8 +2418,13 @@ export class WAT_Visual {
                 }
             }
         };
+        if (ValueIsListSatisfying(Serialization.configurableProperties, ValueIsPropertyDescriptor)) {
+            // @ts-ignore TS18047 "configurableProperties" is not null
+            this._configurableProperties = Serialization.configurableProperties.map((Descriptor) => normalizedPropertyDescriptor(Descriptor));
+        }
+        ;
         [
-            'Name',
+            /*'Behavior', */ 'Name', 'Synopsis',
             'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
             'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
             'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
@@ -1906,8 +2445,9 @@ export class WAT_Visual {
         /**** "activeScript" needs special treatment ****/
         if (ValueIsText(Serialization.activeScript)) {
             this._activeScript = Serialization.activeScript;
-            this.activateScript(); // in "creation" order, i.e.,
-        } // pages and widgets will already be attached, applets may not
+        }
+        this.activateScript(); // in "creation" order, i.e.,
+        // pages and widgets will already be attached, applets may not
     } // and inner visuals may not yet (all) be present
     /**** _serializePropertyInto ****/
     _serializePropertyInto(Name, Serialization) {
@@ -1921,8 +2461,8 @@ export class WAT_Visual {
 //--                                WAT_Applet                                --
 //------------------------------------------------------------------------------
 export class WAT_Applet extends WAT_Visual {
-    constructor() {
-        super(undefined);
+    constructor(Behavior) {
+        super(Behavior, undefined);
         Object.defineProperty(this, "_fullScreen", {
             enumerable: true,
             configurable: true,
@@ -1941,6 +2481,17 @@ export class WAT_Applet extends WAT_Visual {
             writable: true,
             value: -1
         }); // dto.
+        /**** BehaviorSet ****/
+        Object.defineProperty(this, "_BehaviorPool", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: {
+                applet: Object.create(null),
+                page: Object.create(null),
+                widget: Object.create(null),
+            }
+        });
         /**** minWidth ****/
         Object.defineProperty(this, "_minWidth", {
             enumerable: true,
@@ -2040,15 +2591,469 @@ export class WAT_Applet extends WAT_Visual {
             value: []
         });
     }
+    /**** Category ****/
+    get Category() { return 'applet'; }
+    set Category(_) { throwReadOnlyError('Category'); }
+    /**** Behavior ****/
+    get Behavior() { return this._Behavior; }
+    set Behavior(newBehavior) {
+        var _a;
+        allowBehavior('applet behavior', newBehavior);
+        const normalizedBehavior = (newBehavior == null ? undefined : newBehavior.toLowerCase());
+        if (this._normalizedBehavior !== normalizedBehavior) {
+            this._normalizedBehavior = normalizedBehavior;
+            // @ts-ignore TS7053 allow indexing
+            this._Behavior = ((_a = this._BehaviorPool['applet'][normalizedBehavior]) === null || _a === void 0 ? void 0 : _a.Name) || newBehavior;
+            this.activateScript();
+            this.rerender();
+        }
+    }
     /**** Name ****/
     get Name() { return this._Name; }
     set Name(newName) { throwReadOnlyError('Name'); }
+    /**** Applet ****/
+    get Applet() { return this; }
+    set Applet(_) { throwReadOnlyError('Applet'); }
     /**** Path - to be overwritten ****/
     get Path() { return '/'; }
     set Path(_) { throwReadOnlyError('Path'); }
     /**** isAttached ****/
     get isAttached() { return (this._View != null); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    get BehaviorSet() {
+        const Result = {
+            applet: Object.create(null),
+            page: Object.create(null),
+            widget: Object.create(null),
+        };
+        for (const [Behavior, Registration] of Object.entries(this._BehaviorPool.applet)) {
+            const { Category, Name, activeScript } = Registration;
+            Result.applet[Behavior] = { Category, Name, activeScript };
+        }
+        for (const [Behavior, Registration] of Object.entries(this._BehaviorPool.page)) {
+            const { Category, Name, activeScript } = Registration;
+            Result.page[Behavior] = { Category, Name, activeScript };
+        }
+        for (const [Behavior, Registration] of Object.entries(this._BehaviorPool.widget)) {
+            const { Category, Name, activeScript } = Registration;
+            Result.widget[Behavior] = { Category, Name, activeScript };
+        }
+        return Result;
+    }
+    set BehaviorSet(_) { throwReadOnlyError('BehaviorSet'); }
+    /**** BehaviorsOfCategory ****/
+    BehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        // @ts-ignore TS7053 allow indexing
+        return Object.keys(this._BehaviorPool[Category]);
+    }
+    /**** BehaviorOfCategory ****/
+    BehaviorOfCategory(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior name', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if (Registration == null) {
+            return undefined;
+        }
+        const { Name, activeScript } = Registration;
+        return { Category, Name, activeScript };
+    }
+    /**** registerBehaviorOfCategory ****/
+    registerBehaviorOfCategory(Category, Behavior, Script) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior name', Behavior);
+        expectText('behavior script', Script);
+        const normalizedBehavior = Behavior.toLowerCase();
+        if (BehaviorIsIntrinsic(normalizedBehavior))
+            throwError('InvalidArgument: intrinsic behaviors must not be overwritten');
+        try {
+            // @ts-ignore TS2351 AsyncFunction *is* constructible
+            const compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+                'installStylesheet,BehaviorIsNew', Script);
+            // @ts-ignore TS7053 allow indexing
+            this._BehaviorPool[Category][normalizedBehavior] = {
+                Category, Name: Behavior, activeScript: Script, isNew: true,
+                compiledScript, Error: undefined
+            };
+        }
+        catch (Signal) {
+            console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`, Signal);
+            // @ts-ignore TS7053 allow indexing
+            this._BehaviorPool[Category][normalizedBehavior] = {
+                Category, Name: Behavior, activeScript: Script, isNew: false,
+                compiledScript: brokenBehavior, Error: Signal
+            };
+        }
+        uninstallStylesheetForBehavior(this, Category, Behavior);
+        switch (Category) {
+            case 'applet':
+                if (this._normalizedBehavior === normalizedBehavior) {
+                    this.activateScript();
+                }
+                break;
+            case 'page':
+                this.PagesWithBehavior(Behavior).forEach((Page) => Page.activateScript());
+                break;
+            case 'widget':
+                this.WidgetsWithBehavior(Behavior).forEach((Widget) => Widget.activateScript());
+        }
+    }
+    /**** unregisterBehaviorOfCategory ****/
+    unregisterBehaviorOfCategory(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior name', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        if (BehaviorIsIntrinsic(normalizedBehavior))
+            throwError('InvalidArgument: intrinsic behaviors must not be unregistered');
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if (Registration == null) {
+            return undefined;
+        }
+        uninstallStylesheetForBehavior(this, Category, Behavior);
+        // @ts-ignore TS7053 allow indexing
+        delete this._BehaviorPool[Category][normalizedBehavior];
+        switch (Category) {
+            case 'applet':
+                if (this._normalizedBehavior === normalizedBehavior) {
+                    this.activateScript();
+                }
+                break;
+            case 'page':
+                this.PagesWithBehavior(Behavior).forEach((Page) => Page.activateScript());
+                break;
+            case 'widget':
+                this.WidgetsWithBehavior(Behavior).forEach((Widget) => Widget.activateScript());
+        }
+    }
+    /**** renameBehaviorOfCategory ****/
+    renameBehaviorOfCategory(Category, oldName, newName) {
+        expectCategory('behavior category', Category);
+        expectBehavior('old behavior name', oldName);
+        expectBehavior('new behavior name', newName);
+        const normalizedOldName = oldName.toLowerCase();
+        const normalizedNewName = newName.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        if (!(normalizedOldName in this._BehaviorPool[Category]))
+            throwError(`InvalidArgument: no ${Category} behaviour ${quoted(oldName)} found`);
+        if (newName === oldName) {
+            return;
+        }
+        if (normalizedNewName === normalizedOldName) {
+            // @ts-ignore TS7053 allow indexing
+            this._BehaviorPool[Category][normalizedOldName].Name = newName;
+            return;
+        }
+        // @ts-ignore TS7053 allow indexing
+        let Registration = this._BehaviorPool[Category][normalizedOldName];
+        // @ts-ignore TS7053 allow indexing
+        delete this._BehaviorPool[Category][normalizedOldName];
+        Registration.Name = newName;
+        Registration.isNew = true; // just to be safe (it could be important)
+        // @ts-ignore TS7053 allow indexing
+        this._BehaviorPool[Category][normalizedNewName] = Registration;
+        uninstallStylesheetForBehavior(this, Category, oldName);
+        switch (Category) {
+            case 'applet':
+                if (this._normalizedBehavior === normalizedOldName) {
+                    this._Behavior = newName;
+                    this._normalizedBehavior = normalizedNewName;
+                }
+                break;
+            case 'page':
+                this.PagesWithBehavior(oldName).forEach((Page) => {
+                    Page['_Behavior'] = newName;
+                    Page['_normalizedBehavior'] = normalizedNewName;
+                });
+                break;
+            case 'widget':
+                this.WidgetsWithBehavior(oldName).forEach((Widget) => {
+                    Widget['_Behavior'] = newName;
+                    Widget['_normalizedBehavior'] = normalizedNewName;
+                });
+        }
+    }
+    /**** prescriptBehaviorOfCategory ****/
+    prescriptBehaviorOfCategory(Category, Behavior, Script) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior name', Behavior);
+        expectText('behavior script', Script);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if (Registration == null)
+            throwError(`InvalidArgument: no ${Category} behaviour ${quoted(Behavior)} found`);
+        if (Registration.pendingScript !== Script) {
+            Registration.pendingScript = Script;
+        }
+        this.rerender();
+    }
+    /**** rescriptBehaviorOfCategory ****/
+    rescriptBehaviorOfCategory(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior name', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if (Registration == null)
+            throwError(`InvalidArgument: no ${Category} behaviour ${quoted(Behavior)} found`);
+        const { activeScript, pendingScript } = Registration;
+        if (activeScript === pendingScript) {
+            return;
+        }
+        try {
+            // @ts-ignore TS7053 allow indexing
+            this._BehaviorPool[Category][normalizedBehavior].pendingError = undefined;
+            // @ts-ignore TS2351 AsyncFunction *is* constructible
+            const compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+                'installStylesheet,BehaviorIsNew', pendingScript);
+        }
+        catch (Signal) {
+            console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`, Signal);
+            // @ts-ignore TS7053 allow indexing
+            this._BehaviorPool[Category][normalizedBehavior].pendingError = Signal;
+        }
+        this.registerBehaviorOfCategory(Category, Behavior, pendingScript);
+        this.rerender();
+    }
+    /**** groupedBehaviorListOfCategory ****/
+    groupedBehaviorListOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        const groupedList = Object.create(null);
+        // @ts-ignore TS7053 allow indexing
+        Object.values(this._BehaviorPool[Category]).forEach((Behavior) => {
+            const Name = Behavior.Name;
+            const Prefix = Name.replace(/[.][^.]+$/, '');
+            const Suffix = Name.replace(/^.*[.]/, '');
+            if (!(Prefix in groupedList)) {
+                groupedList[Prefix] = [];
+            }
+            groupedList[Prefix].push(Suffix);
+        });
+        return groupedList;
+    }
+    /**** PagesWithBehavior ****/
+    PagesWithBehavior(Behavior) {
+        expectBehavior('behavior name', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        return this._PageList.filter((Page) => (Page.Behavior || '').toLowerCase() === normalizedBehavior);
+    }
+    /**** WidgetsWithBehavior ****/
+    WidgetsWithBehavior(Behavior) {
+        expectBehavior('behavior name', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        return this._PageList.map((Page) => Page.WidgetList.filter((Widget) => (Widget.Behavior || '').toLowerCase() === normalizedBehavior)).flat();
+    }
+    /**** intrinsicBehaviorsOfCategory ****/
+    intrinsicBehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        // @ts-ignore TS7053 allow indexing
+        return Object.values(this._BehaviorPool[Category])
+            .map((Registration) => Registration.Name)
+            .filter((Name) => BehaviorIsIntrinsic(Name.toLowerCase()));
+    }
+    /**** extrinsicBehaviorsOfCategory ****/
+    extrinsicBehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        // @ts-ignore TS7053 allow indexing
+        return Object.values(this._BehaviorPool[Category])
+            .map((Registration) => Registration.Name)
+            .filter((Name) => !BehaviorIsIntrinsic(Name.toLowerCase()));
+    }
+    /**** missingBehaviorsOfCategory ****/
+    missingBehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        const missingBehaviorSet = Object.create(null);
+        switch (Category) {
+            case 'applet':
+                return ((this._Behavior == null) ||
+                    (this._Behavior.toLowerCase() in this._BehaviorPool['applet'])
+                    ? [] : [this._Behavior]);
+            case 'page':
+                this.PageList.forEach((Page) => {
+                    if ((Page.Behavior != null) &&
+                        !(Page.Behavior.toLowerCase() in this._BehaviorPool['page'])) {
+                        missingBehaviorSet[Page.Behavior.toLowerCase()] = Page.Behavior;
+                    }
+                });
+                break;
+            case 'widget':
+                this.PageList.forEach((Page) => {
+                    Page.WidgetList.forEach((Widget) => {
+                        if ((Widget.Behavior != null) &&
+                            !(Widget.Behavior.toLowerCase() in this._BehaviorPool['widget'])) {
+                            missingBehaviorSet[Widget.Behavior.toLowerCase()] = Widget.Behavior;
+                        }
+                    });
+                });
+        }
+        return Object.values(missingBehaviorSet);
+    }
+    /**** brokenBehaviorsOfCategory ****/
+    brokenBehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        const brokenBehaviors = [];
+        // @ts-ignore TS7053 allow indexing
+        Object.values(this._BehaviorPool[Category]).forEach((Registration) => {
+            if (Registration.Error != null) {
+                brokenBehaviors.push(Registration.Name);
+            }
+        });
+        return brokenBehaviors;
+    }
+    /**** usedBehaviorsOfCategory ****/
+    usedBehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        const usedBehaviorSet = Object.create(null);
+        switch (Category) {
+            case 'applet':
+                return ((this._Behavior != null) &&
+                    (this._Behavior.toLowerCase() in this._BehaviorPool['applet'])
+                    ? [this._BehaviorPool['applet'][this._Behavior.toLowerCase()].Name] : []);
+            case 'page':
+                this.PageList.forEach((Page) => {
+                    if ((Page.Behavior != null) &&
+                        (Page.Behavior.toLowerCase() in this._BehaviorPool['page'])) {
+                        usedBehaviorSet[Page.Behavior.toLowerCase()] = true;
+                    }
+                });
+                return Object.keys(usedBehaviorSet).map((normalizedName) => this._BehaviorPool['page'][normalizedName].Name);
+            case 'widget':
+            default: // just to satisfy the compiler
+                this.PageList.forEach((Page) => {
+                    Page.WidgetList.forEach((Widget) => {
+                        if ((Widget.Behavior != null) &&
+                            (Widget.Behavior.toLowerCase() in this._BehaviorPool['widget'])) {
+                            usedBehaviorSet[Widget.Behavior.toLowerCase()] = Widget.Behavior;
+                        }
+                    });
+                });
+                return Object.keys(usedBehaviorSet).map((normalizedName) => this._BehaviorPool['widget'][normalizedName].Name);
+        }
+    }
+    /**** unusedBehaviorsOfCategory ****/
+    unusedBehaviorsOfCategory(Category) {
+        expectCategory('behavior category', Category);
+        // @ts-ignore TS7053 allow indexing
+        const usedBehaviorSet = Object.assign({}, this._BehaviorPool[Category]);
+        switch (Category) {
+            case 'applet':
+                if (this._Behavior != null) {
+                    delete usedBehaviorSet[this._Behavior.toLowerCase()];
+                }
+                break;
+            case 'page':
+                this.PageList.forEach((Page) => {
+                    if (Page.Behavior != null) {
+                        delete usedBehaviorSet[Page.Behavior.toLowerCase()];
+                    }
+                });
+                break;
+            case 'widget':
+                this.PageList.forEach((Page) => {
+                    Page.WidgetList.forEach((Widget) => {
+                        if (Widget.Behavior != null) {
+                            delete usedBehaviorSet[Widget.Behavior.toLowerCase()];
+                        }
+                    });
+                });
+        }
+        return Object.values(usedBehaviorSet).map((Registration) => Registration.Name);
+    }
+    /**** BehaviorOfCategoryIsBroken ****/
+    BehaviorOfCategoryIsBroken(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        return (Registration != null) && (Registration.Error != null);
+    }
+    /**** BehaviorOfCategoryIsUnused ****/
+    BehaviorOfCategoryIsUnused(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if (Registration == null)
+            throwError(`InvalidArgument:no ${Category} behaviour named ${Behavior} found`);
+        switch (Category) {
+            case 'applet':
+                return (this._normalizedBehavior !== normalizedBehavior);
+            case 'page':
+                return this.PageList.every((Page) => Page.normalizedBehavior !== normalizedBehavior);
+            case 'widget':
+                return this.PageList.every((Page) => Page.WidgetList.every((Widget) => Widget.normalizedBehavior !== normalizedBehavior));
+        }
+        return false; // just to satisfy the compiler
+    }
+    /**** SerializationOfBehavior ****/
+    SerializationOfBehavior(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if (Registration == null)
+            throwError(`InvalidArgument: no ${Category} behaviour ${quoted(Behavior)} found`);
+        const { Name, activeScript } = Registration;
+        return { BehaviorSet: { [Category]: [{
+                        Name, Script: activeScript
+                    }] } };
+    }
+    /**** SerializationOfBehavior ****/
+    SerializationOfBehaviors(groupedBehaviorList) {
+        expectPlainObject('grouped behavior list', groupedBehaviorList);
+        const Serialization = {};
+        let SerializationIsEmpty = true;
+        if ('applet' in groupedBehaviorList) {
+            let AppletBehaviors = groupedBehaviorList['applet'];
+            expectListSatisfying('list of applet behaviors', AppletBehaviors, ValueIsBehavior);
+            AppletBehaviors = AppletBehaviors.filter((Behavior) => Behavior.toLowerCase() in this._BehaviorPool['applet']);
+            if (AppletBehaviors.length > 0) {
+                SerializationIsEmpty = false;
+                Serialization['applet'] = AppletBehaviors.map((Behavior) => {
+                    let Registration = this._BehaviorPool['applet'][Behavior.toLowerCase()];
+                    return { Name: Registration.Name, Script: Registration.activeScript };
+                });
+            }
+        }
+        if ('page' in groupedBehaviorList) {
+            let PageBehaviors = groupedBehaviorList['page'];
+            expectListSatisfying('list of page behaviors', PageBehaviors, ValueIsBehavior);
+            PageBehaviors = PageBehaviors.filter((Behavior) => Behavior.toLowerCase() in this._BehaviorPool['page']);
+            if (PageBehaviors.length > 0) {
+                SerializationIsEmpty = false;
+                Serialization['page'] = PageBehaviors.map((Behavior) => {
+                    let Registration = this._BehaviorPool['page'][Behavior.toLowerCase()];
+                    return { Name: Registration.Name, Script: Registration.activeScript };
+                });
+            }
+        }
+        if ('widget' in groupedBehaviorList) {
+            let WidgetBehaviors = groupedBehaviorList['widget'];
+            expectListSatisfying('list of widget behaviors', WidgetBehaviors, ValueIsBehavior);
+            WidgetBehaviors = WidgetBehaviors.filter((Behavior) => Behavior.toLowerCase() in this._BehaviorPool['widget']);
+            if (WidgetBehaviors.length > 0) {
+                SerializationIsEmpty = false;
+                Serialization['widget'] = WidgetBehaviors.map((Behavior) => {
+                    let Registration = this._BehaviorPool['widget'][Behavior.toLowerCase()];
+                    return { Name: Registration.Name, Script: Registration.activeScript };
+                });
+            }
+        }
+        return (SerializationIsEmpty ? undefined : Serialization);
+    }
+    /**** deserializeBehavior[s] ****/
+    deserializeBehaviorsFrom(Serialization) {
+        this._deserializeBehaviorsFrom(Serialization);
+    }
+    deserializeBehaviorFrom(Serialization) {
+        this._deserializeBehaviorsFrom(Serialization);
+    }
     /**** VisualWithElement ****/
     VisualWithElement(DOMElement) {
         let Candidate = undefined;
@@ -2080,7 +3085,7 @@ export class WAT_Applet extends WAT_Visual {
                         return;
                     }
                     /**** scan all widgets shown on this one's overlays ****/
-                    const WidgetsToShow = (SourceWidget.Type === 'Outline'
+                    const WidgetsToShow = (SourceWidget.normalizedBehavior === 'plain_controls.outline'
                         ? SourceWidget.bundledWidgets()
                         : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))));
                     WidgetsToShow.forEach((Widget) => {
@@ -2103,7 +3108,7 @@ export class WAT_Applet extends WAT_Visual {
             if (SourceWidget == null) {
                 return;
             }
-            const WidgetsToShow = (SourceWidget.Type === 'Outline'
+            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'plain_controls.outline'
                 ? SourceWidget.bundledWidgets()
                 : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))));
             WidgetsToShow.forEach((Widget) => {
@@ -2142,6 +3147,16 @@ export class WAT_Applet extends WAT_Visual {
         return WidgetSet;
     }
     set namedWidgets(_) { throwReadOnlyError('namedWidgets'); }
+    /**** uniqueWidgets ****/
+    get uniqueWidgets() {
+        const WidgetSet = {};
+        this._PageList.forEach((Page) => {
+            const uniqueWidgets = Page.uniqueWidgets;
+            Object.assign(WidgetSet, uniqueWidgets);
+        });
+        return WidgetSet;
+    }
+    set uniqueWidgets(_) { throwReadOnlyError('uniqueWidgets'); }
     /**** configureWidgets ****/
     configureWidgets(OptionSet) {
         expectPlainObject('options set', OptionSet);
@@ -2328,8 +3343,8 @@ export class WAT_Applet extends WAT_Visual {
         return (this.Page(PageOrNameOrIndex) != null);
     }
     /**** newPageAt ****/
-    newPageAt(Index) {
-        return this.PageDeserializedAt({}, Index);
+    newPageAt(Behavior, Index) {
+        return this.PageDeserializedAt({ Behavior: Behavior || null }, Index);
     }
     /**** PageDeserializedAt ****/
     PageDeserializedAt(Serialization, Index) {
@@ -2344,7 +3359,8 @@ export class WAT_Applet extends WAT_Visual {
             }
             Index = Math.max(0, Math.min(Index, this._PageList.length));
         }
-        let newPage = new WAT_Page(this);
+        const Behavior = acceptableOptionalBehavior(Serialization.Behavior);
+        let newPage = new WAT_Page(Behavior, this);
         this._PageList.splice(Index, 0, newPage);
         // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
         newPage._deserializeConfigurationFrom(Serialization);
@@ -2680,11 +3696,73 @@ export class WAT_Applet extends WAT_Visual {
     /**** Serialization ****/
     get Serialization() {
         const Result = {};
+        this._serializeBehaviorsInto(Result);
         this._serializeConfigurationInto(Result);
         this._serializePagesInto(Result);
         return Result;
     }
     set Serialization(_) { throwReadOnlyError('Serialization'); }
+    /**** _serializeBehaviorsInto ****/
+    _serializeBehaviorsInto(Serialization) {
+        const BehaviorSet = this.BehaviorSet;
+        Serialization.BehaviorSet = { applet: {}, page: {}, widget: {} };
+        Object.keys(BehaviorSet.applet).forEach((normalizedBehavior) => {
+            if (!BehaviorIsIntrinsic(normalizedBehavior)) {
+                const { Name, activeScript } = BehaviorSet.applet[normalizedBehavior];
+                // @ts-ignore TS18047 Serialization.BehaviorSet is not null
+                Serialization.BehaviorSet.applet[Name] = activeScript;
+            }
+        });
+        Object.keys(BehaviorSet.page).forEach((normalizedBehavior) => {
+            if (!BehaviorIsIntrinsic(normalizedBehavior)) {
+                const { Name, activeScript } = BehaviorSet.page[normalizedBehavior];
+                // @ts-ignore TS18047 Serialization.BehaviorSet is not null
+                Serialization.BehaviorSet.page[Name] = activeScript;
+            }
+        });
+        Object.keys(BehaviorSet.widget).forEach((normalizedBehavior) => {
+            if (!BehaviorIsIntrinsic(normalizedBehavior)) {
+                const { Name, activeScript } = BehaviorSet.widget[normalizedBehavior];
+                // @ts-ignore TS18047 Serialization.BehaviorSet is not null
+                Serialization.BehaviorSet.widget[Name] = activeScript;
+            }
+        });
+        return;
+    }
+    /**** _deserializeBehaviorsFrom ****/
+    _deserializeBehaviorsFrom(Serialization) {
+        const BehaviorSet = Serialization.BehaviorSet;
+        if (!ValueIsPlainObject(BehaviorSet)) {
+            return;
+        }
+        // @ts-ignore TS18047 BehaviorSet is not null
+        const AppletBehaviorSet = BehaviorSet['applet'];
+        if (ValueIsPlainObject(AppletBehaviorSet)) {
+            Object.entries(AppletBehaviorSet).forEach(([Name, Script]) => {
+                if (ValueIsBehavior(Name) && ValueIsText(Script)) {
+                    this.registerBehaviorOfCategory('applet', Name, Script);
+                }
+            });
+        }
+        // @ts-ignore TS18047 BehaviorSet is not null
+        const PageBehaviorSet = BehaviorSet['page'];
+        if (ValueIsPlainObject(PageBehaviorSet)) {
+            Object.entries(PageBehaviorSet).forEach(([Name, Script]) => {
+                if (ValueIsBehavior(Name) && ValueIsText(Script)) {
+                    this.registerBehaviorOfCategory('page', Name, Script);
+                }
+            });
+        }
+        // @ts-ignore TS18047 BehaviorSet is not null
+        const WidgetBehaviorSet = BehaviorSet['widget'];
+        if (ValueIsPlainObject(WidgetBehaviorSet)) {
+            Object.entries(WidgetBehaviorSet).forEach(([Name, Script]) => {
+                if (ValueIsBehavior(Name) && ValueIsText(Script)) {
+                    this.registerBehaviorOfCategory('widget', Name, Script);
+                }
+            });
+        }
+    }
     /**** _serializePagesInto ****/
     _serializePagesInto(Serialization) {
         const PageList = this._PageList;
@@ -2791,14 +3869,17 @@ export class WAT_Applet extends WAT_Visual {
         }
         if (!ValueIsPlainObject(Serialization))
             throwError('InvalidArgument: the given "Serialization" is no valid WAT applet serialization');
-        const Applet = new WAT_Applet();
+        const Behavior = acceptableOptionalBehavior(Serialization.Behavior);
+        const Applet = new WAT_Applet(Behavior);
         const AppletName = Serialization.Name;
         delete Serialization.Name;
-        Applet._deserializeConfigurationFrom(Serialization);
-        Applet._deserializePagesFrom(Serialization);
         if (ValueIsName(AppletName)) {
             Applet._Name = AppletName;
         }
+        registerIntrinsicBehaviorsIn(Applet);
+        Applet._deserializeBehaviorsFrom(Serialization);
+        Applet._deserializeConfigurationFrom(Serialization);
+        Applet._deserializePagesFrom(Serialization);
         return Applet;
     }
     /**** preserve ****/
@@ -2829,8 +3910,8 @@ export class WAT_Applet extends WAT_Visual {
 //--                                 WAT_Page                                 --
 //------------------------------------------------------------------------------
 export class WAT_Page extends WAT_Visual {
-    constructor(Applet) {
-        super(Applet);
+    constructor(Behavior, Applet) {
+        super(Behavior, Applet);
         /**** WidgetList ****/
         Object.defineProperty(this, "_WidgetList", {
             enumerable: true,
@@ -2838,6 +3919,22 @@ export class WAT_Page extends WAT_Visual {
             writable: true,
             value: []
         });
+    }
+    /**** Category ****/
+    get Category() { return 'page'; }
+    set Category(_) { throwReadOnlyError('Category'); }
+    /**** Behavior ****/
+    get Behavior() { return this._Behavior; }
+    set Behavior(newBehavior) {
+        var _a;
+        allowBehavior('applet behavior', newBehavior);
+        const normalizedBehavior = (newBehavior == null ? undefined : newBehavior.toLowerCase());
+        if (this._normalizedBehavior !== normalizedBehavior) {
+            this._normalizedBehavior = normalizedBehavior;
+            // @ts-ignore TS7053 allow indexing
+            this._Behavior = ((_a = this._BehaviorPool['applet'][normalizedBehavior]) === null || _a === void 0 ? void 0 : _a.Name) || newBehavior;
+            this.rerender();
+        }
     }
     /**** Applet ****/
     get Applet() { return this._Container; }
@@ -2876,6 +3973,17 @@ export class WAT_Page extends WAT_Visual {
         return WidgetSet;
     }
     set namedWidgets(_) { throwReadOnlyError('namedWidgets'); }
+    /**** uniqueWidgets ****/
+    get uniqueWidgets() {
+        const WidgetSet = {};
+        this._WidgetList.forEach((Widget) => {
+            if ((Widget.Name != null) && Widget.Name.startsWith('@')) {
+                WidgetSet[Widget.Name] = Widget;
+            }
+        });
+        return WidgetSet;
+    }
+    set uniqueWidgets(_) { throwReadOnlyError('uniqueWidgets'); }
     /**** configureWidgets ****/
     configureWidgets(OptionSet) {
         expectPlainObject('options set', OptionSet);
@@ -3032,12 +4140,11 @@ export class WAT_Page extends WAT_Visual {
         return (this.Widget(WidgetOrNameOrIndex) != null);
     }
     /**** newWidgetAt ****/
-    newWidgetAt(Type = 'plainWidget', Index) {
-        return this.WidgetDeserializedAt(Type, {}, Index);
+    newWidgetAt(Behavior, Index) {
+        return this.WidgetDeserializedAt({ Behavior: Behavior || null }, Index);
     }
     /**** WidgetDeserializedAt ****/
-    WidgetDeserializedAt(Type = 'plainWidget', Serialization, Index) {
-        expectWidgetType('widget type', Type);
+    WidgetDeserializedAt(Serialization, Index) {
         expectSerializableObject('widget serialization', Serialization);
         allowInteger('widget insertion index', Index);
         if (Index == null) {
@@ -3049,18 +4156,19 @@ export class WAT_Page extends WAT_Visual {
             }
             Index = Math.max(0, Math.min(Index, this._WidgetList.length));
         }
-        let newWidget = newWidgetOfType(Type, this);
-        this._WidgetList.splice(Index, 0, newWidget);
+        const Behavior = acceptableOptionalBehavior(Serialization.Behavior);
+        let Widget = new WAT_Widget(Behavior, this);
+        this._WidgetList.splice(Index, 0, Widget);
         // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
-        newWidget._deserializeConfigurationFrom(Serialization);
+        Widget._deserializeConfigurationFrom(Serialization);
         this.rerender();
-        return newWidget;
+        return Widget;
     }
     /**** DuplicateOfWidgetAt ****/
     DuplicateOfWidgetAt(Index) {
         expectInteger('widget index', Index);
         const Widget = this.existingWidget(Index); // DRY
-        return this.WidgetDeserializedAt(Widget.Type, Widget.Serialization, Index);
+        return this.WidgetDeserializedAt(Widget.Serialization, Index);
     }
     /**** mayShiftWidgetUp/Down ****/
     mayShiftWidgetUp(WidgetOrNameOrIndex) {
@@ -3174,13 +4282,7 @@ export class WAT_Page extends WAT_Visual {
                 console.warn('DeserializationError: invalid "WidgetList" entry #' + Index);
                 return;
             }
-            if (!ValueIsWidgetType(WidgetSerialization.Type)) {
-                console.warn('DeserializationError: invalid widget type ' +
-                    quoted('' + WidgetSerialization.Type) + ' in "WidgetList" entry #' +
-                    Index);
-                return;
-            }
-            this.WidgetDeserializedAt(WidgetSerialization.Type, WidgetSerialization, Index);
+            this.WidgetDeserializedAt(WidgetSerialization, Index);
         });
     }
     /**** recursivelyActivateAllScripts ****/
@@ -3193,8 +4295,8 @@ export class WAT_Page extends WAT_Visual {
 //--                                WAT_Widget                                --
 //------------------------------------------------------------------------------
 export class WAT_Widget extends WAT_Visual {
-    constructor(Page) {
-        super(Page);
+    constructor(Behavior, Page) {
+        super(Behavior, Page);
         Object.defineProperty(this, "_Pane", {
             enumerable: true,
             configurable: true,
@@ -3363,11 +4465,10 @@ export class WAT_Widget extends WAT_Visual {
             value: []
         });
     }
-    // avoids multiple renderings atdifferent places
-    /**** Type ****/
-    // @ts-ignore TS2378 this getter throws
-    get Type() { throwError('InternalError: "Type" has to be overwritten'); }
-    set Type(_) { throwReadOnlyError('Type'); }
+    // avoids multiple renderings at different places
+    /**** Category ****/
+    get Category() { return 'widget'; }
+    set Category(_) { throwReadOnlyError('Category'); }
     /**** Applet ****/
     // @ts-ignore TS2446 allow WAT_Widget to access a protected member of WAT_Page
     get Applet() { var _a; return (_a = this._Container) === null || _a === void 0 ? void 0 : _a._Container; }
@@ -4450,7 +5551,6 @@ export class WAT_Widget extends WAT_Visual {
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
         super._serializeConfigurationInto(Serialization);
-        Serialization.Type = this.Type;
         if (this.Lock == true) {
             Serialization.Lock = true;
         }
@@ -4501,234 +5601,283 @@ export class WAT_Widget extends WAT_Visual {
         /**** the remaining properties are simpler ****/
         ;
         [
-            //      'Type',
             'Lock', 'Visibility', 'Enabling'
         ].forEach((Name) => deserializeProperty(Name));
     }
 }
-/**** WidgetTypes ****/
-const builtInWidgetTypes = {};
-function WidgetTypes() {
-    return Object.keys(builtInWidgetTypes);
-}
-/**** newWidgetOfType ****/
-function newWidgetOfType(Type, Page) {
-    if (Type in builtInWidgetTypes) {
-        return new builtInWidgetTypes[Type](Page);
-    }
-    else {
-        throwError(`InvalidArgument: widget type ${quoted(Type)} is unknown`);
-    }
-}
 //------------------------------------------------------------------------------
-//--                          built-in Widget Types                           --
+//--                           built-in Behaviours                            --
 //------------------------------------------------------------------------------
-/**** plainWidget ****/
-export class WAT_plainWidget extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT plainWidget"/>`;
-            }
-        });
-    }
-    get Type() { return 'plainWidget'; }
-    set Type(_) { throwReadOnlyError('Type'); }
+/**** for ImageView ****/
+export const WAT_ImageScalings = ['none', 'stretch', 'cover', 'contain'];
+export const WAT_ImageAlignments = [
+    'left top', 'center top', 'right top', 'left center', 'center center',
+    'right center', 'left bottom', 'center bottom', 'right bottom'
+];
+/**** for WebView ****/
+export const WAT_DefaultSandboxPermissions = ('allow-downloads allow-forms allow-modals allow-orientation-lock ' +
+    'allow-pointer-lock allow-popups allow-same-origin allow-scripts');
+export const WAT_ReferrerPolicies = [
+    'no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin',
+    'same-origin', 'strict-origin', 'strict-origin', 'strict-origin-when-cross-origin',
+    'unsafe-url'
+];
+/**** for Slider ****/
+const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d*[.](?:\d*))(?:\s*:\s*([^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]+))?$/;
+function HashmarkMatcher(Value) {
+    return ValueIsStringMatching(Value, HashmarkPattern) || ValueIsNumber(Value);
 }
-builtInWidgetTypes['plainWidget'] = WAT_plainWidget;
-/**** Outline ****/
-export class WAT_Outline extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
+/**** for TimeInput ****/
+export const WAT_TimePattern = '\\d{2}:\\d{2}';
+export const WAT_TimeRegExp = /\d{2}:\d{2}/;
+export function WAT_TimeMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_TimeRegExp);
+}
+/**** for DateTimeInput ****/
+export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}';
+export const WAT_DateTimeRegExp = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+export function WAT_DateTimeMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_DateTimeRegExp);
+}
+/**** for DateInput ****/
+export const WAT_DatePattern = '\\d{4}-\\d{2}-\\d{2}';
+export const WAT_DateRegExp = /\d{4}-\d{2}-\d{2}/;
+export function WAT_DateMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_DateRegExp);
+}
+/**** for WeekInput ****/
+export const WAT_WeekPattern = '\\d{4}-W\\d{2}';
+export const WAT_WeekRegExp = /\d{4}-W\d{2}/;
+export function WAT_WeekMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_WeekRegExp);
+}
+/**** for MonthInput ****/
+export const WAT_MonthPattern = '\\d{4}-\\d{2}';
+export const WAT_MonthRegExp = /\d{4}-\d{2}/;
+export function WAT_MonthMatcher(Value) {
+    return ValueIsStringMatching(Value, WAT_MonthRegExp);
+}
+/**** for MarkdownView ****/
+import { Marked } from 'marked';
+import hljs from 'highlight.js/lib/core';
+import { default as _css } from 'highlight.js/lib/languages/css';
+hljs.registerLanguage('html', _css);
+import { default as _javascript } from 'highlight.js/lib/languages/javascript';
+hljs.registerLanguage('javascript', _javascript);
+import { default as _java } from 'highlight.js/lib/languages/java';
+hljs.registerLanguage('java', _java);
+import { default as _json } from 'highlight.js/lib/languages/json';
+hljs.registerLanguage('json', _json);
+import { default as _typescript } from 'highlight.js/lib/languages/typescript';
+hljs.registerLanguage('typescript', _typescript);
+import { default as _xml } from 'highlight.js/lib/languages/xml';
+hljs.registerLanguage('html', _xml);
+hljs.registerLanguage('xml', _xml);
+/**** now actually register all intrinsic behaviours ****/
+function registerIntrinsicBehaviorsIn(Applet) {
+    /**** plain_Widget ****/
+    const WAT_plainWidget = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        onRender(() => html `<div class="WAT plainWidget"/>`);
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.plain_Widget', WAT_plainWidget);
+    /**** Outline ****/
+    const WAT_Outline = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Outline {
+        outline:dotted 1px blue;
+        outline-offset:2px;
+      }
+    `);
+        Object_assign(me, {
+            /**** bundledWidgets ****/
+            bundledWidgets: function () {
+                const Page = this.Page;
+                if (Page == null) {
+                    return [];
+                }
+                const { x, y, Width, Height } = this.Geometry;
+                const [minX, maxX, minY, maxY] = [x, x + Width, y, y + Height];
+                return Page.WidgetList.filter((Widget) => {
+                    if (Widget === this) {
+                        return false;
+                    }
+                    const { x, y, Width, Height } = Widget.Geometry;
+                    return ((x >= minX) && (x + Width <= maxX) &&
+                        (y >= minY) && (y + Height <= maxY));
+                });
+            },
+            /**** Renderer ****/
+            _Renderer: function () {
                 return html `<div class="WAT Content Outline"/>`;
-            }
+            },
         });
-    }
-    get Type() { return 'Outline'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    /**** bundledWidgets ****/
-    bundledWidgets() {
-        const Page = this.Page;
-        if (Page == null) {
-            return [];
-        }
-        const { x, y, Width, Height } = this.Geometry;
-        const [minX, maxX, minY, maxY] = [x, x + Width, y, y + Height];
-        return Page.WidgetList.filter((Widget) => {
-            if (Widget === this) {
-                return false;
-            }
-            const { x, y, Width, Height } = Widget.Geometry;
-            return ((x >= minX) && (x + Width <= maxX) &&
-                (y >= minY) && (y + Height <= maxY));
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
+    /**** WidgetPane ****/
+    const WAT_WidgetPane = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.WidgetPane {
+        overflow:hidden;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input', Placeholder: '(enter content path)' }
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return this._Value;
+            },
+            set Value(newValue) {
+                var _a;
+                let SourceWidget, SourcePath;
+                if (ValueIsWidget(newValue)) {
+                    SourceWidget = newValue;
+                    SourcePath = SourceWidget.Path;
+                }
+                else {
+                    allowPath('widget pane source path', newValue);
+                    if ((newValue == null) || (newValue.trim() === '')) {
+                        SourceWidget = undefined;
+                        SourcePath = undefined;
+                    }
+                    else {
+                        SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newValue);
+                        SourcePath = newValue;
+                    }
+                }
+                if (SourceWidget == null) {
+                    if (this._Value != null) {
+                        this._Value = undefined;
+                        this.rerender();
+                    }
+                    return;
+                }
+                if (SourceWidget === this)
+                    throwError('InvalidArgument: a WidgetPane can not show itself');
+                if (SourceWidget.Page === this.Page)
+                    throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
+                if (this._Value !== SourcePath) {
+                    this._Value = SourcePath;
+                    if (this._onValueChange != null) {
+                        this._onValueChange_();
+                    } // no typo!
+                    this.rerender();
+                }
+            },
+            /**** _releaseWidgets ****/
+            _shownWidgets: [],
+            _releaseWidgets: function () {
+                this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+            },
+            componentWillUnmount: function () {
+                this._releaseWidgets();
+            },
+            /**** _GeometryRelativeTo  ****/
+            _GeometryOfWidgetRelativeTo: function (Widget, BaseGeometry, PaneGeometry) {
+                const WidgetAnchors = Widget.Anchors;
+                const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
+                const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
+                const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
+                const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
+                let x, y, Width, Height;
+                switch (WidgetAnchors[0]) {
+                    case 'left-width':
+                        x = WidgetX - BaseX;
+                        Width = WidgetWidth;
+                        break;
+                    case 'width-right':
+                        x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
+                        Width = WidgetWidth;
+                        break;
+                    case 'left-right':
+                        x = WidgetX - BaseX;
+                        Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
+                }
+                switch (WidgetAnchors[1]) {
+                    case 'top-height':
+                        y = WidgetY - BaseY;
+                        Height = WidgetHeight;
+                        break;
+                    case 'height-bottom':
+                        y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
+                        Height = WidgetHeight;
+                        break;
+                    case 'top-bottom':
+                        y = WidgetY - BaseY;
+                        Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
+                }
+                // @ts-ignore TS5905 all variables will be assigned by now
+                return { x, y, Width, Height };
+            }, /**** Renderer ****/
+            _Renderer: function () {
+                var _a;
+                this._releaseWidgets();
+                if (this._Value == null) {
+                    return '';
+                }
+                const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._Value);
+                if ((SourceWidget == null) || (SourceWidget === me)) {
+                    return '';
+                }
+                const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
+                    ? SourceWidget.bundledWidgets()
+                    : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+                WidgetsToShow.forEach((Widget) => Widget._Pane = this);
+                this._shownWidgets = WidgetsToShow;
+                const PaneGeometry = this.Geometry;
+                const BaseGeometry = SourceWidget.Geometry;
+                return html `<div class="WAT Content WidgetPane">
+          ${WidgetsToShow.toReversed().map((Widget) => {
+                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
+                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+                })}
+        </div>`;
+            },
         });
-    }
-}
-builtInWidgetTypes['Outline'] = WAT_Outline;
-appendStyle(`
-/**** Outline ****/
-
-  .WAT.Widget > .WAT.Outline {
-    outline:dotted 1px blue;
-    outline-offset:2px;
-  }
-  `);
-appendStyle(`
-/**** Title/Subtitle/Label/Text/FinePrint ****/
-  `);
-/**** Title ****/
-export class WAT_Title extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content Title">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'Title'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Title'] = WAT_Title;
-appendStyle(`
-  .WAT.Widget > .WAT.Title {
-    font-size:22px; font-weight:bold; line-height:32px;
-    text-overflow:ellipsis;
-  }
-  `);
-/**** Subtitle ****/
-export class WAT_Subtitle extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content Subtitle">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'Subtitle'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Subtitle'] = WAT_Subtitle;
-appendStyle(`
-  .WAT.Widget > .WAT.Subtitle {
-    font-size:18px; font-weight:bold; line-height:27px;
-    text-overflow:ellipsis;
-  }
-  `);
-/**** Label ****/
-export class WAT_Label extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content Label">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'Label'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Label'] = WAT_Label;
-appendStyle(`
-  .WAT.Widget > .WAT.Label {
-    font-size:14px; font-weight:bold; line-height:21px;
-    top:4px;
-    text-overflow:ellipsis;
-  }
-  `);
-/**** Text ****/
-export class WAT_Text_ extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content Text">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'Text'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Text'] = WAT_Text_;
-appendStyle(`
-  .WAT.Widget > .WAT.Text {
-    font-size:14px; font-weight:normal; line-height:21px;
-    top:4px;
-    text-overflow:ellipsis;
-  }
-  `);
-/**** Fineprint ****/
-export class WAT_Fineprint extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content Fineprint">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'Fineprint'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Fineprint'] = WAT_Fineprint;
-appendStyle(`
-  .WAT.Widget > .WAT.FinePrint {
-    font-size:12px; font-weight:normal; line-height:18px;
-    text-overflow:ellipsis;
-  }
-  `);
-/**** HTMLView ****/
-export class WAT_HTMLView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: true
-        });
-        /**** acceptableFileTypes ****/
-        Object.defineProperty(this, "_acceptableFileTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WidgetPane', WAT_WidgetPane);
+    /**** HTMLView ****/
+    const WAT_HTMLView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.HTMLView {
+        overflow-y:scroll;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter HTML)' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, true);
+            },
+            set readonly(newSetting) {
+                allowBoolean('readonly setting', newSetting);
+                if (this.memoized.readonly !== newSetting) {
+                    this.memoized.readonly = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** acceptableFileTypes ****/
+            get acceptableFileTypes() {
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat).slice();
+            },
+            set acceptableFileTypes(newSetting) {
+                allowListSatisfying('acceptable file types', newSetting, ValueIsHTMLFormat);
+                if (newSetting == null) {
+                    newSetting = [];
+                }
+                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
+                    this.memoized.acceptableFileTypes = newSetting.slice();
+                    this.rerender();
+                }
+            }, /**** Renderer ****/
+            _Renderer: function () {
                 const { Enabling, readonly } = this;
-                let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes, [], ValueIsHTMLFormat);
+                let acceptableFileTypes = this.acceptableFileTypes;
                 if (acceptableFileTypes.length === 0) {
                     acceptableFileTypes = WAT_supportedHTMLFormats.slice();
                 }
@@ -4784,99 +5933,78 @@ export class WAT_HTMLView extends WAT_Widget {
                 };
                 /**** actual rendering ****/
                 return html `<div class="WAT Content HTMLView"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        dangerouslySetInnerHTML=${{ __html: acceptableText(this.Value, '') }}
-      />`;
-            }
+          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+          dangerouslySetInnerHTML=${{ __html: acceptableText(this.Value, '') }}
+        />`;
+            },
         });
-    }
-    get Type() { return 'HTMLView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableFileTypes() { return this._acceptableFileTypes.slice(); }
-    set acceptableFileTypes(newSetting) {
-        allowListSatisfying('acceptable file types', newSetting, ValueIsHTMLFormat);
-        if (newSetting == null) {
-            newSetting = [];
-        }
-        if (ValuesDiffer(this._acceptableFileTypes, newSetting)) {
-            this._acceptableFileTypes = newSetting.slice();
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'acceptableFileTypes',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes, [], ValueIsHTMLFormat);
-    }
-}
-builtInWidgetTypes['HTMLView'] = WAT_HTMLView;
-appendStyle(`
-  .WAT.Widget > .WAT.HTMLView {
-    overflow-y:scroll;
-  }
-  `);
-/**** ImageView ****/
-export const WAT_ImageScalings = ['none', 'stretch', 'cover', 'contain'];
-export const WAT_ImageAlignments = [
-    'left top', 'center top', 'right top', 'left center', 'center center',
-    'right center', 'left bottom', 'center bottom', 'right bottom'
-];
-export class WAT_ImageView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** ImageScaling ****/
-        Object.defineProperty(this, "_ImageScaling", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** ImageAlignment ****/
-        Object.defineProperty(this, "_ImageAlignment", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: true
-        });
-        /**** acceptableFileTypes ****/
-        Object.defineProperty(this, "_acceptableFileTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const ImageScaling = acceptableOneOf(this._ImageScaling, 'contain', WAT_ImageScalings);
-                const ImageAlignment = acceptableOneOf(this._ImageAlignment, 'center', WAT_ImageAlignments);
-                const { Enabling, readonly } = this;
-                let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes, [], ValueIsImageFormat);
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.HTMLView', WAT_HTMLView);
+    /**** ImageView ****/
+    const WAT_ImageView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.ImageView {
+        object-fit:contain; object-position:center;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'url-input', Placeholder: '(enter Image URL)' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'ImageScaling', EditorType: 'drop-down', ValueList: WAT_ImageScalings },
+            { Name: 'ImageAlignment', EditorType: 'drop-down', ValueList: WAT_ImageAlignments },
+            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** ImageScaling ****/
+            get ImageScaling() {
+                return acceptableOneOf(this.memoized.ImageScaling, 'contain', WAT_ImageScalings);
+            },
+            set ImageScaling(newSetting) {
+                allowOneOf('image scaling', newSetting, WAT_ImageScalings);
+                if (this.memoized.ImageScaling !== newSetting) {
+                    this.memoized.ImageScaling = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** ImageAlignment ****/
+            get ImageAlignment() {
+                return acceptableOneOf(this.memoized.ImageAlignment, 'center', WAT_ImageAlignments);
+            },
+            set ImageAlignment(newSetting) {
+                allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
+                if (this.memoized.ImageAlignment !== newSetting) {
+                    this.memoized.ImageAlignment = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, true);
+            },
+            set readonly(newSetting) {
+                allowBoolean('readonly setting', newSetting);
+                if (this.memoized.readonly !== newSetting) {
+                    this.memoized.readonly = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** acceptableFileTypes ****/
+            get acceptableFileTypes() {
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat).slice();
+            },
+            set acceptableFileTypes(newSetting) {
+                allowListSatisfying('acceptable file types', newSetting, ValueIsImageFormat);
+                if (newSetting == null) {
+                    newSetting = [];
+                }
+                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
+                    this.memoized.acceptableFileTypes = newSetting.slice();
+                    this.rerender();
+                }
+            }, /**** Renderer ****/
+            _Renderer: function () {
+                const { ImageScaling, ImageAlignment, Enabling, readonly } = this;
+                let acceptableFileTypes = this.acceptableFileTypes;
                 if (acceptableFileTypes.length === 0) {
                     acceptableFileTypes = WAT_supportedImageFormats.slice();
                 }
@@ -4938,5570 +6066,127 @@ export class WAT_ImageView extends WAT_Widget {
                 };
                 /**** actual rendering ****/
                 return html `<img class="WAT Content ImageView"
-        src=${acceptableURL(this.Value, '')}
-        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-      />`;
-            }
+          src=${acceptableURL(this.Value, '')}
+          style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        />`;
+            },
         });
-    }
-    get Type() { return 'ImageView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get ImageScaling() {
-        return this._ImageScaling;
-    }
-    set ImageScaling(newSetting) {
-        allowOneOf('image scaling', newSetting, WAT_ImageScalings);
-        if (this._ImageScaling !== newSetting) {
-            this._ImageScaling = newSetting;
-            this.rerender();
-        }
-    }
-    get ImageAlignment() {
-        return this._ImageAlignment;
-    }
-    set ImageAlignment(newSetting) {
-        allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
-        if (this._ImageAlignment !== newSetting) {
-            this._ImageAlignment = newSetting;
-            this.rerender();
-        }
-    } /**** readonly ****/
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableFileTypes() { return this._acceptableFileTypes.slice(); }
-    set acceptableFileTypes(newSetting) {
-        allowListSatisfying('acceptable file types', newSetting, ValueIsImageFormat);
-        if (newSetting == null) {
-            newSetting = [];
-        }
-        if (ValuesDiffer(this._acceptableFileTypes, newSetting)) {
-            this._acceptableFileTypes = newSetting.slice();
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'ImageScaling', 'ImageAlignment',
-            'readonly', 'acceptableFileTypes',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._ImageScaling = acceptableOneOf(Serialization.ImageScaling, 'contain', WAT_ImageScalings);
-        this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment, 'center', WAT_ImageAlignments);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes, [], ValueIsImageFormat);
-    }
-}
-builtInWidgetTypes['ImageView'] = WAT_ImageView;
-appendStyle(`
-  .WAT.Widget > .WAT.ImageView {
-    object-fit:contain; object-position:center;
-  }
-  `);
-/**** SVGView ****/
-export class WAT_SVGView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** ImageScaling ****/
-        Object.defineProperty(this, "_ImageScaling", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** ImageAlignment ****/
-        Object.defineProperty(this, "_ImageAlignment", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.ImageView', WAT_ImageView);
+    /**** SVGView ****/
+    const WAT_SVGView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.SVGView {
+        object-fit:contain; object-position:center;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter SVG)' },
+            { Name: 'ImageScaling', EditorType: 'drop-down', ValueList: WAT_ImageScalings },
+            { Name: 'ImageAlignment', EditorType: 'drop-down', ValueList: WAT_ImageAlignments },
+        ];
+        Object_assign(me, {
+            /**** ImageScaling ****/
+            get ImageScaling() {
+                return acceptableOneOf(this.memoized.ImageScaling, 'contain', WAT_ImageScalings);
+            },
+            set ImageScaling(newSetting) {
+                allowOneOf('image scaling', newSetting, WAT_ImageScalings);
+                if (this.memoized.ImageScaling !== newSetting) {
+                    this.memoized.ImageScaling = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** ImageAlignment ****/
+            get ImageAlignment() {
+                return acceptableOneOf(this.memoized.ImageAlignment, 'center', WAT_ImageAlignments);
+            },
+            set ImageAlignment(newSetting) {
+                allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
+                if (this.memoized.ImageAlignment !== newSetting) {
+                    this.memoized.ImageAlignment = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** Renderer ****/
+            _Renderer: function () {
                 const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value, ''));
-                const ImageScaling = acceptableOneOf(this._ImageScaling, 'contain', WAT_ImageScalings);
-                const ImageAlignment = acceptableOneOf(this._ImageAlignment, 'center', WAT_ImageAlignments);
+                const { ImageScaling, ImageAlignment } = this;
                 return html `<img class="WAT Content SVGView"
-        src=${DataURL}
-        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-      />`;
-            }
+          src=${DataURL}
+          style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+        />`;
+            },
         });
-    }
-    get Type() { return 'SVGView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get ImageScaling() {
-        return this._ImageScaling;
-    }
-    set ImageScaling(newSetting) {
-        allowOneOf('image scaling', newSetting, WAT_ImageScalings);
-        if (this._ImageScaling !== newSetting) {
-            this._ImageScaling = newSetting;
-            this.rerender();
-        }
-    }
-    get ImageAlignment() {
-        return this._ImageAlignment;
-    }
-    set ImageAlignment(newSetting) {
-        allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
-        if (this._ImageAlignment !== newSetting) {
-            this._ImageAlignment = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        this._serializePropertyInto('ImageScaling', Serialization);
-        this._serializePropertyInto('ImageAlignment', Serialization);
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._ImageScaling = acceptableOneOf(Serialization.ImageScaling, 'contain', WAT_ImageScalings);
-        this._ImageAlignment = acceptableOneOf(Serialization.ImageAlignment, 'center', WAT_ImageAlignments);
-    }
-}
-builtInWidgetTypes['SVGView'] = WAT_SVGView;
-appendStyle(`
-  .WAT.Widget > .WAT.SVGView {
-    object-fit:contain; object-position:center;
-  }
-  `);
-/**** WebView ****/
-export const WAT_DefaultSandboxPermissions = ('allow-downloads allow-forms allow-modals allow-orientation-lock ' +
-    'allow-pointer-lock allow-popups allow-same-origin allow-scripts');
-export const WAT_ReferrerPolicies = [
-    'no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin',
-    'same-origin', 'strict-origin', 'strict-origin', 'strict-origin-when-cross-origin',
-    'unsafe-url'
-];
-export class WAT_WebView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** PermissionsPolicy ****/
-        Object.defineProperty(this, "_PermissionsPolicy", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** allowsFullscreen ****/
-        Object.defineProperty(this, "_allowsFullscreen", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** SandboxPermissions ****/
-        Object.defineProperty(this, "_SandboxPermissions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** ReferrerPolicy ****/
-        Object.defineProperty(this, "_ReferrerPolicy", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const PermissionsPolicy = acceptableOptionalTextline(this._PermissionsPolicy);
-                const allowsFullscreen = acceptableBoolean(this._allowsFullscreen, false);
-                const SandboxPermissions = acceptableTextline(this._SandboxPermissions, WAT_DefaultSandboxPermissions);
-                const ReferrerPolicy = acceptableOptionalOneOf(this._ReferrerPolicy, WAT_ReferrerPolicies);
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SVGView', WAT_SVGView);
+    /**** WebView ****/
+    const WAT_WebView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'url-input', Placeholder: '(enter URL)' },
+            { Name: 'PermissionsPolicy', EditorType: 'textline-input' },
+            { Name: 'allowsFullscreen', EditorType: 'checkbox' },
+            { Name: 'SandboxPermissions', EditorType: 'textline-input' },
+            { Name: 'ReferrerPolicy', EditorType: 'drop-down', ValueList: WAT_ReferrerPolicies },
+        ];
+        Object_assign(me, {
+            /**** PermissionsPolicy ****/
+            get PermissionsPolicy() {
+                return acceptableOptionalTextline(this.memoized.PermissionsPolicy);
+            },
+            set PermissionsPolicy(newSetting) {
+                allowTextline('permissions policy', newSetting);
+                if (this.memoized.PermissionsPolicy !== newSetting) {
+                    this.memoized.PermissionsPolicy = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** allowsFullscreen ****/
+            get allowsFullscreen() {
+                return acceptableBoolean(this.memoized.allowsFullscreen, false);
+            },
+            set allowsFullscreen(newSetting) {
+                allowBoolean('fullscreen permission', newSetting);
+                if (this.memoized.allowsFullscreen !== newSetting) {
+                    this.memoized.allowsFullscreen = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** SandboxPermissions ****/
+            get SandboxPermissions() {
+                return acceptableTextline(this.memoized.SandboxPermissions, WAT_DefaultSandboxPermissions);
+            },
+            set SandboxPermissions(newSetting) {
+                allowTextline('sandbox permissions', newSetting);
+                if (this.memoized.SandboxPermissions !== newSetting) {
+                    this.memoized.SandboxPermissions = newSetting;
+                    this.rerender();
+                }
+            },
+            /**** ReferrerPolicy ****/
+            get ReferrerPolicy() {
+                return acceptableOneOf(this.memoized.ReferrerPolicy, 'strict-origin-when-cross-origin', WAT_ReferrerPolicies);
+            },
+            set ReferrerPolicy(newSetting) {
+                allowOneOf('referrer policy', newSetting, WAT_ReferrerPolicies);
+                if (this.memoized.ReferrerPolicy !== newSetting) {
+                    this.memoized.ReferrerPolicy = newSetting;
+                    this.rerender();
+                }
+            }, /**** Renderer ****/
+            _Renderer: function () {
+                const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this;
                 return html `<iframe class="WAT Content WebView"
-        src=${acceptableURL(this.Value, '')}
-        allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
-        sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
-      />`;
-            }
+          src=${acceptableURL(my.Value, '')}
+          allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
+          sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
+        />`;
+            },
         });
-    }
-    get Type() { return 'WebView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get PermissionsPolicy() { return this._PermissionsPolicy; }
-    set PermissionsPolicy(newSetting) {
-        allowTextline('permissions policy', newSetting);
-        if (this._PermissionsPolicy !== newSetting) {
-            this._PermissionsPolicy = newSetting;
-            this.rerender();
-        }
-    }
-    get allowsFullscreen() { return this._allowsFullscreen; }
-    set allowsFullscreen(newSetting) {
-        allowBoolean('fullscreen permission', newSetting);
-        if (this._allowsFullscreen !== newSetting) {
-            this._allowsFullscreen = newSetting;
-            this.rerender();
-        }
-    }
-    get SandboxPermissions() { return this._SandboxPermissions; }
-    set SandboxPermissions(newSetting) {
-        allowTextline('sandbox permissions', newSetting);
-        if (this._SandboxPermissions !== newSetting) {
-            this._SandboxPermissions = newSetting;
-            this.rerender();
-        }
-    }
-    get ReferrerPolicy() {
-        return this._ReferrerPolicy;
-    }
-    set ReferrerPolicy(newSetting) {
-        allowOneOf('referrer policy', newSetting, WAT_ReferrerPolicies);
-        if (this._ReferrerPolicy !== newSetting) {
-            this._ReferrerPolicy = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'PermissionsPolicy', 'allowsFullscreen', 'SandboxPermissions',
-            'ReferrerPolicy'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._PermissionsPolicy = acceptableOptionalTextline(Serialization.PermissionsPolicy);
-        this._allowsFullscreen = acceptableBoolean(Serialization.allowsFullscreen, false);
-        this._SandboxPermissions = acceptableTextline(Serialization.SandboxPermissions, WAT_DefaultSandboxPermissions);
-        this._ReferrerPolicy = acceptableOptionalOneOf(Serialization.ReferrerPolicy, WAT_ReferrerPolicies);
-    }
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
 }
-builtInWidgetTypes['WebView'] = WAT_WebView;
-appendStyle(`
-  .WAT.Widget > .WAT.WebView {
-  }
-  `);
-/**** Badge ****/
-export class WAT_Badge extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const Value = (ValueIsNumber(this.Value)
-                    ? '' + this.Value
-                    : acceptableTextline(this.Value, ''));
-                const BorderRadius = Math.round(Math.min(this.Width, this.Height) / 2);
-                return html `<div class="WAT Content Badge" style="
-        border-color:${this.ForegroundColor || 'black'}; border-radius:${BorderRadius}px;
-        line-height:${this.Height - 4}px;
-      ">${acceptableTextline(Value, '')}</>`;
-            }
-        });
-    }
-    get Type() { return 'Badge'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Badge'] = WAT_Badge;
-appendStyle(`
-  .WAT.Widget > .WAT.Badge {
-    font-size:18px; font-weight:bold; text-align:center;
-    border:solid 2px black;
-  }
-  `);
-/**** Icon ****/
-export class WAT_Icon extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const _onClick = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    if (this._onClick != null) {
-                        this._onClick_(Event);
-                    } // no typo!
-                };
-                const Value = acceptableURL(this.Value, `${IconFolder}/pencil.png`);
-                const Color = acceptableColor(this.Color, 'black');
-                return html `<div class="WAT Content Icon" style="
-        -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${Color};
-      " disabled=${this.Enabling == false} onClick=${_onClick}
-      />`;
-            }
-        });
-    }
-    get Type() { return 'Icon'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Icon'] = WAT_Icon;
-appendStyle(`
-  .WAT.Widget > .WAT.Icon {
-    -webkit-mask-size:contain;           mask-size:contain;
-    -webkit-mask-position:center center; mask-position:center center;
-  }
-  `);
-/**** horizontalSeparator ****/
-export class WAT_horizontalSeparator extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** rendering ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content horizontalSeparator"></div>`;
-            }
-        });
-    }
-    get Type() { return 'horizontalSeparator'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['horizontalSeparator'] = WAT_horizontalSeparator;
-appendStyle(`
-  .WAT.Widget > .WAT.horizontalSeparator {
-    border:none; border-top:solid 1px black;
-  }
-  `);
-/**** verticalSeparator ****/
-export class WAT_verticalSeparator extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** rendering ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content verticalSeparator"></div>`;
-            }
-        });
-    }
-    get Type() { return 'verticalSeparator'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['verticalSeparator'] = WAT_verticalSeparator;
-appendStyle(`
-  .WAT.Widget > .WAT.verticalSeparator {
-    border:none; border-left:solid 1px black;
-  }
-  `);
-/**** Button ****/
-export class WAT_Button extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const onClick = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    if (this._onClick != null) {
-                        this._onClick_(Event);
-                    } // no typo!
-                };
-                const Label = acceptableTextline(this.Label || this.Value, '');
-                return html `<button class="WAT Content Button" style="
-        line-height:${this.LineHeight || this.Height}px;
-      " disabled=${this.Enabling == false} onClick=${onClick}
-      >${Label}</>`;
-            }
-        });
-    }
-    get Type() { return 'Button'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Label() { return this.memoized.Label; }
-    set Label(newLabel) {
-        allowTextline('button label', newLabel);
-        if (this.memoized.Label != newLabel) {
-            this.memoized.Label = newLabel;
-            this.rerender();
-        }
-    }
-}
-builtInWidgetTypes['Button'] = WAT_Button;
-appendStyle(`
-  .WAT.Widget > .WAT.Button {
-    border:solid 1px black; border-radius:4px;
-    background:white;
-    font-weight:bold; color:black;
-    text-align:center;
-  }
-  `);
-/**** Checkbox ****/
-export class WAT_Checkbox extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const onClick = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    this.Value = Event.target.checked;
-                    if (this._onClick != null) {
-                        this._onClick_(Event);
-                    } // no typo!
-                };
-                const Value = acceptableOptionalBoolean(this.Value);
-                const checked = (Value == true);
-                const indeterminate = (Value == null);
-                return html `<input type="checkbox" class="WAT Checkbox"
-        checked=${checked} indeterminate=${indeterminate}
-        disabled=${this.Enabling == false} onClick=${onClick}
-      />`;
-            }
-        });
-    }
-    get Type() { return 'Checkbox'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Checkbox'] = WAT_Checkbox;
-appendStyle(`
-  .WAT.Widget > .WAT.Checkbox {
-    left:50%; top:50%;
-    transform:translate(-50%,-50%);
-  }
-  `);
-/**** Radiobutton ****/
-export class WAT_Radiobutton extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const onClick = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    this.Value = Event.target.checked;
-                    if (this._onClick != null) {
-                        this._onClick_(Event);
-                    } // no typo!
-                };
-                const Value = acceptableBoolean(this.Value, false);
-                return html `<input type="radio" class="WAT Radiobutton"
-        checked=${Value == true}
-        disabled=${this.Enabling == false} onClick=${onClick}
-      />`;
-            }
-        });
-    }
-    get Type() { return 'Radiobutton'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Radiobutton'] = WAT_Radiobutton;
-appendStyle(`
-  .WAT.Widget > .WAT.Radiobutton {
-    left:50%; top:50%;
-    transform:translate(-50%,-50%);
-  }
-  `);
-/**** Gauge ****/
-export class WAT_Gauge extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** lowerBound ****/
-        Object.defineProperty(this, "_lowerBound", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Optimum ****/
-        Object.defineProperty(this, "_Optimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** upperBound ****/
-        Object.defineProperty(this, "_upperBound", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const Value = acceptableNumber(ValueIsString(this.Value) ? parseFloat(this.Value) : this.Value, 0);
-                const Minimum = acceptableOptionalNumber(this._Minimum);
-                const lowerBound = acceptableOptionalNumber(this._lowerBound);
-                const Optimum = acceptableOptionalNumber(this._Optimum);
-                const upperBound = acceptableOptionalNumber(this._upperBound);
-                const Maximum = acceptableOptionalNumber(this._Maximum);
-                return html `<meter class="WAT Content Gauge" value=${Value}
-        min=${Minimum} low=${lowerBound} opt=${Optimum}
-        high=${upperBound} max=${Maximum}
-       />`;
-            }
-        });
-    }
-    get Type() { return 'Gauge'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowNumber('minimal value', newSetting);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get lowerBound() { return this._lowerBound; }
-    set lowerBound(newSetting) {
-        allowNumber('lower bound', newSetting);
-        if (this._lowerBound !== newSetting) {
-            this._lowerBound = newSetting;
-            this.rerender();
-        }
-    }
-    get Optimum() { return this._Optimum; }
-    set Optimum(newSetting) {
-        allowNumber('optimal value', newSetting);
-        if (this._Optimum !== newSetting) {
-            this._Optimum = newSetting;
-            this.rerender();
-        }
-    }
-    get upperBound() { return this._upperBound; }
-    set upperBound(newSetting) {
-        allowNumber('upper bound', newSetting);
-        if (this._upperBound !== newSetting) {
-            this._upperBound = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowNumber('maximal value', newSetting);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            ''
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        //this._PermissionsPolicy  = acceptableOptionalTextline(Serialization.PermissionsPolicy)
-    }
-}
-builtInWidgetTypes['Gauge'] = WAT_Gauge;
-appendStyle(`
-  .WAT.Widget > .WAT.Gauge {
-  }
-  `);
-/**** Progressbar ****/
-export class WAT_Progressbar extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const Value = acceptableNumber(ValueIsString(this.Value) ? parseFloat(this.Value) : this.Value, 0);
-                const Maximum = acceptableOptionalNumber(this._Maximum);
-                return html `<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
-      style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`;
-            }
-        });
-    }
-    get Type() { return 'Progressbar'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowNumberInRange('maximal value', newSetting, 0, Infinity, true, false);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        this._serializePropertyInto('Maximum', Serialization);
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Maximum = acceptableOptionalNumberInRange(Serialization.Maximum, undefined, 0);
-    }
-}
-builtInWidgetTypes['Progressbar'] = WAT_Progressbar;
-appendStyle(`
-  .WAT.Widget > .WAT.Progressbar {
-    -webkit-appearance:none; -moz-appearance:none; appearance:none;
-    background-color:#EEEEEE;
-  }
-  .WAT.Widget > .WAT.Progressbar::-webkit-progress-bar {
-    background-color:#EEEEEE;
-    border:solid 1px #E0E0E0; border-radius:2px;
-  }
-  .WAT.Widget > .WAT.Progressbar::-webkit-progress-value,
-  .WAT.Widget > .WAT.Progressbar::-moz-progress-bar {
-    background-color:dodgerblue;
-    border:none; border-radius:2px;
-  }
-  `);
-/**** Slider ****/
-const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d*[.](?:\d*))(?:\s*:\s*([^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]+))?$/;
-function HashmarkMatcher(Value) {
-    return ValueIsStringMatching(Value, HashmarkPattern) || ValueIsNumber(Value);
-}
-export class WAT_Slider extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Stepping ****/
-        Object.defineProperty(this, "_Stepping", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_Hashmarks", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                const shownValue = useRef('');
-                const InputElement = useRef(null);
-                let ValueToShow = acceptableNumber(ValueIsString(Value) ? parseFloat(Value) : Value, 0);
-                if (document.activeElement === InputElement.current) {
-                    ValueToShow = shownValue.current;
-                }
-                else {
-                    shownValue.current = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    shownValue.current = this.Value = parseFloat(Event.target.value);
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                };
-                /**** process any other parameters ****/
-                const Minimum = acceptableOptionalNumber(this._Minimum);
-                const Stepping = acceptableOptionalNumberInRange(this._Stepping, undefined, 0);
-                const Maximum = acceptableOptionalNumber(this._Maximum);
-                const Hashmarks = acceptableOptionalListSatisfying(this._Hashmarks, undefined, HashmarkMatcher);
-                let HashmarkList = '', HashmarkId;
-                if ((Hashmarks != null) && (Hashmarks.length > 0)) {
-                    HashmarkId = IdOfWidget(this) + '-Hashmarks';
-                    HashmarkList = html `\n<datalist id=${HashmarkId}>
-          ${Hashmarks.map((Item) => {
-                        Item = '' + Item;
-                        const Value = Item.replace(/:.*$/, '').trim();
-                        const Label = Item.replace(/^[^:]+:/, '').trim();
-                        return html `<option value=${Value}>${Label}</option>`;
-                    })}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="range" class="WAT Content Slider"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${HashmarkId}
-      />${HashmarkList}`;
-            }
-        });
-    }
-    get Type() { return 'Slider'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowNumber('minimal value', newSetting);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Stepping() { return this._Stepping; }
-    set Stepping(newSetting) {
-        allowNumberInRange('stepping', newSetting, 0, Infinity, true, false);
-        if (this._Stepping !== newSetting) {
-            this._Stepping = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowNumber('maximal value', newSetting);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    } /**** Hashmarks ****/
-    get Hashmarks() {
-        return (this._Hashmarks == null ? this._Hashmarks : this._Hashmarks.slice());
-    }
-    set Hashmarks(newSetting) {
-        allowListSatisfying('hashmark list', newSetting, HashmarkMatcher);
-        if (ValuesDiffer(this._Hashmarks, newSetting)) {
-            this._Hashmarks = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Minimum', 'Stepping', 'Maximum', 'Hashmarks',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Minimum = acceptableOptionalNumber(Serialization.Minimum);
-        this._Stepping = acceptableOptionalNumberInRange(Serialization.Stepping, undefined, 0);
-        this._Maximum = acceptableOptionalNumber(Serialization.Maximum);
-        this._Hashmarks = acceptableOptionalListSatisfying(Serialization.Hashmarks, undefined, HashmarkMatcher);
-    }
-}
-builtInWidgetTypes['Slider'] = WAT_Slider;
-appendStyle(`
-  .WAT.Widget > .WAT.Slider {
-  }
-  `);
-/**** TextlineInput ****/
-export class WAT_TextlineInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Pattern ****/
-        Object.defineProperty(this, "_Pattern", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** SpellChecking ****/
-        Object.defineProperty(this, "_SpellChecking", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableTextline(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const Pattern = acceptableOptionalTextline(this._Pattern);
-                const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsTextline);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="text" class="WAT Content TextlineInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'TextlineInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get Pattern() { return this._Pattern; }
-    set Pattern(newSetting) {
-        allowTextline('input pattern', newSetting);
-        if (this._Pattern !== newSetting) {
-            this._Pattern = newSetting;
-            this.rerender();
-        }
-    }
-    get SpellChecking() { return this._SpellChecking; }
-    set SpellChecking(newSetting) {
-        allowBoolean('spell check setting', newSetting);
-        if (this._SpellChecking !== newSetting) {
-            this._SpellChecking = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsTextline);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern',
-            'SpellChecking', 'Suggestions',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
-        this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsTextline);
-    }
-}
-builtInWidgetTypes['TextlineInput'] = WAT_TextlineInput;
-appendStyle(`
-  .WAT.Widget > .WAT.TextlineInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.TextlineInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** PasswordInput ****/
-export class WAT_PasswordInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Pattern ****/
-        Object.defineProperty(this, "_Pattern", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableTextline(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const Pattern = acceptableOptionalTextline(this._Pattern);
-                /**** actual rendering ****/
-                return html `<input type="password" class="WAT Content PasswordInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-      />`;
-            }
-        });
-    }
-    get Type() { return 'PasswordInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get Pattern() { return this._Pattern; }
-    set Pattern(newSetting) {
-        allowTextline('input pattern', newSetting);
-        if (this._Pattern !== newSetting) {
-            this._Pattern = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
-    }
-}
-builtInWidgetTypes['PasswordInput'] = WAT_PasswordInput;
-appendStyle(`
-  .WAT.Widget > .WAT.PasswordInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.PasswordInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** NumberInput ****/
-export class WAT_NumberInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Stepping ****/
-        Object.defineProperty(this, "_Stepping", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 0
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableNumber(ValueIsString(Value) ? parseFloat(Value) : Value, 0);
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = parseFloat(Event.target.value);
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalNumber(this._Minimum);
-                const Stepping = acceptableOptionalNumberInRange(this._Stepping, undefined, 0);
-                const Maximum = acceptableOptionalNumber(this._Maximum);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsNumber);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="number" class="WAT Content NumberInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        readOnly=${readonly} placeholder=${Placeholder}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'NumberInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowNumber('minimal value', newSetting);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Stepping() { return this._Stepping; }
-    set Stepping(newSetting) {
-        allowNumberInRange('stepping', newSetting, 0, Infinity, true, false);
-        if (this._Stepping !== newSetting) {
-            this._Stepping = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowNumber('maximal value', newSetting);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsNumber);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'Minimum', 'Stepping', 'Maximum', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalNumber(Serialization.Minimum);
-        this._Stepping = acceptableOptionalNumberInRange(Serialization.Stepping, undefined, 0);
-        this._Maximum = acceptableOptionalNumber(Serialization.Maximum);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsNumber);
-    }
-}
-builtInWidgetTypes['NumberInput'] = WAT_NumberInput;
-appendStyle(`
-  .WAT.Widget > .WAT.NumberInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.NumberInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** PhoneNumberInput ****/
-export class WAT_PhoneNumberInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Pattern ****/
-        Object.defineProperty(this, "_Pattern", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptablePhoneNumber(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const Pattern = acceptableOptionalTextline(this._Pattern);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsPhoneNumber);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="tel" class="WAT Content PhoneNumberInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
-        disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'PhoneNumberInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get Pattern() { return this._Pattern; }
-    set Pattern(newSetting) {
-        allowTextline('input pattern', newSetting);
-        if (this._Pattern !== newSetting) {
-            this._Pattern = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsPhoneNumber);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsPhoneNumber);
-    }
-}
-builtInWidgetTypes['PhoneNumberInput'] = WAT_PhoneNumberInput;
-appendStyle(`
-  .WAT.Widget > .WAT.PhoneNumberInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.PhoneNumberInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** EMailAddressInput ****/
-export class WAT_EMailAddressInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Pattern ****/
-        Object.defineProperty(this, "_Pattern", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableEMailAddress(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const Pattern = acceptableOptionalTextline(this._Pattern);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsEMailAddress);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="email" class="WAT Content EMailAddressInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'EMailAddressInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get Pattern() { return this._Pattern; }
-    set Pattern(newSetting) {
-        allowTextline('input pattern', newSetting);
-        if (this._Pattern !== newSetting) {
-            this._Pattern = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsEMailAddress);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsEMailAddress);
-    }
-}
-builtInWidgetTypes['EMailAddressInput'] = WAT_EMailAddressInput;
-appendStyle(`
-  .WAT.Widget > .WAT.EMailAddressInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.EMailAddressInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** URLInput ****/
-export class WAT_URLInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Pattern ****/
-        Object.defineProperty(this, "_Pattern", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableURL(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const Pattern = acceptableOptionalTextline(this._Pattern);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsURL);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="url" class="WAT Content URLInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'URLInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get Pattern() { return this._Pattern; }
-    set Pattern(newSetting) {
-        allowTextline('input pattern', newSetting);
-        if (this._Pattern !== newSetting) {
-            this._Pattern = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsURL);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsURL);
-    }
-}
-builtInWidgetTypes['URLInput'] = WAT_URLInput;
-appendStyle(`
-  .WAT.Widget > .WAT.URLInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.URLInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** TimeInput ****/
-export const WAT_TimePattern = '\\d{2}:\\d{2}';
-export const WAT_TimeRegExp = /\d{2}:\d{2}/;
-export function WAT_TimeMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_TimeRegExp);
-}
-export class WAT_TimeInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** withSeconds ****/
-        Object.defineProperty(this, "_withSeconds", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableStringMatching(Value, '', WAT_TimeRegExp);
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const withSeconds = acceptableOptionalBoolean(this._withSeconds);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_TimeRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_TimeRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_TimeMatcher);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="time" class="WAT Content TimeInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${WAT_TimePattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'TimeInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get withSeconds() { return this._withSeconds; }
-    set withSeconds(newSetting) {
-        allowBoolean('seconds display setting', newSetting);
-        if (this._withSeconds !== newSetting) {
-            this._withSeconds = newSetting;
-            this.rerender();
-        }
-    }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowStringMatching('earliest time', newSetting, WAT_TimeRegExp);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowStringMatching('latest time', newSetting, WAT_TimeRegExp);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, WAT_TimeMatcher);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._withSeconds = acceptableBoolean(Serialization.withSeconds, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_TimeRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_TimeRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_TimeMatcher);
-    }
-}
-builtInWidgetTypes['TimeInput'] = WAT_TimeInput;
-appendStyle(`
-  .WAT.Widget > .WAT.TimeInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.TimeInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** DateTimeInput ****/
-export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}';
-export const WAT_DateTimeRegExp = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
-export function WAT_DateTimeMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_DateTimeRegExp);
-}
-export class WAT_DateTimeInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** withSeconds ****/
-        Object.defineProperty(this, "_withSeconds", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableStringMatching(Value, '', WAT_DateTimeRegExp);
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const withSeconds = acceptableOptionalBoolean(this._withSeconds);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateTimeRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_DateTimeRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_DateTimeMatcher);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="datetime-local" class="WAT Content DateTimeInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${WAT_DateTimePattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'DateTimeInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get withSeconds() { return this._withSeconds; }
-    set withSeconds(newSetting) {
-        allowBoolean('seconds display setting', newSetting);
-        if (this._withSeconds !== newSetting) {
-            this._withSeconds = newSetting;
-            this.rerender();
-        }
-    }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowStringMatching('earliest point in time', newSetting, WAT_DateTimeRegExp);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowStringMatching('latest point in time', newSetting, WAT_DateTimeRegExp);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, WAT_DateTimeMatcher);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._withSeconds = acceptableBoolean(Serialization.withSeconds, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_DateTimeRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_DateTimeRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_DateTimeMatcher);
-    }
-}
-builtInWidgetTypes['DateTimeInput'] = WAT_DateTimeInput;
-appendStyle(`
-  .WAT.Widget > .WAT.DateTimeInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.DateTimeInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** DateInput ****/
-export const WAT_DatePattern = '\\d{4}-\\d{2}-\\d{2}';
-export const WAT_DateRegExp = /\d{4}-\d{2}-\d{2}/;
-export function WAT_DateMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_DateRegExp);
-}
-export class WAT_DateInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableStringMatching(Value, '', WAT_DateRegExp);
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_DateRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_DateRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_DateMatcher);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="date" class="WAT Content DateInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WAT_DatePattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'DateInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowStringMatching('earliest date', newSetting, WAT_DateRegExp);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowStringMatching('latest date', newSetting, WAT_DateRegExp);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, WAT_DateMatcher);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_DateRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_DateRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_DateMatcher);
-    }
-}
-builtInWidgetTypes['DateInput'] = WAT_DateInput;
-appendStyle(`
-  .WAT.Widget > .WAT.DateInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.DateInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** WeekInput ****/
-export const WAT_WeekPattern = '\\d{4}-W\\d{2}';
-export const WAT_WeekRegExp = /\d{4}-W\d{2}/;
-export function WAT_WeekMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_WeekRegExp);
-}
-export class WAT_WeekInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableStringMatching(Value, '', WAT_WeekRegExp);
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_WeekRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_WeekRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_WeekMatcher);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="week" class="WAT Content WeekInput"
-        value=${Value} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WAT_WeekPattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'WeekInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowStringMatching('earliest week', newSetting, WAT_WeekRegExp);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowStringMatching('latest week', newSetting, WAT_WeekRegExp);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, WAT_WeekMatcher);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_WeekRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_WeekRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_WeekMatcher);
-    }
-}
-builtInWidgetTypes['WeekInput'] = WAT_WeekInput;
-appendStyle(`
-  .WAT.Widget > .WAT.WeekInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.WeekInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** MonthInput ****/
-export const WAT_MonthPattern = '\\d{4}-\\d{2}';
-export const WAT_MonthRegExp = /\d{4}-\d{2}/;
-export function WAT_MonthMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_MonthRegExp);
-}
-export class WAT_MonthInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Minimum ****/
-        Object.defineProperty(this, "_Minimum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Maximum ****/
-        Object.defineProperty(this, "_Maximum", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableStringMatching(Value, '', WAT_MonthRegExp);
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const Minimum = acceptableOptionalStringMatching(this._Minimum, undefined, WAT_MonthRegExp);
-                const Maximum = acceptableOptionalStringMatching(this._Maximum, undefined, WAT_MonthRegExp);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, WAT_MonthMatcher);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="month" class="WAT Content MonthInput"
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WAT_MonthPattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'MonthInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get Minimum() { return this._Minimum; }
-    set Minimum(newSetting) {
-        allowStringMatching('earliest month', newSetting, WAT_MonthRegExp);
-        if (this._Minimum !== newSetting) {
-            this._Minimum = newSetting;
-            this.rerender();
-        }
-    }
-    get Maximum() { return this._Maximum; }
-    set Maximum(newSetting) {
-        allowStringMatching('latest month', newSetting, WAT_MonthRegExp);
-        if (this._Maximum !== newSetting) {
-            this._Maximum = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, WAT_MonthMatcher);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'withSeconds', 'Minimum', 'Maximum', 'Suggestions'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._Minimum = acceptableOptionalStringMatching(Serialization.Minimum, undefined, WAT_MonthRegExp);
-        this._Maximum = acceptableOptionalStringMatching(Serialization.Maximum, undefined, WAT_MonthRegExp);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, WAT_MonthMatcher);
-    }
-}
-builtInWidgetTypes['MonthInput'] = WAT_MonthInput;
-appendStyle(`
-  .WAT.Widget > .WAT.MonthInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.MonthInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** FileInput ****/
-export class WAT_FileInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** allowMultiple ****/
-        Object.defineProperty(this, "_allowMultiple", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** acceptableTypes ****/
-        Object.defineProperty(this, "_acceptableTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const Value = acceptableText(this._Value, '').trim().replace(/[\n\r]+/g, ',');
-                const Placeholder = acceptableTextline(this._Placeholder, '').trim();
-                const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
-                const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
-                const _onInput = (Event) => {
-                    if (this.Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
-                    // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onDragEnter = (Event) => { return consumingEvent(Event); };
-                const _onDragOver = (Event) => { return consumingEvent(Event); };
-                const _onDrop = (Event) => {
-                    consumeEvent(Event);
-                    if (this.Enabling === false) {
-                        return;
-                    }
-                    this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
-                    // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-                    this._onDrop_(Event, Event.dataTransfer.files);
-                }; // nota bene: "files" is now in "Event.dataTransfer.files"
-                /**** actual rendering ****/
-                return html `<label class="WAT Content FileInput"
-        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
-      >
-        ${Value === ''
-                    ? this._Placeholder === '' ? '' : html `<span style="
-              font-size:${Math.round((this.FontSize || 14) * 0.95)}px; line-height:${this.Height}px
-            ">${Placeholder}</span>`
-                    : html `<span style="line-height:${this.Height}px">${Value}</span>`}
-        <input type="file" style="display:none"
-          multiple=${allowMultiple} accept=${acceptableTypes}
-          disabled=${this.Enabling === false} onInput=${_onInput}
-        />
-      </label>`;
-            }
-        });
-    }
-    get Type() { return 'FileInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get allowMultiple() { return this._allowMultiple; }
-    set allowMultiple(newSetting) {
-        allowBoolean('"allowMultiple" setting', newSetting);
-        if (this._allowMultiple !== newSetting) {
-            this._allowMultiple = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableTypes() { return this._acceptableTypes; }
-    set acceptableTypes(newSetting) {
-        allowTextline('acceptable file types', newSetting);
-        if (this._acceptableTypes !== newSetting) {
-            this._acceptableTypes = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'acceptableTypes', 'allowMultiple'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableTextline(Serialization.Placeholder, '').trim();
-        this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes, '*');
-        this._allowMultiple = acceptableBoolean(Serialization.allowMultiple, false);
-    }
-}
-builtInWidgetTypes['FileInput'] = WAT_FileInput;
-appendStyle(`
-  .WAT.Widget > .WAT.FileInput {
-  .WAT.Widget > .WAT.FileInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-  .WAT.Widget > .WAT.FileInput > span {
-    display:block; position:absolute; overflow:hidden;
-    left:0px; top:0px; width:100%; height:100%;
-    color:gray;
-    padding:0px 2px 0px 2px; white-space:pre; text-overflow:ellipsis;
-  }
-  }
-  `);
-/**** PseudoFileInput ****/
-export class WAT_PseudoFileInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Icon ****/
-        Object.defineProperty(this, "_Icon", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** allowMultiple ****/
-        Object.defineProperty(this, "_allowMultiple", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** acceptableTypes ****/
-        Object.defineProperty(this, "_acceptableTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const Icon = acceptableURL(this._Icon, `${IconFolder}/arrow-up-from-bracket.png`);
-                const Color = acceptableColor(this._Color, 'black');
-                const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
-                const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
-                const _onInput = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
-                    // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                return html `<label class="WAT Content PseudoFileInput">
-        <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
-        "></div>
-        <input type="file" style="display:none"
-          multiple=${allowMultiple} accept=${acceptableTypes}
-          disabled=${this.Enabling === false} onInput=${_onInput}
-        />
-      </label>`;
-            }
-        });
-    }
-    get Type() { return 'PseudoFileInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Icon() { return this._Icon; }
-    set Icon(newSetting) {
-        allowURL('icon image ULR', newSetting);
-        if (this._Icon !== newSetting) {
-            this._Icon = newSetting;
-            this.rerender();
-        }
-    }
-    get allowMultiple() { return this._allowMultiple; }
-    set allowMultiple(newSetting) {
-        allowBoolean('"allowMultiple" setting', newSetting);
-        if (this._allowMultiple !== newSetting) {
-            this._allowMultiple = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableTypes() { return this._acceptableTypes; }
-    set acceptableTypes(newSetting) {
-        allowTextline('acceptable file types', newSetting);
-        if (this._acceptableTypes !== newSetting) {
-            this._acceptableTypes = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Icon', 'acceptableTypes', 'allowMultiple'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Icon = acceptableURL(Serialization.Icon, `${IconFolder}/arrow-up-from-bracket.png`);
-        this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes, '*');
-        this._allowMultiple = acceptableBoolean(Serialization.allowMultiple, false);
-    }
-}
-builtInWidgetTypes['PseudoFileInput'] = WAT_PseudoFileInput;
-appendStyle(`
-  .WAT.Widget > .WAT.PseudoFileInput > div {
-    display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px;
-    -webkit-mask-size:contain;           mask-size:contain;
-    -webkit-mask-position:center center; mask-position:center center;
-  }
-  `);
-/**** FileDropArea ****/
-export class WAT_FileDropArea extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** allowMultiple ****/
-        Object.defineProperty(this, "_allowMultiple", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** acceptableTypes ****/
-        Object.defineProperty(this, "_acceptableTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const Placeholder = acceptableTextline(this._Placeholder, '').trim();
-                const acceptableTypes = acceptableOptionalTextline(this._acceptableTypes, '*');
-                const allowMultiple = acceptableOptionalBoolean(this._allowMultiple);
-                const _onInput = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
-                    // @ts-ignore TS2445 well, this object *is* a subinstance of SNS_Sticker
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onDragEnter = (Event) => { return consumingEvent(Event); };
-                const _onDragOver = (Event) => { return consumingEvent(Event); };
-                const _onDrop = (Event) => {
-                    consumeEvent(Event);
-                    if (this.Enabling == false) {
-                        return;
-                    }
-                    this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
-                    // @ts-ignore TS2445 well, this object *is* a subinstance of WAT_Widget
-                    this._onDrop_(Event, Event.dataTransfer.files);
-                }; // nota bene: "files" is now in "Event.dataTransfer.files"
-                return html `<label class="WAT Content FileDropArea"
-        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
-        <span>${Placeholder}</span>
-        <input type="file"
-          multiple=${allowMultiple} accept=${acceptableTypes}
-          disabled=${this.Enabling === false} onInput=${_onInput}
-        />
-      </label>`;
-            }
-        });
-    }
-    get Type() { return 'FileDropArea'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get allowMultiple() { return this._allowMultiple; }
-    set allowMultiple(newSetting) {
-        allowBoolean('"allowMultiple" setting', newSetting);
-        if (this._allowMultiple !== newSetting) {
-            this._allowMultiple = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableTypes() { return this._acceptableTypes; }
-    set acceptableTypes(newSetting) {
-        allowTextline('acceptable file types', newSetting);
-        if (this._acceptableTypes !== newSetting) {
-            this._acceptableTypes = newSetting;
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'acceptableTypes', 'allowMultiple'
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableTextline(Serialization.Placeholder, '').trim();
-        this._acceptableTypes = acceptableTextline(Serialization.acceptableTypes, '*');
-        this._allowMultiple = acceptableBoolean(Serialization.allowMultiple, false);
-    }
-}
-builtInWidgetTypes['FileDropArea'] = WAT_FileDropArea;
-appendStyle(`
-  .WAT.Widget > .WAT.FileDropArea {
-    display:flex; flex-flow:column nowrap;
-      justify-content:center; align-items:center;
-    border:dashed 4px #DDDDDD; border-radius:4px;
-    color:#DDDDDD; background:white;
-  }
-
-  .WAT.Widget > .WAT.FileDropArea * { pointer-events:none }
-
-  .WAT.Widget > .WAT.FileDropArea > input[type="file"] {
-    display:block; position:absolute; appearance:none;
-    left:0px; top:0px; right:0px; bottom:0px;
-    opacity:0.01;
-  }
-  `);
-/**** SearchInput ****/
-export class WAT_SearchInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Pattern ****/
-        Object.defineProperty(this, "_Pattern", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** SpellChecking ****/
-        Object.defineProperty(this, "_SpellChecking", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableTextline(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const Pattern = acceptableOptionalTextline(this._Pattern);
-                const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsTextline);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                return html `<input type="search" class="WAT Content SearchInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling == false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'SearchInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get Pattern() { return this._Pattern; }
-    set Pattern(newSetting) {
-        allowTextline('input pattern', newSetting);
-        if (this._Pattern !== newSetting) {
-            this._Pattern = newSetting;
-            this.rerender();
-        }
-    }
-    get SpellChecking() { return this._SpellChecking; }
-    set SpellChecking(newSetting) {
-        allowBoolean('spell check setting', newSetting);
-        if (this._SpellChecking !== newSetting) {
-            this._SpellChecking = newSetting;
-            this.rerender();
-        }
-    }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsTextline);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'Pattern',
-            'SpellChecking', 'Suggestions',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._Pattern = acceptableOptionalTextline(Serialization.Pattern);
-        this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsTextline);
-    }
-}
-builtInWidgetTypes['SearchInput'] = WAT_SearchInput;
-appendStyle(`
-  .WAT.Widget > .WAT.SearchInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-
-  .WAT.Widget > .WAT.SearchInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** ColorInput ****/
-export class WAT_ColorInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Suggestions ****/
-        Object.defineProperty(this, "_Suggestions", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                let Value = acceptableOptionalColor(this._Value);
-                const Suggestions = acceptableOptionalListSatisfying(this._Suggestions, undefined, ValueIsColor);
-                let SuggestionList = '', SuggestionId;
-                if ((Suggestions != null) && (Suggestions.length > 0)) {
-                    SuggestionId = IdOfWidget(this) + '-Suggestions';
-                    SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-                }
-                /**** actual rendering ****/
-                const _onInput = (Event) => {
-                    this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                return html `<input type="color" class="WAT Content ColorInput"
-        value=${Value === '' ? null : Value}
-        disabled=${this.Enabling == false} onInput=${_onInput}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-            }
-        });
-    }
-    get Type() { return 'ColorInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Suggestions() {
-        return (this._Suggestions == null ? this._Suggestions : this._Suggestions.slice());
-    }
-    set Suggestions(newSetting) {
-        allowListSatisfying('suggestion list', newSetting, ValueIsColor);
-        if (ValuesDiffer(this._Suggestions, newSetting)) {
-            this._Suggestions = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        this._serializePropertyInto('Suggestions', Serialization);
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Suggestions = acceptableOptionalListSatisfying(Serialization.Suggestions, undefined, ValueIsColor);
-    }
-}
-builtInWidgetTypes['ColorInput'] = WAT_ColorInput;
-appendStyle(`
-  .WAT.Widget > .WAT.ColorInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-  `);
-/**** DropDown ****/
-export class WAT_DropDown extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Options ****/
-        Object.defineProperty(this, "_Options", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                let Value = acceptableTextline(this._Value, '');
-                const Options = acceptableListSatisfying(this._Options, [], ValueIsTextline);
-                const _onInput = (Event) => {
-                    this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                return html `<select class="WAT Content DropDown"
-        disabled=${this.Enabling == false} onInput=${_onInput}
-      >${Options.map((Option) => {
-                    const OptionValue = Option.replace(/:.*$/, '').trim();
-                    let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
-                    const disabled = (OptionLabel[0] === '-');
-                    if (/^-[^-]+$/.test(OptionLabel)) {
-                        OptionLabel = OptionLabel.slice(1);
-                    }
-                    return html `<option value=${OptionValue} selected=${OptionValue === Value}
-            disabled=${disabled}
-          >
-            ${OptionLabel}
-          </option>`;
-                })}</select>`;
-            }
-        });
-    }
-    get Type() { return 'DropDown'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Options() {
-        return (this._Options == null ? this._Options : this._Options.slice());
-    }
-    set Options(newSetting) {
-        allowListSatisfying('option list', newSetting, ValueIsTextline);
-        if (ValuesDiffer(this._Options, newSetting)) {
-            this._Options = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        this._serializePropertyInto('Options', Serialization);
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Options = acceptableListSatisfying(Serialization.Options, [], ValueIsTextline);
-    }
-}
-builtInWidgetTypes['DropDown'] = WAT_DropDown;
-appendStyle(`
-  .WAT.Widget > .WAT.DropDown {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:0px 2px 0px 2px;
-  }
-  `);
-/**** PseudoDropDown ****/
-export class WAT_PseudoDropDown extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Icon ****/
-        Object.defineProperty(this, "_Icon", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Options ****/
-        Object.defineProperty(this, "_Options", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                let Value = acceptableTextline(this._Value, '');
-                const Icon = acceptableURL(this._Icon, `${IconFolder}/menu.png`);
-                const Color = acceptableColor(this._Color, 'black');
-                const Options = acceptableListSatisfying(this._Options, [], ValueIsTextline);
-                const _onInput = (Event) => {
-                    this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                return html `<div class="WAT Content PseudoDropDown">
-        <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
-        "></div>
-        <select disabled=${this.Enabling == false} onInput=${_onInput}>
-          ${Options.map((Option) => {
-                    const OptionValue = Option.replace(/:.*\$/, '').trim();
-                    let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
-                    const disabled = (OptionLabel[0] === '-');
-                    if (/^-[^-]+$/.test(OptionLabel)) {
-                        OptionLabel = OptionLabel.slice(1);
-                    }
-                    return html `<option value=${OptionValue} selected=${OptionValue === Value}
-              disabled=${disabled}
-            >
-              ${OptionLabel}
-            </option>`;
-                })}
-        </select>
-      </div>`;
-            }
-        });
-    }
-    get Type() { return 'PseudoDropDown'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Icon() { return this._Icon; }
-    set Icon(newSetting) {
-        allowURL('icon image ULR', newSetting);
-        if (this._Icon !== newSetting) {
-            this._Icon = newSetting;
-            this.rerender();
-        }
-    }
-    get Options() {
-        return (this._Options == null ? this._Options : this._Options.slice());
-    }
-    set Options(newSetting) {
-        allowListSatisfying('option list', newSetting, ValueIsTextline);
-        if (ValuesDiffer(this._Options, newSetting)) {
-            this._Options = (newSetting == null ? newSetting : newSetting.slice());
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        this._serializePropertyInto('Icon', Serialization);
-        this._serializePropertyInto('Options', Serialization);
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Icon = acceptableURL(Serialization.Icon, `${IconFolder}/menu.png`);
-        this._Options = acceptableListSatisfying(Serialization.Options, [], ValueIsTextline);
-    }
-}
-builtInWidgetTypes['PseudoDropDown'] = WAT_PseudoDropDown;
-appendStyle(`
-  .WAT.Widget > .WAT.PseudoDropDown > div {
-    display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px;
-    -webkit-mask-size:contain;           mask-size:contain;
-    -webkit-mask-position:center center; mask-position:center center;
-  }
-
-  .WAT.Widget > .WAT.PseudoDropDown > select {
-    display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px;
-    opacity:0.01;
-  }
-  `);
-/**** TextInput ****/
-export class WAT_TextInput extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: true
-        });
-        /**** minLength ****/
-        Object.defineProperty(this, "_minLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxLength ****/
-        Object.defineProperty(this, "_maxLength", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** LineWrapping ****/
-        Object.defineProperty(this, "_LineWrapping", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** SpellChecking ****/
-        Object.defineProperty(this, "_SpellChecking", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** acceptableFileTypes ****/
-        Object.defineProperty(this, "_acceptableFileTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_shownValue", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_InputElement", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: createRef()
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Value, Enabling } = this;
-                /**** handle external changes ****/
-                let ValueToShow = acceptableText(Value, '');
-                if ((this._InputElement.current != null) &&
-                    (document.activeElement === this._InputElement.current)) {
-                    ValueToShow = this._shownValue;
-                }
-                else {
-                    this._shownValue = ValueToShow;
-                }
-                const _onInput = (Event) => {
-                    if (Enabling === false) {
-                        return consumingEvent(Event);
-                    }
-                    this._shownValue = this.Value = Event.target.value;
-                    if (this._onInput != null) {
-                        this._onInput_(Event);
-                    } // no typo!
-                };
-                const _onBlur = (Event) => {
-                    this.rerender();
-                    if (this._onBlur != null) {
-                        this._onBlur_(Event);
-                    } // no typo!
-                };
-                /**** process any other parameters ****/
-                const Placeholder = acceptableOptionalTextline(this._Placeholder);
-                const readonly = acceptableOptionalBoolean(this._readonly);
-                const minLength = acceptableOptionalOrdinal(this._minLength);
-                const maxLength = acceptableOptionalOrdinal(this._maxLength);
-                const LineWrapping = acceptableOptionalBoolean(this._LineWrapping);
-                const SpellChecking = acceptableOptionalBoolean(this._SpellChecking);
-                let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes, [], ValueIsTextFormat);
-                if (acceptableFileTypes.length === 0) {
-                    acceptableFileTypes = WAT_supportedTextFormats.slice();
-                }
-                /**** prepare file dropping ****/
-                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
-                function _acceptableDataIn(Event) {
-                    if (Event.dataTransfer.types.includes('text/plain')) {
-                        return true;
-                    }
-                    for (let Item of Event.dataTransfer.items) {
-                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-                const _onDragOver = (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        Event.dataTransfer.dropEffect = 'copy';
-                    }
-                };
-                const _onDrop = async (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        if (Event.dataTransfer.types.includes('text/plain')) {
-                            const Value = Event.dataTransfer.getData('text');
-                            this._shownValue = this.Value = Value;
-                            if (this._onInput != null) {
-                                this._onInput_(Event);
-                            } // no typo!
-                        }
-                        else {
-                            try {
-                                for (let Item of Event.dataTransfer.items) {
-                                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                        this._shownValue = this.Value = await FileReadAsText(Item.getAsFile(), Item.type);
-                                        if (this._onInput != null) {
-                                            this._onInput_(Event);
-                                        } // no typo!
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Signal) {
-                                console.warn('file drop error', Signal);
-                                if (this._onDropError != null) {
-                                    this._onDropError_(Signal);
-                                }
-                            }
-                        }
-                    }
-                };
-                /**** actual rendering ****/
-                return html `<textarea class="WAT Content TextInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        spellcheck=${SpellChecking} style="resize:none; ${LineWrapping == true
-                    ? 'overflow-wrap:break-word; hyphens:auto'
-                    : 'white-space:pre'}"
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-      />`;
-            }
-        });
-    }
-    get Type() { return 'TextInput'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get minLength() { return this._minLength; }
-    set minLength(newSetting) {
-        allowOrdinal('minimal length', newSetting);
-        if (this._minLength !== newSetting) {
-            this._minLength = newSetting;
-            this.rerender();
-        }
-    }
-    get maxLength() { return this._maxLength; }
-    set maxLength(newSetting) {
-        allowOrdinal('maximal length', newSetting);
-        if (this._maxLength !== newSetting) {
-            this._maxLength = newSetting;
-            this.rerender();
-        }
-    }
-    get LineWrapping() { return this._LineWrapping; }
-    set LineWrapping(newSetting) {
-        allowBoolean('line wrapping setting', newSetting);
-        if (this._LineWrapping !== newSetting) {
-            this._LineWrapping = newSetting;
-            this.rerender();
-        }
-    }
-    get SpellChecking() { return this._SpellChecking; }
-    set SpellChecking(newSetting) {
-        allowBoolean('spell check setting', newSetting);
-        if (this._SpellChecking !== newSetting) {
-            this._SpellChecking = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableFileTypes() { return this._acceptableFileTypes.slice(); }
-    set acceptableFileTypes(newSetting) {
-        allowListSatisfying('acceptable file types', newSetting, ValueIsTextFormat);
-        if (newSetting == null) {
-            newSetting = [];
-        }
-        if (ValuesDiffer(this._acceptableFileTypes, newSetting)) {
-            this._acceptableFileTypes = newSetting.slice();
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'readonly', 'minLength', 'maxLength', 'LineWrapping',
-            'SpellChecking', 'acceptableFileTypes',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._minLength = acceptableOptionalOrdinal(Serialization.minLength);
-        this._maxLength = acceptableOptionalOrdinal(Serialization.maxLength);
-        this._LineWrapping = acceptableBoolean(Serialization.LineWrapping, true);
-        this._SpellChecking = acceptableBoolean(Serialization.SpellChecking, false);
-        this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes, [], ValueIsTextFormat);
-    }
-}
-builtInWidgetTypes['TextInput'] = WAT_TextInput;
-appendStyle(`
-  .WAT.Widget > .WAT.TextInput {
-    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff;
-    padding:2px 2px 2px 2px;
-  }
-
-  .WAT.Widget > .WAT.TextInput:read-only {
-    border:solid 1px #DDDDDD; border-radius:2px;
-    background:#F0F0F0;
-  }
-  `);
-/**** MarkdownView ****/
-import { Marked } from 'marked';
-import hljs from 'highlight.js/lib/core';
-import { default as _css } from 'highlight.js/lib/languages/css';
-hljs.registerLanguage('html', _css);
-import { default as _javascript } from 'highlight.js/lib/languages/javascript';
-hljs.registerLanguage('javascript', _javascript);
-import { default as _java } from 'highlight.js/lib/languages/java';
-hljs.registerLanguage('java', _java);
-import { default as _json } from 'highlight.js/lib/languages/json';
-hljs.registerLanguage('json', _json);
-import { default as _typescript } from 'highlight.js/lib/languages/typescript';
-hljs.registerLanguage('typescript', _typescript);
-import { default as _xml } from 'highlight.js/lib/languages/xml';
-hljs.registerLanguage('html', _xml);
-hljs.registerLanguage('xml', _xml);
-export class WAT_MarkdownView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        Object.defineProperty(this, "_HTMLContent", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: ''
-        });
-        Object.defineProperty(this, "_marked", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** readonly ****/
-        Object.defineProperty(this, "_readonly", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: true
-        });
-        /**** acceptableFileTypes ****/
-        Object.defineProperty(this, "_acceptableFileTypes", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const { Enabling, readonly } = this;
-                let acceptableFileTypes = acceptableListSatisfying(this._acceptableFileTypes, [], ValueIsMarkdownFormat);
-                if (acceptableFileTypes.length === 0) {
-                    acceptableFileTypes = WAT_supportedMarkdownFormats.slice();
-                }
-                /**** prepare file dropping ****/
-                const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
-                function _acceptableDataIn(Event) {
-                    if (Event.dataTransfer.types.includes('text/plain')) {
-                        return true;
-                    }
-                    for (let Item of Event.dataTransfer.items) {
-                        if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-                const _onDragOver = (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        Event.dataTransfer.dropEffect = 'copy';
-                    }
-                };
-                const _onDrop = async (Event) => {
-                    if (_acceptableDataIn(Event)) {
-                        Event.preventDefault();
-                        if (Event.dataTransfer.types.includes('text/plain')) {
-                            const Value = Event.dataTransfer.getData('text');
-                            this.Value = Value;
-                            if (this._onInput != null) {
-                                this._onInput_(Event);
-                            } // no typo!
-                        }
-                        else {
-                            try {
-                                for (let Item of Event.dataTransfer.items) {
-                                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                        this.Value = await FileReadAsMarkdown(Item.getAsFile(), Item.type);
-                                        if (this._onInput != null) {
-                                            this._onInput_(Event);
-                                        } // no typo!
-                                        break;
-                                    }
-                                }
-                            }
-                            catch (Signal) {
-                                console.warn('file drop error', Signal);
-                                if (this._onDropError != null) {
-                                    this._onDropError_(Signal);
-                                }
-                            }
-                        }
-                    }
-                };
-                /**** actual rendering ****/
-                return html `<div class="WAT Content MarkdownView"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        dangerouslySetInnerHTML=${{ __html: this._HTMLContent }}
-      />`;
-            }
-        });
-        this._marked = new Marked();
-        this._marked.setOptions({
-            gfm: true, breaks: true,
-        });
-        //    this._marked.use(markedKatex({ nonStandard:true }))
-    }
-    get Type() { return 'MarkdownView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    /**** Value ****/
-    get Value() { return this._Value; }
-    set Value(newValue) {
-        allowText('value', newValue);
-        if (ValuesDiffer(this._Value, newValue)) {
-            this._Value = newValue;
-            try {
-                this._HTMLContent = this._marked.parse(newValue);
-            }
-            catch (Signal) {
-                console.warn('"Value" Setting Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"Value" Setting Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-            if (this._onValueChange != null) {
-                this._onValueChange_();
-            } // no typo!
-            this.rerender();
-        }
-    }
-    get readonly() { return this._readonly; }
-    set readonly(newSetting) {
-        allowBoolean('readonly setting', newSetting);
-        if (this._readonly !== newSetting) {
-            this._readonly = newSetting;
-            this.rerender();
-        }
-    }
-    get acceptableFileTypes() { return this._acceptableFileTypes.slice(); }
-    set acceptableFileTypes(newSetting) {
-        allowListSatisfying('acceptable file types', newSetting, ValueIsMarkdownFormat);
-        if (newSetting == null) {
-            newSetting = [];
-        }
-        if (ValuesDiffer(this._acceptableFileTypes, newSetting)) {
-            this._acceptableFileTypes = newSetting.slice();
-            this.rerender();
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'readonly', 'acceptableFileTypes',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._readonly = acceptableBoolean(Serialization.readonly, false);
-        this._acceptableFileTypes = acceptableListSatisfying(Serialization.acceptableFileTypes, [], ValueIsMarkdownFormat);
-    }
-}
-builtInWidgetTypes['MarkdownView'] = WAT_MarkdownView;
-appendStyle(`
-  .WAT.Widget > .WAT.MarkdownView {
-    overflow-y:scroll;
-  }
-  `);
-/**** TextTab ****/
-export class WAT_TextTab extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Activation ****/
-        Object.defineProperty(this, "_Activation", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const active = (this.isActive ? 'active' : '');
-                const _onClick = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    if (this._onClick != null) {
-                        this._onClick_(Event);
-                    } // no typo!
-                };
-                const Value = acceptableTextline(this.Value, '');
-                return html `<div class="WAT ${active} TextTab"
-        onClick=${_onClick}>${Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'TextTab'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Activation() {
-        return this._Activation;
-    }
-    set Activation(newActivation) {
-        expectBoolean('tab activation', newActivation);
-        if (this._Activation !== newActivation) {
-            this._Activation = newActivation;
-            this.rerender();
-        }
-    }
-    /**** activate/deactivate ****/
-    activate() { this.Activation = true; }
-    deactivate() { this.Activation = false; }
-    /**** isActive ****/
-    get isActive() { return this.Activation; }
-    set isActive(newActivation) { this.Activation = newActivation; }
-}
-builtInWidgetTypes['TextTab'] = WAT_TextTab;
-appendStyle(`
-  .WAT.Widget > .WAT.TextTab {
-    display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
-    border:none; border-bottom:solid 2px transparent;
-    font-weight:bold;
-  }
-  .WAT.Widget > .WAT.TextTab.active {
-    border:none; border-bottom:solid 2px black;
-  }
-  `);
-/**** IconTab ****/
-export class WAT_IconTab extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Activation ****/
-        Object.defineProperty(this, "_Activation", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                const active = (this.isActive ? 'active' : '');
-                const _onClick = (Event) => {
-                    if (this.Enabling == false) {
-                        return consumingEvent(Event);
-                    }
-                    if (this._onClick != null) {
-                        this._onClick_(Event);
-                    } // no typo!
-                };
-                const Value = acceptableURL(this._Value, `${IconFolder}/pencil.png`);
-                const Color = acceptableColor(this.Color, 'black');
-                return html `<div class="WAT ${active} IconTab" style="
-        -webkit-mask-image:url(${Value}); mask-image:url(${Value});
-        background-color:${Color};
-      " disabled=${this.Enabling == false} onClick=${_onClick}
-      />`;
-            }
-        });
-    }
-    get Type() { return 'IconTab'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Activation() {
-        return this._Activation;
-    }
-    set Activation(newActivation) {
-        expectBoolean('tab activation', newActivation);
-        if (this._Activation !== newActivation) {
-            this._Activation = newActivation;
-            this.rerender();
-        }
-    }
-    /**** activate/deactivate ****/
-    activate() { this.Activation = true; }
-    deactivate() { this.Activation = false; }
-    /**** isActive ****/
-    get isActive() { return this.Activation; }
-    set isActive(newActivation) { this.Activation = newActivation; }
-}
-builtInWidgetTypes['IconTab'] = WAT_IconTab;
-appendStyle(`
-  .WAT.Widget > .WAT.IconTab {
-    left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
-    border:none; border-bottom:solid 2px transparent;
-
-    -webkit-mask-size:contain;           mask-size:contain;
-    -webkit-mask-position:center center; mask-position:center center;
-  }
-  .WAT.Widget > .WAT.IconTab.active {
-    border:none; border-bottom:solid 2px black;
-  }
-  `);
-/**** WidgetPane ****/
-export class WAT_WidgetPane extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** _releaseWidgets ****/
-        Object.defineProperty(this, "_shownWidgets", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                var _a;
-                this._releaseWidgets();
-                if (this._Value == null) {
-                    return '';
-                }
-                const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._Value);
-                if ((SourceWidget == null) || (SourceWidget === this)) {
-                    return '';
-                }
-                const WidgetsToShow = (SourceWidget.Type === 'Outline'
-                    ? SourceWidget.bundledWidgets()
-                    : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-                WidgetsToShow.forEach((Widget) => Widget._Pane = this);
-                this._shownWidgets = WidgetsToShow;
-                const PaneGeometry = this.Geometry;
-                const BaseGeometry = SourceWidget.Geometry;
-                return html `<div class="WAT Content WidgetPane">
-        ${WidgetsToShow.toReversed().map((Widget) => {
-                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
-                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
-                })}
-      </div>`;
-            }
-        });
-    }
-    get Type() { return 'WidgetPane'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    /**** Value ****/
-    get Value() { return this._Value; }
-    set Value(newValue) {
-        var _a;
-        let SourceWidget, SourcePath;
-        if (ValueIsWidget(newValue)) {
-            SourceWidget = newValue;
-            SourcePath = SourceWidget.Path;
-        }
-        else {
-            allowPath('widget pane source path', newValue);
-            if ((newValue == null) || (newValue.trim() === '')) {
-                SourceWidget = undefined;
-                SourcePath = undefined;
-            }
-            else {
-                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newValue);
-                SourcePath = newValue;
-            }
-        }
-        if (SourceWidget == null) {
-            if (this._Value != null) {
-                this._Value = undefined;
-                this.rerender();
-            }
-            return;
-        }
-        if (SourceWidget === this)
-            throwError('InvalidArgument: a WidgetPane can not show itself');
-        if (SourceWidget.Page === this.Page)
-            throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
-        if (this._Value !== SourcePath) {
-            this._Value = SourcePath;
-            if (this._onValueChange != null) {
-                this._onValueChange_();
-            } // no typo!
-            this.rerender();
-        }
-    }
-    /**** _GeometryRelativeTo  ****/
-    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
-        const WidgetAnchors = Widget.Anchors;
-        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
-        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
-        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
-        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
-        let x, y, Width, Height;
-        switch (WidgetAnchors[0]) {
-            case 'left-width':
-                x = WidgetX - BaseX;
-                Width = WidgetWidth;
-                break;
-            case 'width-right':
-                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
-                Width = WidgetWidth;
-                break;
-            case 'left-right':
-                x = WidgetX - BaseX;
-                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
-        }
-        switch (WidgetAnchors[1]) {
-            case 'top-height':
-                y = WidgetY - BaseY;
-                Height = WidgetHeight;
-                break;
-            case 'height-bottom':
-                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
-                Height = WidgetHeight;
-                break;
-            case 'top-bottom':
-                y = WidgetY - BaseY;
-                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
-        }
-        // @ts-ignore TS5905 all variables will be assigned by now
-        return { x, y, Width, Height };
-    }
-    _releaseWidgets() {
-        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
-    }
-    componentWillUnmount() {
-        this._releaseWidgets();
-    }
-}
-builtInWidgetTypes['WidgetPane'] = WAT_WidgetPane;
-appendStyle(`
-  .WAT.Widget > .WAT.WidgetPane {
-    overflow:hidden;
-  }
-  `);
-/**** DoubleWidgetPane ****/
-export class WAT_DoubleWidgetPane extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** primaryWidgetPath ****/
-        Object.defineProperty(this, "_primaryWidgetPath", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: undefined
-        });
-        /**** secondaryWidgetPath ****/
-        Object.defineProperty(this, "_secondaryWidgetPath", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: undefined
-        });
-        /**** minPaneWidth ****/
-        Object.defineProperty(this, "_minPaneWidth", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onVisibilityChange ****/
-        Object.defineProperty(this, "_onVisibilityChange", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** primaryPaneIsVisible ****/
-        Object.defineProperty(this, "_primaryPaneIsVisible", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** secondaryPaneIsVisible ****/
-        Object.defineProperty(this, "_secondaryPaneIsVisible", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        /**** _releaseWidgets ****/
-        Object.defineProperty(this, "_shownWidgets", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_VisibilityChanged", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                var _a, _b;
-                this._releaseWidgets();
-                const totalWidth = this.Width;
-                const minPaneWidth = acceptableOrdinal(this._minPaneWidth, 200);
-                const bothPanesVisible = totalWidth >= 2 * minPaneWidth;
-                const PaneWidth = (bothPanesVisible ? Math.floor(totalWidth / 2) : totalWidth);
-                const Value = acceptableOneOf(this._Value, 'primary', ['primary', 'secondary']);
-                this._VisibilityChanged = (bothPanesVisible
-                    ? !this._primaryPaneIsVisible || !this._secondaryPaneIsVisible
-                    : (this._primaryPaneIsVisible !== (Value === 'primary')) ||
-                        (this._secondaryPaneIsVisible !== (Value === 'secondary')));
-                this._primaryPaneIsVisible = bothPanesVisible || (Value === 'primary');
-                this._secondaryPaneIsVisible = bothPanesVisible || (Value === 'secondary');
-                this._shownWidgets = [];
-                let primaryWidget;
-                let primaryWidgetsToShow = [];
-                if (this._primaryPaneIsVisible && (this._primaryWidgetPath != null)) {
-                    primaryWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._primaryWidgetPath);
-                    if ((primaryWidget != null) && (primaryWidget !== this)) {
-                        primaryWidgetsToShow = (primaryWidget.Type === 'Outline'
-                            ? primaryWidget.bundledWidgets()
-                            : [primaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-                        primaryWidgetsToShow.forEach((Widget) => Widget._Pane = this);
-                        this._shownWidgets.push(...primaryWidgetsToShow);
-                    }
-                }
-                let secondaryWidget;
-                let secondaryWidgetsToShow = [];
-                if (this._secondaryPaneIsVisible && (this._secondaryWidgetPath != null)) {
-                    secondaryWidget = (_b = this.Applet) === null || _b === void 0 ? void 0 : _b.WidgetAtPath(this._secondaryWidgetPath);
-                    if ((secondaryWidget != null) && (secondaryWidget !== this)) {
-                        secondaryWidgetsToShow = (secondaryWidget.Type === 'Outline'
-                            ? secondaryWidget.bundledWidgets()
-                            : [secondaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-                        secondaryWidgetsToShow.forEach((Widget) => Widget._Pane = this);
-                        this._shownWidgets.push(...secondaryWidgetsToShow);
-                    }
-                }
-                const { x, y, Width, Height } = this.Geometry;
-                const primaryPaneGeometry = { x, y, Width: PaneWidth, Height };
-                const primaryBaseGeometry = (primaryWidget == null ? undefined : primaryWidget.Geometry);
-                const secondaryPaneGeometry = (bothPanesVisible
-                    ? { x: x + PaneWidth, y, Width: PaneWidth, Height }
-                    : { x, y, Width: PaneWidth, Height });
-                const secondaryBaseGeometry = (secondaryWidget == null ? undefined : secondaryWidget.Geometry);
-                return html `<div class="WAT Content DoubleWidgetPane">
-       <div class="primaryPane" style="
-         width:${this._primaryPaneIsVisible ? PaneWidth : 0}px
-       ">
-        ${primaryWidgetsToShow.toReversed().map((Widget) => {
-                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, primaryBaseGeometry, primaryPaneGeometry);
-                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
-                })}
-       </>
-
-       <div class="secondaryPane" style="
-         left:${bothPanesVisible ? PaneWidth : 0}px;
-         width:${this._secondaryPaneIsVisible ? PaneWidth : 0}px
-       ">
-        ${secondaryWidgetsToShow.toReversed().map((Widget) => {
-                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, secondaryBaseGeometry, secondaryPaneGeometry);
-                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
-                })}
-       </>
-      </div>`;
-            }
-        });
-    }
-    get Type() { return 'DoubleWidgetPane'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get primaryWidgetPath() { return this._primaryWidgetPath; }
-    set primaryWidgetPath(newPath) {
-        var _a;
-        let SourceWidget, SourcePath;
-        if (ValueIsWidget(newPath)) {
-            SourceWidget = newPath;
-            SourcePath = SourceWidget.Path;
-        }
-        else {
-            allowPath('primary pane widget source path', newPath);
-            if ((newPath == null) || (newPath.trim() === '')) {
-                SourceWidget = undefined;
-                SourcePath = undefined;
-            }
-            else {
-                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
-                SourcePath = newPath;
-            }
-        }
-        if (SourceWidget == null) {
-            if (this._primaryWidgetPath != null) {
-                this._primaryWidgetPath = undefined;
-                this.rerender();
-            }
-            this._primaryWidgetPath = SourcePath;
-            return;
-        }
-        if (this._primaryWidgetPath !== SourcePath) {
-            this._primaryWidgetPath = SourcePath;
-            if (SourceWidget === this)
-                throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
-            if (SourceWidget.Page === this.Page)
-                throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
-            this.rerender();
-        }
-    }
-    get secondaryWidgetPath() { return this._secondaryWidgetPath; }
-    set secondaryWidgetPath(newPath) {
-        var _a;
-        let SourceWidget, SourcePath;
-        if (ValueIsWidget(newPath)) {
-            SourceWidget = newPath;
-            SourcePath = SourceWidget.Path;
-        }
-        else {
-            allowPath('secondary pane widget source path', newPath);
-            if ((newPath == null) || (newPath.trim() === '')) {
-                SourceWidget = undefined;
-                SourcePath = undefined;
-            }
-            else {
-                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
-                SourcePath = newPath;
-            }
-        }
-        if (SourceWidget == null) {
-            if (this._secondaryWidgetPath != null) {
-                this._secondaryWidgetPath = undefined;
-                this.rerender();
-            }
-            this._secondaryWidgetPath = SourcePath;
-            return;
-        }
-        if (this._secondaryWidgetPath !== SourcePath) {
-            this._secondaryWidgetPath = SourcePath;
-            if (SourceWidget === this)
-                throwError('InvalidArgument: a DoubleWidgetPane can not show itself');
-            if (SourceWidget.Page === this.Page)
-                throwError('InvalidArgument: a DoubleWidgetPane can not show other widgets from the same page');
-            this.rerender();
-        }
-    }
-    get minPaneWidth() { return this._minPaneWidth; }
-    set minPaneWidth(newSetting) {
-        allowOrdinal('minimal pane width', newSetting);
-        if (this._minPaneWidth !== newSetting) {
-            this._minPaneWidth = newSetting;
-            this.rerender();
-        }
-    }
-    get onVisibilityChange() { return this._onVisibilityChange_; }
-    set onVisibilityChange(newCallback) {
-        allowFunction('"onVisibilityChange" callback', newCallback);
-        this._onVisibilityChange = newCallback;
-    }
-    _onVisibilityChange_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onVisibilityChange = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onVisibilityChange != null) {
-                    this._onVisibilityChange.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onVisibilityChange" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: 'Custom Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get primaryPaneIsVisible() { return this._primaryPaneIsVisible; }
-    set primaryPaneIsVisible(_) { throwReadOnlyError('primaryPaneIsVisible'); }
-    get secondaryPaneIsVisible() { return this._secondaryPaneIsVisible; }
-    set secondaryPaneIsVisible(_) { throwReadOnlyError('secondaryPaneIsVisible'); }
-    /**** _GeometryRelativeTo  ****/
-    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
-        const WidgetAnchors = Widget.Anchors;
-        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
-        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
-        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
-        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
-        let x, y, Width, Height;
-        switch (WidgetAnchors[0]) {
-            case 'left-width':
-                x = WidgetX - BaseX;
-                Width = WidgetWidth;
-                break;
-            case 'width-right':
-                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
-                Width = WidgetWidth;
-                break;
-            case 'left-right':
-                x = WidgetX - BaseX;
-                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
-        }
-        switch (WidgetAnchors[1]) {
-            case 'top-height':
-                y = WidgetY - BaseY;
-                Height = WidgetHeight;
-                break;
-            case 'height-bottom':
-                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
-                Height = WidgetHeight;
-                break;
-            case 'top-bottom':
-                y = WidgetY - BaseY;
-                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
-        }
-        // @ts-ignore TS5905 all variables will be assigned by now
-        return { x, y, Width, Height };
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'primaryWidgetPath', 'secondaryWidgetPath', 'minPaneWidth',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._primaryWidgetPath = acceptableOptionalPath(Serialization.primaryWidgetPath);
-        this._secondaryWidgetPath = acceptableOptionalPath(Serialization.secondaryWidgetPath);
-        this._minPaneWidth = acceptableOrdinal(Serialization.minPaneWidth, 200);
-    }
-    _releaseWidgets() {
-        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
-    }
-    componentWillUnmount() {
-        this._releaseWidgets();
-    }
-    componentDidMount() {
-        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
-            this._onVisibilityChange_();
-        }
-    }
-    componentDidUpdate() {
-        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
-            this._onVisibilityChange_();
-        }
-    }
-}
-builtInWidgetTypes['DoubleWidgetPane'] = WAT_DoubleWidgetPane;
-appendStyle(`
-  .WAT.Widget > .WAT.DoubleWidgetPane {
-    overflow:hidden;
-  }
-  .WAT.Widget > .WAT.DoubleWidgetPane > .primaryPane {
-    display:block; position:absolute;
-    left:0px; top:0px; right:auto; bottom:0px; height:auto;
-  }
-  .WAT.Widget > .WAT.DoubleWidgetPane > .secondaryPane {
-    display:block; position:absolute;
-    top:0px; right:auto; bottom:0px; height:auto;
-  }
-  `);
-/**** SidebarWidgetPane ****/
-export const WAT_SidebarStates = ['hidden', 'overlaid', 'visible'];
-export class WAT_SidebarWidgetPane extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** primaryWidgetPath ****/
-        Object.defineProperty(this, "_primaryWidgetPath", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: undefined
-        });
-        /**** SidebarWidgetPath ****/
-        Object.defineProperty(this, "_SidebarWidgetPath", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: undefined
-        });
-        /**** minPaneWidth ****/
-        Object.defineProperty(this, "_minPaneWidth", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** minSidebarWidth ****/
-        Object.defineProperty(this, "_minSidebarWidth", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** maxSidebarWidth ****/
-        Object.defineProperty(this, "_maxSidebarWidth", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** SidebarState ****/
-        Object.defineProperty(this, "_SidebarState", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: 'hidden'
-        });
-        /**** onVisibilityChange ****/
-        Object.defineProperty(this, "_onVisibilityChange", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** _releaseWidgets ****/
-        Object.defineProperty(this, "_shownWidgets", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_VisibilityChanged", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: false
-        });
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                var _a, _b;
-                this._releaseWidgets();
-                const totalWidth = this.Width;
-                const minPaneWidth = acceptableOrdinal(this._minPaneWidth, 200);
-                const minSidebarWidth = acceptableOrdinal(this._minSidebarWidth, 100);
-                const maxSidebarWidth = acceptableOrdinal(this._maxSidebarWidth, 100);
-                this._VisibilityChanged = false;
-                if (totalWidth < minPaneWidth + minSidebarWidth) {
-                    if (this._SidebarState === 'visible') {
-                        this._VisibilityChanged = true;
-                        this._SidebarState = 'hidden';
-                    }
-                }
-                else {
-                    if (this._SidebarState === 'hidden') {
-                        this._VisibilityChanged = true;
-                        this._SidebarState = 'visible';
-                    }
-                }
-                let PaneWidth = 0, SidebarWidth = 0;
-                switch (this._SidebarState) {
-                    case 'hidden':
-                        PaneWidth = totalWidth;
-                        SidebarWidth = 0;
-                        break;
-                    case 'overlaid':
-                        PaneWidth = totalWidth;
-                        SidebarWidth = Math.max(minSidebarWidth, Math.min(PaneWidth - 40, maxSidebarWidth));
-                        break;
-                    case 'visible':
-                        SidebarWidth = Math.max(minSidebarWidth, Math.min(totalWidth - minPaneWidth, maxSidebarWidth));
-                        PaneWidth = totalWidth - SidebarWidth;
-                }
-                this._shownWidgets = [];
-                let primaryWidget;
-                let primaryWidgetsToShow = [];
-                if (this._primaryWidgetPath != null) {
-                    primaryWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._primaryWidgetPath);
-                    if ((primaryWidget != null) && (primaryWidget !== this)) {
-                        primaryWidgetsToShow = (primaryWidget.Type === 'Outline'
-                            ? primaryWidget.bundledWidgets()
-                            : [primaryWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-                        primaryWidgetsToShow.forEach((Widget) => Widget._Pane = this);
-                        this._shownWidgets.push(...primaryWidgetsToShow);
-                    }
-                }
-                let SidebarWidget;
-                let SidebarWidgetsToShow = [];
-                if ((this._SidebarState !== 'hidden') && (this._SidebarWidgetPath != null)) {
-                    SidebarWidget = (_b = this.Applet) === null || _b === void 0 ? void 0 : _b.WidgetAtPath(this._SidebarWidgetPath);
-                    if ((SidebarWidget != null) && (SidebarWidget !== this)) {
-                        SidebarWidgetsToShow = (SidebarWidget.Type === 'Outline'
-                            ? SidebarWidget.bundledWidgets()
-                            : [SidebarWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-                        SidebarWidgetsToShow.forEach((Widget) => Widget._Pane = this);
-                        this._shownWidgets.push(...SidebarWidgetsToShow);
-                    }
-                }
-                const { x, y, Width, Height } = this.Geometry;
-                const primaryPaneGeometry = {
-                    x: x + (this._SidebarState === 'visible' ? SidebarWidth : 0), y, Width: PaneWidth, Height
-                };
-                const primaryBaseGeometry = (primaryWidget == null ? undefined : primaryWidget.Geometry);
-                const SidebarPaneGeometry = { x, y, Width: SidebarWidth, Height };
-                const SidebarBaseGeometry = (SidebarWidget == null ? undefined : SidebarWidget.Geometry);
-                return html `<div class="WAT Content SidebarWidgetPane">
-       <div class="primaryPane" style="
-         left:${this._SidebarState === 'visible' ? SidebarWidth : 0}px;
-         width:${PaneWidth}px
-       ">
-        ${primaryWidgetsToShow.toReversed().map((Widget) => {
-                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, primaryBaseGeometry, primaryPaneGeometry);
-                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
-                })}
-       </>
-
-       ${(this._SidebarState === 'overlaid') && html `
-         <div class="SidebarUnderlay" onClick=${() => this.closeSidebar()}/>
-       `}
-
-       <div class="Sidebar" style="
-         width:${this._SidebarState === 'hidden' ? 0 : SidebarWidth}px
-       ">
-        ${SidebarWidgetsToShow.toReversed().map((Widget) => {
-                    let Geometry = this._GeometryOfWidgetRelativeTo(Widget, SidebarBaseGeometry, SidebarPaneGeometry);
-                    return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
-                })}
-       </>
-      </div>`;
-            }
-        });
-    }
-    get Type() { return 'SidebarWidgetPane'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get primaryWidgetPath() { return this._primaryWidgetPath; }
-    set primaryWidgetPath(newPath) {
-        var _a;
-        let SourceWidget, SourcePath;
-        if (ValueIsWidget(newPath)) {
-            SourceWidget = newPath;
-            SourcePath = SourceWidget.Path;
-        }
-        else {
-            allowPath('primary widget source path', newPath);
-            if ((newPath == null) || (newPath.trim() === '')) {
-                SourceWidget = undefined;
-                SourcePath = undefined;
-            }
-            else {
-                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
-                SourcePath = newPath;
-            }
-        }
-        if (SourceWidget == null) {
-            if (this._primaryWidgetPath != null) {
-                this._primaryWidgetPath = undefined;
-                this.rerender();
-            }
-            this._primaryWidgetPath = SourcePath;
-            return;
-        }
-        if (this._primaryWidgetPath !== SourcePath) {
-            this._primaryWidgetPath = SourcePath;
-            if (SourceWidget === this)
-                throwError('InvalidArgument: a SidebarWidgetPane can not show itself');
-            if (SourceWidget.Page === this.Page)
-                throwError('InvalidArgument: a SidebarWidgetPane can not show other widgets from the same page');
-            this.rerender();
-        }
-    }
-    get SidebarWidgetPath() { return this._SidebarWidgetPath; }
-    set SidebarWidgetPath(newPath) {
-        var _a;
-        let SourceWidget, SourcePath;
-        if (ValueIsWidget(newPath)) {
-            SourceWidget = newPath;
-            SourcePath = SourceWidget.Path;
-        }
-        else {
-            allowPath('sidebar widget source path', newPath);
-            if ((newPath == null) || (newPath.trim() === '')) {
-                SourceWidget = undefined;
-                SourcePath = undefined;
-            }
-            else {
-                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(newPath);
-                SourcePath = newPath;
-            }
-        }
-        if (SourceWidget == null) {
-            if (this._SidebarWidgetPath != null) {
-                this._SidebarWidgetPath = undefined;
-                this.rerender();
-            }
-            this._SidebarWidgetPath = SourcePath;
-            return;
-        }
-        if (this._SidebarWidgetPath !== SourcePath) {
-            this._SidebarWidgetPath = SourcePath;
-            if (SourceWidget === this)
-                throwError('InvalidArgument: a SidebarWidgetPane can not show itself');
-            if (SourceWidget.Page === this.Page)
-                throwError('InvalidArgument: a SidebarWidgetPane can not show other widgets from the same page');
-            this.rerender();
-        }
-    }
-    get minPaneWidth() { return this._minPaneWidth; }
-    set minPaneWidth(newSetting) {
-        allowOrdinal('minimal pane width', newSetting);
-        if (this._minPaneWidth !== newSetting) {
-            this._minPaneWidth = newSetting;
-            this.rerender();
-        }
-    }
-    get minSidebarWidth() { return this._minSidebarWidth; }
-    set minSidebarWidth(newSetting) {
-        allowOrdinal('minimal sidebar width', newSetting);
-        if (this._minSidebarWidth !== newSetting) {
-            this._minSidebarWidth = newSetting;
-            this.rerender();
-        }
-    }
-    get maxSidebarWidth() { return this._maxSidebarWidth; }
-    set maxSidebarWidth(newSetting) {
-        allowOrdinal('maximal sidebar width', newSetting);
-        if (this._maxSidebarWidth !== newSetting) {
-            this._maxSidebarWidth = newSetting;
-            this.rerender();
-        }
-    }
-    /**** openSidebar ****/
-    openSidebar() {
-        switch (this._SidebarState) {
-            case 'hidden':
-                this._SidebarState = 'overlaid';
-                this.rerender();
-                if (this._onVisibilityChange != null) {
-                    this._onVisibilityChange_();
-                }
-                return;
-            case 'overlaid':
-            case 'visible': return;
-        }
-    }
-    /**** closeSidebar ****/
-    closeSidebar() {
-        switch (this._SidebarState) {
-            case 'hidden': return;
-            case 'overlaid':
-                this._SidebarState = 'hidden';
-                this.rerender();
-                if (this._onVisibilityChange != null) {
-                    this._onVisibilityChange_();
-                }
-                return;
-            case 'visible': return;
-        }
-    }
-    get SidebarState() { return this._SidebarState; }
-    set SidebarState(_) { throwReadOnlyError('SidebarState'); }
-    get onVisibilityChange() { return this._onVisibilityChange_; }
-    set onVisibilityChange(newCallback) {
-        allowFunction('"onVisibilityChange" callback', newCallback);
-        this._onVisibilityChange = newCallback;
-    }
-    _onVisibilityChange_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onVisibilityChange = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onVisibilityChange != null) {
-                    this._onVisibilityChange.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onVisibilityChange" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: 'Custom Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    /**** _GeometryRelativeTo  ****/
-    _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
-        const WidgetAnchors = Widget.Anchors;
-        const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
-        const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
-        const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
-        const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
-        let x, y, Width, Height;
-        switch (WidgetAnchors[0]) {
-            case 'left-width':
-                x = WidgetX - BaseX;
-                Width = WidgetWidth;
-                break;
-            case 'width-right':
-                x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
-                Width = WidgetWidth;
-                break;
-            case 'left-right':
-                x = WidgetX - BaseX;
-                Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
-        }
-        switch (WidgetAnchors[1]) {
-            case 'top-height':
-                y = WidgetY - BaseY;
-                Height = WidgetHeight;
-                break;
-            case 'height-bottom':
-                y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
-                Height = WidgetHeight;
-                break;
-            case 'top-bottom':
-                y = WidgetY - BaseY;
-                Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
-        }
-        // @ts-ignore TS5905 all variables will be assigned by now
-        return { x, y, Width, Height };
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'primaryWidgetPath', 'SidebarWidgetPath',
-            'minPaneWidth', 'minSidebarWidth', 'maxSidebarWidth',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._primaryWidgetPath = acceptableOptionalPath(Serialization.primaryWidgetPath);
-        this._SidebarWidgetPath = acceptableOptionalPath(Serialization.SidebarWidgetPath);
-        this._minPaneWidth = acceptableOrdinal(Serialization.minPaneWidth, 200);
-        this._minSidebarWidth = acceptableOrdinal(Serialization.minSidebarWidth, 100);
-        this._maxSidebarWidth = acceptableOrdinal(Serialization.maxSidebarWidth, 200);
-    }
-    _releaseWidgets() {
-        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
-    }
-    componentWillUnmount() {
-        this._releaseWidgets();
-    }
-    componentDidMount() {
-        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
-            this._onVisibilityChange_();
-        }
-    }
-    componentDidUpdate() {
-        if (this._VisibilityChanged && (this._onVisibilityChange != null)) {
-            this._onVisibilityChange_();
-        }
-    }
-}
-builtInWidgetTypes['SidebarWidgetPane'] = WAT_SidebarWidgetPane;
-appendStyle(`
-  .WAT.Widget > .WAT.SidebarWidgetPane {
-    overflow:hidden;
-  }
-  .WAT.Widget > .WAT.SidebarWidgetPane > .mainPane {
-    display:block; position:absolute;
-    top:0px; right:0px; bottom:0px; width:auto; height:auto;
-  }
-  .WAT.Widget > .WAT.SidebarWidgetPane > .SidebarUnderlay {
-    display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px;
-    background:black; opacity:0.1;
-    pointer-events:auto;
-  }
-  .WAT.Widget > .WAT.SidebarWidgetPane > .Sidebar {
-    display:block; position:absolute;
-    left:0px; top:0px; right:auto; bottom:0px; height:auto;
-  }
-  `);
-/**** Accordion ****/
-export class WAT_Accordion extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content Accordion">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'Accordion'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['Accordion'] = WAT_Accordion;
-appendStyle(`
-  .WAT.Widget > .WAT.Accordion {
-  }
-  `);
-/**** AccordionFold ****/
-export class WAT_AccordionFold extends WAT_Widget {
-    constructor() {
-        super(...arguments);
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content AccordionFold">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'AccordionFold'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['AccordionFold'] = WAT_AccordionFold;
-appendStyle(`
-  .WAT.Widget > .WAT.AccordionFold {
-  }
-  `);
-/**** FlatListView ****/
-export class WAT_FlatListView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Placeholder ****/
-        Object.defineProperty(this, "_Placeholder", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** List ****/
-        Object.defineProperty(this, "_List", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** ItemRenderer ****/
-        Object.defineProperty(this, "_ItemRenderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** SelectionLimit ****/
-        Object.defineProperty(this, "_SelectionLimit", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** selectedIndices ****/
-        Object.defineProperty(this, "_selectedIndices", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
-        });
-        /**** onSelectionChange ****/
-        Object.defineProperty(this, "_onSelectionChange", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onItemSelected ****/
-        Object.defineProperty(this, "_onItemSelected", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** onItemDeselected ****/
-        Object.defineProperty(this, "_onItemDeselected", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: (PropSet) => {
-                let List = acceptableList(this._List, []);
-                let ItemRenderer = acceptableOptionalFunction(this._ItemRenderer);
-                let Placeholder = acceptableTextline(this._Placeholder, '(empty)');
-                let selectedIndices = acceptableListSatisfying(this._selectedIndices, [], ValueIsOrdinal);
-                let SelectionLimit = acceptableOrdinal(this._SelectionLimit, 1);
-                let onClick = acceptableOptionalFunction(this._onClick);
-                let onDblClick = acceptableOptionalFunction(this._onDblClick);
-                let onSelectionChange = acceptableOptionalFunction(this._onSelectionChange);
-                let onItemSelected = acceptableOptionalFunction(this._onItemSelected);
-                let onItemDeselected = acceptableOptionalFunction(this._onItemDeselected);
-                if (ItemRenderer == null) {
-                    ItemRenderer = (Item) => html `${Item + ''}`;
-                }
-                const selectedIndexSet = Object.create(null);
-                selectedIndices = selectedIndices.filter((selectedIndex) => {
-                    if ((selectedIndex < List.length) &&
-                        !(selectedIndex in selectedIndexSet)) {
-                        selectedIndexSet[selectedIndex] = true;
-                        return true;
-                    }
-                    else {
-                        return false;
-                    }
-                });
-                if (selectedIndices.length > SelectionLimit) {
-                    const deselectedIndices = selectedIndices.slice(SelectionLimit);
-                    selectedIndices.length = SelectionLimit;
-                    this._onSelectionChange_(selectedIndices);
-                    if (this._onItemDeselected != null) {
-                        deselectedIndices.forEach((deselectedIndex) => {
-                            this._onItemDeselected_(List[deselectedIndex], deselectedIndex);
-                        });
-                    }
-                }
-                const _onClick = (Event, Index) => {
-                    Event.stopImmediatePropagation();
-                    Event.preventDefault();
-                    if (SelectionLimit === 0) {
-                        return;
-                    }
-                    let SelectionChanged = false;
-                    let IndicesToSelect, IndicesToDeselect;
-                    if (Event.shiftKey || Event.metaKey) {
-                        SelectionChanged = true;
-                        if (ItemIsSelected(Index)) {
-                            IndicesToDeselect = [Index];
-                            selectedIndices = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
-                        }
-                        else {
-                            if (selectedIndices.length === SelectionLimit) {
-                                IndicesToDeselect = [selectedIndices.shift()];
-                            }
-                            IndicesToSelect = [Index];
-                            selectedIndices.push(Index);
-                        }
-                    }
-                    else {
-                        IndicesToDeselect = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
-                        SelectionChanged = !ItemIsSelected(Index);
-                        IndicesToSelect = (SelectionChanged ? [Index] : []);
-                        selectedIndices = [Index];
-                    }
-                    if (SelectionChanged && (this._onSelectionChange != null)) {
-                        this._onSelectionChange_(selectedIndices);
-                    }
-                    // @ts-ignore TS2454 let's check IF variables were assigned
-                    if ((IndicesToDeselect != null) && (this._onItemDeselected != null)) {
-                        IndicesToDeselect.forEach((deselectedIndex) => {
-                            this._onItemDeselected_(List[deselectedIndex], deselectedIndex);
-                        });
-                    }
-                    // @ts-ignore TS2454 let's check IF variables were assigned
-                    if ((IndicesToSelect != null) && (this._onItemSelected != null)) {
-                        IndicesToSelect.forEach((selectedIndex) => {
-                            this._onItemSelected_(List[selectedIndex], selectedIndex);
-                        });
-                    }
-                    this._onClick_(Event, Index);
-                };
-                const _onDblClick = (Event, Index) => {
-                    this._onDblClick_(Event, Index);
-                };
-                function ItemIsSelected(Index) {
-                    return (Index in selectedIndexSet);
-                }
-                return html `<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView"
-        ...${PropSet}
-      >
-        ${List.length === 0
-                    ? html `<div class="Placeholder"><div>${Placeholder}</></>`
-                    : List.map((Item, Index) => html `<div
-              class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
-              dangerouslySetInnerHTML=${{
-                        __html: ItemRenderer(Item, Index, ItemIsSelected(Index))
-                    }}
-              onClick=${(Event) => _onClick(Event, Index)}
-              onDblClick=${(Event) => _onDblClick(Event, Index)}
-            />`)}
-      </>`;
-            }
-        });
-    }
-    get Type() { return 'FlatListView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-    get Placeholder() { return this._Placeholder; }
-    set Placeholder(newSetting) {
-        allowTextline('placeholder', newSetting);
-        if (this._Placeholder !== newSetting) {
-            this._Placeholder = newSetting;
-            this.rerender();
-        }
-    }
-    get List() { return this._List.slice(); }
-    set List(newList) {
-        expectList('list', newList);
-        if (ValuesDiffer(this._List, newList)) {
-            this._List = newList.slice();
-            this.rerender();
-        }
-    }
-    get ItemRenderer() { return this._ItemRenderer; }
-    set ItemRenderer(newCallback) {
-        expectFunction('list item rendering callback', newCallback);
-        this._ItemRenderer = newCallback;
-    }
-    get SelectionLimit() { return this._SelectionLimit; }
-    set SelectionLimit(newSetting) {
-        allowOrdinal('selection limit', newSetting);
-        if (this._SelectionLimit !== newSetting) {
-            this._SelectionLimit = newSetting;
-            this.rerender();
-        }
-    }
-    get selectedIndices() {
-        return this._selectedIndices.slice();
-    }
-    set selectedIndices(newList) {
-        expectListSatisfying('indicies of selected list elements', newList, ValueIsOrdinal);
-        if (ValuesDiffer(this._selectedIndices, newList)) {
-            const selectedIndexSet = Object.create(null);
-            this._selectedIndices = newList.filter((selectedIndex) => {
-                if ((selectedIndex < this._List.length) &&
-                    !(selectedIndex in selectedIndexSet)) {
-                    selectedIndexSet[selectedIndex] = true;
-                    return true;
-                }
-                else {
-                    return false;
-                }
-            });
-            this.rerender();
-        }
-    }
-    get onSelectionChange() { return this._onSelectionChange_; }
-    set onSelectionChange(newCallback) {
-        allowFunction('"onSelectionChange" callback', newCallback);
-        this._onSelectionChange = newCallback;
-    }
-    _onSelectionChange_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onSelectionChange = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onSelectionChange != null) {
-                    this._onSelectionChange.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onSelectionChange" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onSelectionChange" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onItemSelected() { return this._onItemSelected_; }
-    set onItemSelected(newCallback) {
-        allowFunction('"onItemSelected" callback', newCallback);
-        this._onItemSelected = newCallback;
-    }
-    _onItemSelected_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onItemSelected = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onItemSelected != null) {
-                    this._onItemSelected.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onItemSelected" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onItemSelected" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    get onItemDeselected() { return this._onItemDeselected_; }
-    set onItemDeselected(newCallback) {
-        allowFunction('"onItemDeselected" callback', newCallback);
-        this._onItemDeselected = newCallback;
-    }
-    _onItemDeselected_(...ArgList) {
-        if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-            this._onItemDeselected = ArgList[0];
-        }
-        else { // callback invocation
-            try {
-                if (this._onItemDeselected != null) {
-                    this._onItemDeselected.apply(this, ArgList);
-                }
-            }
-            catch (Signal) {
-                console.warn('"onItemDeselected" Callback Failure', Signal);
-                setErrorReport(this, {
-                    Type: '"onItemDeselected" Callback Failure',
-                    Sufferer: this, Message: '' + Signal, Cause: Signal
-                });
-            }
-        }
-    }
-    /**** _serializeConfigurationInto ****/
-    _serializeConfigurationInto(Serialization) {
-        super._serializeConfigurationInto(Serialization);
-        [
-            'Placeholder', 'SelectionLimit',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-    }
-    /**** _deserializeConfigurationFrom ****/
-    _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
-        this._Placeholder = acceptableOptionalTextline(Serialization.Placeholder);
-        this._SelectionLimit = acceptableOptionalOrdinal(Serialization.SelectionLimit);
-    }
-}
-builtInWidgetTypes['FlatListView'] = WAT_FlatListView;
-appendStyle(`
-/**** FlatListView ****/
-
-  .WAT.Widget > .WAT.FlatListView {
-    display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
-    overflow:scroll; overflow-x:auto; overflow-y:scroll;
-    border:solid 1px #888888; border-radius:2px;
-    background:#e8f0ff; padding:0px 2px 0px 4px;
-  }
-
-  .WAT.Widget > .WAT.FlatListView.empty {
-    overflow:hidden;
-    background-color:#EEEEEE;
-  }
-
-  .WAT.Widget > .WAT.FlatListView > div.Placeholder {
-    display:flex; position:relative;
-      flex-flow:column nowrap; align-items:center; justify-content:center;
-    width:100%; height:100%;
-  }
-
-  .WAT.Widget > .WAT.FlatListView > div.Placeholder > * {
-    position:relative;
-  }
-
-  .WAT.Widget > .WAT.FlatListView > div.ListItem {
-    display:block; position:relative; overflow:hidden; flex:0 0 auto;
-    left:0px; top:0px; width:auto; height:22px; line-height:22px;
-    background:none;
-    border:none; border-bottom:solid 1px lightgray;
-    white-space:nowrap; text-overflow:ellipsis;
-    user-select:none; pointer-events:auto;
-  }
-
-  .WAT.Widget > .WAT.FlatListView > div.ListItem:last-child {
-    border:none; border-bottom:solid 1px transparent;
-  }
-
-  .WAT.Widget > .WAT.FlatListView > div.ListItem.selected {
-    background:dodgerblue; color:white;
-  }
-  `);
-/**** nestedListView ****/
-export class WAT_nestedListView extends WAT_Widget {
-    constructor(Page) {
-        super(Page);
-        /**** Renderer ****/
-        Object.defineProperty(this, "_Renderer", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: () => {
-                return html `<div class="WAT Content nestedListView">${this.Value}</div>`;
-            }
-        });
-    }
-    get Type() { return 'nestedListView'; }
-    set Type(_) { throwReadOnlyError('Type'); }
-}
-builtInWidgetTypes['nestedListView'] = WAT_nestedListView;
-appendStyle(`
-  .WAT.Widget > .WAT.nestedListView {
-  }
-  `);
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
     'application/javascript', 'application/typescript', 'application/json',
@@ -10854,9 +6539,7 @@ class WAT_PageView extends Component {
     _releaseWidgets(WidgetList) {
         WidgetList.forEach((Widget) => {
             Widget._Pane = undefined;
-            if ((Widget instanceof WAT_WidgetPane) ||
-                (Widget instanceof WAT_DoubleWidgetPane) ||
-                (Widget instanceof WAT_SidebarWidgetPane)) {
+            if (Widget.Behavior === 'basic_controls.WidgetPane') {
                 Widget._releaseWidgets();
             }
         });
@@ -11051,7 +6734,8 @@ class WAT_DialogView extends Component {
         }
         // @ts-ignore TS5905 all variables will be assigned by now
         return { x, y, Width, Height };
-    } /**** dialog dragging and resizing ****/
+    }
+    /**** dialog dragging and resizing ****/
     _handleDrag(dx, dy) {
         if (this._DragInfo.Mode === 'drag') {
             this._moveDialog(dx, dy);
@@ -11142,7 +6826,7 @@ class WAT_DialogView extends Component {
             this._shownWidgets = [];
         }
         else {
-            const WidgetsToShow = (SourceWidget.Type === 'Outline'
+            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
                 ? SourceWidget.bundledWidgets()
                 : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))));
             WidgetsToShow.forEach((Widget) => Widget._Pane = Dialog);
@@ -11315,7 +6999,7 @@ class WAT_OverlayView extends Component {
             this._shownWidgets = [];
         }
         else {
-            const WidgetsToShow = (SourceWidget.Type === 'Outline'
+            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
                 ? SourceWidget.bundledWidgets()
                 : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))));
             WidgetsToShow.forEach((Widget) => Widget._Pane = Overlay);
