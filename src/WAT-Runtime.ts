@@ -30,7 +30,7 @@
       allowInteger, expectInteger, allowIntegerInRange,
       allowOrdinal, expectCardinal,
     allowString, expectString, allowStringMatching,
-      allowText, expectText, allowTextline,
+      allowText, expectText, allowTextline, expectTextline,
     expectPlainObject,
     expectList, allowListSatisfying, expectListSatisfying,
     allowFunction, expectFunction,
@@ -258,12 +258,7 @@
     'Behaviour Compilation Failure','Behaviour Execution Failure',
     'Script Compilation Failure',   'Script Execution Failure',
     '"Value" Setting Failure',      'Rendering Failure',
-    '"onMount" Callback Failure',   '"onUnmount" Callback Failure',
-    '"onFocus" Callback Failure',   '"onBlur" Callback Failure',
-    '"onClick" Callback Failure',   '"onInput" Callback Failure',
-    '"onDrop" Callback Failure',    '"onDropError" Callback Failure',
-    '"onValueChange" Callback Failure', 'Custom Callback Failure',
-    'Event Handling Failure',
+    'Callback Failure',
   ]
   export type WAT_ErrorType = typeof WAT_ErrorTypes[number]
 
@@ -1729,6 +1724,12 @@
     return Descriptor
   }
 
+//----------------------------------------------------------------------------//
+//                              Callback Support                              //
+//----------------------------------------------------------------------------//
+
+  function noCallback ():void {}
+
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -2500,36 +2501,8 @@
 
       if (ValuesDiffer(this._Value,newValue)) {
         this._Value = newValue // *C* a deep copy may be better
-
-        if (this._onValueChange != null) { this._onValueChange_() }  // no typo!
-
+        this.on('value-change')(newValue)
         this.rerender()
-      }
-    }
-
-  /**** onValueChange ****/
-
-    protected _onValueChange:Function|undefined
-
-    public get onValueChange ():Function|undefined { return this._onValueChange_ }
-    public set onValueChange (newCallback:Function|undefined) {
-      allowFunction('"onValueChange" callback',newCallback)
-      this._onValueChange = newCallback
-    }
-
-    protected _onValueChange_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onValueChange = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onValueChange != null) { this._onValueChange.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onValueChange" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onValueChange" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
       }
     }
 
@@ -2609,7 +2582,7 @@ console.warn('"onValueChange" Callback Failure',Signal)
     public async activateScript (Mode:string = 'catch-exception'):Promise<void> {
       let activeScript:string = (this._activeScript || '').trim()
 
-//    this._Renderer = () => '' // not without behaviors!
+      this._CallbackRegistry = undefined
       unregisterAllReactiveFunctionsFrom(this)
 
     /**** prepare for script execution ****/
@@ -2630,10 +2603,10 @@ console.warn('execution error in reactive function',Signal)
         }))
       }
 
-      const onRender      = this._onRender_.bind(this)
-      const onMount       = this._onMount_.bind(this)
-      const onUnmount     = this._onUnmount_.bind(this)
-      const onValueChange = this._onValueChange_.bind(this)
+      const onRender      = this.on.bind(this,'render')
+      const onMount       = this.on.bind(this,'mount')
+      const onUnmount     = this.on.bind(this,'unmount')
+      const onValueChange = this.on.bind(this,'value-change')
 
       function installStylesheet (Stylesheet:WAT_Text|undefined) {
         throwError('NotForVisualScripts: visual scripts must not install behavior stylesheets')
@@ -2795,64 +2768,72 @@ console.warn('Script Execution Failure',Signal)
     public get isBroken ():boolean  { return (this._ErrorReport != null) }
     public set isBroken (_:boolean) { throwReadOnlyError('isBroken') }
 
+  /**** on ****/
+
+    protected _CallbackRegistry:Indexable|undefined
+
+    public on (
+      CallbackName:WAT_Textline, newCallback?:Function|undefined
+    ):Function {
+      expectTextline('callback name',CallbackName)
+      const normalizedCallbackName = CallbackName.toLowerCase()
+
+      if (arguments.length === 1) {
+        return this._CallbackRegistry?.[normalizedCallbackName] || noCallback
+      } else {
+        allowFunction('callback',newCallback)
+        if (newCallback == null) {
+          if (this._CallbackRegistry != null) {
+            delete this._CallbackRegistry[normalizedCallbackName]
+          }
+        } else {
+          if (this._CallbackRegistry == null) {
+            this._CallbackRegistry = Object.create(null)
+          }
+// @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
+          this._CallbackRegistry[normalizedCallbackName] = this._Callback.bind(
+            this, CallbackName, newCallback
+          )
+
+          if ((normalizedCallbackName === 'mount') && this.isMounted) {
+// @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
+            this._CallbackRegistry['mount']()               // very special case
+          }
+        }
+
+        return newCallback || noCallback
+      }
+    }
+
+    private _Callback (
+      CallbackName:WAT_Textline, Callback:Function, ...ArgList:any[]
+    ):any {
+      try {
+        return Callback.apply(this,ArgList)
+      } catch (Signal:any) {
+console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
+        setErrorReport(this,{
+          Type:'Callback Handling Failure',
+          Sufferer:this, Message:'' + Signal, Cause:Signal
+        })
+      }
+    }
+
   /**** Renderer ****/
 
-    protected _Renderer:Function|undefined
-
-    public get Renderer ():Function|undefined { return this._Renderer }
+    public get Renderer ():Function|undefined { return this.on('render') }
     public set Renderer (newRenderer:Function|undefined) {
       allowFunction('renderer',newRenderer)
       if (newRenderer == null) { newRenderer = () => ''}
 
-      this._Renderer = () => {
-        try {
-          newRenderer.call(this)
-        } catch (Signal:any) {
-console.warn('Rendering Failure',Signal)
-          setErrorReport(this,{
-            Type:'Rendering Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
+      this.on('render',newRenderer)
       this.rerender()
-    }
-
-  /**** onRender ****/
-
-    public get onRender ():Function|undefined { return this._onRender_ }
-    public set onRender (newCallback:Function|undefined) {
-      allowFunction('rendering callback',newCallback)
-      this._Renderer = newCallback
-    }
-
-    protected _onRender_ (newCallback:Function|undefined):void {
-      if (newCallback == null) {                          // callback invocation
-        try {
-          if (this._Renderer != null) { this._Renderer.call(this) }
-        } catch (Signal:any) {
-console.warn('Rendering Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'Rendering Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      } else {                                          // definition invocation
-        this._Renderer = newCallback
-      }
     }
 
   /**** Rendering - generates the rendering for this widget ****/
 
     public Rendering ():any {
-      let Renderer = this._Renderer
-      if (Renderer == null) { return '' }
-
-      try {
-        return Renderer.call(this)
-      } catch (Signal:any) {
-        console.error('Rendering Failure',Signal)
-      }
+      return this.on('render')()
     }
 
   /**** rerender (to be overwritten) ****/
@@ -2943,60 +2924,6 @@ console.warn('Rendering Callback Failure',Signal)
 
     public get isMounted ():boolean  { return (this._View != null) }
     public set isMounted (_:boolean) { throwReadOnlyError('isMounted') }
-
-  /**** onMount ****/
-
-    protected _onMount:Function|undefined
-
-    public get onMount ():Function|undefined { return this._onMount_ }
-    public set onMount (newCallback:Function|undefined) {
-      allowFunction('"onMount" callback',newCallback)
-      this._onMount = newCallback
-    }
-
-    protected _onMount_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onMount = ArgList[0]
-        if (this.isMounted) { this._onMount_() }
-      } else {                                            // callback invocation
-        try {
-          if (this._onMount != null) { this._onMount.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onMount" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onMount" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-  /**** onUnmount ****/
-
-    protected _onUnmount:Function|undefined
-
-    public get onUnmount ():Function|undefined { return this._onUnmount_ }
-    public set onUnmount (newCallback:Function|undefined) {
-      allowFunction('"onUnmount" callback',newCallback)
-      this._onUnmount = newCallback
-    }
-
-    protected _onUnmount_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onUnmount = ArgList[0]
-//      if (! this.isMounted) { this._onUnmount_() } // no! this would be wrong!
-      } else {                                            // callback invocation
-        try {
-          if (this._onUnmount != null) { this._onUnmount.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onUnmount" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onUnmount" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
 
   /**** _serializeConfigurationInto ****/
 
@@ -4806,7 +4733,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       this._Name = AppletName
       this._View = AppletView
 
-      if (this._onMount != null) { this._onMount_() }                // no typo!
+      this.on('mount')()
 
       if (this.visitedPage == null) {
         this.visitPage(this.PageList[0])
@@ -5677,189 +5604,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       if (this._OverflowVisibility !== newOverflowVisibility) {
         this._OverflowVisibility = newOverflowVisibility
         this.rerender()
-      }
-    }
-
-  /**** onFocus ****/
-
-    protected _onFocus:Function|undefined
-
-    public get onFocus ():Function|undefined { return this._onFocus_ }
-    public set onFocus (newCallback:Function|undefined) {
-      allowFunction('"onFocus" callback',newCallback)
-      this._onFocus = newCallback
-    }
-
-    protected _onFocus_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onFocus = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onFocus != null) { this._onFocus.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onFocus" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onFocus" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-  /**** onBlur ****/
-
-    protected _onBlur:Function|undefined
-
-    public get onBlur ():Function|undefined { return this._onBlur_ }
-    public set onBlur (newCallback:Function|undefined) {
-      allowFunction('"onBlur" callback',newCallback)
-      this._onBlur = newCallback
-    }
-
-    protected _onBlur_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onBlur = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onBlur != null) { this._onBlur.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onBlur" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onBlur" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-  /**** onClick ****/
-
-    protected _onClick:Function|undefined
-
-    public get onClick ():Function|undefined { return this._onClick_ }
-    public set onClick (newCallback:Function|undefined) {
-      allowFunction('"onClick" callback',newCallback)
-      this._onClick = newCallback
-    }
-
-    protected _onClick_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onClick = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onClick != null) { this._onClick.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onClick" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onClick" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-  /**** onDblClick ****/
-
-    protected _onDblClick:Function|undefined
-
-    public get onDblClick ():Function|undefined { return this._onDblClick_ }
-    public set onDblClick (newCallback:Function|undefined) {
-      allowFunction('"onDblClick" callback',newCallback)
-      this._onDblClick = newCallback
-    }
-
-    protected _onDblClick_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onDblClick = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onDblClick != null) { this._onDblClick.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onDblClick" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onDblClick" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-
-  /**** onInput ****/
-
-    protected _onInput:Function|undefined
-
-    public get onInput ():Function|undefined { return this._onInput_ }
-    public set onInput (newCallback:Function|undefined) {
-      allowFunction('"onInput" callback',newCallback)
-      this._onInput = newCallback
-    }
-
-    protected _onInput_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onInput = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onInput != null) { this._onInput.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onInput" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onInput" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-  /**** onDrop ****/
-
-    protected _onDrop:Function|undefined
-
-    public get onDrop ():Function|undefined { return this._onDrop_ }
-    public set onDrop (newCallback:Function|undefined) {
-      allowFunction('"onDrop" callback',newCallback)
-      this._onDrop = newCallback
-    }
-
-    protected _onDrop_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onDrop = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onDrop != null) { this._onDrop.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onDrop" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onDrop" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
-      }
-    }
-
-  /**** onDropError ****/
-
-    protected _onDropError:Function|undefined
-
-    public get onDropError ():Function|undefined { return this._onDropError_ }
-    public set onDropError (newCallback:Function|undefined) {
-      allowFunction('"onDropError" callback',newCallback)
-      this._onDropError = newCallback
-    }
-
-    protected _onDropError_ (...ArgList:any[]):void {
-      if ((ArgList.length === 1) && (typeof ArgList[0] === 'function')) {
-        this._onDropError = ArgList[0]
-      } else {                                            // callback invocation
-        try {
-          if (this._onDropError != null) { this._onDropError.apply(this,ArgList) }
-        } catch (Signal:any) {
-console.warn('"onDropError" Callback Failure',Signal)
-          setErrorReport(this,{
-            Type:'"onDropError" Callback Failure',
-            Sufferer:this, Message:'' + Signal, Cause:Signal
-          })
-        }
       }
     }
 
@@ -6841,6 +6585,8 @@ console.warn('"onDropError" Callback Failure',Signal)
       }
     `)
 
+  /**** custom Properties ****/
+
     Object_assign(me,{
     /**** bundledWidgets ****/
 
@@ -6862,13 +6608,12 @@ console.warn('"onDropError" Callback Failure',Signal)
         })
       },
 
-    /**** Renderer ****/
-
-      _Renderer: function () {
-        return html`<div class="WAT Content Outline"/>`
-      },
 
     } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(() => html`<div class="WAT Content Outline"/>`)
   }
 
   registerIntrinsicBehavior (
@@ -6885,6 +6630,8 @@ console.warn('"onDropError" Callback Failure',Signal)
         overflow:hidden;
       }
     `)
+
+  /**** custom Properties ****/
 
     my.configurableProperties = [
       { Name:'Value', EditorType:'textline-input', Placeholder:'(enter content path)' }
@@ -6998,38 +6745,39 @@ console.warn('"onDropError" Callback Failure',Signal)
           }
   // @ts-ignore TS5905 all variables will be assigned by now
         return { x,y, Width,Height }
-      },    /**** Renderer ****/
-
-      _Renderer: function () {
-        this._releaseWidgets()
-
-        if (this._Value == null) { return '' }
-
-        const SourceWidget = this.Applet?.WidgetAtPath(this._Value as WAT_Path)
-        if ((SourceWidget == null) || (SourceWidget === me)) { return '' }
-
-        const WidgetsToShow:WAT_Widget[] = (
-          SourceWidget.normalizedBehavior === 'basic_controls.outline'
-          ? (SourceWidget as Indexable).bundledWidgets()
-          : [SourceWidget]
-        ).filter((Widget:Indexable) => (
-          Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))
-        ))
-          WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
-        this._shownWidgets = WidgetsToShow
-
-        const PaneGeometry = this.Geometry
-        const BaseGeometry = SourceWidget.Geometry
-
-        return html`<div class="WAT Content WidgetPane">
-          ${(WidgetsToShow as any).toReversed().map((Widget:WAT_Widget) => {
-            let Geometry = this._GeometryOfWidgetRelativeTo(Widget,BaseGeometry,PaneGeometry)
-            return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`
-          })}
-        </div>`
       },
-
     } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      this._releaseWidgets()
+
+      if (this._Value == null) { return '' }
+
+      const SourceWidget = this.Applet?.WidgetAtPath(this._Value as WAT_Path)
+      if ((SourceWidget == null) || (SourceWidget === me)) { return '' }
+
+      const WidgetsToShow:WAT_Widget[] = (
+        SourceWidget.normalizedBehavior === 'basic_controls.outline'
+        ? (SourceWidget as Indexable).bundledWidgets()
+        : [SourceWidget]
+      ).filter((Widget:Indexable) => (
+        Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))
+      ))
+        WidgetsToShow.forEach((Widget:Indexable) => Widget._Pane = this)
+      this._shownWidgets = WidgetsToShow
+
+      const PaneGeometry = this.Geometry
+      const BaseGeometry = SourceWidget.Geometry
+
+      return html`<div class="WAT Content WidgetPane">
+        ${(WidgetsToShow as any).toReversed().map((Widget:WAT_Widget) => {
+          let Geometry = this._GeometryOfWidgetRelativeTo(Widget,BaseGeometry,PaneGeometry)
+          return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`
+        })}
+      </div>`
+    })
   }
 
   registerIntrinsicBehavior (
@@ -7047,6 +6795,8 @@ console.warn('"onDropError" Callback Failure',Signal)
         overflow-y:scroll;
       }
     `)
+
+  /**** custom Properties ****/
 
     my.configurableProperties = [
       { Name:'Value',    EditorType:'text-input', Placeholder:'(enter text)' },
@@ -7083,69 +6833,71 @@ console.warn('"onDropError" Callback Failure',Signal)
           this.memoized.acceptableFileTypes = newSetting.slice()
           this.rerender()
         }
-      },    /**** Renderer ****/
-
-      _Renderer: function () {
-        const { Enabling,readonly } = this
-
-        let acceptableFileTypes = this.acceptableFileTypes
-        if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedTextFormats.slice() }
-
-      /**** prepare file dropping ****/
-
-        const allowsDropping = (
-          (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
-        )
-
-        function _acceptableDataIn (Event:Indexable):boolean {
-          if (Event.dataTransfer.types.includes('text/plain')) { return true }
-
-          for (let Item of Event.dataTransfer.items) {
-            if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-              return true
-            }
-          }
-          return false
-        }
-
-        const _onDragOver = (Event:Indexable) => {
-          if (_acceptableDataIn(Event)) {
-            Event.preventDefault()
-            Event.dataTransfer.dropEffect = 'copy'
-          }
-        }
-        const _onDrop = async (Event:Indexable) => {
-          if (_acceptableDataIn(Event)) {
-            Event.preventDefault()
-
-            if (Event.dataTransfer.types.includes('text/plain')) {
-              const Value = Event.dataTransfer.getData('text')
-              this.Value = Value
-              if (this._onInput != null) { this._onInput_(Event) }   // no typo!
-            } else {
-              try {
-                for (let Item of Event.dataTransfer.items) {
-                  if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                    this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
-                    if (this._onInput != null) { this._onInput_(Event) } // no typo!
-                    break
-                  }
-                }
-              } catch (Signal:any) {
-console.warn('file drop error',Signal)
-                if (this._onDropError != null) { this._onDropError_(Signal) }
-              }
-            }
-          }
-        }
-
-      /**** actual rendering ****/
-
-        return html`<div class="WAT Content TextView"
-          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        >${this.Value}</>`
       },
     } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Enabling,readonly } = this
+
+      let acceptableFileTypes = this.acceptableFileTypes
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedTextFormats.slice() }
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this.Value = Value
+            this.on('input')(Event)
+          } else {
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                  this.on('input')(Event)
+                  break
+                }
+              }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              this.on('drop-error')(Signal)
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
+
+      return html`<div class="WAT Content TextView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+      >${this.Value}</>`
+    })
   }
 
   registerIntrinsicBehavior (
@@ -7163,6 +6915,8 @@ console.warn('file drop error',Signal)
         overflow-y:scroll;
       }
     `)
+
+  /**** custom Properties ****/
 
     my.configurableProperties = [
       { Name:'Value',    EditorType:'text-input', Placeholder:'(enter HTML)' },
@@ -7199,70 +6953,72 @@ console.warn('file drop error',Signal)
           this.memoized.acceptableFileTypes = newSetting.slice()
           this.rerender()
         }
-      },    /**** Renderer ****/
-
-      _Renderer: function () {
-        const { Enabling,readonly } = this
-
-        let acceptableFileTypes = this.acceptableFileTypes
-        if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedHTMLFormats.slice() }
-
-      /**** prepare file dropping ****/
-
-        const allowsDropping = (
-          (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
-        )
-
-        function _acceptableDataIn (Event:Indexable):boolean {
-          if (Event.dataTransfer.types.includes('text/plain')) { return true }
-
-          for (let Item of Event.dataTransfer.items) {
-            if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-              return true
-            }
-          }
-          return false
-        }
-
-        const _onDragOver = (Event:Indexable) => {
-          if (_acceptableDataIn(Event)) {
-            Event.preventDefault()
-            Event.dataTransfer.dropEffect = 'copy'
-          }
-        }
-        const _onDrop = async (Event:Indexable) => {
-          if (_acceptableDataIn(Event)) {
-            Event.preventDefault()
-
-            if (Event.dataTransfer.types.includes('text/plain')) {
-              const Value = Event.dataTransfer.getData('text')
-              this.Value = Value
-              if (this._onInput != null) { this._onInput_(Event) }   // no typo!
-            } else {
-              try {
-                for (let Item of Event.dataTransfer.items) {
-                  if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                    this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
-                    if (this._onInput != null) { this._onInput_(Event) } // no typo!
-                    break
-                  }
-                }
-              } catch (Signal:any) {
-console.warn('file drop error',Signal)
-                if (this._onDropError != null) { this._onDropError_(Signal) }
-              }
-            }
-          }
-        }
-
-      /**** actual rendering ****/
-
-        return html`<div class="WAT Content HTMLView"
-          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-          dangerouslySetInnerHTML=${{__html:acceptableText(this.Value,'')}}
-        />`
       },
     } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Enabling,readonly } = this
+
+      let acceptableFileTypes = this.acceptableFileTypes
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedHTMLFormats.slice() }
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this.Value = Value
+            this.on('input')(Event)
+          } else {
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                  this.on('input')(Event)
+                  break
+                }
+              }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              this.on('drop-error')(Event)
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
+
+      return html`<div class="WAT Content HTMLView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        dangerouslySetInnerHTML=${{__html:acceptableText(this.Value,'')}}
+      />`
+    })
   }
 
   registerIntrinsicBehavior (
@@ -7280,6 +7036,8 @@ console.warn('file drop error',Signal)
         object-fit:contain; object-position:center;
       }
     `)
+
+  /**** custom Properties ****/
 
     my.configurableProperties = [
       { Name:'Value',    EditorType:'url-input', Placeholder:'(enter Image URL)' },
@@ -7346,80 +7104,82 @@ console.warn('file drop error',Signal)
           this.memoized.acceptableFileTypes = newSetting.slice()
           this.rerender()
         }
-      },    /**** Renderer ****/
+      },
+    } as Indexable)
 
-      _Renderer: function () {
-        const { ImageScaling,ImageAlignment, Enabling,readonly } = this
+  /**** Renderer ****/
 
-        let acceptableFileTypes = this.acceptableFileTypes
-        if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedImageFormats.slice() }
+    onRender(function (this:Indexable) {
+      const { ImageScaling,ImageAlignment, Enabling,readonly } = this
 
-      /**** prepare file dropping ****/
+      let acceptableFileTypes = this.acceptableFileTypes
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedImageFormats.slice() }
 
-        const allowsDropping = (
-          (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
-        )
+    /**** prepare file dropping ****/
 
-        function _acceptableDataIn (Event:Indexable):boolean {
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.some((Type:string) => (
+          (Type === 'text/html') &&
+          Event.dataTransfer.getData('text/html').includes('<img')
+        ))) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
           if (Event.dataTransfer.types.some((Type:string) => (
             (Type === 'text/html') &&
             Event.dataTransfer.getData('text/html').includes('<img')
-          ))) { return true }
-
-          for (let Item of Event.dataTransfer.items) {
-            if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-              return true
-            }
-          }
-          return false
-        }
-
-        const _onDragOver = (Event:Indexable) => {
-          if (_acceptableDataIn(Event)) {
-            Event.preventDefault()
-            Event.dataTransfer.dropEffect = 'copy'
-          }
-        }
-        const _onDrop = async (Event:Indexable) => {
-          if (_acceptableDataIn(Event)) {
-            Event.preventDefault()
-
-            if (Event.dataTransfer.types.some((Type:string) => (
-              (Type === 'text/html') &&
-              Event.dataTransfer.getData('text/html').includes('<img')
-            ))) {
-              const HTML = Event.dataTransfer.getData('text/html')
-                const Parser = new DOMParser()
-                const Doc    = Parser.parseFromString(HTML,'text/html')
-                const ImageSource = Doc.querySelector('img')?.src
-              this.Value = ImageSource
-              if (this._onInput != null) { this._onInput_(Event) }   // no typo!
-            } else {
-              try {
-                for (let Item of Event.dataTransfer.items) {
-                  if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                    this.Value = await FileReadAsImage(Item.getAsFile(),Item.type)
-                    if (this._onInput != null) { this._onInput_(Event) } // no typo!
-                    break
-                  }
+          ))) {
+            const HTML = Event.dataTransfer.getData('text/html')
+              const Parser = new DOMParser()
+              const Doc    = Parser.parseFromString(HTML,'text/html')
+              const ImageSource = Doc.querySelector('img')?.src
+            this.Value = ImageSource
+            this.on('input')(Event)
+          } else {
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsImage(Item.getAsFile(),Item.type)
+                  this.on('input')(Event)
+                  break
                 }
-              } catch (Signal:any) {
-console.warn('file drop error',Signal)
-                if (this._onDropError != null) { this._onDropError_(Signal) }
               }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              this.on('drop-error')(Event)
             }
           }
         }
+      }
 
-      /**** actual rendering ****/
+    /**** actual rendering ****/
 
-        return html`<img class="WAT Content ImageView"
-          src=${acceptableURL(this.Value,'')}
-          style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-          onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        />`
-      },
-    } as Indexable)
+      return html`<img class="WAT Content ImageView"
+        src=${acceptableURL(this.Value,'')}
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+      />`
+    })
   }
 
   registerIntrinsicBehavior (
@@ -7437,6 +7197,8 @@ console.warn('file drop error',Signal)
         object-fit:contain; object-position:center;
       }
     `)
+
+  /**** custom Properties ****/
 
     my.configurableProperties = [
       { Name:'Value',          EditorType:'text-input', Placeholder:'(enter SVG)' },
@@ -7473,19 +7235,21 @@ console.warn('file drop error',Signal)
         }
       },
 
-    /**** Renderer ****/
 
-      _Renderer: function () {
-        const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value,''))
-
-        const { ImageScaling,ImageAlignment } = this
-
-        return html`<img class="WAT Content SVGView"
-          src=${DataURL}
-          style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-        />`
-      },
     } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value,''))
+
+      const { ImageScaling,ImageAlignment } = this
+
+      return html`<img class="WAT Content SVGView"
+        src=${DataURL}
+        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+      />`
+    })
   }
 
   registerIntrinsicBehavior (
@@ -7498,6 +7262,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+  /**** custom Properties ****/
+
     my.configurableProperties = [
       { Name:'Value',             EditorType:'url-input', Placeholder:'(enter URL)' },
       { Name:'PermissionsPolicy', EditorType:'textline-input' },
@@ -7563,24 +7329,86 @@ console.warn('file drop error',Signal)
           this.memoized.ReferrerPolicy = newSetting
           this.rerender()
         }
-      },    /**** Renderer ****/
-
-      _Renderer: function () {
-        const {
-          PermissionsPolicy,allowsFullscreen,SandboxPermissions,ReferrerPolicy
-        } = this
-
-        return html`<iframe class="WAT Content WebView"
-          src=${acceptableURL(my.Value,'')}
-          allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
-          sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
-        />`
       },
     } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const {
+        PermissionsPolicy,allowsFullscreen,SandboxPermissions,ReferrerPolicy
+      } = this
+
+      return html`<iframe class="WAT Content WebView"
+        src=${acceptableURL(this.Value,'')}
+        allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
+        sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
+      />`
+    })
   }
 
   registerIntrinsicBehavior (
     Applet, 'widget', 'basic_controls.WebView', WAT_WebView
+  )
+
+/**** Button ****/
+
+  const WAT_Button:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.Button {
+        border:solid 1px black; border-radius:4px;
+        background:white;
+        font-weight:bold; color:black;
+        text-align:center;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Label', EditorType:'textline-input', Placeholder:'(enter label)' },
+    ]
+
+    Object_assign(me,{
+    /**** Label ****/
+
+      get Label ():WAT_Textline|undefined {
+        return acceptableTextline(this.memoized.Label,'Button')
+      },
+
+      set Label (newValue:WAT_Textline|undefined) {
+        allowTextline('button label',newValue)
+        if (this.memoized.Label !== newValue) {
+          this.memoized.Label = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const onClick = (Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+        this.on('click')(Event)
+      }
+
+      const Label = acceptableTextline(this.Label,'Button')
+
+      return html`<button class="WAT Content Button" style="
+        line-height:${this.LineHeight || this.Height}px;
+      " disabled=${this.Enabling == false} onClick=${onClick}
+      >${Label}</>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.Button', WAT_Button
   )
 
 
@@ -7892,11 +7720,7 @@ console.warn('file drop error',Signal)
       const Applet = this._Applet as WAT_Applet
 
       Applet['_View'] = (this as Component).base
-      if (Applet['_onMount'] != null) {
-        (Applet as Indexable)._onMount_()                            // no typo!
-      }
-
-      rerender()
+      Applet.on('mount')()
     }
 
   /**** componentWillUnmount ****/
@@ -7905,9 +7729,7 @@ console.warn('file drop error',Signal)
       const Applet = this._Applet as WAT_Applet
 
       Applet['_View'] = undefined
-      if (Applet['_onUnmount'] != null) {
-        (Applet as Indexable)._onUnmount_()                          // no typo!
-      }
+      Applet.on('unmount')()
     }
 
   /**** render ****/
@@ -7957,9 +7779,7 @@ console.warn('file drop error',Signal)
       const Page = this._Page as WAT_Page
 
       Page['_View'] = (this as Component).base
-      if (Page['_onMount'] != null) {
-        (Page as Indexable)._onMount_()                              // no typo!
-      }
+      Page.on('mount')()
     }
 
   /**** componentWillUnmount ****/
@@ -7970,9 +7790,7 @@ console.warn('file drop error',Signal)
       const Page = this._Page as WAT_Page
 
       Page['_View'] = undefined
-      if (Page['_onUnmount'] != null) {
-        (Page as Indexable)._onUnmount_()                            // no typo!
-      }
+      Page.on('unmount')()
     }
 
   /**** _releaseWidgets ****/
@@ -8026,9 +7844,7 @@ console.warn('file drop error',Signal)
       const Widget = this._Widget as WAT_Widget
 
       Widget['_View'] = (this as Component).base
-      if (Widget['_onMount'] != null) {
-        (Widget as Indexable)._onMount_()                            // no typo!
-      }
+      Widget.on('mount')()
     }
 
   /**** componentWillUnmount ****/
@@ -8037,9 +7853,7 @@ console.warn('file drop error',Signal)
       const Widget = this._Widget as WAT_Widget
 
       Widget['_View'] = undefined
-      if (Widget['_onUnmount'] != null) {
-        (Widget as Indexable)._onUnmount_()                          // no typo!
-      }
+      Widget.on('unmount')()
     }
 
   /**** render ****/
