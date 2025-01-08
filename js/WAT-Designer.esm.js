@@ -17,14 +17,14 @@ var __rest = (this && this.__rest) || function (s, e) {
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, HTMLsafe, ValuesAreEqual, ValueIsOrdinal, ValueIsText, ValueIsPlainObject, ValueIsListSatisfying, allowOrdinal, allowTextline, expectList, allowListSatisfying, allowFunction, } from 'javascript-interface-library';
+quoted, HTMLsafe, ValuesAreEqual, ValueIsOrdinal, ValueIsText, ValueIsPlainObject, ValueIsArray, ValueIsList, ValueIsListSatisfying, allowOrdinal, allowTextline, expectList, allowListSatisfying, allowFunction, allowOneOf, } from 'javascript-interface-library';
 import Conversion from 'svelte-coordinate-conversion';
 const { fromViewportTo } = Conversion;
 import { html, useState, useRef, useEffect, useMemo, useCallback, } from 'htm/preact';
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_ImageScalings, WAT_ImageAlignments, WAT_ReferrerPolicies, WAT_TimePattern, WAT_DateTimePattern, WAT_DatePattern, WAT_WeekPattern, WAT_MonthPattern, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsWidgetType, ValueIsErrorReport, allowPage, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, ValueIsBehavior, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsErrorReport, allowPage, BehaviorIsIntrinsic, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 import mapTouchToMouseFor from 'svelte-touch-to-mouse';
 mapTouchToMouseFor('.WAD.DesignerButton');
 mapTouchToMouseFor('.WAD.Dialog > .Titlebar');
@@ -66,7 +66,7 @@ appendStyle(`
     padding:0px;
     background:none; color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
-    font-size:14px; font-weight:normal; line-height:1.4; color:black;
+    font-size:14px; font-weight:400; line-height:1.4; color:black;
     text-align:left; text-shadow:none;
     z-index:2000000;
     pointer-events:none;
@@ -170,25 +170,25 @@ appendStyle(`
     background:transparent; color:inherit;
     pointer-events:auto;
   }
-/**** Name/Integerr/URLInput ****/
+/**** Name/Integer/URLInput ****/
 
-  .WAD.TextLineInput, .WAD.IntegerInput, .WAD.URLInput {
+  .WAD.TextLineInput, .WAD.NumberInput, .WAD.TimeInput {
     display:block; position:relative;
     width:auto; height:30px;
   }
-  .WAD.TextLineInput > input, .WAD.IntegerInput > input, .WAD.URLInput > input {
+  .WAD.TextLineInput > input, .WAD.NumberInput > input, .WAD.TimeInput > input {
     display:block; position:relative;
     left:0px; top:0px; width:100%; height:100%;
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:0px 2px 0px 4px;
     pointer-events:auto;
   }
-  .WAD.TextLineInput.wrong > input, .WAD.IntegerInput.wrong > input,
-  .WAD.URLInput.wrong > input {
+  .WAD.TextLineInput.wrong > input, .WAD.NumberInput.wrong > input,
+  .WAD.TimeInput.wrong > input {
     color:red;
   }
-  .WAD.TextLineInput > input:read-only, .WAD.IntegerInput > input:read-only,
-  .WAD.URLInput > input:read-only {
+  .WAD.TextLineInput > input:read-only, .WAD.NumberInput > input:read-only,
+  .WAD.TimeInput > input:read-only {
     background:transparent;
   }
 
@@ -324,6 +324,49 @@ appendStyle(`
   }
 
   .WAD.FlatListView > div.ListItem.selected {
+    background:dodgerblue; color:white;
+  }
+
+/**** NestedListView ****/
+
+  .WAD.NestedListView {
+    display:flex; flex-flow:column nowrap; align-items:stretch;
+    overflow:scroll; overflow-x:auto; overflow-y:scroll;
+  }
+
+  .WAD.NestedListView .ItemView {
+    display:flex; flex-flow:column nowrap; align-items:stretch;
+      position:relative; overflow:hidden; flex:0 0 auto;
+    left:0px; top:0px; width:auto; height:auto;
+    background:none; border:none;
+    user-select:none;
+  }
+
+  .WAD.NestedListView .ItemLine {
+    display:flex; flex-flow:row nowrap; align-items:stretch;
+      position:relative; flex:0 0 auto;
+    height:22px; line-height:22px;
+    white-space:nowrap; text-overflow:ellipsis;
+  }
+
+  .WAD.NestedListView .ItemIcon {
+    display:inline-block; position:relative;
+    margin:6px 2px 0px 2px; width:10px; height:10px;
+    pointer-events:none;
+  }
+
+  .WAD.NestedListView .ItemExpander {
+    display:inline-block; position:relative;
+    margin-top:4px; width:14px; height:14px;
+    pointer-events:auto;
+  }
+
+  .WAD.NestedListView .ItemLabel {
+    display:inline-block; position:relative; flex:1 0 auto;
+    pointer-events:none;
+  }
+
+  .WAD.NestedListView .ItemLine.selected > .ItemLabel {
     background:dodgerblue; color:white;
   }
 
@@ -556,6 +599,11 @@ appendStyle(`
     pointer-events:none;
   }
 
+  .WAD.Behavior {}
+  .WAD.Behavior.selected { background:dodgerblue; color:white }
+  .WAD.Behavior.broken   { text-decoration:red wavy underline }
+  .WAD.Behavior.unused   { font-style:italic }
+
 
 `.trimLeft());
 //------------------------------------------------------------------------------
@@ -580,6 +628,7 @@ const DesignerState = {
         minWidth: 380, minHeight: 550,
         ReportToShow: undefined, // workaround for strange closure problem
         ScrollPositions: {
+            BehaviorBrowser: 0,
             AppletConfiguration: 0,
             PageBrowser: 0,
             PageConfiguration: 0,
@@ -589,8 +638,26 @@ const DesignerState = {
         Expansions: {
             AppletConfiguration: { Scripting: true },
             PageConfiguration: { Scripting: true },
-            WidgetConfiguration: {},
+            WidgetConfiguration: { BehaviorSpecific: true },
         },
+        newBehaviorName: '',
+        BehaviorExpansions: {},
+    },
+    SettingsDialog: {
+        Title: 'WAT Settings', View: undefined,
+        x: NaN, y: NaN, Width: 320, Height: 240,
+        minWidth: 320, minHeight: 240,
+    },
+    BehaviorEditor: {
+        Title: 'Behavior Editor', View: undefined,
+        x: NaN, y: NaN, Width: 320, Height: 240,
+        minWidth: 320, minHeight: 240,
+        ReportToShow: undefined, // workaround for strange closure problem
+    },
+    SynopsisEditor: {
+        Title: 'Synopsis Editor', View: undefined,
+        x: NaN, y: NaN, Width: 320, Height: 240,
+        minWidth: 320, minHeight: 240,
     },
     ValueEditor: {
         Title: 'Value Editor', View: undefined,
@@ -604,6 +671,20 @@ const DesignerState = {
         Scope: 'Applet',
         ReportToShow: undefined, // workaround for strange closure problem
     },
+    CodeAssistant: {
+        Title: 'WAT Code Assistant', View: undefined,
+        x: NaN, y: NaN, Width: 320, Height: 240,
+        minWidth: 320, minHeight: 240,
+        Scope: 'Applet',
+        ReportToShow: undefined, // workaround for strange closure problem
+    },
+    SearchDialog: {
+        Title: 'Search within WAT', View: undefined,
+        x: NaN, y: NaN, Width: 320, Height: 240,
+        minWidth: 320, minHeight: 240,
+    },
+    selectedCategory: 'widget', // never undefined!
+    selectedBehavior: undefined,
     selectedPages: [],
     selectedWidgets: [],
 };
@@ -983,7 +1064,7 @@ function WAD_Button(PropSet) {
 //--                               WAD_Checkbox                               --
 //------------------------------------------------------------------------------
 function WAD_Checkbox(PropSet) {
-    let { enabled, Value, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "style"]);
+    let { enabled, readonly, Value, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "style"]);
     let checked = false, indeterminate = false;
     switch (Value) {
         case null:
@@ -1001,7 +1082,7 @@ function WAD_Checkbox(PropSet) {
     useEffect(() => CheckboxRef.current.indeterminate = indeterminate, [indeterminate]);
     return html `<div class="WAD Checkbox" style=${style}>
       <input type="checkbox" ref=${CheckboxRef}
-        disabled=${enabled === false}
+        disabled=${(enabled === false) && (readonly === false)}
         checked=${checked}
         ...${otherProps}
       />
@@ -1011,9 +1092,10 @@ function WAD_Checkbox(PropSet) {
 //--                            WAD_TextlineInput                             --
 //------------------------------------------------------------------------------
 function WAD_TextlineInput(PropSet) {
-    let { enabled, Value, Placeholder, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    let { Type, // for similar input elements
+    enabled, readonly, Value, Placeholder, minLength, maxLength, multiple, Pattern, SpellChecking, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
-    , ["enabled", "Value", "Placeholder", "Suggestions", "onInput", "onBlur", "style"]);
+    , ["Type", "enabled", "readonly", "Value", "Placeholder", "minLength", "maxLength", "multiple", "Pattern", "SpellChecking", "Suggestions", "onInput", "onBlur", "style"]);
     /**** Value Handling ****/
     const shownValue = useRef('');
     const InputElement = useRef(null);
@@ -1068,37 +1150,42 @@ function WAD_TextlineInput(PropSet) {
     });
     /**** actual Rendering ****/
     return html `<div class="WAD TextLineInput ${wrong}" style=${style}>
-      <input type="text"
-        disabled=${enabled === false}
+      <input type=${Type || 'text'}
+        disabled=${enabled === false} readonly=${readonly}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
-        list=${SuggestionId}
+        minlength=${minLength} maxlength=${maxLength}
+        pattern=${Pattern} spellcheck=${SpellChecking == true}
+        list=${SuggestionId} multiple=${multiple}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       />${SuggestionList}
     </>`;
 }
 //------------------------------------------------------------------------------
-//--                             WAD_IntegerInput                             --
+//--                             WAD_NumberInput                              --
 //------------------------------------------------------------------------------
-function WAD_IntegerInput(PropSet) {
-    let { enabled, Value, Placeholder, Minimum, Maximum, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "Minimum", "Maximum", "onInput", "onBlur", "style"]);
+function WAD_NumberInput(PropSet) {
+    let { enabled, readonly, Value, Placeholder, Suggestions, Minimum, Maximum, StepValue, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    /**** Value Handling ****/
+    , ["enabled", "readonly", "Value", "Placeholder", "Suggestions", "Minimum", "Maximum", "StepValue", "onInput", "onBlur", "style"]);
+    /**** Value Handling ****/
     const shownValue = useRef('');
     const InputElement = useRef(null);
-    let ValueToShow = '';
+    let ValueToShow = undefined;
     switch (Value) {
         case null:
         case undefined:
-            ValueToShow = '';
+            ValueToShow = undefined;
             break;
         case multipleValues:
-            ValueToShow = '';
+            ValueToShow = undefined;
             Placeholder = '(multiple values)';
             break;
         case noSelection:
-            ValueToShow = '';
+            ValueToShow = undefined;
             Placeholder = '(no selection)';
             enabled = false;
             break;
-        default: ValueToShow = '' + Value;
+        default: ValueToShow = Value;
     }
     if (document.activeElement === InputElement.current) {
         ValueToShow = shownValue.current;
@@ -1107,6 +1194,15 @@ function WAD_IntegerInput(PropSet) {
         shownValue.current = ValueToShow;
     }
     const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
+    /**** Suggestion Handling ****/
+    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    let SuggestionList = '';
+    if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionList = html `<datalist id=${SuggestionId}>
+        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+      </datalist>`;
+    }
+    /**** Event Handling ****/
     const _onInput = useCallback((Event) => {
         Event.stopPropagation();
         //    Event.preventDefault() // NO!
@@ -1123,21 +1219,114 @@ function WAD_IntegerInput(PropSet) {
             onBlur(Event);
         }
     });
-    return html `<div class="WAD IntegerInput ${wrong}" style=${style}>
-      <input type="number" min=${Minimum || 0} step="1" max=${Maximum}
-        disabled=${enabled === false}
+    /**** actual Rendering ****/
+    return html `<div class="WAD NumberInput ${wrong}" style=${style}>
+      <input type="number"
+        disabled=${enabled === false} readonly=${readonly}
+        min=${Minimum} step=${StepValue} max=${Maximum}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
+        list=${SuggestionId}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       />
     </>`;
 }
 //------------------------------------------------------------------------------
-//--                               WAD_URLInput                               --
+//--                             WAD_IntegerInput                             --
 //------------------------------------------------------------------------------
-function WAD_URLInput(PropSet) {
-    let { enabled, Value, Placeholder, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+function WAD_IntegerInput(PropSet) {
+    PropSet = Object.assign({}, PropSet);
+    if (PropSet.Value != null) {
+        PropSet.Value = Math.round(PropSet.Value);
+    }
+    if (PropSet.Minimum != null) {
+        PropSet.Minimum = Math.round(PropSet.Minimum);
+    }
+    if (PropSet.Maximum != null) {
+        PropSet.Maximum = Math.round(PropSet.Maximum);
+    }
+    if (PropSet.Suggestions != null) {
+        PropSet.Suggestions = PropSet.Suggestions.map((Value) => Math.round);
+    }
+    PropSet.StepValue = 1;
+    return WAD_NumberInput(PropSet);
+}
+//------------------------------------------------------------------------------
+//--                                WAD_Slider                                --
+//------------------------------------------------------------------------------
+function WAD_Slider(PropSet) {
+    let { enabled, readonly, Value, Minimum, Maximum, StepValue, Hashmarks, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
-    , ["enabled", "Value", "Placeholder", "Suggestions", "onInput", "onBlur", "style"]);
+    , ["enabled", "readonly", "Value", "Minimum", "Maximum", "StepValue", "Hashmarks", "onInput", "onBlur", "style"]);
+    /**** Value Handling ****/
+    const shownValue = useRef('');
+    const InputElement = useRef(null);
+    let ValueToShow = undefined;
+    switch (Value) {
+        case null:
+        case undefined:
+        case multipleValues:
+            ValueToShow = undefined;
+            break;
+        case noSelection:
+            ValueToShow = undefined;
+            enabled = false;
+            break;
+        default: ValueToShow = Value;
+    }
+    if (document.activeElement === InputElement.current) {
+        ValueToShow = shownValue.current;
+    }
+    else {
+        shownValue.current = ValueToShow;
+    }
+    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
+    /**** Hashmark Handling ****/
+    const HashmarkId = useMemo(() => newId() + '-Hashmarks');
+    let HashmarkList = '';
+    if ((Hashmarks != null) && (Hashmarks.length > 0)) {
+        HashmarkList = html `\n<datalist id=${HashmarkId}>
+        ${Hashmarks.map((Item) => {
+            Item = '' + Item;
+            const Value = Item.replace(/:.*$/, '').trim();
+            const Label = Item.replace(/^[^:]+:/, '').trim();
+            return html `<option value=${Value}>${Label}</option>`;
+        })}
+      </datalist>`;
+    }
+    /**** Event Handling ****/
+    const _onInput = useCallback((Event) => {
+        Event.stopPropagation();
+        //    Event.preventDefault() // NO!
+        if (enabled !== false) {
+            shownValue.current = Event.target.value;
+            if (typeof onInput === 'function') {
+                onInput(Event);
+            }
+        }
+    }, [enabled]);
+    const _onBlur = useCallback((Event) => {
+        WAT_rerender();
+        if (typeof onBlur === 'function') {
+            onBlur(Event);
+        }
+    });
+    return html `<div class="WAD Slider ${wrong}" style=${style}>
+      <input type="range"
+        disabled=${enabled === false} readonly=${readonly}
+        min=${Minimum} step=${StepValue} max=${Maximum}
+        ref=${InputElement} value=${ValueToShow} list=${HashmarkId}
+        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
+      />
+    </>`;
+}
+//------------------------------------------------------------------------------
+//--                              WAD_TimeInput                               --
+//------------------------------------------------------------------------------
+function WAD_TimeInput(PropSet) {
+    let { Type, // for similar input elements
+    enabled, readonly, Value, Placeholder, Minimum, Maximum, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    /**** Value Handling ****/
+    , ["Type", "enabled", "readonly", "Value", "Placeholder", "Minimum", "Maximum", "Suggestions", "onInput", "onBlur", "style"]);
     /**** Value Handling ****/
     const shownValue = useRef('');
     const InputElement = useRef(null);
@@ -1191,10 +1380,11 @@ function WAD_URLInput(PropSet) {
         }
     });
     /**** actual Rendering ****/
-    return html `<div class="WAD URLInput ${wrong}" style=${style}>
-      <input type="url"
-        disabled=${enabled === false}
+    return html `<div class="WAD TextLineInput ${wrong}" style=${style}>
+      <input type=${Type || 'time'}
+        disabled=${enabled === false} readonly=${readonly}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
+        min=${Minimum} max=${Maximum}
         list=${SuggestionId}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       />${SuggestionList}
@@ -1261,6 +1451,62 @@ function WAD_PseudoDropDown(PropSet) {
     </>`;
 }
 //------------------------------------------------------------------------------
+//--                       WAD_Behavior[Pseudo]DropDown                       --
+//------------------------------------------------------------------------------
+function WAD_BehaviorDropDown(PropSet) {
+    let { enabled, Value, groupedOptionList, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "groupedOptionList", "style"]);
+    let ValueToShow = '';
+    switch (Value) {
+        case null:
+        case undefined:
+            ValueToShow = '';
+            break;
+        case multipleValues:
+            ValueToShow = '';
+            break;
+        case noSelection:
+            ValueToShow = '';
+            enabled = false;
+            break;
+        default: ValueToShow = '' + Value;
+    }
+    return html `<div class="WAD DropDown" style=${style}>
+      <select disabled=${enabled === false} ...${otherProps}>
+        <option value="">(no behavior)</option>
+        <option value="-" disabled>----</option>
+        ${Object.entries(groupedOptionList || {}).map(([Prefix, SuffixList]) => {
+        return html `<optgroup label="${Prefix}">
+            ${SuffixList.map((Suffix) => html `<option
+              value=${Prefix + '.' + Suffix} selected=${ValueToShow === Prefix + '.' + Suffix}
+            >${Suffix}</option`)}
+          </optgroup>`;
+    })}
+      </select>
+    </>`;
+}
+function WAD_BehaviorPseudoDropDown(PropSet) {
+    let { Icon, Color, enabled, Value, Placeholder, groupedOptionList } = PropSet, otherProps = __rest(PropSet, ["Icon", "Color", "enabled", "Value", "Placeholder", "groupedOptionList"]);
+    return html `<div class="WAD PseudoDropDown ${enabled === false ? 'disabled' : ''}">
+      <div style="
+        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+        background-color:${Color || 'black'};
+      "></>
+      <select disabled=${enabled === false} ...${otherProps}>
+        <option value="-" disabled selected>${Placeholder || '(please select)'}</option>
+        <option value="-" disabled>----</option>
+        <option value="">(no behavior)</option>
+        <option value="-" disabled>----</option>
+        ${Object.entries(groupedOptionList || {}).map(([Prefix, SuffixList]) => {
+        return html `<optgroup label="${Prefix}">
+            ${SuffixList.map((Suffix) => html `<option
+              value=${Prefix + '.' + Suffix}
+            >${Suffix}</option`)}
+          </optgroup>`;
+    })}
+      </select>
+    </>`;
+}
+//------------------------------------------------------------------------------
 //--                           WAD_PseudoFileInput                            --
 //------------------------------------------------------------------------------
 function WAD_PseudoFileInput(PropSet) {
@@ -1277,9 +1523,9 @@ function WAD_PseudoFileInput(PropSet) {
 //--                              WAD_ColorInput                              --
 //------------------------------------------------------------------------------
 function WAD_ColorInput(PropSet) {
-    let { enabled, Value, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
+    let { enabled, readonly, Value, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
-    , ["enabled", "Value", "Suggestions", "onInput", "onBlur", "style"]);
+    , ["enabled", "readonly", "Value", "Suggestions", "onInput", "onBlur", "style"]);
     /**** Value Handling ****/
     const shownValue = useRef('');
     const InputElement = useRef(null);
@@ -1333,7 +1579,7 @@ function WAD_ColorInput(PropSet) {
     /**** actual Rendering ****/
     return html `<div class="WAD ColorInput ${wrong}" style=${style}>
       <input type="color"
-        disabled=${enabled === false}
+        disabled=${enabled === false} readonly=${readonly}
         ref=${InputElement} value=${ValueToShow}
         list=${SuggestionId}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
@@ -1344,7 +1590,7 @@ function WAD_ColorInput(PropSet) {
 //--                              WAD_TextInput                               --
 //------------------------------------------------------------------------------
 function WAD_TextInput(PropSet) {
-    let { enabled, Value, Placeholder, onInput, onBlur, LineWrapping, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "onInput", "onBlur", "LineWrapping", "style"]);
+    let { enabled, readonly, Value, Placeholder, minLength, maxLength, Resizability, LineWrapping, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "Placeholder", "minLength", "maxLength", "Resizability", "LineWrapping", "onInput", "onBlur", "style"]);
     const shownValue = useRef('');
     const InputElement = useRef(null);
     let ValueToShow = '';
@@ -1389,9 +1635,10 @@ function WAD_TextInput(PropSet) {
     });
     return html `<div class="WAD TextInput ${wrong}" style=${style}>
       <textarea
-        disabled=${enabled === false} style="${LineWrapping == true
+        disabled=${enabled === false} readonly=${readonly} style="${LineWrapping == true
         ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
         : undefined}"
+        minlength=${minLength} maxlength=${maxLength}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
       ></textarea>
@@ -1519,6 +1766,224 @@ function WAD_FlatListView(PropSet) {
     </>`;
 }
 //------------------------------------------------------------------------------
+//--                            WAD_NestedListView                            --
+//------------------------------------------------------------------------------
+function WAD_NestedListView(PropSet) {
+    let { List, ItemRenderer, Placeholder, LabelOfItem, ContentListOfItem, selectedPaths, SelectionLimit, SelectionMode, onClick, onDblClick, onSelectionChange, onItemSelected, onItemDeselected, expandedPaths, Indentation, onExpansionChange, onItemExpanded, onItemCollapsed } = PropSet, otherProps = __rest(PropSet, ["List", "ItemRenderer", "Placeholder", "LabelOfItem", "ContentListOfItem", "selectedPaths", "SelectionLimit", "SelectionMode", "onClick", "onDblClick", "onSelectionChange", "onItemSelected", "onItemDeselected", "expandedPaths", "Indentation", "onExpansionChange", "onItemExpanded", "onItemCollapsed"]);
+    function ValueIsOrdinalList(Value) {
+        return ValueIsListSatisfying(Value, ValueIsOrdinal);
+    }
+    expectList('item list', List);
+    allowFunction('list item renderer', ItemRenderer);
+    allowTextline('list placeholder', Placeholder);
+    allowFunction('list item label generator', LabelOfItem);
+    allowFunction('list item content generator', ContentListOfItem);
+    allowListSatisfying('list of selected paths', selectedPaths, ValueIsOrdinalList);
+    allowOrdinal('selection limit', SelectionLimit);
+    allowOneOf('selection mode', SelectionMode, ['same-container', 'any-container']);
+    allowFunction('click callback', onClick);
+    allowFunction('double-click callback', onDblClick);
+    allowFunction('selection change callback', onSelectionChange);
+    allowFunction('item selection callback', onItemSelected);
+    allowFunction('item deselection callback', onItemDeselected);
+    allowListSatisfying('list of expanded paths', expandedPaths, ValueIsOrdinalList);
+    allowOrdinal('indentation', Indentation);
+    allowFunction('expansion change callback', onExpansionChange);
+    allowFunction('item expansion callback', onItemExpanded);
+    allowFunction('item collapse callback', onItemCollapsed);
+    function DefaultRenderer(Item, Path) {
+        return html `<div class="ItemLabel" dangerouslySetInnerHTML=${{
+            __html: LabelOfItem(Item)
+        }}/>`;
+    }
+    if (ItemRenderer == null) {
+        ItemRenderer = DefaultRenderer;
+    }
+    if (Placeholder == null) {
+        Placeholder = '(empty)';
+    }
+    if (selectedPaths == null) {
+        selectedPaths = [];
+    }
+    if (SelectionLimit == null) {
+        SelectionLimit = 1;
+    }
+    if (SelectionMode == null) {
+        SelectionMode = 'same-container';
+    }
+    if (expandedPaths == null) {
+        expandedPaths = [];
+    }
+    if (Indentation == null) {
+        Indentation = 10;
+    }
+    function ItemAtPath(Path) {
+        let Item = List[Path[0]];
+        for (let i = 1, l = Path.length; i < l; i++) {
+            if (Item == null) {
+                return undefined;
+            }
+            const ContentList = ContentListOfItem(Item);
+            if (!ValueIsArray(ContentList)) {
+                return undefined;
+            }
+            Item = ContentList[Path[i]];
+        }
+        return Item;
+    }
+    function ItemAtPathExists(Path) {
+        return (ItemAtPath(Path) != null);
+    }
+    function PathsAreEqual(PathA, PathB) {
+        return ((PathA.length === PathB.length) &&
+            PathA.every((Item, Index) => Item === PathB[Index]));
+    }
+    function IndexOfPathIn(Path, PathList) {
+        for (let i = 0, l = PathList.length; i < l; i++) {
+            if (PathsAreEqual(Path, PathList[i])) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    function ItemInContainer(ItemPath, ContainerPath) {
+        return ((ItemPath.length === ContainerPath.length + 1) &&
+            PathsAreEqual(ItemPath.slice(0, ContainerPath.length), ContainerPath));
+    }
+    function ItemNotInContainer(ItemPath, ContainerPath) {
+        return ((ItemPath.length !== ContainerPath.length + 1) ||
+            !PathsAreEqual(ItemPath.slice(0, ContainerPath.length), ContainerPath));
+    }
+    function ItemIsSelected(Path) { return (IndexOfPathIn(Path, selectedPaths) >= 0); }
+    function ItemIsExpanded(Path) { return (IndexOfPathIn(Path, expandedPaths) >= 0); }
+    selectedPaths = selectedPaths.filter((Path) => ItemAtPathExists(Path));
+    selectedPaths = selectedPaths.filter((Path, Index) => (IndexOfPathIn(Path, selectedPaths) === Index));
+    if ((selectedPaths.length > 1) && (SelectionMode === 'same-container')) {
+        const ContainerPath = selectedPaths[0].slice(0, selectedPaths[0].length - 1);
+        selectedPaths = selectedPaths.filter((Path) => (ItemInContainer(Path, ContainerPath)));
+    }
+    expandedPaths = expandedPaths.filter((Path) => ItemAtPathExists(Path));
+    expandedPaths = expandedPaths.filter((Path, Index) => (IndexOfPathIn(Path, expandedPaths) === Index));
+    function processSelectionClick(Event, Item, ItemPath) {
+        Event.stopImmediatePropagation();
+        Event.preventDefault();
+        if (SelectionLimit === 0) {
+            return;
+        }
+        let SelectionChanged = false;
+        let PathsToSelect, PathsToDeselect;
+        if (Event.shiftKey || Event.metaKey) {
+            SelectionChanged = true;
+            if (ItemIsSelected(ItemPath)) {
+                PathsToDeselect = [ItemPath];
+                selectedPaths = selectedPaths.filter((Path) => !PathsAreEqual(ItemPath, Path));
+            }
+            else {
+                const ContainerPath = ItemPath.slice(0, ItemPath.length - 1);
+                PathsToDeselect = selectedPaths.filter((Path) => (!ItemInContainer(Path, ContainerPath)));
+                selectedPaths = selectedPaths.filter((Path) => (ItemInContainer(Path, ContainerPath)));
+                if (selectedPaths.length === SelectionLimit) {
+                    PathsToDeselect.push([selectedPaths.shift()]);
+                }
+                PathsToSelect = [ItemPath];
+                selectedPaths.push(ItemPath);
+            }
+        }
+        else {
+            PathsToDeselect = selectedPaths.filter((Path) => !PathsAreEqual(ItemPath, Path));
+            SelectionChanged = !ItemIsSelected(ItemPath);
+            PathsToSelect = (SelectionChanged ? [ItemPath] : []);
+            selectedPaths = [ItemPath];
+        }
+        if (SelectionChanged && (onSelectionChange != null)) {
+            onSelectionChange(selectedPaths);
+        }
+        // @ts-ignore TS2454 let's check IF variables were assigned
+        if ((PathsToDeselect != null) && (onItemDeselected != null)) {
+            PathsToDeselect.forEach((Path) => {
+                onItemDeselected(ItemAtPath(Path), Path);
+            });
+        }
+        // @ts-ignore TS2454 let's check IF variables were assigned
+        if ((PathsToSelect != null) && (onItemSelected != null)) {
+            PathsToSelect.forEach((Path) => {
+                onItemSelected(ItemAtPath(Path), Path);
+            });
+        }
+    }
+    function processDoubleClick(Event, Item, ItemPath) {
+        if (onDblClick != null) {
+            Event.stopImmediatePropagation();
+            Event.preventDefault();
+            onDblClick(Item, ItemPath, Event);
+        }
+    }
+    function processExpansionClick(Event, Item, Path) {
+        Event.stopImmediatePropagation();
+        Event.preventDefault();
+        let ExpansionIndex = IndexOfPathIn(Path, expandedPaths);
+        if (ExpansionIndex < 0) {
+            expandedPaths.push(Path);
+        }
+        else {
+            expandedPaths.splice(ExpansionIndex, 1);
+        }
+        if (onExpansionChange != null) {
+            onExpansionChange(expandedPaths);
+        }
+        if (ExpansionIndex < 0) {
+            if (onItemExpanded != null) {
+                onItemExpanded(Item, Path);
+            }
+        }
+        else {
+            if (onItemCollapsed != null) {
+                onItemCollapsed(Item, Path);
+            }
+        }
+    }
+    function renderedItem(Item, Path) {
+        const Offset = (Path.length - 1) * Indentation;
+        const isSelected = ItemIsSelected(Path);
+        const isExpanded = ItemIsExpanded(Path);
+        let ContentList = ContentListOfItem(Item);
+        if (!ValueIsArray(ContentList)) {
+            ContentList = [];
+        }
+        const hasContent = (ContentList.length > 0);
+        function onSelectionClick(Event) {
+            processSelectionClick(Event, Item, Path);
+        }
+        function onDoubleClick(Event) {
+            processDoubleClick(Event, Item, Path);
+        }
+        function onExpansionClick(Event) {
+            processExpansionClick(Event, Item, Path);
+        }
+        return html `<div class="ItemView" style="padding-left:${Offset}px">
+          <div class="ItemLine ${isSelected ? 'selected' : ''}"
+            onClick=${onSelectionClick} onDblClick=${onDoubleClick}
+          >
+            ${hasContent
+            ? (isExpanded
+                ? html `<img class="ItemExpander" src="${IconFolder}/caret-down.png"  onClick=${onExpansionClick}/>`
+                : html `<img class="ItemExpander" src="${IconFolder}/caret-right.png" onClick=${onExpansionClick}/>`)
+            : html `<img class="ItemIcon" src="${IconFolder}/circle.png"/>`} ${ItemRenderer(Item, Path)}
+          </div>
+          ${hasContent && isExpanded
+            ? ContentList.map((Item, Index) => renderedItem(Item, Path.concat(Index)))
+            : ''}
+        </div>`;
+    }
+    return html `<div class="WAD NestedListView ${List.length === 0 ? 'empty' : ''}"
+      ...${otherProps}
+    >
+      ${List.length === 0
+        ? html `<div class="Placeholder"><div>${Placeholder}</></>`
+        : List.map((Item, Index) => renderedItem(Item, [Index]))}
+    </>`;
+}
+//------------------------------------------------------------------------------
 //--                                 WAD_Fold                                 --
 //------------------------------------------------------------------------------
 function WAD_Fold(PropSet) {
@@ -1546,18 +2011,321 @@ function WAD_verticalSeparator(PropSet) {
     return html `<div class="WAD verticalSeparator" ...${PropSet}/>`;
 }
 //------------------------------------------------------------------------------
+//--                         WAD_PropertyConfigurator                         --
+//------------------------------------------------------------------------------
+function WAD_PropertyConfigurator(PropSet) {
+    const { Descriptor, Enabling, Value, onInput } = PropSet;
+    const { Name, Label, EditorType, readonly, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, StepValue, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Descriptor;
+    switch (EditorType) {
+        case 'checkbox':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_Checkbox}
+              enabled=${Enabling} readonly=${readonly} Value=${Value}
+              onInput=${(Event) => onInput(Event.target.checked)}
+            />
+          </>
+        `;
+        case 'choice': // drop-down for boolean properties
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value == true ? TrueValue : FalseValue}
+              Options=${[FalseValue, TrueValue]}
+              onInput=${(Event) => onInput(Event.target.value === TrueValue)}
+            />
+          </>
+        `;
+        case 'textline-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TextlineInput} style="flex:1 0 auto"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder}
+              minLength=${minLength} maxLength=${maxLength} Pattern=${Pattern}
+              SpellChecking=${SpellChecking} Suggestions=${Suggestions}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'password-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TextlineInput} Type="password" style="flex:1 0 auto"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder}
+              minLength=${minLength} maxLength=${maxLength} Pattern=${Pattern}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'email-address-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TextlineInput} Type="email" style="flex:1 0 auto"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder}
+              minLength=${minLength} maxLength=${maxLength} Pattern=${Pattern}
+              multiple=${multiple} Suggestions=${Suggestions}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'phone-number-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TextlineInput} Type="tel" style="flex:1 0 auto"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder}
+              minLength=${minLength} maxLength=${maxLength} Pattern=${Pattern}
+              Suggestions=${Suggestions}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'url-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TextlineInput} Type="url" style="flex:1 0 auto"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder}
+              minLength=${minLength} maxLength=${maxLength} Pattern=${Pattern}
+              Suggestions=${Suggestions}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'search-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TextlineInput} Type="search" style="flex:1 0 auto"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder}
+              minLength=${minLength} maxLength=${maxLength} Pattern=${Pattern}
+              SpellChecking=${SpellChecking} Suggestions=${Suggestions}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'number-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_NumberInput} style="width:60px"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue} StepValue=${StepValue}
+              onInput=${(Event) => onInput(parseFloat(Event.target.value))}
+            />
+          </>
+        `;
+        case 'integer-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_IntegerInput} style="width:60px"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue}
+              onInput=${(Event) => onInput(parseInt(Event.target.value, 10))}
+            />
+          </>
+        `;
+        case 'time-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TimeInput} Type="time"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'date-time-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TimeInput} Type="date-time-local"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'date-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TimeInput} Type="date"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'month-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TimeInput} Type="month"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'week-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_TimeInput} Type="week"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
+              Minimum=${minValue} Maximum=${maxValue}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'color-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_ColorInput} Type="week"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Suggestions=${Suggestions}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'drop-down':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown}
+              enabled=${Enabling} Value=${Value} Options=${ValueList}
+              onInput=${(Event) => onInput(Event.target.value)}
+            />
+          </>
+        `;
+        case 'slider':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+            <${WAD_Gap}/>
+            <${WAD_Slider} style="width:60px"
+              enabled=${Enabling} readonly=${readonly}
+              Value=${Value} Placeholder=${Placeholder} Hashmarks=${Hashmarks}
+              Minimum=${minValue} Maximum=${maxValue} StepValue=${StepValue}
+              onInput=${(Event) => onInput(parseFloat(Event.target.value))}
+            />
+          </>
+        `;
+        case 'text-input':
+        case 'html-input':
+        case 'css-input':
+        case 'javascript-input':
+        case 'json-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+          </>
+
+          <${WAD_TextInput} style="padding-top:4px; min-height:60px"
+            enabled=${Enabling} readonly=${readonly}
+            Value=${Value} Placeholder=${Placeholder}
+            minLength=${minLength} maxLength=${maxLength}
+            Resizability=${Resizability} LineWrapping=${LineWrapping}
+            onInput=${(Event) => onInput(Event.target.value)}
+          />
+        `;
+        case 'linelist-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+          </>
+
+          <${WAD_TextInput} style="padding-top:4px; min-height:60px"
+            enabled=${Enabling} readonly=${readonly}
+            Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
+            minLength=${minLength} maxLength=${maxLength}
+            Resizability=${Resizability} LineWrapping=${LineWrapping}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/, '\n').split('\n'))}
+          />
+        `;
+        case 'numberlist-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+          </>
+
+          <${WAD_TextInput} style="padding-top:4px; min-height:60px"
+            enabled=${Enabling} readonly=${readonly}
+            Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
+            minLength=${minLength} maxLength=${maxLength}
+            Resizability=${Resizability} LineWrapping=${LineWrapping}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/, '\n').split('\n').map((Line) => parseFloat(Line)))}
+          />
+        `;
+    }
+    console.warn(`unsupported EditorType ${quoted(EditorType)}`);
+    return html ``;
+}
+//------------------------------------------------------------------------------
 //--                              Import Support                              --
 //------------------------------------------------------------------------------
+/**** looksLikeBehaviorSet ****/
+function looksLikeBehaviorSet(Serialization) {
+    return (ValueIsPlainObject(Serialization) &&
+        (Serialization.PageList == null) &&
+        (Serialization.WidgetList == null) &&
+        ValueIsPlainObject(Serialization.BehaviorSet) &&
+        // @ts-ignore TS18047 "Serialization.BehaviorSet" is not null
+        ((Serialization.BehaviorSet['applet'] == null) || ValueIsList(Serialization.BehaviorSet['applet'])) &&
+        // @ts-ignore TS18047 "Serialization.BehaviorSet" is not null
+        ((Serialization.BehaviorSet['page'] == null) || ValueIsList(Serialization.BehaviorSet['page'])) &&
+        // @ts-ignore TS18047 "Serialization.BehaviorSet" is not null
+        ((Serialization.BehaviorSet['widget'] == null) || ValueIsList(Serialization.BehaviorSet['widget'])));
+}
 /**** looksLikeApplet ****/
 function looksLikeApplet(Serialization) {
-    return (ValueIsPlainObject(Serialization) &&
-        ValueIsListSatisfying(Serialization.PageList, looksLikePage));
+    return (ValueIsPlainObject(Serialization) && ((Serialization.PageList == null) ||
+        ValueIsListSatisfying(Serialization.PageList, looksLikePage)));
 }
 /**** looksLikePage ****/
 function looksLikePage(Serialization) {
     return (ValueIsPlainObject(Serialization) &&
-        !('PageList' in Serialization) &&
-        !('Type' in Serialization) && ((Serialization.WidgetList == null) ||
+        !('PageList' in Serialization) && ((Serialization.WidgetList == null) ||
         ValueIsListSatisfying(Serialization.WidgetList, looksLikeWidget)));
 }
 /**** looksLikePageList ****/
@@ -1567,7 +2335,8 @@ function looksLikePageList(Serialization) {
 /**** looksLikeWidget ****/
 function looksLikeWidget(Serialization) {
     return (ValueIsPlainObject(Serialization) &&
-        ValueIsWidgetType(Serialization.Type));
+        (Serialization.PageList == null) &&
+        (Serialization.WidgetList == null));
 }
 /**** looksLikeWidgetList ****/
 function looksLikeWidgetList(Serialization) {
@@ -1848,6 +2617,292 @@ function redoOperation() {
 class WAD_Operation {
     get isIrrelevant() { return false; }
     set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
+}
+//----------------------------------------------------------------------------//
+//                    WAD_BehaviorDeserializationOperation                    //
+//----------------------------------------------------------------------------//
+class WAD_BehaviorDeserializationOperation extends WAD_Operation {
+    /**** constructor ****/
+    constructor(Serialization) {
+        super();
+        Object.defineProperty(this, "_Category", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Behavior", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Script", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this._Category = Object.keys(Serialization.BehaviorSet)[0];
+        this._Behavior = Serialization.BehaviorSet[this._Category][0].Name;
+        this._Script = Serialization.BehaviorSet[this._Category][0].Script;
+    }
+    /**** canExtend ****/
+    canExtend(otherOperation) {
+        return false;
+    }
+    /**** isIrrelevant ****/
+    get isIrrelevant() { return false; }
+    set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
+    /**** doNow ****/
+    doNow() {
+        const Applet = DesignerState.Applet;
+        Applet.registerBehaviorOfCategory(this._Category, this._Behavior, this._Script);
+        DesignerState.selectedCategory = this._Category;
+        DesignerState.selectedBehavior = this._Behavior;
+    }
+    /**** extend ****/
+    extend(otherOperation) {
+        throwError('NotExtensible: this operation can not be extended');
+    }
+    /**** redo ****/
+    redo() {
+        this.doNow();
+    }
+    /**** undo ****/
+    undo() {
+        const Applet = DesignerState.Applet;
+        Applet.unregisterBehaviorOfCategory(this._Category, this._Behavior);
+        DesignerState.selectedCategory = this._Category;
+        DesignerState.selectedBehavior = undefined;
+    }
+}
+//----------------------------------------------------------------------------//
+//                     WAD_BehaviorConfigurationOperation                     //
+//----------------------------------------------------------------------------//
+class WAD_BehaviorConfigurationOperation extends WAD_Operation {
+    /**** constructor ****/
+    constructor(Category, Behavior, PropertyName, PropertyValue) {
+        super();
+        Object.defineProperty(this, "_Category", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Behavior", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_PropertyName", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_oldValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_newValue", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        const Applet = DesignerState.Applet;
+        this._Category = Category;
+        this._Behavior = Behavior;
+        this._PropertyName = PropertyName;
+        this._oldValue = Applet._BehaviorPool[Category][Behavior.toLowerCase()][PropertyName];
+        this._newValue = PropertyValue;
+    }
+    /**** canExtend ****/
+    canExtend(otherOperation) {
+        return ((otherOperation instanceof WAD_BehaviorConfigurationOperation) &&
+            (otherOperation._Category === this._Category) &&
+            (otherOperation._PropertyName === this._PropertyName) &&
+            (((this._PropertyName === 'Name') &&
+                (otherOperation._newValue === this._Behavior) // renaming is tricky!
+            ) || ((this._PropertyName !== 'Name') &&
+                (otherOperation._Behavior === this._Behavior) &&
+                (otherOperation._newValue === this._oldValue))));
+    }
+    /**** isIrrelevant ****/
+    get isIrrelevant() {
+        return (this._oldValue === this._newValue);
+    }
+    set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
+    /**** doNow ****/
+    doNow() {
+        const Applet = DesignerState.Applet;
+        switch (this._PropertyName) {
+            case 'Name': // renaming is tricky!
+                Applet.renameBehaviorOfCategory(this._Category, this._Behavior, this._newValue);
+                DesignerState.selectedBehavior = this._newValue;
+                break;
+            case 'pendingScript':
+                Applet.prescriptBehaviorOfCategory(this._Category, this._Behavior, this._newValue);
+                DesignerState.selectedBehavior = this._Behavior;
+                break;
+        }
+        DesignerState.selectedCategory = this._Category;
+    }
+    /**** extend ****/
+    extend(otherOperation) {
+        this.doNow();
+        // @ts-ignore TS2341 allow access
+        otherOperation._newValue = this._newValue;
+    }
+    /**** redo ****/
+    redo() {
+        this.doNow();
+    }
+    /**** undo ****/
+    undo() {
+        const Applet = DesignerState.Applet;
+        switch (this._PropertyName) {
+            case 'Name': // renaming is tricky!
+                Applet.renameBehaviorOfCategory(this._Category, this._newValue, this._Behavior);
+                break;
+            case 'pendingScript':
+                Applet.prescriptBehaviorOfCategory(this._Category, this._Behavior, this._oldValue);
+                break;
+        }
+        DesignerState.selectedCategory = this._Category;
+        DesignerState.selectedBehavior = this._Behavior;
+    }
+}
+//----------------------------------------------------------------------------//
+//                   WAD_BehaviorScriptApplicationOperation                   //
+//----------------------------------------------------------------------------//
+class WAD_BehaviorScriptApplicationOperation extends WAD_Operation {
+    /**** constructor ****/
+    constructor(Category, Behavior) {
+        super();
+        Object.defineProperty(this, "_Category", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Behavior", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_oldScript", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_newScript", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        const Applet = DesignerState.Applet;
+        this._Category = Category;
+        this._Behavior = Behavior;
+        this._oldScript = Applet._BehaviorPool[Category][Behavior.toLowerCase()].activeScript;
+        this._newScript = Applet._BehaviorPool[Category][Behavior.toLowerCase()].pendingScript;
+    }
+    /**** canExtend ****/
+    canExtend(otherOperation) {
+        return false;
+    }
+    /**** isIrrelevant ****/
+    get isIrrelevant() {
+        return (this._newScript === this._oldScript);
+    }
+    set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
+    /**** doNow ****/
+    doNow() {
+        const Applet = DesignerState.Applet;
+        Applet.rescriptBehaviorOfCategory(this._Category, this._Behavior);
+    }
+    /**** extend ****/
+    extend(otherOperation) {
+        throwError('NotExtensible: this operation can not be extended');
+    }
+    /**** redo ****/
+    redo() {
+        this.doNow();
+    }
+    /**** undo ****/
+    undo() {
+        const Applet = DesignerState.Applet;
+        Applet.prescriptBehaviorOfCategory(this._Category, this._Behavior, this._oldScript);
+        Applet.rescriptBehaviorOfCategory(this._Category, this._Behavior);
+        Applet.prescriptBehaviorOfCategory(this._Category, this._Behavior, this._newScript);
+    }
+}
+//----------------------------------------------------------------------------//
+//                       WAD_BehaviorDeletionOperation                        //
+//----------------------------------------------------------------------------//
+class WAD_BehaviorDeletionOperation extends WAD_Operation {
+    /**** constructor ****/
+    constructor(Category, Behavior) {
+        super();
+        Object.defineProperty(this, "_Category", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Behavior", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Script", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        const Applet = DesignerState.Applet;
+        this._Category = Category;
+        this._Behavior = Behavior;
+        this._Script = Applet._BehaviorPool[Category][Behavior.toLowerCase()].activeScript;
+    }
+    /**** canExtend ****/
+    canExtend(otherOperation) {
+        return false;
+    }
+    /**** isIrrelevant ****/
+    get isIrrelevant() { return false; }
+    set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
+    /**** doNow ****/
+    doNow() {
+        const { Applet } = DesignerState;
+        Applet.unregisterBehaviorOfCategory(this._Category, this._Behavior);
+        DesignerState.selectedCategory = this._Category;
+        DesignerState.selectedBehavior = undefined;
+    }
+    /**** extend ****/
+    extend(otherOperation) {
+        throwError('NotExtensible: this operation can not be extended');
+    }
+    /**** redo ****/
+    redo() {
+        this.doNow();
+    }
+    /**** undo ****/
+    undo() {
+        const { Applet } = DesignerState;
+        Applet.registerBehaviorOfCategory(this._Category, this._Behavior, this._Script);
+        DesignerState.selectedCategory = this._Category;
+        DesignerState.selectedBehavior = this._Behavior;
+    }
 }
 //----------------------------------------------------------------------------//
 //                      WAD_AppletConfigurationOperation                      //
@@ -2332,7 +3387,7 @@ class WAD_WidgetDeserializationOperation extends WAD_Operation {
     doNow() {
         const newWidgets = this._newWidgets = [];
         this._Serializations.forEach((Serialization, i) => {
-            const newWidget = this._Page.WidgetDeserializedAt(Serialization.Type, Serialization, this._StartIndex + i);
+            const newWidget = this._Page.WidgetDeserializedAt(Serialization, this._StartIndex + i);
             newWidgets.push(newWidget);
         });
         selectWidgets(newWidgets);
@@ -2695,7 +3750,7 @@ class WAD_WidgetDeletionOperation extends WAD_Operation {
     undo() {
         const newWidgets = this._Widgets = [];
         this._Serializations.forEach((Serialization, i) => {
-            const newWidget = this._Page.WidgetDeserializedAt(Serialization.Type, Serialization, this._Indices[i]);
+            const newWidget = this._Page.WidgetDeserializedAt(Serialization, this._Indices[i]);
             newWidgets.push(newWidget);
         });
         selectWidgets(newWidgets);
@@ -2703,6 +3758,24 @@ class WAD_WidgetDeletionOperation extends WAD_Operation {
 } //----------------------------------------------------------------------------//
 //                                  Commands                                  //
 //----------------------------------------------------------------------------//
+/**** doCreateNewBehavior ****/
+function doCreateNewBehavior(Category, Behavior) {
+    doOperation(new WAD_BehaviorDeserializationOperation({
+        BehaviorSet: { [Category]: [{ Name: Behavior, Script: '' }] }
+    }));
+}
+/**** doConfigureSelectedBehavior ****/
+function doConfigureSelectedBehavior(Property, Value) {
+    doOperation(new WAD_BehaviorConfigurationOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior, Property, Value));
+}
+/**** doApplyBehaviorScript ****/
+function doApplyBehaviorScript() {
+    doOperation(new WAD_BehaviorScriptApplicationOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior));
+}
+/**** doDeleteSelectedBehavior ****/
+function doDeleteSelectedBehavior() {
+    doOperation(new WAD_BehaviorDeletionOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior));
+}
 /**** doConfigureApplet ****/
 function doConfigureApplet(Property, Value) {
     doOperation(new WAD_AppletConfigurationOperation(Property, Value));
@@ -2712,12 +3785,12 @@ function doApplyAppletScript() {
     doOperation(new WAD_AppletScriptApplicationOperation());
 }
 /**** doCreatePage ****/
-function doCreatePage() {
+function doCreatePage(Behavior) {
     const { Applet, selectedPages } = DesignerState;
     const InsertionIndex = (selectedPages.length === 0
         ? Applet.PageCount
         : Math.max(selectedPages.map((Page) => Page.Index)) + 1);
-    doOperation(new WAD_PageDeserializationOperation([{ WidgetList: [] }], InsertionIndex));
+    doOperation(new WAD_PageDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior), WidgetList: [] }], InsertionIndex));
 }
 /**** doDuplicateSelectedPages ****/
 function doDuplicateSelectedPages() {
@@ -2776,8 +3849,8 @@ function doDeleteSelectedPages() {
     doOperation(new WAD_PageDeletionOperation(DesignerState.selectedPages));
 }
 /**** doCreateWidget ****/
-function doCreateWidget(Type) {
-    doOperation(new WAD_WidgetDeserializationOperation([{ Type }], DesignerState.Applet.visitedPage, 0));
+function doCreateWidget(Behavior) {
+    doOperation(new WAD_WidgetDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior) }], DesignerState.Applet.visitedPage, 0));
 }
 /**** doDuplicateSelectedWidgets ****/
 function doDuplicateSelectedWidgets() {
@@ -3050,6 +4123,10 @@ function doImport(FileContent, Type) {
     }
     let { Applet } = DesignerState;
     let visitedPage = Applet.visitedPage;
+    if (looksLikeBehaviorSet(Serialization)) {
+        Applet.deserializeBehaviorsFrom(Serialization);
+        return;
+    }
     if (looksLikePage(Serialization)) {
         doOperation(new WAD_PageDeserializationOperation([Serialization], visitedPage == null ? 0 : visitedPage.Index + 1)); // also selects and visits this page
         return;
@@ -3100,9 +4177,13 @@ function doImport(FileContent, Type) {
 /**** doExport ****/
 function doExport(Scope) {
     var _a, _b;
-    const Applet = DesignerState.Applet;
+    const { Applet, selectedCategory, selectedBehavior } = DesignerState;
     let Serialization, suggestedFileName;
     switch (Scope) {
+        case 'selected Behavior':
+            Serialization = Applet.SerializationOfBehavior(selectedCategory, selectedBehavior);
+            suggestedFileName = selectedBehavior + '.json';
+            break;
         case 'Applet':
             Serialization = Applet.Serialization;
             suggestedFileName = (Applet.Name || 'WAT-Applet') + '.json';
@@ -3467,7 +4548,7 @@ function WAD_DesignerButton() {
 //--                               WAD_Toolbox                                --
 //------------------------------------------------------------------------------
 function WAD_Toolbox() {
-    const { Applet, isLayouting, selectedWidgets, shelvedWidgets } = DesignerState;
+    const { Applet, isLayouting, selectedBehavior, selectedWidgets, shelvedWidgets } = DesignerState;
     const toggleLayouting = useCallback(() => {
         DesignerState.isLayouting = !DesignerState.isLayouting;
         WAT_rerender();
@@ -3480,46 +4561,9 @@ function WAD_Toolbox() {
           active=${isLayouting}
           onClick=${toggleLayouting}
         />
-        <${WAD_PseudoDropDown} Icon="${IconFolder}/plus.png"
-          enabled=${Applet.visitedPage != null} Value="" Placeholder="(please select)"
-          OptionList=${[
-        '----',
-        'plainWidget:plain Widget', 'Outline:Widget Outline',
-        '----',
-        'Title', 'Subtitle', 'Label', 'Text', 'Fineprint',
-        '----',
-        'HTMLView:HTML View', 'MarkdownView:Markdown View',
-        'ImageView:Image View', 'SVGView:SVG View',
-        'WebView:Web View',
-        'Badge', 'Icon',
-        'horizontalSeparator:horizontal Separator',
-        'verticalSeparator:vertical Separator',
-        '----',
-        'Button', 'Checkbox', 'Radiobutton',
-        '----',
-        'Gauge', 'Slider', 'Progressbar',
-        '----',
-        'TextlineInput:Textline Input', 'PasswordInput:Password Input',
-        'NumberInput:Number Input', 'PhoneNumberInput:Phone Number Input',
-        'EMailAddressInput:EMail Address Input', 'URLInput:URL Input',
-        'SearchInput:Search Input', 'TextInput:Text Input',
-        'ColorInput:Color Input',
-        '----',
-        'DropDown', 'PseudoDropDown:Pseudo DropDown',
-        '----',
-        'TimeInput:Time Input', 'DateTimeInput:Date and Time Input',
-        'DateInput:Date Input', 'WeekInput:Week Input', 'MonthInput:Month Input',
-        '----',
-        'FileInput:File Input', 'PseudoFileInput:pseudo File Input',
-        'FileDropArea:File Drop Area',
-        '----',
-        'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
-        'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
-        'SidebarWidgetPane:Sidebar Widget Pane',
-        '-Accordion', '-AccordionFold:Accordion Fold',
-        'FlatListView:flat List View', '-NestedListView:nested List View',
-        '-NoteSticker'
-    ]}
+        <${WAD_BehaviorPseudoDropDown} Icon="${IconFolder}/plus.png"
+          enabled=${Applet.visitedPage != null}
+          groupedOptionList=${Applet.groupedBehaviorListOfCategory('widget')}
           onInput=${(Event) => {
         doCreateWidget(Event.target.value);
         Event.target.value = '';
@@ -3529,9 +4573,10 @@ function WAD_Toolbox() {
           active=${DialogIsOpen('Inspector')}
           onClick=${(Event) => toggleDialog('Inspector', Event)}
         />
-        <${WAD_Icon} Icon="${IconFolder}/square-code.png"
-          active=${DialogIsOpen('ScriptEditor')}
-          onClick=${(Event) => toggleDialog('ScriptEditor', Event)}
+        <${WAD_Icon} Icon="${IconFolder}/message-circle-pencil.png"
+          enabled=${false}
+          active=${DialogIsOpen('CodeAssistant')}
+          onClick=${(Event) => toggleDialog('CodeAssistant', Event)}
         />
 
         <${WAD_Icon} Icon="${IconFolder}/scissors.png"
@@ -3563,6 +4608,7 @@ function WAD_Toolbox() {
         <${WAD_PseudoDropDown} Icon="${IconFolder}/arrow-down-to-bracket.png"
           Placeholder="(please choose)" Value=""
           OptionList=${[
+        (selectedBehavior == null ? '-' : '') + 'selected Behavior',
         'Applet', 'active Page', 'selected Pages', 'selected Widgets',
         '----', 'Applet Design', 'Applet Script'
     ]}
@@ -3578,11 +4624,15 @@ function WAD_Toolbox() {
         <${WAD_Icon} Icon="${IconFolder}/chevron-right.png"
           enabled=${mayVisitNextPage()} onClick=${doVisitNextPage}
         />
-        <${WAD_Icon} Icon="${IconFolder}/house-line.png"
-          enabled=${(Applet.PageCount > 0) && (Applet.visitedPage !== Applet.Page(0))}
-          onClick=${doVisitHomePage}
+        <${WAD_Icon} Icon="${IconFolder}/search-alt-2.png"
+          enabled=${false}
+          active=${DialogIsOpen('SearchDialog')}
+          onClick=${(Event) => toggleDialog('SearchDialog', Event)}
         />
-        <${WAD_Icon} />
+        <${WAD_Icon} Icon="${IconFolder}/gear.png"
+          active=${DialogIsOpen('SettingsDialog')}
+          onClick=${(Event) => toggleDialog('SettingsDialog', Event)}
+        />
 
         <${WAD_Icon} Icon="${IconFolder}/terminal.png" enabled=${false}/>
         <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
@@ -3613,6 +4663,11 @@ function WAD_Inspector() {
     >
      <${WAD_vertically} style="width:100%; height:100%; padding:4px">
       <${WAD_horizontally}>
+        <${WAD_Icon} Icon="${IconFolder}/shapes.png"
+          active=${activeTab === 'BehaviorBrowser'}
+          onClick=${() => activateTab('BehaviorBrowser')}
+        />
+        <div style="width:10px"/>
         <${WAD_Icon} Icon="${IconFolder}/book-open.png"
           active=${activeTab === 'AppletConfiguration'}
           onClick=${() => activateTab('AppletConfiguration')}
@@ -3644,6 +4699,7 @@ function WAD_Inspector() {
         background:#EEEEEE;
         border-top:solid 1px #888888; border-bottom:solid 1px #888888;
       ">
+        ${(activeTab === 'BehaviorBrowser') && html `<${WAD_Label}>Behavior Browser</>`}
         ${(activeTab === 'AppletConfiguration') && html `<${WAD_Label}>Applet Configuration</>`}
         ${(activeTab === 'PageBrowser') && html `<${WAD_Label}>Page Browser</>`}
         ${(activeTab === 'PageConfiguration') && html `<${WAD_Label}>Page Configuration</>`}
@@ -3651,6 +4707,7 @@ function WAD_Inspector() {
         ${(activeTab === 'WidgetConfiguration') && html `<${WAD_Label}>Widget Configuration</>`}
       </>
 
+      ${(activeTab === 'BehaviorBrowser') && html `<${WAD_BehaviorBrowserPane}/>`}
       ${(activeTab === 'AppletConfiguration') && html `<${WAD_AppletConfigurationPane}/>`}
       ${(activeTab === 'PageBrowser') && html `<${WAD_PageBrowserPane}/>`}
       ${(activeTab === 'PageConfiguration') && html `<${WAD_PageConfigurationPane}/>`}
@@ -3660,6 +4717,165 @@ function WAD_Inspector() {
     </>`;
 }
 DesignerState.Inspector.View = WAD_Inspector;
+/**** WAD_BehaviorBrowserPane ****/
+function WAD_BehaviorBrowserPane() {
+    const { Applet, Inspector, selectedCategory, selectedBehavior } = DesignerState;
+    const setCategoryTo = useCallback((newCategory) => {
+        DesignerState.selectedCategory = newCategory;
+        DesignerState.selectedBehavior = undefined;
+        WAT_rerender();
+    }, []);
+    const BehaviorSet = Applet.BehaviorSet[selectedCategory];
+    function ValueIsUniqueBehaviorName(Value) {
+        return (ValueIsBehavior(Value) && !(Value.toLowerCase() in BehaviorSet));
+    }
+    /**** remember fold expansions ****/
+    const Expansions = Inspector.BehaviorExpansions;
+    function toggleExpansion(Name) {
+        Expansions[Name] = !Expansions[Name];
+        WAT_rerender();
+    }
+    /**** remember scroll position ****/
+    const ScrollPosition = Inspector.ScrollPositions.BehaviorBrowser;
+    function updateScrollPosition(Event) {
+        Inspector.ScrollPositions.BehaviorBrowser = Event.target.scrollTop;
+    }
+    const scrollablePane = useRef(null);
+    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    /**** handle list item rendering and selection ****/
+    const groupedBehaviorList = Applet.groupedBehaviorListOfCategory(selectedCategory);
+    const GroupList = [], customGroupList = Object.keys(groupedBehaviorList);
+    ['basic', 'native', 'traditional', 'mobile', 'wearable'].forEach((Prefix) => {
+        const GroupName = Prefix + '_controls';
+        if (GroupName in groupedBehaviorList) {
+            GroupList.push(GroupName);
+            customGroupList.splice(customGroupList.indexOf(GroupName), 1);
+        }
+    });
+    GroupList.push(...customGroupList.sort());
+    const ListIsEmpty = (Object.keys(groupedBehaviorList).length === 0);
+    const BehaviorListItemRenderer = useCallback((GroupName, Behavior, Index, selected) => {
+        let Classes = ['WAD', 'Behavior'];
+        if (selected) {
+            Classes.push('selected');
+        }
+        if (Applet.BehaviorOfCategoryIsBroken(selectedCategory, GroupName + '.' + Behavior)) {
+            Classes.push('broken');
+        }
+        if (Applet.BehaviorOfCategoryIsUnused(selectedCategory, GroupName + '.' + Behavior)) {
+            Classes.push('unused');
+        }
+        return `<span
+          class=${Classes.length === 0 ? undefined : Classes.join(' ')}
+        >${Behavior.replace(/^.*[.]/, '')}</span>`;
+    });
+    const selectedBehaviorIndices = Object.create(null);
+    GroupList.forEach((GroupName) => {
+        const Suffix = (selectedBehavior || '').replace(/^.*[.]/, '');
+        const SelectionIndex = groupedBehaviorList[GroupName].indexOf(Suffix);
+        selectedBehaviorIndices[GroupName] = (SelectionIndex < 0 ? [] : [SelectionIndex]);
+    });
+    const updateBehaviorSelection = useCallback((GroupName, selectedIndices) => {
+        const SelectionIndex = selectedIndices[0];
+        if (SelectionIndex == null) {
+            DesignerState.selectedBehavior = undefined;
+        }
+        else {
+            DesignerState.selectedBehavior = GroupName + '.' + groupedBehaviorList[GroupName][SelectionIndex];
+        }
+        WAT_rerender();
+    });
+    /**** actual rendering ****/
+    return html `<div class="WAD InspectorPane">
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+      <${WAD_horizontally}>
+        <${WAD_Label}>Category</>
+          <div style="width:8px"/>
+        <${WAD_DropDown}
+          Value=${selectedCategory} Options=${['applet', 'page', 'widget']}
+          onInput=${(Event) => setCategoryTo(Event.target.value)}
+        />
+      </>
+
+      <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
+        <${WAD_Icon} Icon="${IconFolder}/plus.png"
+          enabled=${ValueIsUniqueBehaviorName(Inspector.newBehaviorName)}
+          onClick=${(Event) => {
+        doCreateNewBehavior(selectedCategory, Inspector.newBehaviorName);
+        DesignerState.selectedBehavior = Inspector.newBehaviorName;
+        if (!DialogIsOpen('BehaviorEditor')) {
+            openDialog('BehaviorEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
+        WAT_rerender();
+    }}
+        />
+          <div style="width:8px"/>
+        <${WAD_TextlineInput} Placeholder="(behavior name)" style="flex:1 0 auto"
+          Value=${Inspector.newBehaviorName}
+          onInput=${(Event) => { Inspector.newBehaviorName = Event.target.value; WAT_rerender(); }}
+        />
+          <div style="width:8px"/>
+        <${WAD_Icon} Icon="${IconFolder}/square-code.png"
+          active=${DialogIsOpen('BehaviorEditor')}
+          enabled=${DesignerState.selectedBehavior != null}
+          onClick=${(Event) => {
+        if (DesignerState.BehaviorEditor.Category === selectedCategory) {
+            toggleDialog('BehaviorEditor', Event);
+        }
+        else {
+            DesignerState.BehaviorEditor.Category = selectedCategory;
+            openDialog('BehaviorEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
+    }}
+        />
+          <${WAD_Gap}/>
+        <${WAD_Icon} Icon="${IconFolder}/minus.png"
+          enabled=${(DesignerState.selectedBehavior != null) && !BehaviorIsIntrinsic(DesignerState.selectedBehavior)}
+          onClick=${doDeleteSelectedBehavior}
+        />
+      </>
+
+      <${WAD_vertically} style="
+        flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
+        margin-top:6px;
+      " ref=${scrollablePane} scrollTop=${ScrollPosition} onScroll=${updateScrollPosition}>
+        ${ListIsEmpty && html `
+          <${WAD_horizontally}>
+            <div style="
+              flex:1 0 auto;
+              height:40px; line-height:40px;
+              font-style:italic; text-align:center
+            ">(no behaviours)</>
+          </>
+        `}
+        ${!ListIsEmpty && GroupList.map((GroupName) => html `
+          <${WAD_Fold} Label=${GroupName}
+            Expansion=${Expansions[GroupName]}
+            toggleExpansion=${() => toggleExpansion(GroupName)}
+          >
+            <${WAD_FlatListView} style="flex:0 0 auto"
+              List=${groupedBehaviorList[GroupName]} Placeholder="(no behaviours)"
+              ItemRenderer=${BehaviorListItemRenderer.bind(null, GroupName)}
+              selectedIndices=${selectedBehaviorIndices[GroupName]}
+              SelectionLimit=${1}
+              onSelectionChange=${(selectedIndices) => updateBehaviorSelection(GroupName, selectedIndices)}
+              onDblClick=${(Event, Index) => {
+        DesignerState.selectedBehavior = GroupName + '.' + groupedBehaviorList[GroupName][Index];
+        if (DesignerState.BehaviorEditor.Category === selectedCategory) {
+            toggleDialog('BehaviorEditor', Event);
+        }
+        else {
+            DesignerState.BehaviorEditor.Category = selectedCategory;
+            openDialog('BehaviorEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
+    }}
+            />
+          </>
+        `)}
+      </>
+     </>
+    </>`;
+}
 /**** WAD_AppletConfigurationPane ****/
 function WAD_AppletConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
@@ -3677,6 +4893,29 @@ function WAD_AppletConfigurationPane() {
     }
     const scrollablePane = useRef(null);
     useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    /**** prepare behavior-specific properties ****/
+    const configurableProperties = Applet.configurableProperties;
+    let PropertyEditors = [];
+    if (configurableProperties.length === 0) {
+        PropertyEditors.push(html `
+        <${WAD_horizontally}>
+          <div style="
+            flex:1 0 auto;
+            height:40px; line-height:40px;
+            font-style:italic; text-align:center
+          ">(none)</>
+        </>
+      `);
+    }
+    else {
+        PropertyEditors = configurableProperties.map((Descriptor) => html `
+        <${WAD_PropertyConfigurator} Descriptor=${Descriptor}
+          Enabling=${true}
+          Value=${Applet[Descriptor.Name]}
+          onInput=${(newValue) => doConfigureApplet(Descriptor.Name, newValue)}
+        />
+      `);
+    }
     /**** handle script input ****/
     const { activeScript, pendingScript, ErrorReport, ScriptError } = Applet;
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
@@ -3695,6 +4934,38 @@ function WAD_AppletConfigurationPane() {
           readonly Value=${Applet.Name}
         />
       </>
+
+      <${WAD_horizontally} style="padding-top:4px">
+        <${WAD_Label} style="width:52px">Behavior</>
+        <${WAD_Gap}/>
+        <${WAD_BehaviorDropDown}
+          Value=${Applet.Behavior} groupedOptionList=${Applet.groupedBehaviorListOfCategory('applet')}
+          onInput=${(Event) => doConfigureApplet('Behavior', Event.target.value)}
+        />
+      </>
+
+      <${WAD_horizontally}>
+        <${WAD_Label}>Synopsis</>
+        <${WAD_Gap}/>
+        <${WAD_Icon} Icon="${IconFolder}/circle-information.png"
+          active=${DialogIsOpen('SynopsisEditor') && (DesignerState.SynopsisEditor.Scope === 'Applet')}
+          onClick=${(Event) => {
+        if (DesignerState.SynopsisEditor.Scope === 'Applet') {
+            toggleDialog('SynopsisEditor', Event);
+        }
+        else {
+            DesignerState.SynopsisEditor.Scope = 'Applet';
+            openDialog('SynopsisEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
+    }}
+        />
+      </>
+
+      <${WAD_TextInput} Placeholder="(enter synopsis)" style="
+        padding-top:4px; min-height:60px;
+      " Value=${Applet.Synopsis}
+        onInput=${(Event) => doConfigureApplet('Synopsis', Event.target.value)}
+      />
 
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
@@ -4072,7 +5343,7 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Image URL</>
             <${WAD_Gap}/>
-            <${WAD_URLInput} style="flex:1 0 auto"
+            <${WAD_TextlineInput} Type="url" style="flex:1 0 auto"
               Value=${(_h = Applet.BackgroundTexture) === null || _h === void 0 ? void 0 : _h.ImageURL}
               onInput=${(Event) => {
         const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
@@ -4147,7 +5418,13 @@ function WAD_AppletConfigurationPane() {
           " Value=${Applet.HeadExtensions}
             onInput=${(Event) => doConfigureApplet('HeadExtensions', Event.target.value)}
           />
-        </>        <${WAD_Fold} Label="Scripting"
+        </>        <${WAD_Fold} Label="Behavior-specific Settings"
+          Expansion=${Expansions.BehaviorSpecific}
+          toggleExpansion=${() => toggleExpansion('BehaviorSpecific')}
+        >
+          ${PropertyEditors}
+        </>
+        <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
           toggleExpansion=${() => toggleExpansion('Scripting')}
         >
@@ -4155,12 +5432,15 @@ function WAD_AppletConfigurationPane() {
             <${WAD_Label}>Script</>
               <div style="width:8px"/>
             <${WAD_Icon} Icon="${IconFolder}/square-code.png"
-              active=${DialogIsOpen('ScriptEditor')}
+              active=${DialogIsOpen('ScriptEditor') && (DesignerState.ScriptEditor.Scope === 'Applet')}
               onClick=${(Event) => {
-        if (!DialogIsOpen('ScriptEditor')) {
-            DesignerState.ScriptEditor.Scope = 'Applet';
+        if (DesignerState.ScriptEditor.Scope === 'Applet') {
+            toggleDialog('ScriptEditor', Event);
         }
-        toggleDialog('ScriptEditor', Event);
+        else {
+            DesignerState.ScriptEditor.Scope = 'Applet';
+            openDialog('ScriptEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
     }}
             />
             <${WAD_Gap}/>
@@ -4231,7 +5511,13 @@ function WAD_PageBrowserPane() {
       </>
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
-        <${WAD_Icon} Icon="${IconFolder}/plus.png" onClick=${doCreatePage} />
+        <${WAD_BehaviorPseudoDropDown} Icon="${IconFolder}/plus.png"
+          groupedOptionList=${Applet.groupedBehaviorListOfCategory('page')}
+          onInput=${(Event) => {
+        doCreatePage(Event.target.value);
+        Event.target.value = '';
+    }}
+        />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
           enabled=${selectedPages.length > 0}
           onClick=${doDuplicateSelectedPages}
@@ -4302,8 +5588,31 @@ function WAD_PageConfigurationPane() {
     }
     const scrollablePane = useRef(null);
     useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
-    /**** handle script input ****/
+    /**** prepare behavior-specific properties ****/
     const { visitedPage } = Applet;
+    const configurableProperties = visitedPage.configurableProperties;
+    let PropertyEditors = [];
+    if (configurableProperties.length === 0) {
+        PropertyEditors.push(html `
+        <${WAD_horizontally}>
+          <div style="
+            flex:1 0 auto;
+            height:40px; line-height:40px;
+            font-style:italic; text-align:center
+          ">(none)</>
+        </>
+      `);
+    }
+    else {
+        PropertyEditors = configurableProperties.map((Descriptor) => html `
+        <${WAD_PropertyConfigurator} Descriptor=${Descriptor}
+          Enabling=${(visitedPage != null)}
+          Value=${visitedPage[Descriptor.Name]}
+          onInput=${(newValue) => doConfigureVisitedPage(Descriptor.Name, newValue)}
+        />
+      `);
+    }
+    /**** handle script input ****/
     const { activeScript, pendingScript, ErrorReport, ScriptError } = visitedPage;
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
     const ReportToShow = ScriptError || ErrorReport;
@@ -4323,6 +5632,38 @@ function WAD_PageConfigurationPane() {
           onInput=${(Event) => doConfigureVisitedPage('Name', Event.target.value)}
         />
       </>
+
+      <${WAD_horizontally} style="padding-top:4px">
+        <${WAD_Label} style="width:52px">Behavior</>
+        <${WAD_Gap}/>
+        <${WAD_BehaviorDropDown}
+          Value=${visitedPage.Behavior} groupedOptionList=${Applet.groupedBehaviorListOfCategory('page')}
+          onInput=${(Event) => doConfigureVisitedPage('Behavior', Event.target.value)}
+        />
+      </>
+
+      <${WAD_horizontally}>
+        <${WAD_Label}>Synopsis</>
+        <${WAD_Gap}/>
+        <${WAD_Icon} Icon="${IconFolder}/circle-information.png"
+          active=${DialogIsOpen('SynopsisEditor') && (DesignerState.SynopsisEditor.Scope === 'visitedPage')}
+          onClick=${(Event) => {
+        if (DesignerState.SynopsisEditor.Scope === 'visitedPage') {
+            toggleDialog('SynopsisEditor', Event);
+        }
+        else {
+            DesignerState.SynopsisEditor.Scope = 'visitedPage';
+            openDialog('SynopsisEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
+    }}
+        />
+      </>
+
+      <${WAD_TextInput} Placeholder="(enter synopsis)" style="
+        padding-top:4px; min-height:60px;
+      " Value=${visitedPage.Synopsis}
+        onInput=${(Event) => doConfigureVisitedPage('Synopsis', Event.target.value)}
+      />
 
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
@@ -4560,7 +5901,7 @@ function WAD_PageConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Image URL</>
             <${WAD_Gap}/>
-            <${WAD_URLInput} style="flex:1 0 auto"
+            <${WAD_TextlineInput} Type="url" style="flex:1 0 auto"
               Value=${(_h = visitedPage.BackgroundTexture) === null || _h === void 0 ? void 0 : _h.ImageURL}
               onInput=${(Event) => {
         const { isActive, ImageURL, Mode, xOffset, yOffset } = (visitedPage.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
@@ -4595,6 +5936,12 @@ function WAD_PageConfigurationPane() {
           </>
         </>
 
+        <${WAD_Fold} Label="Behavior-specific Settings"
+          Expansion=${Expansions.BehaviorSpecific}
+          toggleExpansion=${() => toggleExpansion('BehaviorSpecific')}
+        >
+          ${PropertyEditors}
+        </>
         <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
           toggleExpansion=${() => toggleExpansion('Scripting')}
@@ -4603,12 +5950,15 @@ function WAD_PageConfigurationPane() {
             <${WAD_Label}>Script</>
               <div style="width:8px"/>
             <${WAD_Icon} Icon="${IconFolder}/square-code.png"
-              active=${DialogIsOpen('ScriptEditor')}
+              active=${DialogIsOpen('ScriptEditor') && (DesignerState.ScriptEditor.Scope === 'visitedPage')}
               onClick=${(Event) => {
-        if (!DialogIsOpen('ScriptEditor')) {
-            DesignerState.ScriptEditor.Scope = 'visitedPage';
+        if (DesignerState.ScriptEditor.Scope === 'visitedPage') {
+            toggleDialog('ScriptEditor', Event);
         }
-        toggleDialog('ScriptEditor', Event);
+        else {
+            DesignerState.ScriptEditor.Scope = 'visitedPage';
+            openDialog('ScriptEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
     }}
             />
             <${WAD_Gap}/>
@@ -4678,46 +6028,9 @@ function WAD_WidgetBrowserPane() {
       </>
 
       <${WAD_horizontally} style="padding-top:4px; padding-bottom:4px">
-        <${WAD_PseudoDropDown} Icon="${IconFolder}/plus.png"
-          enabled=${visitedPage != null} Value="" Placeholder="(please select)"
-          OptionList=${[
-        '----',
-        'plainWidget:plain Widget', 'Outline:Widget Outline',
-        '----',
-        'Title', 'Subtitle', 'Label', 'Text', 'Fineprint',
-        '----',
-        'HTMLView:HTML View', 'MarkdownView:Markdown View',
-        'ImageView:Image View', 'SVGView:SVG View',
-        'WebView:Web View',
-        'Badge', 'Icon',
-        'horizontalSeparator:horizontal Separator',
-        'verticalSeparator:vertical Separator',
-        '----',
-        'Button', 'Checkbox', 'Radiobutton',
-        '----',
-        'Gauge', 'Slider', 'Progressbar',
-        '----',
-        'TextlineInput:Textline Input', 'PasswordInput:Password Input',
-        'NumberInput:Number Input', 'PhoneNumberInput:Phone Number Input',
-        'EMailAddressInput:EMail Address Input', 'URLInput:URL Input',
-        'SearchInput:Search Input', 'TextInput:Text Input',
-        'ColorInput:Color Input',
-        '----',
-        'DropDown', 'PseudoDropDown:Pseudo DropDown',
-        '----',
-        'TimeInput:Time Input', 'DateTimeInput:Date and Time Input',
-        'DateInput:Date Input', 'WeekInput:Week Input', 'MonthInput:Month Input',
-        '----',
-        'FileInput:File Input', 'PseudoFileInput:pseudo File Input',
-        'FileDropArea:File Drop Area',
-        '----',
-        'TextTab:Text Tab', 'IconTab:Icon Tab', '-TabStrip',
-        'WidgetPane:Widget Pane', 'DoubleWidgetPane:Double Widget Pane',
-        'SidebarWidgetPane:Sidebar Widget Pane',
-        '-Accordion', '-AccordionFold:Accordion Fold',
-        'FlatListView:flat List View', '-nestedListView:nested List View',
-        '-NoteSticker'
-    ]}
+        <${WAD_BehaviorPseudoDropDown} Icon="${IconFolder}/plus.png"
+          enabled=${visitedPage != null}
+          groupedOptionList=${Applet.groupedBehaviorListOfCategory('widget')}
           onInput=${(Event) => {
         doCreateWidget(Event.target.value);
         Event.target.value = '';
@@ -4774,7 +6087,6 @@ function WAD_WidgetBrowserPane() {
 function WAD_WidgetConfigurationPane() {
     const { Applet, selectedWidgets, Inspector } = DesignerState;
     const visitedPage = Applet.visitedPage;
-    const commonType = commonValueOf(selectedWidgets.map((Widget) => Widget.Type));
     /**** remember fold expansions ****/
     const Expansions = Inspector.Expansions.WidgetConfiguration;
     function toggleExpansion(Name) {
@@ -4822,6 +6134,32 @@ function WAD_WidgetConfigurationPane() {
         }
         doConfigureSelectedWidgets('Value', Value);
     }
+    /**** prepare behavior-specific properties ****/
+    let configurableProperties = commonValueOf(selectedWidgets.map((Widget) => Widget.configurableProperties));
+    if (!ValueIsList(configurableProperties)) {
+        configurableProperties = [];
+    }
+    let PropertyEditors = [];
+    if (configurableProperties.length === 0) {
+        PropertyEditors.push(html `
+        <${WAD_horizontally}>
+          <div style="
+            flex:1 0 auto;
+            height:40px; line-height:40px;
+            font-style:italic; text-align:center
+          ">(none)</>
+        </>
+      `);
+    }
+    else {
+        PropertyEditors = configurableProperties.map((Descriptor) => html `
+        <${WAD_PropertyConfigurator} Descriptor=${Descriptor}
+          Enabling=${selectedWidgets.length > 0}
+          Value=${commonValueOf(selectedWidgets.map((Widget) => Widget[Descriptor.Name]))}
+          onInput=${(newValue) => doConfigureSelectedWidgets(Descriptor.Name, newValue)}
+        />
+      `);
+    }
     /**** handle script input ****/
     const activeScript = commonValueOf(selectedWidgets.map((Widget) => Widget.activeScript));
     const pendingScript = commonValueOf(selectedWidgets.map((Widget) => Widget.pendingScript));
@@ -4847,11 +6185,38 @@ function WAD_WidgetConfigurationPane() {
       </>
 
       <${WAD_horizontally} style="padding-top:4px">
-        <${WAD_Label} style="width:52px">Type</>
-        <${WAD_TextlineInput} readonly style="flex:1 0 auto"
-          Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Type))}
+        <${WAD_Label} style="width:52px">Behavior</>
+        <${WAD_Gap}/>
+        <${WAD_BehaviorDropDown}
+          enabled=${false}
+          Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Behavior))}
+          groupedOptionList=${Applet.groupedBehaviorListOfCategory('widget')}
         />
       </>
+
+      <${WAD_horizontally}>
+        <${WAD_Label}>Synopsis</>
+        <${WAD_Gap}/>
+        <${WAD_Icon} Icon="${IconFolder}/circle-information.png"
+          active=${DialogIsOpen('SynopsisEditor') && (DesignerState.SynopsisEditor.Scope === 'selectedWidgets')}
+          onClick=${(Event) => {
+        if (DesignerState.SynopsisEditor.Scope === 'selectedWidgets') {
+            toggleDialog('SynopsisEditor', Event);
+        }
+        else {
+            DesignerState.SynopsisEditor.Scope = 'selectedWidgets';
+            openDialog('SynopsisEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
+    }}
+        />
+      </>
+
+      <${WAD_TextInput} Placeholder="(enter synopsis)" style="
+        padding-top:4px; min-height:60px;
+      " enabled=${selectedWidgets.length > 0}
+        Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Synopsis))}
+        onInput=${(Event) => doConfigureSelectedWidgets('Synopsis', Event.target.value)}
+      />
 
       <${WAD_vertically} style="
         flex:1 1 auto; overflow-x:hidden; overflow-y:scroll;
@@ -5326,7 +6691,7 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Image URL</>
             <${WAD_Gap}/>
-            <${WAD_URLInput} style="flex:1 0 auto"
+            <${WAD_TextlineInput} Type="url" style="flex:1 0 auto"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture), 'ImageURL')}
               onInput=${(Event) => {
@@ -5697,6 +7062,12 @@ function WAD_WidgetConfigurationPane() {
           </>
         </>
 
+        <${WAD_Fold} Label="Behavior-specific Settings"
+          Expansion=${Expansions.BehaviorSpecific}
+          toggleExpansion=${() => toggleExpansion('BehaviorSpecific')}
+        >
+          ${PropertyEditors}
+        </>
         <${WAD_Fold} Label="Scripting"
           Expansion=${Expansions.Scripting}
           toggleExpansion=${() => toggleExpansion('Scripting')}
@@ -5705,12 +7076,15 @@ function WAD_WidgetConfigurationPane() {
             <${WAD_Label}>Script</>
               <div style="width:8px"/>
             <${WAD_Icon} Icon="${IconFolder}/square-code.png"
-              active=${DialogIsOpen('ScriptEditor')}
+              active=${DialogIsOpen('ScriptEditor') && (DesignerState.ScriptEditor.Scope === 'selectedWidgets')}
               onClick=${(Event) => {
-        if (!DialogIsOpen('ScriptEditor')) {
-            DesignerState.ScriptEditor.Scope = 'selectedWidgets';
+        if (DesignerState.ScriptEditor.Scope === 'selectedWidgets') {
+            toggleDialog('ScriptEditor', Event);
         }
-        toggleDialog('ScriptEditor', Event);
+        else {
+            DesignerState.ScriptEditor.Scope = 'selectedWidgets';
+            openDialog('ScriptEditor', Event === null || Event === void 0 ? void 0 : Event.clientX, Event === null || Event === void 0 ? void 0 : Event.clientY); // *C* better position!
+        }
     }}
             />
             <${WAD_Gap}/>
@@ -5731,1251 +7105,7 @@ function WAD_WidgetConfigurationPane() {
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
           />
-        </>        <${WAD_Fold} Label="Type-specific Settings"
-          Expansion=${Expansions.TypeSpecific}
-          toggleExpansion=${() => toggleExpansion('TypeSpecific')}
-        >
-          ${(commonType === 'HTMLView') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>acceptable File Types (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter type list or leave empty for all supported)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.acceptableFileTypes))}
-                onInput=${(Event) => doConfigureSelectedWidgets('acceptableFileTypes', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'MarkdownView') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>acceptable File Types (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter type list or leave empty for all supported)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.acceptableFileTypes))}
-                onInput=${(Event) => doConfigureSelectedWidgets('acceptableFileTypes', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'ImageView') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Image Scaling</>
-              <${WAD_Gap}/>
-              <${WAD_DropDown}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.ImageScaling))}
-                Options=${WAT_ImageScalings}
-                onInput=${(Event) => doConfigureSelectedWidgets('ImageScaling', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Image Alignment</>
-              <${WAD_Gap}/>
-              <${WAD_DropDown}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.ImageAlignment))}
-                Options=${WAT_ImageAlignments}
-                onInput=${(Event) => doConfigureSelectedWidgets('ImageAlignment', Event.target.value)}
-              />
-            </>
-          `}
-
-          ${(commonType === 'SVGView') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Image Scaling</>
-              <${WAD_Gap}/>
-              <${WAD_DropDown}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.ImageScaling))}
-                Options=${WAT_ImageScalings}
-                onInput=${(Event) => doConfigureSelectedWidgets('ImageScaling', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Image Alignment</>
-              <${WAD_Gap}/>
-              <${WAD_DropDown}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.ImageAlignment))}
-                Options=${WAT_ImageAlignments}
-                onInput=${(Event) => doConfigureSelectedWidgets('ImageAlignment', Event.target.value)}
-              />
-            </>
-
-
-          `}
-
-          ${(commonType === 'WebView') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Permissions Policy</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.PermissionsPolicy))}
-                onInput=${(Event) => doConfigureSelectedWidgets('PermissionsPolicy', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>allows Fullscreen</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.allowsFullscreen))}
-                onInput=${(Event) => doConfigureSelectedWidgets('allowsFullscreen', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Permissions Policy</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.PermissionsPolicy))}
-                onInput=${(Event) => doConfigureSelectedWidgets('PermissionsPolicy', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Sandbox Permissionsy</>
-              <${WAD_Gap}/>
-              <${WAD_DropDown}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.SandboxPermissions))}
-                Options=${WAT_ReferrerPolicies}
-                onInput=${(Event) => doConfigureSelectedWidgets('SandboxPermissions', Event.target.value)}
-              />
-            </>
-          `}
-
-          ${(commonType === 'Gauge') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Minimum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>lower Bound</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.lowerBound))}
-                onInput=${(Event) => doConfigureSelectedWidgets('lowerBound', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Optimum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Optimum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Optimum', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>upper Bound</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.upperBound))}
-                onInput=${(Event) => doConfigureSelectedWidgets('upperBound', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Maximum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', parseFloat(Event.target.value))}
-              />
-            </>
-
-          `}
-
-          ${(commonType === 'Progressbar') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Maximum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', parseFloat(Event.target.value))}
-              />
-            </>
-
-          `}
-
-          ${(commonType === 'Slider') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Minimum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Stepping</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Stepping))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('Stepping', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Maximum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Hashmarks (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter hashmark list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Hashmarks))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Hashmarks', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(['TextlineInput', 'SearchInput'].indexOf(commonType) >= 0) && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Input Pattern</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Pattern))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Pattern', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>check Spelling</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.SpellChecking))}
-                onInput=${(Event) => doConfigureSelectedWidgets('SpellChecking', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'PasswordInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Input Pattern</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Pattern))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Pattern', Event.target.value)}
-              />
-            </>
-
-
-          `}
-
-          ${(commonType === 'NumberInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Minimum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Stepping</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Stepping))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('Stepping', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Maximum</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', parseFloat(Event.target.value))}
-              />
-            </>
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/).map(Number))}
-            />
-
-          `}
-
-          ${(commonType === 'PhoneNumberInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Input Pattern</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Pattern))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Pattern', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'EMailAddressInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Input Pattern</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Pattern))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Pattern', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'URLInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Input Pattern</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Pattern))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Pattern', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'TimeInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>with Seconds</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.withSeconds))}
-                onInput=${(Event) => doConfigureSelectedWidgets('withSeconds', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>earliest Time</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                Pattern=${WAT_TimePattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>latest Time</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                Pattern=${WAT_TimePattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'DateTimeInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>with Seconds</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.withSeconds))}
-                onInput=${(Event) => doConfigureSelectedWidgets('withSeconds', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>earliest Point of Time</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                Pattern=${WAT_DateTimePattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>latest Point of Time</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                Pattern=${WAT_DateTimePattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'DateInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>earliest Date</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                Pattern=${WAT_DatePattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>latest Date</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                Pattern=${WAT_DatePattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'WeekInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>earliest Week</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                Pattern=${WAT_WeekPattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>latest Week</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                Pattern=${WAT_WeekPattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'MonthInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>earliest Month</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Minimum))}
-                Pattern=${WAT_MonthPattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Minimum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>latest Month</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Maximum))}
-                Pattern=${WAT_MonthPattern}
-                onInput=${(Event) => doConfigureSelectedWidgets('Maximum', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'FileInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>acceptable Types</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.acceptableTypes))}
-                onInput=${(Event) => doConfigureSelectedWidgets('acceptableTypes', Event.target.value)}
-              />
-            </>
-
-         <${WAD_horizontally}>
-              <${WAD_Label}>multiple Files</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.allowMultiple))}
-                onInput=${(Event) => doConfigureSelectedWidgets('allowMultiple', Event.target.checked)}
-              />
-            </>
-          `}
-
-          ${(commonType === 'PseudoFileInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Icon URL</>
-              <${WAD_Gap}/>
-              <${WAD_URLInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Icon))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Icon', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>acceptable Types</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.acceptableTypes))}
-                onInput=${(Event) => doConfigureSelectedWidgets('acceptableTypes', Event.target.value)}
-              />
-            </>
-
-         <${WAD_horizontally}>
-              <${WAD_Label}>multiple Files</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.allowMultiple))}
-                onInput=${(Event) => doConfigureSelectedWidgets('allowMultiple', Event.target.checked)}
-              />
-            </>
-          `}
-
-          ${(commonType === 'FileDropArea') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>acceptable Types</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.acceptableTypes))}
-                onInput=${(Event) => doConfigureSelectedWidgets('acceptableTypes', Event.target.value)}
-              />
-            </>
-
-         <${WAD_horizontally}>
-              <${WAD_Label}>multiple Files</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.allowMultiple))}
-                onInput=${(Event) => doConfigureSelectedWidgets('allowMultiple', Event.target.checked)}
-              />
-            </>
-          `}
-
-          ${(commonType === 'ColorInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'DropDown') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Options (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Options))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Options', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'PseudoDropDown') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Icon URL</>
-              <${WAD_Gap}/>
-              <${WAD_URLInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Icon))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Icon', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Options (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Options))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Options', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'TextInput') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>read-only</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.readonly))}
-                onInput=${(Event) => doConfigureSelectedWidgets('readonly', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Input Length</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxLength))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxLength', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>wrap Lines</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.LineWrapping))}
-                onInput=${(Event) => doConfigureSelectedWidgets('LineWrapping', Event.target.checked)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Suggestions (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter value list)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.Suggestions))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Suggestions', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-            <${WAD_horizontally}>
-              <${WAD_Label}>acceptable File Types (one per line)</>
-            </>
-
-            <${WAD_TextInput} Placeholder="(enter type list or leave empty for all supported)" style="min-height:60px"
-              enabled=${selectedWidgets.length > 0}
-                Value=${commonListLiteralOf(selectedWidgets.map((Widget) => Widget.acceptableFileTypes))}
-                onInput=${(Event) => doConfigureSelectedWidgets('acceptableFileTypes', Event.target.value.trim().split(/\s*\n\s*/))}
-            />
-
-          `}
-
-          ${(commonType === 'DoubleWidgetPane') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>primary Widget Path</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.primaryWidgetPath))}
-                onInput=${(Event) => doConfigureSelectedWidgets('primaryWidgetPath', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>secondary Widget Path</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.secondaryWidgetPath))}
-                onInput=${(Event) => doConfigureSelectedWidgets('secondaryWidgetPath', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Pane Width</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minPaneWidth))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minPaneWidth', parseFloat(Event.target.value))}
-              />
-            </>
-
-
-          `}
-
-          ${(commonType === 'SidebarWidgetPane') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>primary Widget Path</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.primaryWidgetPath))}
-                onInput=${(Event) => doConfigureSelectedWidgets('primaryWidgetPath', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Sidebar Widget Path</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.SidebarWidgetPath))}
-                onInput=${(Event) => doConfigureSelectedWidgets('SidebarWidgetPath', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Pane Width</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minPaneWidth))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minPaneWidth', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>min. Sidebar Width</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.minSidebarWidth))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('minSidebarWidth', parseFloat(Event.target.value))}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>max. Sidebar Width</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.maxSidebarWidth))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('maxSidebarWidth', parseFloat(Event.target.value))}
-              />
-            </>
-
-
-          `}
-
-          ${(['TextTab', 'IconTab'].indexOf(commonType) >= 0) && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>active</>
-              <${WAD_Gap}/>
-              <${WAD_Checkbox}
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Activation))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Activation', Event.target.checked)}
-              />
-            </>
-          `}
-
-          ${(commonType === 'TabStrip') && html `
-
-          `}
-
-          ${(commonType === 'FlatListView') && html `
-            <${WAD_horizontally}>
-              <${WAD_Label}>Placeholder</>
-              <${WAD_Gap}/>
-              <${WAD_TextlineInput} style="flex:1 0 auto"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.Placeholder))}
-                onInput=${(Event) => doConfigureSelectedWidgets('Placeholder', Event.target.value)}
-              />
-            </>
-
-            <${WAD_horizontally}>
-              <${WAD_Label}>Selection Limit</>
-              <${WAD_Gap}/>
-              <${WAD_IntegerInput} style="width:60px"
-                enabled=${selectedWidgets.length > 0}
-                Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.SelectionLimit))}
-                Minimum=${0}
-                onInput=${(Event) => doConfigureSelectedWidgets('SelectionLimit', parseFloat(Event.target.value))}
-              />
-            </>
-
-
-          `}
-          <${WAD_horizontally}>
-            <${WAD_Label}>Value</>
-            <${WAD_Gap}/>
-            <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
-              active=${DialogIsOpen('ValueEditor')}
-              onClick=${(Event) => toggleDialog('ValueEditor', Event)}
-            />
-          </>
-
-          <${WAD_TextInput} Placeholder="(enter value)" style="min-height:60px"
-            enabled=${selectedWidgets.length > 0}
-            Value=${ValueToEdit} onInput=${_onValueInput}
-          />
         </>
-
       </>
 
       <${WAD_horizontally}>
@@ -6992,6 +7122,149 @@ function WAD_WidgetConfigurationPane() {
      </>
     </>`;
 }
+//------------------------------------------------------------------------------
+//--                            WAD_SettingsDialog                            --
+//------------------------------------------------------------------------------
+function WAD_SettingsDialog() {
+    const onClose = useCallback(() => closeDialog('SettingsDialog'));
+    const { Applet } = DesignerState;
+    return html `<${WAD_Dialog} Name="SettingsDialog" resizable=${true}
+      onClose=${onClose}
+    >
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+
+     </>
+    </>`;
+}
+DesignerState.SettingsDialog.View = WAD_SettingsDialog;
+//------------------------------------------------------------------------------
+//--                            WAD_BehaviorEditor                            --
+//------------------------------------------------------------------------------
+function WAD_BehaviorEditor() {
+    const onClose = useCallback(() => closeDialog('BehaviorEditor'));
+    const { Applet, selectedCategory, selectedBehavior } = DesignerState;
+    let activeScript, pendingScript;
+    let ErrorReport, ScriptError;
+    ({
+        activeScript, pendingScript, ErrorReport
+    } = (Applet._BehaviorPool[selectedCategory][(selectedBehavior || '').toLowerCase()] || {}));
+    const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
+    const ReportToShow = ScriptError || ErrorReport;
+    DesignerState.BehaviorEditor.ReportToShow = ReportToShow; // *C* workaround
+    const setPendingScriptTo = useCallback((newScript) => {
+        doConfigureSelectedBehavior('pendingScript', newScript);
+    }, []);
+    const applyPendingScript = useCallback(() => {
+        doApplyBehaviorScript();
+    }, []);
+    return html `<${WAD_Dialog} Name="BehaviorEditor" resizable=${true}
+      onClose=${onClose}
+    >
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+      <${WAD_horizontally}>
+        <${WAD_Label} style="width:60px">Category</>
+          <div style="width:8px"/>
+        <${WAD_DropDown}
+          enabled=${false}
+          Value=${selectedCategory} Options=${['applet', 'page', 'widget']}
+        />
+      </>
+
+      <${WAD_horizontally}>
+        <${WAD_Label} style="width:60px">Behavior</>
+          <div style="width:8px"/>
+        <${WAD_TextlineInput} Placeholder="(behavior name)" style="flex:1 0 auto"
+          Value=${(Applet._BehaviorPool[selectedCategory][(selectedBehavior || '').toLowerCase()] || {}).Name}
+          onInput=${(Event) => {
+        doConfigureSelectedBehavior('Name', Event.target.value);
+        WAT_rerender();
+    }}
+        />
+          <div style="width:20px"/>
+        <${WAD_Icon} Icon="${IconFolder}/check.png"
+          enabled=${ScriptIsPending && !BehaviorIsIntrinsic(DesignerState.selectedBehavior)}
+          onClick=${applyPendingScript}
+        />
+          <div style="width:8px"/>
+        <${WAD_Icon} Icon="${IconFolder}/xmark.png" style="width:24px"
+          enabled=${ScriptIsPending && !BehaviorIsIntrinsic(DesignerState.selectedBehavior)}
+          onClick=${() => setPendingScriptTo('')}
+        />
+      </>
+
+      <${WAD_TextInput} Placeholder="(enter script)" LineWrapping=${true} style="
+        flex:1 0 auto; padding-top:4px;
+      " Value=${pendingScript == null ? activeScript : pendingScript}
+        onInput=${(Event) => setPendingScriptTo(Event.target.value)}
+      />
+
+      <${WAD_horizontally}>
+        <${WAD_ErrorView} style="flex:1 1 auto" ErrorReport=${ReportToShow}/>
+        <${WAD_Icon} Icon="${IconFolder}/triangle-exclamation.png" style="
+          display:${ValueIsErrorReport(ReportToShow) ? 'block' : 'none'};
+          padding-top:6px;
+        " onClick=${() => {
+        const { ReportToShow } = DesignerState.BehaviorEditor;
+        window.alert(ReportToShow.Type + '\n\n' + ReportToShow.Message);
+    }}/>
+      </>
+     </>
+    </>`;
+}
+DesignerState.BehaviorEditor.View = WAD_BehaviorEditor;
+//------------------------------------------------------------------------------
+//--                            WAD_SynopsisEditor                            --
+//------------------------------------------------------------------------------
+function WAD_SynopsisEditor() {
+    const onClose = useCallback(() => closeDialog('SynopsisEditor'));
+    const { Applet } = DesignerState;
+    let Synopsis;
+    const { Scope } = DesignerState.SynopsisEditor;
+    switch (Scope) {
+        case 'Applet':
+            Synopsis = Applet.Synopsis;
+            break;
+        case 'visitedPage':
+            Synopsis = Applet.visitedPage.Synopsis;
+            break;
+        case 'selectedWidgets':
+            const { selectedWidgets } = DesignerState;
+            Synopsis = commonValueOf(selectedWidgets.map((Widget) => Widget.Synopsis));
+            break;
+    }
+    const setScopeTo = useCallback((newScope) => {
+        DesignerState.SynopsisEditor.Scope = newScope;
+        WAT_rerender();
+    }, []);
+    const setSynopsisTo = useCallback((newSynopsis) => {
+        switch (DesignerState.SynopsisEditor.Scope) {
+            case 'Applet': return doConfigureApplet('Synopsis', newSynopsis);
+            case 'visitedPage': return doConfigureVisitedPage('Synopsis', newSynopsis);
+            case 'selectedWidgets': return doConfigureSelectedWidgets('Synopsis', newSynopsis);
+        }
+    }, []);
+    return html `<${WAD_Dialog} Name="SynopsisEditor" resizable=${true}
+      onClose=${onClose}
+    >
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+      <${WAD_horizontally}>
+        <${WAD_Label}>Scope</>
+          <div style="width:8px"/>
+        <${WAD_DropDown}
+          Value=${Scope} Options=${['Applet', 'visitedPage', 'selectedWidgets']}
+          onInput=${(Event) => setScopeTo(Event.target.value)}
+        />
+      </>
+
+      <${WAD_TextInput} Placeholder="(enter synopsis)" LineWrapping=${true} style="
+        flex:1 0 auto; padding-top:4px;
+      " Value=${Synopsis}
+        onInput=${(Event) => setSynopsisTo(Event.target.value)}
+      />
+     </>
+    </>`;
+}
+DesignerState.SynopsisEditor.View = WAD_SynopsisEditor;
 //------------------------------------------------------------------------------
 //--                             WAD_ValueEditor                              --
 //------------------------------------------------------------------------------
@@ -7061,7 +7334,7 @@ function WAD_ScriptEditor() {
     let ErrorReport, ScriptError;
     // "activeScript" always exists, "pendingScript" may be missing
     const { Scope } = DesignerState.ScriptEditor;
-    switch (DesignerState.ScriptEditor.Scope) {
+    switch (Scope) {
         case 'Applet':
             ;
             ({ activeScript, pendingScript, ErrorReport, ScriptError } = Applet);
@@ -7142,6 +7415,36 @@ function WAD_ScriptEditor() {
     </>`;
 }
 DesignerState.ScriptEditor.View = WAD_ScriptEditor;
+//------------------------------------------------------------------------------
+//--                            WAD_CodeAssistant                             --
+//------------------------------------------------------------------------------
+function WAD_CodeAssistant() {
+    const onClose = useCallback(() => closeDialog('CodeAssistant'));
+    const { Applet } = DesignerState;
+    return html `<${WAD_Dialog} Name="CodeAssistant" resizable=${true}
+      onClose=${onClose}
+    >
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+
+     </>
+    </>`;
+}
+DesignerState.CodeAssistant.View = WAD_CodeAssistant;
+//------------------------------------------------------------------------------
+//--                             WAD_SearchDialog                             --
+//------------------------------------------------------------------------------
+function WAD_SearchDialog() {
+    const onClose = useCallback(() => closeDialog('SearchDialog'));
+    const { Applet } = DesignerState;
+    return html `<${WAD_Dialog} Name="SearchDialog" resizable=${true}
+      onClose=${onClose}
+    >
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+
+     </>
+    </>`;
+}
+DesignerState.SearchDialog.View = WAD_SearchDialog;
 //------------------------------------------------------------------------------
 //--                              Layouter State                              --
 //------------------------------------------------------------------------------
