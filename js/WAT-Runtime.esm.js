@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component } from 'htm/preact';
@@ -1570,13 +1570,6 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** Value ****/
-        Object.defineProperty(this, "_Value", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
         /**** unobserved ****/
         // @ts-ignore TS2564 allow "_unobserved" to be assigned upon first use
         Object.defineProperty(this, "_unobserved", {
@@ -1915,15 +1908,6 @@ export class WAT_Visual {
         }
         if (this._Cursor !== newCursor) {
             this._Cursor = newCursor;
-            this.rerender();
-        }
-    }
-    get Value() { return this._Value; }
-    set Value(newValue) {
-        allowSerializableValue('value', newValue);
-        if (ValuesDiffer(this._Value, newValue)) {
-            this._Value = newValue; // *C* a deep copy may be better
-            this.on('value-change')(newValue);
             this.rerender();
         }
     }
@@ -2266,15 +2250,6 @@ export class WAT_Visual {
     set isMounted(_) { throwReadOnlyError('isMounted'); }
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
-        if (this._Value != null) { // test serializability of "Value" first
-            try {
-                JSON.stringify(this._Value);
-            }
-            catch (Signal) {
-                throwError('NotSerializable: cannot serialize "Value" of visual ' +
-                    quoted(this.Path));
-            }
-        }
         if (this._memoized != null) { // test serializability of "memoized" as well
             try {
                 JSON.stringify(this._memoized);
@@ -2294,7 +2269,7 @@ export class WAT_Visual {
             'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
             'Opacity', 'OverflowVisibility', 'Cursor',
             'activeScript', 'pendingScript',
-            'memoized', 'Value',
+            'memoized',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
         if (this._configurableProperties.length > 0) {
             Serialization.configurableProperties = this._configurableProperties.map((Descriptor) => (Object.assign({}, Descriptor)));
@@ -2327,7 +2302,6 @@ export class WAT_Visual {
             'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
             'Opacity', 'OverflowVisibility', 'Cursor',
             /*'activeScript',*/ 'pendingScript',
-            'Value',
         ].forEach((Name) => deserializeProperty(Name));
         if (ValueIsPlainObject(Serialization.memoized)) {
             try {
@@ -5992,7 +5966,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 this.on('click')(Event);
             };
-            const Label = acceptableTextline(this.Label, 'Button');
+            const Label = this.Label;
             return html `<button class="WAT Content Button" style="
         line-height:${this.LineHeight || this.Height}px;
       " disabled=${this.Enabling == false} onClick=${onClick}
@@ -6000,6 +5974,166 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Button', WAT_Button);
+    /**** Checkbox ****/
+    const WAT_Checkbox = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Checkbox {
+        left:50%; top:50%;
+        transform:translate(-50%,-50%);
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'checkbox' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalBoolean(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowBoolean('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const onClick = (Event) => {
+                if (this.Enabling == false) {
+                    return consumingEvent(Event);
+                }
+                this.Value = Event.target.checked;
+                this.on('value-change')();
+            };
+            const Value = this.Value;
+            const checked = (Value == true);
+            const indeterminate = (Value == null);
+            return html `<input type="checkbox" class="WAT Checkbox"
+        checked=${checked} indeterminate=${indeterminate}
+        disabled=${this.Enabling == false} onClick=${onClick}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Checkbox', WAT_Checkbox);
+    /**** Radiobutton ****/
+    const WAT_Radiobutton = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Radiobutton {
+        left:50%; top:50%;
+        transform:translate(-50%,-50%);
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'checkbox' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableBoolean(this.memoized.Value, false);
+            },
+            set Value(newValue) {
+                expectBoolean('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const onClick = (Event) => {
+                if (this.Enabling == false) {
+                    return consumingEvent(Event);
+                }
+                this.Value = Event.target.checked;
+                this.on('value-change')();
+            };
+            return html `<input type="radio" class="WAT Radiobutton"
+        checked=${this.Value == true}
+        disabled=${this.Enabling == false} onClick=${onClick}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Radiobutton', WAT_Radiobutton);
+    /**** Gauge ****/
+    const WAT_Gauge = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'checkbox' },
+        ];
+        Object_assign(me, {
+            /**** Minimum ****/
+            get Minimum() {
+                return acceptableOptionalNumber(this.memoized.Minimum);
+            },
+            set Minimum(newValue) {
+                allowNumber('minimal value', newValue);
+                if (this.memoized.Minimum !== newValue) {
+                    this.memoized.Minimum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** lowerBound ****/
+            get lowerBound() {
+                return acceptableOptionalNumber(this.memoized.lowerBound);
+            },
+            set lowerBound(newValue) {
+                allowNumber('lower bound', newValue);
+                if (this.memoized.lowerBound !== newValue) {
+                    this.memoized.lowerBound = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Optimum ****/
+            get Optimum() {
+                return acceptableOptionalNumber(this.memoized.Optimum);
+            },
+            set Optimum(newValue) {
+                allowNumber('optimum', newValue);
+                if (this.memoized.Optimum !== newValue) {
+                    this.memoized.Optimum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** upperBound ****/
+            get upperBound() {
+                return acceptableOptionalNumber(this.memoized.upperBound);
+            },
+            set upperBound(newValue) {
+                allowNumber('upper bound', newValue);
+                if (this.memoized.upperBound !== newValue) {
+                    this.memoized.upperBound = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Maximum ****/
+            get Maximum() {
+                return acceptableOptionalNumber(this.memoized.Maximum);
+            },
+            set Maximum(newValue) {
+                allowNumber('maximal value', newValue);
+                if (this.memoized.Maximum !== newValue) {
+                    this.memoized.Maximum = newValue;
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Minimum, lowerBound, Optimum, upperBound, Maximum } = this;
+            return html `<meter class="WAT Content Gauge" value=${Value}
+        min=${Minimum} low=${lowerBound} opt=${Optimum}
+        high=${upperBound} max=${Maximum}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Gauge', WAT_Gauge);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
