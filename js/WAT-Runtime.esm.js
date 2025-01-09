@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, /*allowPhoneNumber,*/ allowURL, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, /*allowPhoneNumber,*/ allowURL, HexColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 const allowPhoneNumber = allowTextline; // *C* should be implemented
@@ -8244,6 +8244,116 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoFileInput', WAT_PseudoFileInput);
+    /**** FileDropArea ****/
+    const WAT_FileDropArea = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.FileDropArea {
+        display:flex; flex-flow:column nowrap;
+          justify-content:center; align-items:center;
+        border:dashed 4px #DDDDDD; border-radius:4px;
+        color:#DDDDDD; background:white;
+      }
+
+      .WAT.Widget > .WAT.FileDropArea * { pointer-events:none }
+
+      .WAT.Widget > .WAT.FileDropArea > input[type="file"] {
+        display:block; position:absolute; appearance:none;
+        left:0px; top:0px; right:0px; bottom:0px;
+        opacity:0.01;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'text-input' },
+            { Name: 'Placeholder', EditorType: 'text-input' },
+            { Name: 'allowMultiple', EditorType: 'checkbox' },
+            { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalText(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** allowMultiple ****/
+            get allowMultiple() {
+                return acceptableBoolean(this.memoized.allowMultiple, false);
+            },
+            set allowMultiple(newValue) {
+                expectBoolean('multiplicity setting', newValue);
+                if (this.memoized.allowMultiple !== newValue) {
+                    this.memoized.allowMultiple = newValue;
+                    this.rerender();
+                }
+            },
+            /**** acceptableFileTypes ****/
+            get acceptableFileTypes() {
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextline).slice();
+            },
+            set acceptableFileTypes(newSetting) {
+                allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
+                if (newSetting == null) {
+                    newSetting = [];
+                }
+                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
+                    this.memoized.acceptableFileTypes = newSetting.slice();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
+            const _onInput = (Event) => {
+                if (this.Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
+                this.on('input')(Event);
+            };
+            const _onDragEnter = (Event) => { return consumingEvent(Event); };
+            const _onDragOver = (Event) => { return consumingEvent(Event); };
+            const _onDrop = (Event) => {
+                consumeEvent(Event);
+                if (this.Enabling === false) {
+                    return;
+                }
+                this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
+                this.on('drop')(Event, Event.dataTransfer.files);
+            }; // nota bene: "files" is now in "Event.dataTransfer.files"
+            /**** actual rendering ****/
+            return html `<label class="WAT Content FileDropArea"
+        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
+        <span>${Placeholder}</span>
+        <input type="file"
+          multiple=${allowMultiple} accept=${acceptableFileTypes}
+          disabled=${Enabling === false} onInput=${_onInput}
+        />
+      </label>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
     /**** SearchInput ****/
     const WAT_SearchInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
@@ -8406,6 +8516,76 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.SearchInput', WAT_SearchInput);
+    /**** ColorInput ****/
+    const WAT_ColorInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.ColorInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'color-input' },
+            { Name: 'Suggestions', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableColor(this.memoized.Value, '#000000');
+            },
+            set Value(newValue) {
+                allowColor('value', newValue);
+                if (newValue == null) {
+                    newValue = '#000000';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = HexColor(newValue);
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsColor);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, ValueIsColor);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? newValue : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Suggestions } = this;
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this.on('input')(Event);
+            };
+            /**** process any other parameters ****/
+            let SuggestionList = '', SuggestionId;
+            if ((Suggestions != null) && (Suggestions.length > 0)) {
+                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionList = html `<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+        </datalist>`;
+            }
+            /**** actual rendering ****/
+            return html `<input type="color" class="WAT Content ColorInput"
+        value=${Value === '' ? null : Value}
+        disabled=${Enabling == false} onInput=${_onInput}
+        list=${SuggestionId}
+      />${SuggestionList}`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
