@@ -35,7 +35,7 @@
     expectList, allowListSatisfying, expectListSatisfying,
     allowFunction, expectFunction,
     allowOneOf, expectOneOf,
-    allowColor, allowPhoneNumber, allowURL,
+    allowColor, allowEMailAddress, allowPhoneNumber, allowURL,
   } from 'javascript-interface-library'
   import * as JIL from 'javascript-interface-library'
 
@@ -8556,6 +8556,222 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput
+  )
+
+/**** EMailAddressInput ****/
+
+  const WAT_EMailAddressInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.EMailAddressInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.EMailAddressInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',        EditorType:'textline-input' },
+      { Name:'Placeholder',  EditorType:'textline-input' },
+      { Name:'readonly',     EditorType:'checkbox' },
+      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'Pattern',      EditorType:'textline-input' },
+      { Name:'SpellChecking',EditorType:'checkbox' },
+      { Name:'Suggestions',  EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalEMailAddress(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowEMailAddress('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Placeholder ****/
+
+      get Placeholder ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Placeholder)
+      },
+
+      set Placeholder (newValue:WAT_Textline|undefined) {
+        allowTextline('input placeholder',newValue)
+        if (this.memoized.Placeholder !== newValue) {
+          this.memoized.Placeholder = newValue
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** minLength ****/
+
+      get minLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.minLength)
+      },
+
+      set minLength (newValue:number|undefined) {
+        allowOrdinal('minimal input length',newValue)
+        if (this.memoized.minLength !== newValue) {
+          this.memoized.minLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** maxLength ****/
+
+      get maxLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.maxLength)
+      },
+
+      set maxLength (newValue:number|undefined) {
+        allowOrdinal('maximal input length',newValue)
+        if (this.memoized.maxLength !== newValue) {
+          this.memoized.maxLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Pattern ****/
+
+      get Pattern ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Pattern)
+      },
+
+      set Pattern (newValue:WAT_Textline|undefined) {
+        allowTextline('input pattern',newValue)
+        if (this.memoized.Pattern !== newValue) {
+          this.memoized.Pattern = newValue
+          this.rerender()
+        }
+      },
+
+    /**** SpellChecking ****/
+
+      get SpellChecking ():boolean {
+        return acceptableBoolean(this.memoized.SpellChecking,false)
+      },
+
+      set SpellChecking (newValue:boolean) {
+        expectBoolean('spell check setting',newValue)
+        if (this.memoized.SpellChecking !== newValue) {
+          this.memoized.SpellChecking = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,ValueIsEMailAddress
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,ValueIsEMailAddress)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        Placeholder, readonly, minLength,maxLength, Pattern, SpellChecking,
+        Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="email" class="WAT Content EMailAddressInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.EMailAddressInput', WAT_EMailAddressInput
   )
 
 /**** PasswordInput ****/
