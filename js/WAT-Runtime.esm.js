@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, /*allowPhoneNumber,*/ allowURL, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, /*allowPhoneNumber,*/ allowURL, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 const allowPhoneNumber = allowTextline; // *C* should be implemented
@@ -6563,6 +6563,137 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
+    /**** PasswordInput ****/
+    const WAT_PasswordInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.PasswordInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.PasswordInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input' },
+            { Name: 'Placeholder', EditorType: 'textline-input' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'Pattern', EditorType: 'textline-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalTextline(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowTextline('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, false);
+            },
+            set readonly(newValue) {
+                expectBoolean('readonly setting', newValue);
+                if (this.memoized.readonly !== newValue) {
+                    this.memoized.readonly = newValue;
+                    this.rerender();
+                }
+            },
+            /**** minLength ****/
+            get minLength() {
+                return acceptableOptionalOrdinal(this.memoized.minLength);
+            },
+            set minLength(newValue) {
+                allowOrdinal('minimal input length', newValue);
+                if (this.memoized.minLength !== newValue) {
+                    this.memoized.minLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** maxLength ****/
+            get maxLength() {
+                return acceptableOptionalOrdinal(this.memoized.maxLength);
+            },
+            set maxLength(newValue) {
+                allowOrdinal('maximal input length', newValue);
+                if (this.memoized.maxLength !== newValue) {
+                    this.memoized.maxLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Pattern ****/
+            get Pattern() {
+                return acceptableOptionalTextline(this.memoized.Pattern);
+            },
+            set Pattern(newValue) {
+                allowTextline('input pattern', newValue);
+                if (this.memoized.Pattern !== newValue) {
+                    this.memoized.Pattern = newValue;
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            let ValueToShow = Value || '';
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
+            }
+            else {
+                this._shownValue = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this._shownValue = this.Value = Event.target.value;
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.rerender();
+                this.on('blur')(Event);
+            };
+            /**** process any other parameters ****/
+            const { Placeholder, readonly, minLength, maxLength, Pattern } = this;
+            /**** actual rendering ****/
+            return html `<input type="password" class="WAT Content PasswordInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
     /**** NumberInput ****/
     const WAT_NumberInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -7206,17 +7337,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.URLInput', WAT_URLInput);
-    /**** PasswordInput ****/
-    const WAT_PasswordInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    /**** TimeInput ****/
+    const WAT_TimeInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
-      .WAT.Widget > .WAT.PasswordInput {
+      .WAT.Widget > .WAT.TimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
         border:solid 1px #888888; border-radius:2px;
         background:#e8f0ff;
         padding:0px 2px 0px 2px;
       }
 
-      .WAT.Widget > .WAT.PasswordInput:read-only {
+      .WAT.Widget > .WAT.TimeInput:read-only {
         border:solid 1px #DDDDDD; border-radius:2px;
         background:#F0F0F0;
       }
@@ -7224,36 +7355,25 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
             { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
+            { Name: 'withSeconds', EditorType: 'checkbox' },
+            { Name: 'Minimum', EditorType: 'time-input', Stepping: 1 },
+            { Name: 'Maximum', EditorType: 'time-input', Stepping: 1 },
+            { Name: 'Suggestions', EditorType: 'linelist-input' },
         ];
         Object_assign(me, {
             /**** Value ****/
             get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
+                return acceptableOptionalStringMatching(this.memoized.Value, WAT_TimeRegExp);
             },
             set Value(newValue) {
-                allowTextline('value', newValue);
+                allowStringMatching('value', newValue, WAT_TimeRegExp);
                 if (newValue == null) {
                     newValue = '';
                 }
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
                     this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
                     this.rerender();
                 }
             },
@@ -7268,36 +7388,54 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.rerender();
                 }
             },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
+            /**** withSeconds ****/
+            get withSeconds() {
+                return acceptableBoolean(this.memoized.withSeconds, false);
             },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
+            set withSeconds(newValue) {
+                expectBoolean('granularity setting', newValue);
+                if (this.memoized.withSeconds !== newValue) {
+                    this.memoized.withSeconds = newValue;
                     this.rerender();
                 }
             },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
+            /**** Minimum ****/
+            get Minimum() {
+                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_TimeRegExp);
             },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
+            set Minimum(newValue) {
+                allowStringMatching('earliest time', newValue, WAT_TimeRegExp);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Minimum !== newValue) {
+                    this.memoized.Minimum = newValue;
                     this.rerender();
                 }
             },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
+            /**** Maximum ****/
+            get Maximum() {
+                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_TimeRegExp);
             },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
+            set Maximum(newValue) {
+                allowStringMatching('latest time', newValue, WAT_TimeRegExp);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Maximum !== newValue) {
+                    this.memoized.Maximum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, WAT_TimeMatcher);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, WAT_TimeMatcher);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? newValue : newValue.slice());
                     this.rerender();
                 }
             },
@@ -7326,17 +7464,25 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern } = this;
+            const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
+            let SuggestionList = '', SuggestionId;
+            if ((Suggestions != null) && (Suggestions.length > 0)) {
+                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionList = html `<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+        </datalist>`;
+            }
             /**** actual rendering ****/
-            return html `<input type="password" class="WAT Content PasswordInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+            return html `<input type="text" class="WAT Content TextlineInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
+        readOnly=${readonly} pattern=${WAT_TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-      />`;
+        list=${SuggestionId}
+      />${SuggestionList}`;
         });
     };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput);
     /**** SearchInput ****/
     const WAT_SearchInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -8423,6 +8569,7 @@ function IdOfWidget(Widget) {
 export const newId = customAlphabet(nolookalikesSafe, 21);
 const global = (new Function('return this'))();
 global.WAT = {
+    Object_assign,
     MarkdownAsText, MarkdownAsHTML
 };
 global.JIL = JIL;
