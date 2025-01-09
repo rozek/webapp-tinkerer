@@ -1432,7 +1432,7 @@
     FalseValue?:string, TrueValue?:string,
     minLength?:number, maxLength?:number,
     multiple?:boolean, Pattern?:string,
-    minValue?:any, maxValue?:any, StepValue?:'any'|number,
+    minValue?:any, maxValue?:any, Stepping?:'any'|number,
     Resizability?:'none'|'horizontal'|'vertical'|'both',
     LineWrapping?:boolean, SpellChecking?:boolean,
     Hashmarks?:any[], Suggestions?:string[], ValueList?:any[]
@@ -1484,7 +1484,7 @@
     const {
       EditorType,
       Placeholder, FalseValue,TrueValue, minLength,maxLength,multiple,Pattern,
-      minValue,maxValue,StepValue, Resizability,LineWrapping, SpellChecking,
+      minValue,maxValue,Stepping, Resizability,LineWrapping, SpellChecking,
       ValueList, Hashmarks, Suggestions
     } = Value
     switch (EditorType) {
@@ -1516,7 +1516,7 @@
           (Placeholder   != null) && ! ValueIsTextline(Placeholder)  ||
           (minValue      != null) && ! ValueIsFiniteNumber(minValue) ||
           (maxValue      != null) && ! ValueIsFiniteNumber(maxValue) ||
-          (StepValue     != null) && ! ValueIsNumberInRange(StepValue, 0,Infinity, false) && (StepValue !== 'any') ||
+          (Stepping      != null) && ! ValueIsNumberInRange(Stepping, 0,Infinity, false) && (Stepping !== 'any') ||
           (Suggestions   != null) && ! ValueIsListSatisfying(Suggestions,ValueIsFiniteNumber)
         ) { return false }
         break
@@ -1525,7 +1525,7 @@
           (Placeholder   != null) && ! ValueIsTextline(Placeholder)  ||
           (minValue      != null) && ! ValueIsInteger(minValue) ||
           (maxValue      != null) && ! ValueIsInteger(maxValue) ||
-          (StepValue     != null) && ! ValueIsIntegerInRange(StepValue, 0,Infinity) && (StepValue !== 'any') ||
+          (Stepping      != null) && ! ValueIsIntegerInRange(Stepping, 0,Infinity, false) && (Stepping !== 'any') ||
           (Suggestions   != null) && ! ValueIsListSatisfying(Suggestions,ValueIsInteger)
         ) { return false }
         break
@@ -1575,7 +1575,7 @@
         if (
           (minValue  != null) && ! ValueIsFiniteNumber(minValue) ||
           (maxValue  != null) && ! ValueIsFiniteNumber(maxValue) ||
-          (StepValue != null) && ! ValueIsNumberInRange(StepValue, 0,Infinity, false) && (StepValue !== 'any') ||
+          (Stepping  != null) && ! ValueIsNumberInRange(Stepping, 0,Infinity, false) && (Stepping !== 'any') ||
           (Hashmarks != null) && ! ValueIsListSatisfying(Hashmarks,HashmarkMatcher)
         ) { return false }
         break
@@ -1618,7 +1618,7 @@
     let {
       Name, Label, EditorType, readonly,
       Placeholder, FalseValue,TrueValue, minLength,maxLength,multiple,Pattern,
-      minValue,maxValue,StepValue, Resizability,LineWrapping, SpellChecking,
+      minValue,maxValue,Stepping, Resizability,LineWrapping, SpellChecking,
       ValueList, Hashmarks, Suggestions
     } = Value
 
@@ -1653,7 +1653,7 @@
           if (Placeholder != null) { Descriptor.Placeholder = Placeholder }
           if (minValue    != null) { Descriptor.minValue    = minValue }
           if (maxValue    != null) { Descriptor.maxValue    = maxValue }
-          if (StepValue   != null) { Descriptor.StepValue   = StepValue }
+          if (Stepping    != null) { Descriptor.Stepping    = Stepping }
           if (Suggestions != null) { Descriptor.Suggestions = Suggestions.slice() }
           break
         case 'time-input':
@@ -1673,7 +1673,7 @@
         case 'slider':
           if (minValue  != null) { Descriptor.minValue  = minValue }
           if (maxValue  != null) { Descriptor.maxValue  = maxValue }
-          if (StepValue != null) { Descriptor.StepValue = StepValue }
+          if (Stepping  != null) { Descriptor.Stepping  = Stepping }
           if (Hashmarks != null) { Descriptor.Hashmarks = Hashmarks.slice() }
           break
         case 'text-input':
@@ -8048,6 +8048,178 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput
+  )
+
+/**** PasswordInput ****/
+
+  const WAT_PasswordInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.PasswordInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.PasswordInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'textline-input' },
+      { Name:'Placeholder',EditorType:'textline-input' },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'minLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'maxLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'Pattern',    EditorType:'textline-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableTextline(this.memoized.Value,'')
+      },
+
+      set Value (newValue:string|undefined) {
+        allowTextline('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Placeholder ****/
+
+      get Placeholder ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Placeholder)
+      },
+
+      set Placeholder (newValue:WAT_Textline|undefined) {
+        allowTextline('input placeholder',newValue)
+        if (this.memoized.Placeholder !== newValue) {
+          this.memoized.Placeholder = newValue
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** minLength ****/
+
+      get minLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.minLength)
+      },
+
+      set minLength (newValue:number|undefined) {
+        allowOrdinal('minimal input length',newValue)
+        if (this.memoized.minLength !== newValue) {
+          this.memoized.minLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** maxLength ****/
+
+      get maxLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.maxLength)
+      },
+
+      set maxLength (newValue:number|undefined) {
+        allowOrdinal('maximal input length',newValue)
+        if (this.memoized.maxLength !== newValue) {
+          this.memoized.maxLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Pattern ****/
+
+      get Pattern ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Pattern)
+      },
+
+      set Pattern (newValue:WAT_Textline|undefined) {
+        allowTextline('input pattern',newValue)
+        if (this.memoized.Pattern !== newValue) {
+          this.memoized.Pattern = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        Placeholder, readonly, minLength,maxLength, Pattern
+      } = this
+
+    /**** actual rendering ****/
+
+      return html`<input type="password" class="WAT Content PasswordInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput
   )
 
 
