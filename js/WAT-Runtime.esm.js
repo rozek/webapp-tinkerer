@@ -607,76 +607,74 @@ export function acceptableBoolean(Value, Default) {
     return (ValueIsBoolean(Value) ? Value : Default);
 }
 /**** acceptableOptionalBoolean ****/
-export function acceptableOptionalBoolean(Value, Default) {
-    return (Value == null
-        ? undefined
-        : ValueIsBoolean(Value) ? Value : Default);
+export function acceptableOptionalBoolean(Value) {
+    return (ValueIsBoolean(Value) ? Value : undefined);
 }
 /**** acceptableNumber ****/
 export function acceptableNumber(Value, Default) {
     return (ValueIsNumber(Value) ? Value : Default);
 }
 /**** acceptableOptionalNumber ****/
-export function acceptableOptionalNumber(Value, Default) {
-    return (ValueIsNumber(Value) ? Value : Default);
+export function acceptableOptionalNumber(Value) {
+    return (ValueIsNumber(Value) ? Value : undefined);
 }
 /**** acceptableNumberInRange ****/
 export function acceptableNumberInRange(Value, Default, minValue = -Infinity, maxValue = Infinity, withMin = false, withMax = false) {
     return (ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax) ? Value : Default);
 }
 /**** acceptableOptionalNumberInRange ****/
-export function acceptableOptionalNumberInRange(Value, Default, minValue = -Infinity, maxValue = Infinity, withMin = false, withMax = false) {
+export function acceptableOptionalNumberInRange(Value, minValue = -Infinity, maxValue = Infinity, withMin = false, withMax = false) {
     return (ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax)
         ? Value
-        : Default);
+        : undefined);
 }
 /**** acceptableInteger ****/
 export function acceptableInteger(Value, Default) {
     return (ValueIsInteger(Value) ? Value : Default);
 }
 /**** acceptableOptionalInteger ****/
-export function acceptableOptionalInteger(Value, Default) {
-    return (ValueIsInteger(Value) ? Value : Default);
+export function acceptableOptionalInteger(Value) {
+    return (ValueIsInteger(Value) ? Value : undefined);
 }
 /**** acceptableIntegerInRange ****/
 export function acceptableIntegerInRange(Value, Default, minValue = -Infinity, maxValue = Infinity) {
     return (ValueIsIntegerInRange(Value, minValue, maxValue) ? Value : Default);
 }
 /**** acceptableOptionalIntegerInRange ****/
-export function acceptableOptionalIntegerInRange(Value, Default, minValue = -Infinity, maxValue = Infinity) {
-    return (ValueIsIntegerInRange(Value, minValue, maxValue) ? Value : Default);
+export function acceptableOptionalIntegerInRange(Value, minValue = -Infinity, maxValue = Infinity) {
+    return (ValueIsIntegerInRange(Value, minValue, maxValue) ? Value : undefined);
 }
 /**** acceptableOrdinal ****/
 export function acceptableOrdinal(Value, Default) {
     return (ValueIsOrdinal(Value) ? Value : Default);
 }
 /**** acceptableOptionalOrdinal ****/
-export function acceptableOptionalOrdinal(Value, Default) {
-    return (ValueIsOrdinal(Value) ? Value : Default);
+export function acceptableOptionalOrdinal(Value) {
+    return (ValueIsOrdinal(Value) ? Value : undefined);
 }
 /**** acceptableString ****/
 export function acceptableString(Value, Default) {
     return (ValueIsString(Value) ? Value : Default);
 }
 /**** acceptableOptionalString ****/
-export function acceptableOptionalString(Value, Default) {
-    return (ValueIsString(Value) ? Value : Default);
+export function acceptableOptionalString(Value) {
+    return (ValueIsString(Value) ? Value : undefined);
 }
 /**** acceptableNonEmptyString ****/
 export function acceptableNonEmptyString(Value, Default) {
     return (ValueIsString(Value) && (Value.trim() !== '') ? Value : Default);
 }
 /**** acceptableOptionalNonEmptyString ****/
-export function acceptableOptionalNonEmptyString(Value, Default) {
-    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : Default);
+export function acceptableOptionalNonEmptyString(Value) {
+    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : undefined);
 }
 /**** acceptableStringMatching ****/
 export function acceptableStringMatching(Value, Default, Pattern) {
     return (ValueIsStringMatching(Value, Pattern) ? Value : Default);
 }
 /**** acceptableOptionalStringMatching ****/
-export function acceptableOptionalStringMatching(Value, Default, Pattern) {
-    return (ValueIsStringMatching(Value, Pattern) ? Value : Default);
+export function acceptableOptionalStringMatching(Value, Pattern) {
+    return (ValueIsStringMatching(Value, Pattern) ? Value : undefined);
 }
 /**** acceptableText ****/
 const noCtrlCharsButCRLFTABPattern = /^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
@@ -684,16 +682,16 @@ export function acceptableText(Value, Default) {
     return (ValueIsStringMatching(Value, noCtrlCharsButCRLFTABPattern) ? Value : Default);
 }
 /**** acceptableOptionalText ****/
-export function acceptableOptionalText(Value, Default) {
-    return (ValueIsText(Value) ? Value : Default);
+export function acceptableOptionalText(Value) {
+    return (ValueIsText(Value) ? Value : undefined);
 }
 /**** acceptableTextline ****/
 export function acceptableTextline(Value, Default) {
     return (ValueIsTextline(Value) ? Value : Default).replace(/[\f\r\n\v\u0085\u2028\u2029].*$/, '...');
 }
 /**** acceptableOptionalTextline ****/
-export function acceptableOptionalTextline(Value, Default) {
-    const Result = ValueIsTextline(Value) ? Value : Default;
+export function acceptableOptionalTextline(Value) {
+    const Result = ValueIsTextline(Value) ? Value : undefined;
     return (Result == null
         ? undefined
         : Result.replace(/[\f\r\n\v\u0085\u2028\u2029].*$/, '...'));
@@ -703,24 +701,24 @@ export function acceptableFunction(Value, Default) {
     return (ValueIsFunction(Value) ? Value : Default);
 }
 /**** acceptableOptionalFunction ****/
-export function acceptableOptionalFunction(Value, Default) {
-    return (ValueIsFunction(Value) ? Value : Default);
+export function acceptableOptionalFunction(Value) {
+    return (ValueIsFunction(Value) ? Value : undefined);
 }
 /**** acceptableList ****/
 export function acceptableList(Value, Default) {
     return (ValueIsList(Value) ? Value : Default);
 }
 /**** acceptableOptionalList ****/
-export function acceptableOptionalList(Value, Default) {
-    return (ValueIsList(Value) ? Value : Default);
+export function acceptableOptionalList(Value) {
+    return (ValueIsList(Value) ? Value : undefined);
 }
 /**** acceptableListSatisfying ****/
 export function acceptableListSatisfying(Value, Default, Matcher) {
     return (ValueIsListSatisfying(Value, Matcher) ? Value : Default);
 }
 /**** acceptableOptionalListSatisfying ****/
-export function acceptableOptionalListSatisfying(Value, Default, Matcher) {
-    return (ValueIsListSatisfying(Value, Matcher) ? Value : Default);
+export function acceptableOptionalListSatisfying(Value, Matcher) {
+    return (ValueIsListSatisfying(Value, Matcher) ? Value : undefined);
 }
 /**** acceptableOneOf ****/
 export function acceptableOneOf(Value, Default, ValueList) {
@@ -735,8 +733,8 @@ export function acceptableColor(Value, Default) {
     return (ValueIsColor(Value) ? Value : Default);
 }
 /**** acceptableOptionalColor ****/
-export function acceptableOptionalColor(Value, Default) {
-    return (ValueIsColor(Value) ? Value : Default);
+export function acceptableOptionalColor(Value) {
+    return (ValueIsColor(Value) ? Value : undefined);
 }
 /**** acceptableEMailAddress ****/
 export function acceptableEMailAddress(Value, Default) {
@@ -6065,9 +6063,26 @@ function registerIntrinsicBehaviorsIn(Applet) {
     const WAT_Gauge = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'checkbox' },
+            { Name: 'Value', EditorType: 'number-input' },
+            { Name: 'Minimum', EditorType: 'number-input' },
+            { Name: 'lowerBound', EditorType: 'number-input' },
+            { Name: 'Optimum', EditorType: 'number-input' },
+            { Name: 'upperBound', EditorType: 'number-input' },
+            { Name: 'Maximum', EditorType: 'number-input' },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalNumber(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowFiniteNumber('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** Minimum ****/
             get Minimum() {
                 return acceptableOptionalNumber(this.memoized.Minimum);
@@ -6134,6 +6149,49 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Gauge', WAT_Gauge);
+    /**** Progressbar ****/
+    const WAT_Progressbar = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Progressbar {
+        -webkit-appearance:none; -moz-appearance:none; appearance:none;
+        background-color:#EEEEEE;
+      }
+      .WAT.Widget > .WAT.Progressbar::-webkit-progress-bar {
+        background-color:#EEEEEE;
+        border:solid 1px #E0E0E0; border-radius:2px;
+      }
+      .WAT.Widget > .WAT.Progressbar::-webkit-progress-value,
+      .WAT.Widget > .WAT.Progressbar::-moz-progress-bar {
+        background-color:dodgerblue;
+        border:none; border-radius:2px;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'number-input' },
+            { Name: 'Maximum', EditorType: 'number-input' },
+        ];
+        Object_assign(me, {
+            /**** Maximum ****/
+            get Maximum() {
+                return acceptableOptionalNumberInRange(this.memoized.Maximum, 0, Infinity, true);
+            },
+            set Maximum(newValue) {
+                allowNumber('maximal value', newValue);
+                if (this.memoized.Maximum !== newValue) {
+                    this.memoized.Maximum = newValue;
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Maximum } = this;
+            return html `<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
+      style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
