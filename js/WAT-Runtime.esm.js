@@ -901,7 +901,7 @@ function ValueIsPropertyDescriptor(Value) {
             if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
                 (minValue != null) && !ValueIsInteger(minValue) ||
                 (maxValue != null) && !ValueIsInteger(maxValue) ||
-                (Stepping != null) && !ValueIsIntegerInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
+                (Stepping != null) && !ValueIsIntegerInRange(Stepping, 0, Infinity) && (Stepping !== 'any') ||
                 (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsInteger)) {
                 return false;
             }
@@ -6606,6 +6606,170 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
+    /**** SearchInput ****/
+    const WAT_SearchInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.SearchInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.SearchInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input' },
+            { Name: 'Placeholder', EditorType: 'textline-input' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'Pattern', EditorType: 'textline-input' },
+            { Name: 'SpellChecking', EditorType: 'checkbox' },
+            { Name: 'Suggestions', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableTextline(this.memoized.Value, '');
+            },
+            set Value(newValue) {
+                allowTextline('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, false);
+            },
+            set readonly(newValue) {
+                expectBoolean('readonly setting', newValue);
+                if (this.memoized.readonly !== newValue) {
+                    this.memoized.readonly = newValue;
+                    this.rerender();
+                }
+            },
+            /**** minLength ****/
+            get minLength() {
+                return acceptableOptionalOrdinal(this.memoized.minLength);
+            },
+            set minLength(newValue) {
+                allowOrdinal('minimal input length', newValue);
+                if (this.memoized.minLength !== newValue) {
+                    this.memoized.minLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** maxLength ****/
+            get maxLength() {
+                return acceptableOptionalOrdinal(this.memoized.maxLength);
+            },
+            set maxLength(newValue) {
+                allowOrdinal('maximal input length', newValue);
+                if (this.memoized.maxLength !== newValue) {
+                    this.memoized.maxLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Pattern ****/
+            get Pattern() {
+                return acceptableOptionalTextline(this.memoized.Pattern);
+            },
+            set Pattern(newValue) {
+                allowTextline('input pattern', newValue);
+                if (this.memoized.Pattern !== newValue) {
+                    this.memoized.Pattern = newValue;
+                    this.rerender();
+                }
+            },
+            /**** SpellChecking ****/
+            get SpellChecking() {
+                return acceptableBoolean(this.memoized.SpellChecking, false);
+            },
+            set SpellChecking(newValue) {
+                expectBoolean('spell check setting', newValue);
+                if (this.memoized.SpellChecking !== newValue) {
+                    this.memoized.SpellChecking = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsTextline);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, ValueIsTextline);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? newValue : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            let ValueToShow = Value || '';
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
+            }
+            else {
+                this._shownValue = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this._shownValue = this.Value = Event.target.value;
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.rerender();
+                this.on('blur')(Event);
+            };
+            /**** process any other parameters ****/
+            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            let SuggestionList = '', SuggestionId;
+            if ((Suggestions != null) && (Suggestions.length > 0)) {
+                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionList = html `<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+        </datalist>`;
+            }
+            /**** actual rendering ****/
+            return html `<input type="search" class="WAT Content SearchInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.SearchInput', WAT_SearchInput);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
