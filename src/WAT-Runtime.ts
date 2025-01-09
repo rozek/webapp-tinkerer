@@ -1068,14 +1068,8 @@
 
 /**** acceptableOptionalBoolean ****/
 
-  export function acceptableOptionalBoolean (
-    Value:any, Default?:boolean|undefined
-  ):boolean|undefined {
-    return (
-      Value == null
-      ? undefined
-      : ValueIsBoolean(Value) ? Value : Default
-    )
+  export function acceptableOptionalBoolean (Value:any):boolean|undefined {
+    return (ValueIsBoolean(Value) ? Value : undefined)
   }
 
 /**** acceptableNumber ****/
@@ -1086,10 +1080,8 @@
 
 /**** acceptableOptionalNumber ****/
 
-  export function acceptableOptionalNumber (
-    Value:any, Default?:number|undefined
-  ):number|undefined {
-    return (ValueIsNumber(Value) ? Value : Default)
+  export function acceptableOptionalNumber (Value:any):number|undefined {
+    return (ValueIsNumber(Value) ? Value : undefined)
   }
 
 /**** acceptableNumberInRange ****/
@@ -1105,14 +1097,14 @@
 /**** acceptableOptionalNumberInRange ****/
 
   export function acceptableOptionalNumberInRange (
-    Value:any, Default:number|undefined,
+    Value:any,
     minValue:number = -Infinity, maxValue:number = Infinity,
     withMin:boolean = false, withMax:boolean = false
   ):number|undefined {
     return (
       ValueIsNumberInRange(Value,minValue,maxValue,withMin,withMax)
       ? Value
-      : Default
+      : undefined
     )
   }
 
@@ -1124,10 +1116,8 @@
 
 /**** acceptableOptionalInteger ****/
 
-  export function acceptableOptionalInteger (
-    Value:any, Default:number|undefined
-  ):number|undefined {
-    return (ValueIsInteger(Value) ? Value : Default)
+  export function acceptableOptionalInteger (Value:any):number|undefined {
+    return (ValueIsInteger(Value) ? Value : undefined)
   }
 
 /**** acceptableIntegerInRange ****/
@@ -1141,10 +1131,10 @@
 /**** acceptableOptionalIntegerInRange ****/
 
   export function acceptableOptionalIntegerInRange (
-    Value:any, Default:number|undefined,
+    Value:any,
     minValue:number = -Infinity, maxValue:number = Infinity
   ):number|undefined {
-    return (ValueIsIntegerInRange(Value,minValue,maxValue) ? Value : Default)
+    return (ValueIsIntegerInRange(Value,minValue,maxValue) ? Value : undefined)
   }
 
 /**** acceptableOrdinal ****/
@@ -1156,9 +1146,9 @@
 /**** acceptableOptionalOrdinal ****/
 
   export function acceptableOptionalOrdinal (
-    Value:any, Default?:number|undefined
+    Value:any,
   ):number|undefined {
-    return (ValueIsOrdinal(Value) ? Value : Default)
+    return (ValueIsOrdinal(Value) ? Value : undefined)
   }
 
 /**** acceptableString ****/
@@ -1169,10 +1159,8 @@
 
 /**** acceptableOptionalString ****/
 
-  export function acceptableOptionalString (
-    Value:any, Default?:string|undefined
-  ):string|undefined {
-    return (ValueIsString(Value) ? Value : Default)
+  export function acceptableOptionalString (Value:any):string|undefined {
+    return (ValueIsString(Value) ? Value : undefined)
   }
 
 /**** acceptableNonEmptyString ****/
@@ -1183,10 +1171,8 @@
 
 /**** acceptableOptionalNonEmptyString ****/
 
-  export function acceptableOptionalNonEmptyString (
-    Value:any, Default?:string|undefined
-  ):string|undefined {
-    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : Default)
+  export function acceptableOptionalNonEmptyString (Value:any):string|undefined {
+    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : undefined)
   }
 
 /**** acceptableStringMatching ****/
@@ -1200,9 +1186,9 @@
 /**** acceptableOptionalStringMatching ****/
 
   export function acceptableOptionalStringMatching (
-    Value:any, Default:string|undefined, Pattern:RegExp
+    Value:any, Pattern:RegExp
   ):string|undefined {
-    return (ValueIsStringMatching(Value,Pattern) ? Value : Default)
+    return (ValueIsStringMatching(Value,Pattern) ? Value : undefined)
   }
 
 /**** acceptableText ****/
@@ -1215,10 +1201,8 @@
 
 /**** acceptableOptionalText ****/
 
-  export function acceptableOptionalText (
-    Value:any, Default?:string|undefined
-  ):string|undefined {
-    return (ValueIsText(Value) ? Value : Default)
+  export function acceptableOptionalText (Value:any):string|undefined {
+    return (ValueIsText(Value) ? Value : undefined)
   }
 
 /**** acceptableTextline ****/
@@ -1231,10 +1215,8 @@
 
 /**** acceptableOptionalTextline ****/
 
-  export function acceptableOptionalTextline (
-    Value:any, Default?:string|undefined
-  ):string|undefined {
-    const Result = ValueIsTextline(Value) ? Value : Default
+  export function acceptableOptionalTextline (Value:any):string|undefined {
+    const Result = ValueIsTextline(Value) ? Value : undefined
     return (
       Result == null
       ? undefined
@@ -1250,10 +1232,8 @@
 
 /**** acceptableOptionalFunction ****/
 
-  export function acceptableOptionalFunction (
-    Value:any, Default?:Function|undefined
-  ):Function|undefined {
-    return (ValueIsFunction(Value) ? Value : Default)
+  export function acceptableOptionalFunction (Value:any):Function|undefined {
+    return (ValueIsFunction(Value) ? Value : undefined)
   }
 
 /**** acceptableList ****/
@@ -1264,10 +1244,8 @@
 
 /**** acceptableOptionalList ****/
 
-  export function acceptableOptionalList (
-    Value:any, Default?:any[]|undefined
-  ):any[]|undefined {
-    return (ValueIsList(Value) ? Value : Default)
+  export function acceptableOptionalList (Value:any):any[]|undefined {
+    return (ValueIsList(Value) ? Value : undefined)
   }
 
 /**** acceptableListSatisfying ****/
@@ -1281,9 +1259,9 @@
 /**** acceptableOptionalListSatisfying ****/
 
   export function acceptableOptionalListSatisfying (
-    Value:any, Default:any[]|undefined, Matcher:Function
+    Value:any, Matcher:Function
   ):any[]|undefined {
-    return (ValueIsListSatisfying(Value,Matcher) ? Value : Default)
+    return (ValueIsListSatisfying(Value,Matcher) ? Value : undefined)
   }
 
 /**** acceptableOneOf ****/
@@ -1310,10 +1288,8 @@
 
 /**** acceptableOptionalColor ****/
 
-  export function acceptableOptionalColor (
-    Value:any, Default?:string|undefined
-  ):string|undefined {
-    return (ValueIsColor(Value) ? Value : Default)
+  export function acceptableOptionalColor (Value:any):string|undefined {
+    return (ValueIsColor(Value) ? Value : undefined)
   }
 
 /**** acceptableEMailAddress ****/
@@ -7518,10 +7494,30 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value', EditorType:'checkbox' },
+      { Name:'Value',      EditorType:'number-input' },
+      { Name:'Minimum',    EditorType:'number-input' },
+      { Name:'lowerBound', EditorType:'number-input' },
+      { Name:'Optimum',    EditorType:'number-input' },
+      { Name:'upperBound', EditorType:'number-input' },
+      { Name:'Maximum',    EditorType:'number-input' },
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Value)
+      },
+
+      set Value (newValue:number|undefined) {
+        allowFiniteNumber('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** Minimum ****/
 
       get Minimum ():number|undefined {
@@ -7612,6 +7608,67 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.Gauge', WAT_Gauge
+  )
+
+/**** Progressbar ****/
+
+  const WAT_Progressbar:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.Progressbar {
+        -webkit-appearance:none; -moz-appearance:none; appearance:none;
+        background-color:#EEEEEE;
+      }
+      .WAT.Widget > .WAT.Progressbar::-webkit-progress-bar {
+        background-color:#EEEEEE;
+        border:solid 1px #E0E0E0; border-radius:2px;
+      }
+      .WAT.Widget > .WAT.Progressbar::-webkit-progress-value,
+      .WAT.Widget > .WAT.Progressbar::-moz-progress-bar {
+        background-color:dodgerblue;
+        border:none; border-radius:2px;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',   EditorType:'number-input' },
+      { Name:'Maximum', EditorType:'number-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Maximum ****/
+
+      get Maximum ():number|undefined {
+        return acceptableOptionalNumberInRange(this.memoized.Maximum, 0,Infinity, true)
+      },
+
+      set Maximum (newValue:boolean|undefined) {
+        allowNumber('maximal value',newValue)
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Maximum } = this
+
+      return html`<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
+      style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar
   )
 
 
