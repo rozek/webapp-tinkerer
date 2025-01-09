@@ -9,7 +9,7 @@ import { ObjectMergedWith as Object_assign,
 quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
-import { render, html, Component } from 'htm/preact';
+import { render, html, Component, useRef } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
@@ -6192,6 +6192,113 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar);
+    /**** Slider ****/
+    const WAT_Slider = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'number-input' },
+            { Name: 'Minimum', EditorType: 'number-input' },
+            { Name: 'Stepping', EditorType: 'number-input', Minimum: 0 },
+            { Name: 'Maximum', EditorType: 'number-input' },
+            { Name: 'Hashmarks', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Minimum ****/
+            get Minimum() {
+                return acceptableOptionalNumber(this.memoized.Minimum);
+            },
+            set Minimum(newValue) {
+                allowNumber('minimal value', newValue);
+                if (this.memoized.Minimum !== newValue) {
+                    this.memoized.Minimum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Stepping ****/
+            get Stepping() {
+                const Candidate = this.memoized.Stepping;
+                return (Candidate === 'any' ? 'any' : acceptableOptionalNumber(Candidate));
+            },
+            set Stepping(newValue) {
+                if (newValue !== 'any') {
+                    allowNumber('step value', newValue);
+                }
+                if (this.memoized.Stepping !== newValue) {
+                    this.memoized.Stepping = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Maximum ****/
+            get Maximum() {
+                return acceptableOptionalNumber(this.memoized.Maximum);
+            },
+            set Maximum(newValue) {
+                allowNumber('maximal value', newValue);
+                if (this.memoized.Maximum !== newValue) {
+                    this.memoized.Maximum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Hashmarks ****/
+            get Hashmarks() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Hashmarks, HashmarkMatcher);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Hashmarks(newValue) {
+                allowListSatisfying('hashmark list', newValue, HashmarkMatcher);
+                if (ValuesDiffer(this.memoized.Hashmarks, newValue)) {
+                    this.memoized.Hashmarks = (newValue == null ? newValue : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            const shownValue = useRef('');
+            const InputElement = useRef(null);
+            let ValueToShow = acceptableNumber(ValueIsString(Value) ? parseFloat(Value) : Value, 0);
+            if (document.activeElement === InputElement.current) {
+                ValueToShow = shownValue.current;
+            }
+            else {
+                shownValue.current = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                shownValue.current = this.Value = parseFloat(Event.target.value);
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.on('blur')(Event);
+                this.rerender();
+            };
+            /**** process any other parameters ****/
+            const { Minimum, Stepping, Maximum, Hashmarks } = this;
+            let HashmarkList = '', HashmarkId;
+            if ((Hashmarks != null) && (Hashmarks.length > 0)) {
+                HashmarkId = IdOfWidget(this) + '-Hashmarks';
+                HashmarkList = html `\n<datalist id=${HashmarkId}>
+          ${Hashmarks.map((Item) => {
+                    Item = '' + Item;
+                    const Value = Item.replace(/:.*$/, '').trim();
+                    const Label = Item.replace(/^[^:]+:/, '').trim();
+                    return html `<option value=${Value}>${Label}</option>`;
+                })}
+        </datalist>`;
+            }
+            /**** actual rendering ****/
+            return html `<input type="range" class="WAT Content Slider"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${HashmarkId}
+      />${HashmarkList}`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Slider', WAT_Slider);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
