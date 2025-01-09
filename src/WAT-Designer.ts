@@ -85,6 +85,14 @@
   const noSelection    = {}
   const multipleValues = {}
 
+/**** HTMLsafe_ ****/
+
+  function HTMLsafe_ (
+    Argument:string|undefined, EOLReplacement?:string
+  ):string|undefined {
+    return (Argument == null ? undefined : HTMLsafe(Argument,EOLReplacement))
+  }
+
 //------------------------------------------------------------------------------
 //--                           Stylesheet Handling                            --
 //------------------------------------------------------------------------------
@@ -5155,6 +5163,7 @@ console.log('DesignerState',DesignerState)
         />
         <${WAD_Icon} Icon="${IconFolder}/gear.png"
           active=${DialogIsOpen('SettingsDialog')}
+          enabled=${false}
           onClick=${(Event:PointerEvent) => toggleDialog('SettingsDialog',Event)}
         />
 
@@ -6060,14 +6069,10 @@ console.log('DesignerState',DesignerState)
   /**** handle list item rendering and selection ****/
 
     const PageListItemRenderer = useCallback((Page:WAT_Page, Index:number, selected:boolean) => {
-      let Result = '<span style="font-style:italic">(unnamed)</span>'
-        const PageName = Page.Name
-        if (PageName != null) { Result = HTMLsafe(PageName) }
-
-        if (Applet.visitedPage === Page) {
-          Result = `<u style="font-weight:bold">${Result}</u>`
-        }
-      return Result
+      let Style = ''
+        if (Page.Name == null)           { Style += 'font-style:italic;' }
+        if (Applet.visitedPage === Page) { Style += 'font-weight:bold; text-decoration:underline' }
+      return `<span style="${Style}">${HTMLsafe_(Page.Name) || `(unnamed ${Page.Behavior || 'page'})`}</span>`
     })
     const selectedPageIndices = selectedPages.map((Page:WAT_Page) => Page.Index)
 
@@ -6622,7 +6627,7 @@ console.log('DesignerState',DesignerState)
     const WidgetListItemRenderer = useCallback((Widget:WAT_Widget, Index:number, selected:boolean) => {
       const WidgetName = Widget.Name
       if (WidgetName == null) {
-        return `<span style="font-style:italic">(${Widget.Type})</span>`
+        return `<span style="font-style:italic">(unnamed ${Widget.Behavior || 'widget'})</span>`
       } else {
         return HTMLsafe(WidgetName)
       }
