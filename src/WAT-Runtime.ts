@@ -818,6 +818,15 @@
     left:0px; top:0px; width:100%; height:100%;
   }
 
+/**** "Placeholders" are not yet ready for rendering ****/
+
+  .WAT.Placeholder {
+    background-image:repeating-linear-gradient(-45deg,
+      rgba(222,222,222, 1) 0px, rgba(222,222,222, 1) 4px,
+      rgba(0,0,0, 0) 4px, rgba(0,0,0, 0) 8px
+    ); background-size:11.31px 11.31px;
+  }
+
 /**** WAT Applet ****/
 
   .WAT.Applet {
@@ -6518,7 +6527,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
-    onRender(() => html`<div class="WAT plainWidget"/>`)
+    onRender(() => html`<div class="WAT Content Placeholder"/>`)
   }
 
   registerIntrinsicBehavior(
