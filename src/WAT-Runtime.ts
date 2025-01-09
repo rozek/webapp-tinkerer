@@ -8143,6 +8143,178 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput
   )
 
+/**** PasswordInput ****/
+
+  const WAT_PasswordInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.PasswordInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.PasswordInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'textline-input' },
+      { Name:'Placeholder',EditorType:'textline-input' },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'minLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'maxLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'Pattern',    EditorType:'textline-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalTextline(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowTextline('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Placeholder ****/
+
+      get Placeholder ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Placeholder)
+      },
+
+      set Placeholder (newValue:WAT_Textline|undefined) {
+        allowTextline('input placeholder',newValue)
+        if (this.memoized.Placeholder !== newValue) {
+          this.memoized.Placeholder = newValue
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** minLength ****/
+
+      get minLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.minLength)
+      },
+
+      set minLength (newValue:number|undefined) {
+        allowOrdinal('minimal input length',newValue)
+        if (this.memoized.minLength !== newValue) {
+          this.memoized.minLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** maxLength ****/
+
+      get maxLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.maxLength)
+      },
+
+      set maxLength (newValue:number|undefined) {
+        allowOrdinal('maximal input length',newValue)
+        if (this.memoized.maxLength !== newValue) {
+          this.memoized.maxLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Pattern ****/
+
+      get Pattern ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Pattern)
+      },
+
+      set Pattern (newValue:WAT_Textline|undefined) {
+        allowTextline('input pattern',newValue)
+        if (this.memoized.Pattern !== newValue) {
+          this.memoized.Pattern = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        Placeholder, readonly, minLength,maxLength, Pattern
+      } = this
+
+    /**** actual rendering ****/
+
+      return html`<input type="password" class="WAT Content PasswordInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput
+  )
+
 /**** NumberInput ****/
 
   const WAT_NumberInput:WAT_BehaviorFunction = async (
@@ -8991,21 +9163,21 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'native_controls.URLInput', WAT_URLInput
   )
 
-/**** PasswordInput ****/
+/**** TimeInput ****/
 
-  const WAT_PasswordInput:WAT_BehaviorFunction = async (
+  const WAT_TimeInput:WAT_BehaviorFunction = async (
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
-      .WAT.Widget > .WAT.PasswordInput {
+      .WAT.Widget > .WAT.TimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
         border:solid 1px #888888; border-radius:2px;
         background:#e8f0ff;
         padding:0px 2px 0px 2px;
       }
 
-      .WAT.Widget > .WAT.PasswordInput:read-only {
+      .WAT.Widget > .WAT.TimeInput:read-only {
         border:solid 1px #DDDDDD; border-radius:2px;
         background:#F0F0F0;
       }
@@ -9015,41 +9187,27 @@ console.warn('file drop error',Signal)
 
     my.configurableProperties = [
       { Name:'Value',      EditorType:'textline-input' },
-      { Name:'Placeholder',EditorType:'textline-input' },
       { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'minLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',    EditorType:'textline-input' },
+      { Name:'withSeconds',EditorType:'checkbox' },
+      { Name:'Minimum',    EditorType:'time-input', Stepping:1 },
+      { Name:'Maximum',    EditorType:'time-input', Stepping:1 },
+      { Name:'Suggestions',EditorType:'linelist-input' },
     ]
 
     Object_assign(me,{
     /**** Value ****/
 
       get Value ():string|undefined {
-        return acceptableOptionalTextline(this.memoized.Value)
+        return acceptableOptionalStringMatching(this.memoized.Value,WAT_TimeRegExp)
       },
 
       set Value (newValue:string|undefined) {
-        allowTextline('value',newValue)
+        allowStringMatching('value',newValue,WAT_TimeRegExp)
         if (newValue == null) { newValue = '' }
 
         if (this.memoized.Value !== newValue) {
           this.memoized.Value = newValue
           this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
           this.rerender()
         }
       },
@@ -9068,49 +9226,70 @@ console.warn('file drop error',Signal)
         }
       },
 
-    /**** minLength ****/
+    /**** withSeconds ****/
 
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
+      get withSeconds ():boolean {
+        return acceptableBoolean(this.memoized.withSeconds,false)
       },
 
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
+      set withSeconds (newValue:boolean) {
+        expectBoolean('granularity setting',newValue)
+        if (this.memoized.withSeconds !== newValue) {
+          this.memoized.withSeconds = newValue
           this.rerender()
         }
       },
 
-    /**** maxLength ****/
+    /**** Minimum ****/
 
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
+      get Minimum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_TimeRegExp)
       },
 
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
+      set Minimum (newValue:string|undefined) {
+        allowStringMatching('earliest time',newValue,WAT_TimeRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
           this.rerender()
         }
       },
 
-    /**** Pattern ****/
+    /**** Maximum ****/
 
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
+      get Maximum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_TimeRegExp)
       },
 
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
+      set Maximum (newValue:string|undefined) {
+        allowStringMatching('latest time',newValue,WAT_TimeRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
           this.rerender()
         }
       },
 
+    /**** Suggestions ****/
 
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,WAT_TimeMatcher
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,WAT_TimeMatcher)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
     } as Indexable)
 
   /**** Renderer ****/
@@ -9145,22 +9324,32 @@ console.warn('file drop error',Signal)
     /**** process any other parameters ****/
 
       const {
-        Placeholder, readonly, minLength,maxLength, Pattern
+        readonly, withSeconds, Minimum,Maximum, Suggestions
       } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
 
     /**** actual rendering ****/
 
-      return html`<input type="password" class="WAT Content PasswordInput"
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
+      return html`<input type="text" class="WAT Content TextlineInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
+        readOnly=${readonly} pattern=${WAT_TimePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-      />`
+        list=${SuggestionId}
+      />${SuggestionList}`
     })
   }
 
   registerIntrinsicBehavior(
-    Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput
+    Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput
   )
 
 /**** SearchInput ****/
@@ -10457,6 +10646,7 @@ console.warn('file drop error',Signal)
 
   const global = (new Function('return this'))() as Indexable
   global.WAT = {
+    Object_assign,
     MarkdownAsText, MarkdownAsHTML
   }
   global.JIL = JIL
