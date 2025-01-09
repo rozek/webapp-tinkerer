@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowPhoneNumber, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, useRef } from 'htm/preact';
@@ -736,17 +736,17 @@ export function acceptableColor(Value, Default) {
 export function acceptableOptionalColor(Value) {
     return (ValueIsColor(Value) ? Value : undefined);
 }
-/**** acceptableEMailAddress ****/
-export function acceptableEMailAddress(Value, Default) {
-    return (ValueIsEMailAddress(Value) ? Value : Default);
+/**** acceptableOptionalEMailAddress ****/
+export function acceptableOptionalEMailAddress(Value) {
+    return (ValueIsEMailAddress(Value) ? Value : undefined);
 }
-/**** acceptablePhoneNumber ****/
-export function acceptablePhoneNumber(Value, Default) {
-    return ( /*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : Default);
+/**** acceptableOptionalPhoneNumber ****/
+export function acceptableOptionalPhoneNumber(Value) {
+    return ( /*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : undefined);
 }
-/**** acceptableURL ****/
-export function acceptableURL(Value, Default) {
-    return (ValueIsURL(Value) ? Value : Default);
+/**** acceptableOptionalURL ****/
+export function acceptableOptionalURL(Value) {
+    return (ValueIsURL(Value) ? Value : undefined);
 }
 /**** acceptableBehavior ****/
 export function acceptableBehavior(Value, Default) {
@@ -5375,7 +5375,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Value ****/
             get Value() {
-                return this._Value;
+                return acceptableOptionalTextline(this.memoized.Value);
             },
             set Value(newValue) {
                 var _a;
@@ -5396,8 +5396,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     }
                 }
                 if (SourceWidget == null) {
-                    if (this._Value != null) {
-                        this._Value = undefined;
+                    if (this.memoized.Value != null) {
+                        this.memoized.Value = undefined;
+                        this.on('value-change')();
                         this.rerender();
                     }
                     return;
@@ -5407,10 +5408,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (SourceWidget.Page === this.Page)
                     throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
                 if (this._Value !== SourcePath) {
-                    this._Value = SourcePath;
-                    if (this._onValueChange != null) {
-                        this._onValueChange_();
-                    } // no typo!
+                    this.memoized.Value = SourcePath;
+                    this.on('value-change')();
                     this.rerender();
                 }
             },
@@ -5464,11 +5463,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             var _a;
             this._releaseWidgets();
-            if (this._Value == null) {
+            const Value = this.Value;
+            if (Value == null) {
                 return '';
             }
-            const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(this._Value);
-            if ((SourceWidget == null) || (SourceWidget === me)) {
+            const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(Value);
+            if ((SourceWidget == null) || (SourceWidget === this)) {
                 return '';
             }
             const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
@@ -5501,6 +5501,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalText(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** readonly ****/
             get readonly() {
                 return acceptableBoolean(this.memoized.readonly, true);
@@ -5599,6 +5614,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalText(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** readonly ****/
             get readonly() {
                 return acceptableBoolean(this.memoized.readonly, true);
@@ -5679,7 +5709,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** actual rendering ****/
             return html `<div class="WAT Content HTMLView"
         onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        dangerouslySetInnerHTML=${{ __html: acceptableText(this.Value, '') }}
+        dangerouslySetInnerHTML=${{ __html: this.Value || '' }}
       />`;
         });
     };
@@ -5700,6 +5730,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalURL(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** ImageScaling ****/
             get ImageScaling() {
                 return acceptableOneOf(this.memoized.ImageScaling, 'contain', WAT_ImageScalings);
@@ -5807,7 +5852,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             /**** actual rendering ****/
             return html `<img class="WAT Content ImageView"
-        src=${acceptableURL(this.Value, '')}
+        src=${this.Value || ''}
         style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
         onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
       />`;
@@ -5828,6 +5873,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'ImageAlignment', EditorType: 'drop-down', ValueList: WAT_ImageAlignments },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalText(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** ImageScaling ****/
             get ImageScaling() {
                 return acceptableOneOf(this.memoized.ImageScaling, 'contain', WAT_ImageScalings);
@@ -5853,7 +5913,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
         /**** Renderer ****/
         onRender(function () {
-            const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value, ''));
+            const DataURL = 'data:image/svg+xml;base64,' + btoa(this.memoized.Value || '');
             const { ImageScaling, ImageAlignment } = this;
             return html `<img class="WAT Content SVGView"
         src=${DataURL}
@@ -5873,6 +5933,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'ReferrerPolicy', EditorType: 'drop-down', ValueList: WAT_ReferrerPolicies },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalURL(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** PermissionsPolicy ****/
             get PermissionsPolicy() {
                 return acceptableOptionalTextline(this.memoized.PermissionsPolicy);
@@ -5920,9 +5995,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
         /**** Renderer ****/
         onRender(function () {
-            const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this;
+            const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this.memoized;
             return html `<iframe class="WAT Content WebView"
-        src=${acceptableURL(this.Value, '')}
+        src=${this.Value || ''}
         allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
         sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
       />`;
@@ -5964,7 +6039,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 this.on('click')(Event);
             };
-            const Label = this.Label;
+            const Label = this.memoized.Label;
             return html `<button class="WAT Content Button" style="
         line-height:${this.LineHeight || this.Height}px;
       " disabled=${this.Enabling == false} onClick=${onClick}
@@ -6172,6 +6247,18 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Maximum', EditorType: 'number-input' },
         ];
         Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalNumber(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowFiniteNumber('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
             /**** Maximum ****/
             get Maximum() {
                 return acceptableOptionalNumberInRange(this.memoized.Maximum, 0, Infinity, true);
@@ -6229,11 +6316,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** Stepping ****/
             get Stepping() {
                 const Candidate = this.memoized.Stepping;
-                return (Candidate === 'any' ? 'any' : acceptableOptionalNumber(Candidate));
+                return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0, Infinity, false));
             },
             set Stepping(newValue) {
                 if (newValue !== 'any') {
-                    allowNumber('step value', newValue);
+                    allowNumberInRange('step value', newValue, 0, Infinity, false);
                 }
                 if (this.memoized.Stepping !== newValue) {
                     this.memoized.Stepping = newValue;
@@ -6340,7 +6427,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Value ****/
             get Value() {
-                return acceptableTextline(this.memoized.Value, '');
+                return acceptableOptionalTextline(this.memoized.Value);
             },
             set Value(newValue) {
                 allowTextline('value', newValue);
@@ -6475,6 +6562,321 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
+    /**** NumberInput ****/
+    const WAT_NumberInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.NumberInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.NumberInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'number-input' },
+            { Name: 'Placeholder', EditorType: 'textline-input' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'Minimum', EditorType: 'number-input' },
+            { Name: 'Stepping', EditorType: 'number-input', Minimum: 0 },
+            { Name: 'Maximum', EditorType: 'number-input' },
+            { Name: 'Suggestions', EditorType: 'numberlist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalNumber(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowFiniteNumber('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, false);
+            },
+            set readonly(newValue) {
+                expectBoolean('readonly setting', newValue);
+                if (this.memoized.readonly !== newValue) {
+                    this.memoized.readonly = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Minimum ****/
+            get Minimum() {
+                return acceptableOptionalNumber(this.memoized.Minimum);
+            },
+            set Minimum(newValue) {
+                allowNumber('minimal value', newValue);
+                if (this.memoized.Minimum !== newValue) {
+                    this.memoized.Minimum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Stepping ****/
+            get Stepping() {
+                const Candidate = this.memoized.Stepping;
+                return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0, Infinity, false));
+            },
+            set Stepping(newValue) {
+                if (newValue !== 'any') {
+                    allowNumberInRange('step value', newValue, 0, Infinity, false);
+                }
+                if (this.memoized.Stepping !== newValue) {
+                    this.memoized.Stepping = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Maximum ****/
+            get Maximum() {
+                return acceptableOptionalNumber(this.memoized.Maximum);
+            },
+            set Maximum(newValue) {
+                allowNumber('maximal value', newValue);
+                if (this.memoized.Maximum !== newValue) {
+                    this.memoized.Maximum = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsNumber);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, ValueIsNumber);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? newValue : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            let ValueToShow = Value;
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
+            }
+            else {
+                this._shownValue = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this._shownValue = this.Value = parseFloat(Event.target.value);
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.rerender();
+                this.on('blur')(Event);
+            };
+            /**** process any other parameters ****/
+            const { Placeholder, readonly, Minimum, Stepping, Maximum, Suggestions } = this;
+            let SuggestionList = '', SuggestionId;
+            if ((Suggestions != null) && (Suggestions.length > 0)) {
+                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionList = html `<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+        </datalist>`;
+            }
+            /**** actual rendering ****/
+            return html `<input type="number" class="WAT Content NumberInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} placeholder=${Placeholder}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.NumberInput', WAT_NumberInput);
+    /**** PhoneNumberInput ****/
+    const WAT_PhoneNumberInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.PhoneNumberInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.PhoneNumberInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input' },
+            { Name: 'Placeholder', EditorType: 'textline-input' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'Pattern', EditorType: 'textline-input' },
+            { Name: 'SpellChecking', EditorType: 'checkbox' },
+            { Name: 'Suggestions', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalPhoneNumber(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowPhoneNumber('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, false);
+            },
+            set readonly(newValue) {
+                expectBoolean('readonly setting', newValue);
+                if (this.memoized.readonly !== newValue) {
+                    this.memoized.readonly = newValue;
+                    this.rerender();
+                }
+            },
+            /**** minLength ****/
+            get minLength() {
+                return acceptableOptionalOrdinal(this.memoized.minLength);
+            },
+            set minLength(newValue) {
+                allowOrdinal('minimal input length', newValue);
+                if (this.memoized.minLength !== newValue) {
+                    this.memoized.minLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** maxLength ****/
+            get maxLength() {
+                return acceptableOptionalOrdinal(this.memoized.maxLength);
+            },
+            set maxLength(newValue) {
+                allowOrdinal('maximal input length', newValue);
+                if (this.memoized.maxLength !== newValue) {
+                    this.memoized.maxLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Pattern ****/
+            get Pattern() {
+                return acceptableOptionalTextline(this.memoized.Pattern);
+            },
+            set Pattern(newValue) {
+                allowTextline('input pattern', newValue);
+                if (this.memoized.Pattern !== newValue) {
+                    this.memoized.Pattern = newValue;
+                    this.rerender();
+                }
+            },
+            /**** SpellChecking ****/
+            get SpellChecking() {
+                return acceptableBoolean(this.memoized.SpellChecking, false);
+            },
+            set SpellChecking(newValue) {
+                expectBoolean('spell check setting', newValue);
+                if (this.memoized.SpellChecking !== newValue) {
+                    this.memoized.SpellChecking = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsPhoneNumber);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, ValueIsPhoneNumber);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? newValue : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            let ValueToShow = Value || '';
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
+            }
+            else {
+                this._shownValue = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this._shownValue = this.Value = Event.target.value;
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.rerender();
+                this.on('blur')(Event);
+            };
+            /**** process any other parameters ****/
+            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            let SuggestionList = '', SuggestionId;
+            if ((Suggestions != null) && (Suggestions.length > 0)) {
+                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionList = html `<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+        </datalist>`;
+            }
+            /**** actual rendering ****/
+            return html `<input type="tel" class="WAT Content PhoneNumberInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput);
     /**** PasswordInput ****/
     const WAT_PasswordInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -6502,7 +6904,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Value ****/
             get Value() {
-                return acceptableTextline(this.memoized.Value, '');
+                return acceptableOptionalTextline(this.memoized.Value);
             },
             set Value(newValue) {
                 allowTextline('value', newValue);
@@ -6635,7 +7037,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Value ****/
             get Value() {
-                return acceptableTextline(this.memoized.Value, '');
+                return acceptableOptionalTextline(this.memoized.Value);
             },
             set Value(newValue) {
                 allowTextline('value', newValue);
