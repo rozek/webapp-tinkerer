@@ -2070,7 +2070,8 @@ export class WAT_Visual {
             let compiledScript; // try compiling pending script first
             try {
                 // @ts-ignore TS2351 AsyncFunction *is* constructible
-                compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, BehaviorIsNew', pendingScript);
+                compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+                    'installStylesheet,BehaviorIsNew', pendingScript);
             }
             catch (Signal) {
                 setScriptError(this, {
@@ -2279,9 +2280,6 @@ export class WAT_Visual {
             'activeScript', 'pendingScript',
             'memoized',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-        if (this._configurableProperties.length > 0) {
-            Serialization.configurableProperties = this._configurableProperties.map((Descriptor) => (Object.assign({}, Descriptor)));
-        }
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -2297,11 +2295,6 @@ export class WAT_Visual {
                 }
             }
         };
-        if (ValueIsListSatisfying(Serialization.configurableProperties, ValueIsPropertyDescriptor)) {
-            // @ts-ignore TS18047 "configurableProperties" is not null
-            this._configurableProperties = Serialization.configurableProperties.map((Descriptor) => normalizedPropertyDescriptor(Descriptor));
-        }
-        ;
         [
             /*'Behavior', */ 'Name', 'Synopsis',
             'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
