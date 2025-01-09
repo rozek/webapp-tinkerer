@@ -8163,7 +8163,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', EditorType: 'text-input' },
-            { Name: 'Placeholder', EditorType: 'text-input' },
+            { Name: 'Icon', EditorType: 'url-input' },
             { Name: 'allowMultiple', EditorType: 'checkbox' },
             { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
         ];
@@ -8657,6 +8657,100 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DropDown', WAT_DropDown);
+    /**** PseudoDropDown ****/
+    const WAT_PseudoDropDown = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.PseudoDropDown > div {
+        display:block; position:absolute;
+        left:0px; top:0px; right:0px; bottom:0px;
+        -webkit-mask-size:contain;           mask-size:contain;
+        -webkit-mask-position:center center; mask-position:center center;
+      }
+
+      .WAT.Widget > .WAT.PseudoDropDown > select {
+        display:block; position:absolute;
+        left:0px; top:0px; right:0px; bottom:0px;
+        opacity:0.01;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input' },
+            { Name: 'Icon', EditorType: 'url-input' },
+            { Name: 'Options', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalTextline(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowTextline('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Icon ****/
+            get Icon() {
+                return acceptableOptionalURL(this.memoized.Icon);
+            },
+            set Icon(newValue) {
+                allowURL('icon URL', newValue);
+                if (this.memoized.Icon !== newValue) {
+                    this.memoized.Icon = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Options ****/
+            get Options() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Options, ValueIsColor);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Options(newValue) {
+                allowListSatisfying('option list', newValue, ValueIsColor);
+                if (ValuesDiffer(this.memoized.Options, newValue)) {
+                    this.memoized.Options = (newValue == null ? undefined : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Icon, Color, Options } = this;
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this.Value = Event.target.value;
+                this.on('input')(Event);
+            };
+            /**** actual rendering ****/
+            return html `<div class="WAT Content PseudoDropDown">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        "></div>
+        <select disabled=${Enabling == false} onInput=${_onInput}>
+          ${Options.map((Option) => {
+                const OptionValue = Option.replace(/:.*\$/, '').trim();
+                let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
+                const disabled = (OptionLabel[0] === '-');
+                if (/^-[^-]+$/.test(OptionLabel)) {
+                    OptionLabel = OptionLabel.slice(1);
+                }
+                return html `<option value=${OptionValue} selected=${OptionValue === Value}
+              disabled=${disabled}
+            >
+              ${OptionLabel}
+            </option>`;
+            })}
+        </select>
+      </div>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoDropDown', WAT_PseudoDropDown);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
