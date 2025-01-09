@@ -2683,7 +2683,8 @@ console.warn('Script Execution Failure',Signal)
         try {
 // @ts-ignore TS2351 AsyncFunction *is* constructible
           compiledScript = new AsyncFunction(
-            'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, BehaviorIsNew',
+            'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+            'installStylesheet,BehaviorIsNew',
             pendingScript
           )
         } catch (Signal:any) {
@@ -2921,12 +2922,6 @@ console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
         'activeScript','pendingScript',
         'memoized',
       ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
-
-      if (this._configurableProperties.length > 0) {
-        Serialization.configurableProperties = this._configurableProperties.map(
-          (Descriptor:Indexable) => ({ ...Descriptor })
-        )
-      }
     }
 
   /**** _deserializeConfigurationFrom ****/
@@ -2944,13 +2939,6 @@ console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
             )
           }
         }
-      }
-
-      if (ValueIsListSatisfying(Serialization.configurableProperties,ValueIsPropertyDescriptor)) {
-// @ts-ignore TS18047 "configurableProperties" is not null
-        this._configurableProperties = Serialization.configurableProperties.map(
-          (Descriptor:Indexable) => normalizedPropertyDescriptor(Descriptor)
-        )
       }
 
       ;[
