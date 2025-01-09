@@ -5530,7 +5530,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             /**** acceptableFileTypes ****/
             get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat).slice();
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextFormat).slice();
             },
             set acceptableFileTypes(newSetting) {
                 allowListSatisfying('acceptable file types', newSetting, ValueIsTextFormat);
@@ -5781,7 +5781,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             /**** acceptableFileTypes ****/
             get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat).slice();
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsImageFormat).slice();
             },
             set acceptableFileTypes(newSetting) {
                 allowListSatisfying('acceptable file types', newSetting, ValueIsImageFormat);
@@ -6434,9 +6434,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             set Value(newValue) {
                 allowTextline('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
                     this.on('value-change')();
@@ -6597,9 +6594,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             set Value(newValue) {
                 allowTextline('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
                     this.on('value-change')();
@@ -8043,6 +8037,213 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput);
+    /**** FileInput ****/
+    const WAT_FileInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.FileInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+      .WAT.Widget > .WAT.FileInput > span {
+        display:block; position:absolute; overflow:hidden;
+        left:0px; top:0px; width:100%; height:100%;
+        color:gray;
+        padding:0px 2px 0px 2px; white-space:pre; text-overflow:ellipsis;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'text-input' },
+            { Name: 'Placeholder', EditorType: 'text-input' },
+            { Name: 'allowMultiple', EditorType: 'checkbox' },
+            { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalText(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** allowMultiple ****/
+            get allowMultiple() {
+                return acceptableBoolean(this.memoized.allowMultiple, false);
+            },
+            set allowMultiple(newValue) {
+                expectBoolean('multiplicity setting', newValue);
+                if (this.memoized.allowMultiple !== newValue) {
+                    this.memoized.allowMultiple = newValue;
+                    this.rerender();
+                }
+            },
+            /**** acceptableFileTypes ****/
+            get acceptableFileTypes() {
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextline).slice();
+            },
+            set acceptableFileTypes(newSetting) {
+                allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
+                if (newSetting == null) {
+                    newSetting = [];
+                }
+                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
+                    this.memoized.acceptableFileTypes = newSetting.slice();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
+            const _onInput = (Event) => {
+                if (this.Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
+                this.on('input')(Event);
+            };
+            const _onDragEnter = (Event) => { return consumingEvent(Event); };
+            const _onDragOver = (Event) => { return consumingEvent(Event); };
+            const _onDrop = (Event) => {
+                consumeEvent(Event);
+                if (this.Enabling === false) {
+                    return;
+                }
+                this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
+                this.on('drop')(Event, Event.dataTransfer.files);
+            }; // nota bene: "files" is now in "Event.dataTransfer.files"
+            /**** actual rendering ****/
+            return html `<label class="WAT Content FileInput"
+        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
+      >
+        ${Value === ''
+                ? Placeholder === '' ? '' : html `<span style="
+              font-size:${Math.round((this.FontSize || 14) * 0.95)}px; line-height:${this.Height}px
+            ">${Placeholder}</span>`
+                : html `<span style="line-height:${this.Height}px">${Value}</span>`}
+        <input type="file" style="display:none"
+          multiple=${allowMultiple} accept=${acceptableFileTypes}
+          disabled=${Enabling === false} onInput=${_onInput}
+        />
+      </label>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileInput', WAT_FileInput);
+    /**** PseudoFileInput ****/
+    const WAT_PseudoFileInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.PseudoFileInput > div {
+        display:block; position:absolute;
+        left:0px; top:0px; right:0px; bottom:0px;
+        -webkit-mask-size:contain;           mask-size:contain;
+        -webkit-mask-position:center center; mask-position:center center;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'text-input' },
+            { Name: 'Placeholder', EditorType: 'text-input' },
+            { Name: 'allowMultiple', EditorType: 'checkbox' },
+            { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalText(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Icon ****/
+            get Icon() {
+                return acceptableOptionalURL(this.memoized.Icon);
+            },
+            set Icon(newValue) {
+                allowURL('icon URL', newValue);
+                if (this.memoized.Icon !== newValue) {
+                    this.memoized.Icon = newValue;
+                    this.rerender();
+                }
+            },
+            /**** allowMultiple ****/
+            get allowMultiple() {
+                return acceptableBoolean(this.memoized.allowMultiple, false);
+            },
+            set allowMultiple(newValue) {
+                expectBoolean('multiplicity setting', newValue);
+                if (this.memoized.allowMultiple !== newValue) {
+                    this.memoized.allowMultiple = newValue;
+                    this.rerender();
+                }
+            },
+            /**** acceptableFileTypes ****/
+            get acceptableFileTypes() {
+                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextline).slice();
+            },
+            set acceptableFileTypes(newSetting) {
+                allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
+                if (newSetting == null) {
+                    newSetting = [];
+                }
+                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
+                    this.memoized.acceptableFileTypes = newSetting.slice();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, Icon, Color, allowMultiple, acceptableFileTypes } = this;
+            const _onInput = (Event) => {
+                if (this.Enabling == false) {
+                    return consumingEvent(Event);
+                }
+                this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
+                this.on('input')(Event);
+            };
+            /**** actual rendering ****/
+            return html `<label class="WAT Content PseudoFileInput">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        "></div>
+        <input type="file" style="display:none"
+          multiple=${allowMultiple} accept=${acceptableFileTypes}
+          disabled=${Enabling === false} onInput=${_onInput}
+        />
+      </label>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoFileInput', WAT_PseudoFileInput);
     /**** SearchInput ****/
     const WAT_SearchInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
@@ -8077,9 +8278,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             set Value(newValue) {
                 allowTextline('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
                     this.on('value-change')();
