@@ -11008,6 +11008,263 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'native_controls.PseudoDropDown', WAT_PseudoDropDown
   )
 
+/**** TextInput ****/
+
+  const WAT_TextInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    my._InputElement = createRef()
+
+    installStylesheet(`
+      .WAT.Widget > .WAT.TextInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:2px 2px 2px 2px;
+      }
+
+      .WAT.Widget > .WAT.TextInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',        EditorType:'textline-input' },
+      { Name:'Placeholder',  EditorType:'textline-input' },
+      { Name:'readonly',     EditorType:'checkbox' },
+      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'LineWrapping', EditorType:'checkbox' },
+      { Name:'SpellChecking',EditorType:'checkbox' },
+      { Name:'acceptableFileTypes', Label:'File Types', EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():WAT_Text|undefined {
+        return acceptableOptionalText(this.memoized.Value)
+      },
+
+      set Value (newValue:WAT_Text|undefined) {
+        allowText('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Placeholder ****/
+
+      get Placeholder ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Placeholder)
+      },
+
+      set Placeholder (newValue:WAT_Textline|undefined) {
+        allowTextline('input placeholder',newValue)
+        if (this.memoized.Placeholder !== newValue) {
+          this.memoized.Placeholder = newValue
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** minLength ****/
+
+      get minLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.minLength)
+      },
+
+      set minLength (newValue:number|undefined) {
+        allowOrdinal('minimal input length',newValue)
+        if (this.memoized.minLength !== newValue) {
+          this.memoized.minLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** maxLength ****/
+
+      get maxLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.maxLength)
+      },
+
+      set maxLength (newValue:number|undefined) {
+        allowOrdinal('maximal input length',newValue)
+        if (this.memoized.maxLength !== newValue) {
+          this.memoized.maxLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** LineWrapping ****/
+
+      get LineWrapping ():boolean {
+        return acceptableBoolean(this.memoized.LineWrapping,false)
+      },
+
+      set LineWrapping (newValue:boolean) {
+        expectBoolean('line wrapping setting',newValue)
+        if (this.memoized.LineWrapping !== newValue) {
+          this.memoized.LineWrapping = newValue
+          this.rerender()
+        }
+      },
+
+    /**** SpellChecking ****/
+
+      get SpellChecking ():boolean {
+        return acceptableBoolean(this.memoized.SpellChecking,false)
+      },
+
+      set SpellChecking (newValue:boolean) {
+        expectBoolean('spell check setting',newValue)
+        if (this.memoized.SpellChecking !== newValue) {
+          this.memoized.SpellChecking = newValue
+          this.rerender()
+        }
+      },
+
+    /**** acceptableFileTypes ****/
+
+      get acceptableFileTypes ():WAT_Textline[] {
+        return acceptableListSatisfying(
+          this.memoized.acceptableFileTypes, [], ValueIsTextFormat
+        ).slice()
+      },
+      set acceptableFileTypes (newSetting:WAT_Textline[]) {
+        allowListSatisfying('acceptable file types',newSetting, ValueIsTextFormat)
+        if (newSetting == null) { newSetting = [] }
+
+        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
+          this.memoized.acceptableFileTypes = newSetting.slice()
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        Placeholder, readonly, minLength,maxLength, LineWrapping, SpellChecking,
+        acceptableFileTypes
+      } = this
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this.Value = Value
+            this.on('input')(Event)
+          } else {
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                  this.on('input')(Event)
+                  break
+                }
+              }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              this.on('drop-error')(Signal)
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
+
+      return html`<textarea class="WAT Content TextInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        spellcheck=${SpellChecking} style="resize:none; ${
+          LineWrapping == true
+          ? 'overflow-wrap:break-word; hyphens:auto'
+          : 'white-space:pre'
+        }"
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.TextInput', WAT_TextInput
+  )
+
 
   }
 
