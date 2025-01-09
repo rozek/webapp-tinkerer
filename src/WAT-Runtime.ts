@@ -2491,21 +2491,6 @@
       }
     }
 
-  /**** Value ****/
-
-    protected _Value:serializableValue|undefined
-
-    public get Value ():serializableValue|undefined { return this._Value }
-    public set Value (newValue:serializableValue|undefined) {
-      allowSerializableValue('value',newValue)
-
-      if (ValuesDiffer(this._Value,newValue)) {
-        this._Value = newValue // *C* a deep copy may be better
-        this.on('value-change')(newValue)
-        this.rerender()
-      }
-    }
-
   /**** unobserved ****/
 
 // @ts-ignore TS2564 allow "_unobserved" to be assigned upon first use
@@ -2928,15 +2913,6 @@ console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
   /**** _serializeConfigurationInto ****/
 
     protected _serializeConfigurationInto (Serialization:Serializable):void {
-      if (this._Value != null) {        // test serializability of "Value" first
-        try { JSON.stringify(this._Value) } catch (Signal:any) {
-          throwError(
-            'NotSerializable: cannot serialize "Value" of visual ' +
-            quoted(this.Path)
-          )
-        }
-      }
-
       if (this._memoized != null) {// test serializability of "memoized" as well
         try { JSON.stringify(this._memoized) } catch (Signal:any) {
           throwError(
@@ -2956,7 +2932,7 @@ console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
         'activeScript','pendingScript',
-        'memoized','Value',
+        'memoized',
       ].forEach((Name:string) => this._serializePropertyInto(Name,Serialization))
 
       if (this._configurableProperties.length > 0) {
@@ -2998,7 +2974,6 @@ console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
         'BorderWidths','BorderStyles','BorderColors','BorderRadii','BoxShadow',
         'Opacity','OverflowVisibility','Cursor',
         /*'activeScript',*/'pendingScript',
-        'Value',
       ].forEach((Name:string) => deserializeProperty(Name))
 
       if (ValueIsPlainObject(Serialization.memoized)) {
@@ -7398,7 +7373,7 @@ console.warn('file drop error',Signal)
         this.on('click')(Event)
       }
 
-      const Label = acceptableTextline(this.Label,'Button')
+      const Label = this.Label
 
       return html`<button class="WAT Content Button" style="
         line-height:${this.LineHeight || this.Height}px;
@@ -7409,6 +7384,234 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.Button', WAT_Button
+  )
+
+/**** Checkbox ****/
+
+  const WAT_Checkbox:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.Checkbox {
+        left:50%; top:50%;
+        transform:translate(-50%,-50%);
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value', EditorType:'checkbox' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():boolean|undefined {
+        return acceptableOptionalBoolean(this.memoized.Value)
+      },
+
+      set Value (newValue:boolean|undefined) {
+        allowBoolean('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const onClick = (Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+
+        this.Value = Event.target.checked
+        this.on('value-change')()
+      }
+
+      const Value = this.Value
+
+      const checked       = (Value == true)
+      const indeterminate = (Value == null)
+
+      return html`<input type="checkbox" class="WAT Checkbox"
+        checked=${checked} indeterminate=${indeterminate}
+        disabled=${this.Enabling == false} onClick=${onClick}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.Checkbox', WAT_Checkbox
+  )
+
+/**** Radiobutton ****/
+
+  const WAT_Radiobutton:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.Radiobutton {
+        left:50%; top:50%;
+        transform:translate(-50%,-50%);
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value', EditorType:'checkbox' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():boolean|undefined {
+        return acceptableBoolean(this.memoized.Value,false)
+      },
+
+      set Value (newValue:boolean|undefined) {
+        expectBoolean('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const onClick = (Event:any) => {
+        if (this.Enabling == false) { return consumingEvent(Event) }
+
+        this.Value = Event.target.checked
+        this.on('value-change')()
+      }
+
+      return html`<input type="radio" class="WAT Radiobutton"
+        checked=${this.Value == true}
+        disabled=${this.Enabling == false} onClick=${onClick}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.Radiobutton', WAT_Radiobutton
+  )
+
+/**** Gauge ****/
+
+  const WAT_Gauge:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value', EditorType:'checkbox' },
+    ]
+
+    Object_assign(me,{
+    /**** Minimum ****/
+
+      get Minimum ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Minimum)
+      },
+
+      set Minimum (newValue:boolean|undefined) {
+        allowNumber('minimal value',newValue)
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** lowerBound ****/
+
+      get lowerBound ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.lowerBound)
+      },
+
+      set lowerBound (newValue:boolean|undefined) {
+        allowNumber('lower bound',newValue)
+        if (this.memoized.lowerBound !== newValue) {
+          this.memoized.lowerBound = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Optimum ****/
+
+      get Optimum ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Optimum)
+      },
+
+      set Optimum (newValue:boolean|undefined) {
+        allowNumber('optimum',newValue)
+        if (this.memoized.Optimum !== newValue) {
+          this.memoized.Optimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** upperBound ****/
+
+      get upperBound ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.upperBound)
+      },
+
+      set upperBound (newValue:boolean|undefined) {
+        allowNumber('upper bound',newValue)
+        if (this.memoized.upperBound !== newValue) {
+          this.memoized.upperBound = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Maximum ****/
+
+      get Maximum ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Maximum)
+      },
+
+      set Maximum (newValue:boolean|undefined) {
+        allowNumber('maximal value',newValue)
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const {
+        Value,
+        Minimum, lowerBound, Optimum, upperBound, Maximum
+      } = this
+
+      return html`<meter class="WAT Content Gauge" value=${Value}
+        min=${Minimum} low=${lowerBound} opt=${Optimum}
+        high=${upperBound} max=${Maximum}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.Gauge', WAT_Gauge
   )
 
 
