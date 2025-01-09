@@ -7861,7 +7861,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('hashmark list',newValue,HashmarkMatcher)
         if (ValuesDiffer(this.memoized.Hashmarks,newValue)) {
           this.memoized.Hashmarks = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -8078,7 +8078,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsTextline)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -8454,7 +8454,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsNumber)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -8670,7 +8670,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsPhoneNumber)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -8888,7 +8888,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsEMailAddress)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -9106,7 +9106,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsURL)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -9298,7 +9298,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,WAT_TimeMatcher)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -9489,7 +9489,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,WAT_DateTimeMatcher)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -9666,7 +9666,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,WAT_DateMatcher)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -9842,7 +9842,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,WAT_WeekMatcher)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -10018,7 +10018,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,WAT_MonthMatcher)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -10627,7 +10627,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsTextline)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -10748,7 +10748,7 @@ console.warn('file drop error',Signal)
         allowListSatisfying('suggestion list',newValue,ValueIsColor)
         if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
           this.memoized.Suggestions = (
-            newValue == null ? newValue : newValue.slice()
+            newValue == null ? undefined : newValue.slice()
           )
           this.rerender()
         }
@@ -10762,6 +10762,8 @@ console.warn('file drop error',Signal)
 
       const _onInput = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
+
+        this.Value = Event.target.value
         this.on('input')(Event)
       }
 
@@ -10788,6 +10790,101 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput
+  )
+
+/**** DropDown ****/
+
+  const WAT_DropDown:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.DropDown {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',  EditorType:'textline-input' },
+      { Name:'Options',EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalTextline(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowTextline('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Options ****/
+
+      get Options ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Options,ValueIsColor
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Options (newValue:string[]|undefined) {
+        allowListSatisfying('option list',newValue,ValueIsColor)
+        if (ValuesDiffer(this.memoized.Options,newValue)) {
+          this.memoized.Options = (
+            newValue == null ? undefined : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling, Options } = this
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+    /**** actual rendering ****/
+
+      return html`<select class="WAT Content DropDown"
+        disabled=${Enabling == false} onInput=${_onInput}
+      >${Options.map((Option:string) => {
+          const OptionValue = Option.replace(/:.*$/,'').trim()
+          let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
+          const disabled    = (OptionLabel[0] === '-')
+            if (/^-[^-]+$/.test(OptionLabel)) {
+              OptionLabel = OptionLabel.slice(1)
+            }
+          return html`<option value=${OptionValue} selected=${OptionValue === Value}
+            disabled=${disabled}
+          >
+            ${OptionLabel}
+          </option>`
+        }
+      )}</select>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.DropDown', WAT_DropDown
   )
 
 
