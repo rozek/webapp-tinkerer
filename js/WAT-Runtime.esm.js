@@ -6,9 +6,10 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, allowPhoneNumber, } from 'javascript-interface-library';
+quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, /*allowPhoneNumber,*/ allowURL, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
+const allowPhoneNumber = allowTextline; // *C* should be implemented
 import { render, html, Component, useRef } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
@@ -7041,6 +7042,170 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.EMailAddressInput', WAT_EMailAddressInput);
+    /**** URLInput ****/
+    const WAT_URLInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.URLInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.URLInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input' },
+            { Name: 'Placeholder', EditorType: 'textline-input' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'Pattern', EditorType: 'textline-input' },
+            { Name: 'SpellChecking', EditorType: 'checkbox' },
+            { Name: 'Suggestions', EditorType: 'linelist-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableOptionalURL(this.memoized.Value);
+            },
+            set Value(newValue) {
+                allowURL('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, false);
+            },
+            set readonly(newValue) {
+                expectBoolean('readonly setting', newValue);
+                if (this.memoized.readonly !== newValue) {
+                    this.memoized.readonly = newValue;
+                    this.rerender();
+                }
+            },
+            /**** minLength ****/
+            get minLength() {
+                return acceptableOptionalOrdinal(this.memoized.minLength);
+            },
+            set minLength(newValue) {
+                allowOrdinal('minimal input length', newValue);
+                if (this.memoized.minLength !== newValue) {
+                    this.memoized.minLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** maxLength ****/
+            get maxLength() {
+                return acceptableOptionalOrdinal(this.memoized.maxLength);
+            },
+            set maxLength(newValue) {
+                allowOrdinal('maximal input length', newValue);
+                if (this.memoized.maxLength !== newValue) {
+                    this.memoized.maxLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Pattern ****/
+            get Pattern() {
+                return acceptableOptionalTextline(this.memoized.Pattern);
+            },
+            set Pattern(newValue) {
+                allowTextline('input pattern', newValue);
+                if (this.memoized.Pattern !== newValue) {
+                    this.memoized.Pattern = newValue;
+                    this.rerender();
+                }
+            },
+            /**** SpellChecking ****/
+            get SpellChecking() {
+                return acceptableBoolean(this.memoized.SpellChecking, false);
+            },
+            set SpellChecking(newValue) {
+                expectBoolean('spell check setting', newValue);
+                if (this.memoized.SpellChecking !== newValue) {
+                    this.memoized.SpellChecking = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsURL);
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, ValueIsURL);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? newValue : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            let ValueToShow = Value || '';
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
+            }
+            else {
+                this._shownValue = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this._shownValue = this.Value = Event.target.value;
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.rerender();
+                this.on('blur')(Event);
+            };
+            /**** process any other parameters ****/
+            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            let SuggestionList = '', SuggestionId;
+            if ((Suggestions != null) && (Suggestions.length > 0)) {
+                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionList = html `<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
+        </datalist>`;
+            }
+            /**** actual rendering ****/
+            return html `<input type="url" class="WAT Content URLInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.URLInput', WAT_URLInput);
     /**** PasswordInput ****/
     const WAT_PasswordInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
