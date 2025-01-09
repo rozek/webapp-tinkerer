@@ -35,7 +35,7 @@
     expectList, allowListSatisfying, expectListSatisfying,
     allowFunction, expectFunction,
     allowOneOf, expectOneOf,
-    allowColor, allowURL,
+    allowColor, allowPhoneNumber, allowURL,
   } from 'javascript-interface-library'
   import * as JIL from 'javascript-interface-library'
 
@@ -1292,22 +1292,22 @@
     return (ValueIsColor(Value) ? Value : undefined)
   }
 
-/**** acceptableEMailAddress ****/
+/**** acceptableOptionalEMailAddress ****/
 
-  export function acceptableEMailAddress (Value:any, Default:string):string {
-    return (ValueIsEMailAddress(Value) ? Value : Default)
+  export function acceptableOptionalEMailAddress (Value:any):string|undefined {
+    return (ValueIsEMailAddress(Value) ? Value : undefined)
   }
 
-/**** acceptablePhoneNumber ****/
+/**** acceptableOptionalPhoneNumber ****/
 
-  export function acceptablePhoneNumber (Value:any, Default:string):string {
-    return (/*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : Default)
+  export function acceptableOptionalPhoneNumber (Value:any):string|undefined {
+    return (/*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : undefined)
   }
 
-/**** acceptableURL ****/
+/**** acceptableOptionalURL ****/
 
-  export function acceptableURL (Value:any, Default:string):string {
-    return (ValueIsURL(Value) ? Value : Default)
+  export function acceptableOptionalURL (Value:any):string|undefined {
+    return (ValueIsURL(Value) ? Value : undefined)
   }
 
 /**** acceptableBehavior ****/
@@ -6558,8 +6558,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
           )
         })
       },
-
-
     } as Indexable)
 
   /**** Renderer ****/
@@ -6592,7 +6590,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     /**** Value ****/
 
       get Value ():WAT_Path|undefined {
-        return this._Value as WAT_Path
+        return acceptableOptionalTextline(this.memoized.Value) as WAT_Path
       },
 
       set Value (newValue:WAT_Path|WAT_Widget|undefined) {
@@ -6612,8 +6610,9 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         }
 
         if (SourceWidget == null) {
-          if (this._Value != null) {
-            this._Value = undefined
+          if (this.memoized.Value != null) {
+            this.memoized.Value = undefined
+            this.on('value-change')()
             this.rerender()
           }
           return
@@ -6628,10 +6627,8 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         )
 
         if (this._Value !== SourcePath) {
-          this._Value = SourcePath
-
-          if (this._onValueChange != null) { this._onValueChange_() }// no typo!
-
+          this.memoized.Value = SourcePath
+          this.on('value-change')()
           this.rerender()
         }
       },
@@ -6704,10 +6701,11 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     onRender(function (this:Indexable) {
       this._releaseWidgets()
 
-      if (this._Value == null) { return '' }
+      const Value = this.Value
+      if (Value == null) { return '' }
 
-      const SourceWidget = this.Applet?.WidgetAtPath(this._Value as WAT_Path)
-      if ((SourceWidget == null) || (SourceWidget === me)) { return '' }
+      const SourceWidget = this.Applet?.WidgetAtPath(Value as WAT_Path)
+      if ((SourceWidget == null) || (SourceWidget === this)) { return '' }
 
       const WidgetsToShow:WAT_Widget[] = (
         SourceWidget.normalizedBehavior === 'basic_controls.outline'
@@ -6756,6 +6754,23 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalText(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowText('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** readonly ****/
 
       get readonly ():boolean {
@@ -6876,6 +6891,23 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalText(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowText('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** readonly ****/
 
       get readonly ():boolean {
@@ -6967,7 +6999,7 @@ console.warn('file drop error',Signal)
 
       return html`<div class="WAT Content HTMLView"
         onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
-        dangerouslySetInnerHTML=${{__html:acceptableText(this.Value,'')}}
+        dangerouslySetInnerHTML=${{__html:this.Value || ''}}
       />`
     })
   }
@@ -6999,6 +7031,23 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalURL(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowText('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** ImageScaling ****/
 
       get ImageScaling ():WAT_ImageScaling|undefined {
@@ -7126,7 +7175,7 @@ console.warn('file drop error',Signal)
     /**** actual rendering ****/
 
       return html`<img class="WAT Content ImageView"
-        src=${acceptableURL(this.Value,'')}
+        src=${this.Value || ''}
         style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
         onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
       />`
@@ -7158,6 +7207,23 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalText(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowText('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** ImageScaling ****/
 
       get ImageScaling ():WAT_ImageScaling|undefined {
@@ -7192,7 +7258,7 @@ console.warn('file drop error',Signal)
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
-      const DataURL = 'data:image/svg+xml;base64,' + btoa(acceptableText(this.Value,''))
+      const DataURL = 'data:image/svg+xml;base64,' + btoa(this.memoized.Value || '')
 
       const { ImageScaling,ImageAlignment } = this
 
@@ -7224,6 +7290,23 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalURL(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowText('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** PermissionsPolicy ****/
 
       get PermissionsPolicy ():WAT_Textline|undefined {
@@ -7288,10 +7371,10 @@ console.warn('file drop error',Signal)
     onRender(function (this:Indexable) {
       const {
         PermissionsPolicy,allowsFullscreen,SandboxPermissions,ReferrerPolicy
-      } = this
+      } = this.memoized
 
       return html`<iframe class="WAT Content WebView"
-        src=${acceptableURL(this.Value,'')}
+        src=${this.Value || ''}
         allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
         sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
       />`
@@ -7337,8 +7420,6 @@ console.warn('file drop error',Signal)
           this.rerender()
         }
       },
-
-
     } as Indexable)
 
   /**** Renderer ****/
@@ -7349,7 +7430,7 @@ console.warn('file drop error',Signal)
         this.on('click')(Event)
       }
 
-      const Label = this.Label
+      const Label = this.memoized.Label
 
       return html`<button class="WAT Content Button" style="
         line-height:${this.LineHeight || this.Height}px;
@@ -7640,6 +7721,21 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Value)
+      },
+
+      set Value (newValue:number|undefined) {
+        allowFiniteNumber('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
     /**** Maximum ****/
 
       get Maximum ():number|undefined {
@@ -7721,12 +7817,12 @@ console.warn('file drop error',Signal)
 
       get Stepping ():number|'any'|undefined {
         const Candidate = this.memoized.Stepping
-        return (Candidate === 'any' ? 'any' : acceptableOptionalNumber(Candidate))
+        return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0,Infinity, false))
       },
 
       set Stepping (newValue:number|'any'|undefined) {
         if (newValue !== 'any') {
-          allowNumber('step value',newValue)
+          allowNumberInRange('step value',newValue, 0,Infinity, false)
         }
         if (this.memoized.Stepping !== newValue) {
           this.memoized.Stepping = newValue
@@ -7766,8 +7862,6 @@ console.warn('file drop error',Signal)
           this.rerender()
         }
       },
-
-
     } as Indexable)
 
   /**** Renderer ****/
@@ -7869,7 +7963,7 @@ console.warn('file drop error',Signal)
     /**** Value ****/
 
       get Value ():string|undefined {
-        return acceptableTextline(this.memoized.Value,'')
+        return acceptableOptionalTextline(this.memoized.Value)
       },
 
       set Value (newValue:string|undefined) {
@@ -7985,8 +8079,6 @@ console.warn('file drop error',Signal)
           this.rerender()
         }
       },
-
-
     } as Indexable)
 
   /**** Renderer ****/
@@ -8050,6 +8142,422 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput
   )
 
+/**** NumberInput ****/
+
+  const WAT_NumberInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.NumberInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.NumberInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'number-input' },
+      { Name:'Placeholder',EditorType:'textline-input' },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'Minimum',    EditorType:'number-input' },
+      { Name:'Stepping',   EditorType:'number-input', Minimum:0 },
+      { Name:'Maximum',    EditorType:'number-input' },
+      { Name:'Suggestions',EditorType:'numberlist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Value)
+      },
+
+      set Value (newValue:number|undefined) {
+        allowFiniteNumber('value',newValue)
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Placeholder ****/
+
+      get Placeholder ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Placeholder)
+      },
+
+      set Placeholder (newValue:WAT_Textline|undefined) {
+        allowTextline('input placeholder',newValue)
+        if (this.memoized.Placeholder !== newValue) {
+          this.memoized.Placeholder = newValue
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Minimum ****/
+
+      get Minimum ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Minimum)
+      },
+
+      set Minimum (newValue:number|undefined) {
+        allowNumber('minimal value',newValue)
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Stepping ****/
+
+      get Stepping ():number|'any'|undefined {
+        const Candidate = this.memoized.Stepping
+        return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0,Infinity, false))
+      },
+
+      set Stepping (newValue:number|'any'|undefined) {
+        if (newValue !== 'any') {
+          allowNumberInRange('step value',newValue, 0,Infinity, false)
+        }
+        if (this.memoized.Stepping !== newValue) {
+          this.memoized.Stepping = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Maximum ****/
+
+      get Maximum ():number|undefined {
+        return acceptableOptionalNumber(this.memoized.Maximum)
+      },
+
+      set Maximum (newValue:number|undefined) {
+        allowNumber('maximal value',newValue)
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():number[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,ValueIsNumber
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:number[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,ValueIsNumber)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = parseFloat(Event.target.value)
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        Placeholder, readonly, Minimum,Stepping,Maximum, Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="number" class="WAT Content NumberInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
+        readOnly=${readonly} placeholder=${Placeholder}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.NumberInput', WAT_NumberInput
+  )
+
+/**** PhoneNumberInput ****/
+
+  const WAT_PhoneNumberInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.PhoneNumberInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.PhoneNumberInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',        EditorType:'textline-input' },
+      { Name:'Placeholder',  EditorType:'textline-input' },
+      { Name:'readonly',     EditorType:'checkbox' },
+      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
+      { Name:'Pattern',      EditorType:'textline-input' },
+      { Name:'SpellChecking',EditorType:'checkbox' },
+      { Name:'Suggestions',  EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalPhoneNumber(this.memoized.Value)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowPhoneNumber('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** Placeholder ****/
+
+      get Placeholder ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Placeholder)
+      },
+
+      set Placeholder (newValue:WAT_Textline|undefined) {
+        allowTextline('input placeholder',newValue)
+        if (this.memoized.Placeholder !== newValue) {
+          this.memoized.Placeholder = newValue
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** minLength ****/
+
+      get minLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.minLength)
+      },
+
+      set minLength (newValue:number|undefined) {
+        allowOrdinal('minimal input length',newValue)
+        if (this.memoized.minLength !== newValue) {
+          this.memoized.minLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** maxLength ****/
+
+      get maxLength ():number|undefined {
+        return acceptableOptionalOrdinal(this.memoized.maxLength)
+      },
+
+      set maxLength (newValue:number|undefined) {
+        allowOrdinal('maximal input length',newValue)
+        if (this.memoized.maxLength !== newValue) {
+          this.memoized.maxLength = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Pattern ****/
+
+      get Pattern ():WAT_Textline|undefined {
+        return acceptableOptionalTextline(this.memoized.Pattern)
+      },
+
+      set Pattern (newValue:WAT_Textline|undefined) {
+        allowTextline('input pattern',newValue)
+        if (this.memoized.Pattern !== newValue) {
+          this.memoized.Pattern = newValue
+          this.rerender()
+        }
+      },
+
+    /**** SpellChecking ****/
+
+      get SpellChecking ():boolean {
+        return acceptableBoolean(this.memoized.SpellChecking,false)
+      },
+
+      set SpellChecking (newValue:boolean) {
+        expectBoolean('spell check setting',newValue)
+        if (this.memoized.SpellChecking !== newValue) {
+          this.memoized.SpellChecking = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,ValueIsPhoneNumber
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,ValueIsPhoneNumber)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        Placeholder, readonly, minLength,maxLength, Pattern, SpellChecking,
+        Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="tel" class="WAT Content PhoneNumberInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern} spellcheck=${SpellChecking}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput
+  )
+
 /**** PasswordInput ****/
 
   const WAT_PasswordInput:WAT_BehaviorFunction = async (
@@ -8085,7 +8593,7 @@ console.warn('file drop error',Signal)
     /**** Value ****/
 
       get Value ():string|undefined {
-        return acceptableTextline(this.memoized.Value,'')
+        return acceptableOptionalTextline(this.memoized.Value)
       },
 
       set Value (newValue:string|undefined) {
@@ -8259,7 +8767,7 @@ console.warn('file drop error',Signal)
     /**** Value ****/
 
       get Value ():string|undefined {
-        return acceptableTextline(this.memoized.Value,'')
+        return acceptableOptionalTextline(this.memoized.Value)
       },
 
       set Value (newValue:string|undefined) {
@@ -8375,8 +8883,6 @@ console.warn('file drop error',Signal)
           this.rerender()
         }
       },
-
-
     } as Indexable)
 
   /**** Renderer ****/
