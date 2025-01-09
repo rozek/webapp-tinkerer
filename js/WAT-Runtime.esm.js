@@ -863,7 +863,7 @@ function ValueIsPropertyDescriptor(Value) {
         return false;
     }
     /**** validate editor-specific settings ****/
-    const { EditorType, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, StepValue, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+    const { EditorType, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
     switch (EditorType) {
         case 'checkbox':
             break;
@@ -892,7 +892,7 @@ function ValueIsPropertyDescriptor(Value) {
             if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
                 (minValue != null) && !ValueIsFiniteNumber(minValue) ||
                 (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
-                (StepValue != null) && !ValueIsNumberInRange(StepValue, 0, Infinity, false) && (StepValue !== 'any') ||
+                (Stepping != null) && !ValueIsNumberInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
                 (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsFiniteNumber)) {
                 return false;
             }
@@ -901,7 +901,7 @@ function ValueIsPropertyDescriptor(Value) {
             if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
                 (minValue != null) && !ValueIsInteger(minValue) ||
                 (maxValue != null) && !ValueIsInteger(maxValue) ||
-                (StepValue != null) && !ValueIsIntegerInRange(StepValue, 0, Infinity) && (StepValue !== 'any') ||
+                (Stepping != null) && !ValueIsIntegerInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
                 (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsInteger)) {
                 return false;
             }
@@ -951,7 +951,7 @@ function ValueIsPropertyDescriptor(Value) {
         case 'slider':
             if ((minValue != null) && !ValueIsFiniteNumber(minValue) ||
                 (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
-                (StepValue != null) && !ValueIsNumberInRange(StepValue, 0, Infinity, false) && (StepValue !== 'any') ||
+                (Stepping != null) && !ValueIsNumberInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
                 (Hashmarks != null) && !ValueIsListSatisfying(Hashmarks, HashmarkMatcher)) {
                 return false;
             }
@@ -987,7 +987,7 @@ function ValueIsPropertyDescriptor(Value) {
 function normalizedPropertyDescriptor(Value) {
     if (!ValueIsPropertyDescriptor(Value))
         throwError(`InvalidArgument: invalid property ${Value.Name == null ? '' : quoted('' + Value.Name)}`);
-    let { Name, Label, EditorType, readonly, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, StepValue, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+    let { Name, Label, EditorType, readonly, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
     if (Label == null) {
         Label = Name;
     }
@@ -1041,8 +1041,8 @@ function normalizedPropertyDescriptor(Value) {
             if (maxValue != null) {
                 Descriptor.maxValue = maxValue;
             }
-            if (StepValue != null) {
-                Descriptor.StepValue = StepValue;
+            if (Stepping != null) {
+                Descriptor.Stepping = Stepping;
             }
             if (Suggestions != null) {
                 Descriptor.Suggestions = Suggestions.slice();
@@ -1075,8 +1075,8 @@ function normalizedPropertyDescriptor(Value) {
             if (maxValue != null) {
                 Descriptor.maxValue = maxValue;
             }
-            if (StepValue != null) {
-                Descriptor.StepValue = StepValue;
+            if (Stepping != null) {
+                Descriptor.Stepping = Stepping;
             }
             if (Hashmarks != null) {
                 Descriptor.Hashmarks = Hashmarks.slice();
@@ -6475,6 +6475,137 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
+    /**** PasswordInput ****/
+    const WAT_PasswordInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.PasswordInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.PasswordInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', EditorType: 'textline-input' },
+            { Name: 'Placeholder', EditorType: 'textline-input' },
+            { Name: 'readonly', EditorType: 'checkbox' },
+            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
+            { Name: 'Pattern', EditorType: 'textline-input' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableTextline(this.memoized.Value, '');
+            },
+            set Value(newValue) {
+                allowTextline('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('value-change')();
+                    this.rerender();
+                }
+            },
+            /**** Placeholder ****/
+            get Placeholder() {
+                return acceptableOptionalTextline(this.memoized.Placeholder);
+            },
+            set Placeholder(newValue) {
+                allowTextline('input placeholder', newValue);
+                if (this.memoized.Placeholder !== newValue) {
+                    this.memoized.Placeholder = newValue;
+                    this.rerender();
+                }
+            },
+            /**** readonly ****/
+            get readonly() {
+                return acceptableBoolean(this.memoized.readonly, false);
+            },
+            set readonly(newValue) {
+                expectBoolean('readonly setting', newValue);
+                if (this.memoized.readonly !== newValue) {
+                    this.memoized.readonly = newValue;
+                    this.rerender();
+                }
+            },
+            /**** minLength ****/
+            get minLength() {
+                return acceptableOptionalOrdinal(this.memoized.minLength);
+            },
+            set minLength(newValue) {
+                allowOrdinal('minimal input length', newValue);
+                if (this.memoized.minLength !== newValue) {
+                    this.memoized.minLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** maxLength ****/
+            get maxLength() {
+                return acceptableOptionalOrdinal(this.memoized.maxLength);
+            },
+            set maxLength(newValue) {
+                allowOrdinal('maximal input length', newValue);
+                if (this.memoized.maxLength !== newValue) {
+                    this.memoized.maxLength = newValue;
+                    this.rerender();
+                }
+            },
+            /**** Pattern ****/
+            get Pattern() {
+                return acceptableOptionalTextline(this.memoized.Pattern);
+            },
+            set Pattern(newValue) {
+                allowTextline('input pattern', newValue);
+                if (this.memoized.Pattern !== newValue) {
+                    this.memoized.Pattern = newValue;
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            /**** handle external changes ****/
+            let ValueToShow = Value || '';
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
+            }
+            else {
+                this._shownValue = ValueToShow;
+            }
+            const _onInput = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this._shownValue = this.Value = Event.target.value;
+                this.on('input')(Event);
+            };
+            const _onBlur = (Event) => {
+                this.rerender();
+                this.on('blur')(Event);
+            };
+            /**** process any other parameters ****/
+            const { Placeholder, readonly, minLength, maxLength, Pattern } = this;
+            /**** actual rendering ****/
+            return html `<input type="password" class="WAT Content PasswordInput"
+        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
+        readOnly=${readonly} placeholder=${Placeholder}
+        pattern=${Pattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
