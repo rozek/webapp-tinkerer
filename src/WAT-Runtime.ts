@@ -1381,7 +1381,7 @@
 
 // @ts-ignore TS7053 allow indexing
     Applet._BehaviorPool[Category][normalizedName] = {
-      Category, Name, activeScript, compiledScript
+      Category, Name, activeScript, compiledScript, isNew:true
     }
   }
 
@@ -7774,6 +7774,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
   /**** custom Properties ****/
 
     my.configurableProperties = [
@@ -7915,7 +7917,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="range" class="WAT Content Slider"
+      return html`<input type="range" class="WAT Content Slider" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
         list=${HashmarkId}
@@ -7933,6 +7935,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.TextlineInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8129,7 +8133,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="text" class="WAT Content TextlineInput"
+      return html`<input type="text" class="WAT Content TextlineInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         pattern=${Pattern} spellcheck=${SpellChecking}
@@ -8149,6 +8153,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.PasswordInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8302,7 +8308,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="password" class="WAT Content PasswordInput"
+      return html`<input type="password" class="WAT Content PasswordInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         pattern=${Pattern}
@@ -8321,6 +8327,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.NumberInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8502,7 +8510,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="number" class="WAT Content NumberInput"
+      return html`<input type="number" class="WAT Content NumberInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
         readOnly=${readonly} placeholder=${Placeholder}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -8521,6 +8529,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.PhoneNumberInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8717,7 +8727,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="tel" class="WAT Content PhoneNumberInput"
+      return html`<input type="tel" class="WAT Content PhoneNumberInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         pattern=${Pattern} spellcheck=${SpellChecking}
@@ -8737,6 +8747,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.EMailAddressInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8933,7 +8945,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="email" class="WAT Content EMailAddressInput"
+      return html`<input type="email" class="WAT Content EMailAddressInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         pattern=${Pattern} spellcheck=${SpellChecking}
@@ -8953,6 +8965,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.URLInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9149,7 +9163,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="url" class="WAT Content URLInput"
+      return html`<input type="url" class="WAT Content URLInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         pattern=${Pattern} spellcheck=${SpellChecking}
@@ -9169,6 +9183,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.TimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9338,7 +9354,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="time" class="WAT Content TimeInput"
+      return html`<input type="time" class="WAT Content TimeInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
         readOnly=${readonly} pattern=${WAT_TimePattern}
@@ -9358,6 +9374,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.DateTimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9527,7 +9545,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="datetime-local" class="WAT Content DateTimeInput"
+      return html`<input type="datetime-local" class="WAT Content DateTimeInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
         readOnly=${readonly} pattern=${WAT_DateTimePattern}
@@ -9547,6 +9565,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.DateInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9702,7 +9722,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="datetime-local" class="WAT Content DateInput"
+      return html`<input type="datetime-local" class="WAT Content DateInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WAT_DatePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -9721,6 +9741,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.WeekInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9876,7 +9898,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="datetime-local" class="WAT Content WeekInput"
+      return html`<input type="datetime-local" class="WAT Content WeekInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WAT_WeekPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -9895,6 +9917,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.MonthInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -10050,7 +10074,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="datetime-local" class="WAT Content MonthInput"
+      return html`<input type="datetime-local" class="WAT Content MonthInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WAT_MonthPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -10069,6 +10093,8 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
+    my._InputElement = createRef()
+
     installStylesheet(`
       .WAT.Widget > .WAT.SearchInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -10265,7 +10291,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="search" class="WAT Content SearchInput"
+      return html`<input type="search" class="WAT Content SearchInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         pattern=${Pattern} spellcheck=${SpellChecking}
