@@ -9186,7 +9186,7 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'textline-input' },
+      { Name:'Value',      EditorType:'time-input', Stepping:1 },
       { Name:'readonly',   EditorType:'checkbox' },
       { Name:'withSeconds',EditorType:'checkbox' },
       { Name:'Minimum',    EditorType:'time-input', Stepping:1 },
@@ -9338,7 +9338,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<input type="text" class="WAT Content TextlineInput"
+      return html`<input type="time" class="WAT Content TimeInput"
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         step=${withSeconds ? 1 : 60}
         readOnly=${readonly} pattern=${WAT_TimePattern}
@@ -9350,6 +9350,717 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput
+  )
+
+/**** DateTimeInput ****/
+
+  const WAT_DateTimeInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.DateTimeInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.DateTimeInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'date-time-input', Stepping:1 },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'withSeconds',EditorType:'checkbox' },
+      { Name:'Minimum',    EditorType:'date-time-input', Stepping:1 },
+      { Name:'Maximum',    EditorType:'date-time-input', Stepping:1 },
+      { Name:'Suggestions',EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Value,WAT_DateTimeRegExp)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowStringMatching('value',newValue,WAT_DateTimeRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** withSeconds ****/
+
+      get withSeconds ():boolean {
+        return acceptableBoolean(this.memoized.withSeconds,false)
+      },
+
+      set withSeconds (newValue:boolean) {
+        expectBoolean('granularity setting',newValue)
+        if (this.memoized.withSeconds !== newValue) {
+          this.memoized.withSeconds = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Minimum ****/
+
+      get Minimum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateTimeRegExp)
+      },
+
+      set Minimum (newValue:string|undefined) {
+        allowStringMatching('earliest point in time',newValue,WAT_DateTimeRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Maximum ****/
+
+      get Maximum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateTimeRegExp)
+      },
+
+      set Maximum (newValue:string|undefined) {
+        allowStringMatching('latest point in time',newValue,WAT_DateTimeRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,WAT_DateTimeMatcher
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,WAT_DateTimeMatcher)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        readonly, withSeconds, Minimum,Maximum, Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="datetime-local" class="WAT Content DateTimeInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        step=${withSeconds ? 1 : 60}
+        readOnly=${readonly} pattern=${WAT_DateTimePattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.DateTimeInput', WAT_DateTimeInput
+  )
+
+/**** DateInput ****/
+
+  const WAT_DateInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.DateInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.DateInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'date-input' },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'withSeconds',EditorType:'checkbox' },
+      { Name:'Minimum',    EditorType:'date-input' },
+      { Name:'Maximum',    EditorType:'date-input' },
+      { Name:'Suggestions',EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Value,WAT_DateRegExp)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowStringMatching('value',newValue,WAT_DateRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Minimum ****/
+
+      get Minimum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateRegExp)
+      },
+
+      set Minimum (newValue:string|undefined) {
+        allowStringMatching('earliest date',newValue,WAT_DateRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Maximum ****/
+
+      get Maximum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateRegExp)
+      },
+
+      set Maximum (newValue:string|undefined) {
+        allowStringMatching('latest date',newValue,WAT_DateRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,WAT_DateMatcher
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,WAT_DateMatcher)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        readonly, withSeconds, Minimum,Maximum, Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="datetime-local" class="WAT Content DateInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        readOnly=${readonly} pattern=${WAT_DatePattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.DateInput', WAT_DateInput
+  )
+
+/**** WeekInput ****/
+
+  const WAT_WeekInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.WeekInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.WeekInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'week-input' },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'withSeconds',EditorType:'checkbox' },
+      { Name:'Minimum',    EditorType:'week-input' },
+      { Name:'Maximum',    EditorType:'week-input' },
+      { Name:'Suggestions',EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Value,WAT_WeekRegExp)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowStringMatching('value',newValue,WAT_WeekRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Minimum ****/
+
+      get Minimum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_WeekRegExp)
+      },
+
+      set Minimum (newValue:string|undefined) {
+        allowStringMatching('earliest week',newValue,WAT_WeekRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Maximum ****/
+
+      get Maximum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_WeekRegExp)
+      },
+
+      set Maximum (newValue:string|undefined) {
+        allowStringMatching('latest week',newValue,WAT_WeekRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,WAT_WeekMatcher
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,WAT_WeekMatcher)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        readonly, withSeconds, Minimum,Maximum, Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="datetime-local" class="WAT Content WeekInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        readOnly=${readonly} pattern=${WAT_WeekPattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.WeekInput', WAT_WeekInput
+  )
+
+/**** MonthInput ****/
+
+  const WAT_MonthInput:WAT_BehaviorFunction = async (
+    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.MonthInput {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff;
+        padding:0px 2px 0px 2px;
+      }
+
+      .WAT.Widget > .WAT.MonthInput:read-only {
+        border:solid 1px #DDDDDD; border-radius:2px;
+        background:#F0F0F0;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',      EditorType:'month-input' },
+      { Name:'readonly',   EditorType:'checkbox' },
+      { Name:'withSeconds',EditorType:'checkbox' },
+      { Name:'Minimum',    EditorType:'month-input' },
+      { Name:'Maximum',    EditorType:'month-input' },
+      { Name:'Suggestions',EditorType:'linelist-input' },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Value,WAT_MonthRegExp)
+      },
+
+      set Value (newValue:string|undefined) {
+        allowStringMatching('value',newValue,WAT_MonthRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('value-change')()
+          this.rerender()
+        }
+      },
+
+    /**** readonly ****/
+
+      get readonly ():boolean {
+        return acceptableBoolean(this.memoized.readonly,false)
+      },
+
+      set readonly (newValue:boolean) {
+        expectBoolean('readonly setting',newValue)
+        if (this.memoized.readonly !== newValue) {
+          this.memoized.readonly = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Minimum ****/
+
+      get Minimum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_MonthRegExp)
+      },
+
+      set Minimum (newValue:string|undefined) {
+        allowStringMatching('earliest month',newValue,WAT_MonthRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Minimum !== newValue) {
+          this.memoized.Minimum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Maximum ****/
+
+      get Maximum ():string|undefined {
+        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_MonthRegExp)
+      },
+
+      set Maximum (newValue:string|undefined) {
+        allowStringMatching('latest month',newValue,WAT_MonthRegExp)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Maximum !== newValue) {
+          this.memoized.Maximum = newValue
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableOptionalListSatisfying(
+          this.memoized.Suggestions,WAT_MonthMatcher
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,WAT_MonthMatcher)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? newValue : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value, Enabling } = this
+
+    /**** handle external changes ****/
+
+      let ValueToShow:string = Value || ''
+      if (
+        (this._InputElement.current != null) &&
+        (document.activeElement === this._InputElement.current)
+      ) {
+        ValueToShow = this._shownValue
+      } else {
+        this._shownValue = ValueToShow
+      }
+
+      const _onInput = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+
+        this._shownValue = this.Value = Event.target.value
+        this.on('input')(Event)
+      }
+
+      const _onBlur = (Event:any) => {
+        this.rerender()
+        this.on('blur')(Event)
+      }
+
+    /**** process any other parameters ****/
+
+      const {
+        readonly, withSeconds, Minimum,Maximum, Suggestions
+      } = this
+
+      let SuggestionList:any = '', SuggestionId
+      if ((Suggestions != null) && (Suggestions.length > 0)) {
+        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+
+        SuggestionList = html`<datalist id=${SuggestionId}>
+          ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
+        </datalist>`
+      }
+
+    /**** actual rendering ****/
+
+      return html`<input type="datetime-local" class="WAT Content MonthInput"
+        value=${ValueToShow} min=${Minimum} max=${Maximum}
+        readOnly=${readonly} pattern=${WAT_MonthPattern}
+        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+        list=${SuggestionId}
+      />${SuggestionList}`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput
   )
 
 /**** SearchInput ****/
