@@ -2259,7 +2259,6 @@ function WAD_PropertyConfigurator(PropSet) {
         case 'html-input':
         case 'css-input':
         case 'javascript-input':
-        case 'json-input':
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
@@ -2271,6 +2270,25 @@ function WAD_PropertyConfigurator(PropSet) {
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
             onInput=${(Event) => onInput(Event.target.value)}
+          />
+        `;
+        case 'json-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+          </>
+
+          <${WAD_TextInput} style="padding-top:4px; min-height:60px"
+            enabled=${Enabling} readonly=${readonly}
+            Value=${JSON.stringify(Value)} Placeholder=${Placeholder}
+            minLength=${minLength} maxLength=${maxLength}
+            Resizability=${Resizability} LineWrapping=${LineWrapping}
+            onInput=${(Event) => {
+                try {
+                    onInput(JSON.parse(Event.target.value));
+                }
+                catch (Signal) { /* nop */ }
+            }}
           />
         `;
         case 'linelist-input':
@@ -2288,6 +2306,20 @@ function WAD_PropertyConfigurator(PropSet) {
           />
         `;
         case 'numberlist-input':
+            return html `
+          <${WAD_horizontally}>
+            <${WAD_Label}>${Label}</>
+          </>
+
+          <${WAD_TextInput} style="padding-top:4px; min-height:60px"
+            enabled=${Enabling} readonly=${readonly}
+            Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
+            minLength=${minLength} maxLength=${maxLength}
+            Resizability=${Resizability} LineWrapping=${LineWrapping}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/, '\n').split('\n').map((Line) => parseFloat(Line)))}
+          />
+        `;
+        case 'integerlist-input':
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
