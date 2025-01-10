@@ -746,13 +746,25 @@ export function acceptableColor(Value, Default) {
 export function acceptableOptionalColor(Value) {
     return (ValueIsColor(Value) ? Value : undefined);
 }
+/**** acceptableEMailAddress ****/
+export function acceptableEMailAddress(Value, Default) {
+    return (ValueIsEMailAddress(Value) ? Value : Default);
+}
 /**** acceptableOptionalEMailAddress ****/
 export function acceptableOptionalEMailAddress(Value) {
     return (ValueIsEMailAddress(Value) ? Value : undefined);
 }
+/**** acceptablePhoneNumber ****/
+export function acceptablePhoneNumber(Value, Default) {
+    return ( /*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : Default);
+}
 /**** acceptableOptionalPhoneNumber ****/
 export function acceptableOptionalPhoneNumber(Value) {
     return ( /*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : undefined);
+}
+/**** acceptableURL ****/
+export function acceptableURL(Value, Default) {
+    return (ValueIsURL(Value) ? Value : Default);
 }
 /**** acceptableOptionalURL ****/
 export function acceptableOptionalURL(Value) {
@@ -9879,6 +9891,28 @@ export const newId = customAlphabet(nolookalikesSafe, 21);
 const global = (new Function('return this'))();
 global.WAT = {
     Object_assign,
+    acceptableBoolean, acceptableOptionalBoolean,
+    acceptableNumber, acceptableOptionalNumber,
+    acceptableNumberInRange, acceptableOptionalNumberInRange,
+    acceptableInteger, acceptableOptionalInteger,
+    acceptableIntegerInRange, acceptableOptionalIntegerInRange,
+    acceptableOrdinal, acceptableOptionalOrdinal,
+    acceptableString, acceptableOptionalString,
+    acceptableNonEmptyString, acceptableOptionalNonEmptyString,
+    acceptableStringMatching, acceptableOptionalStringMatching,
+    acceptableText, acceptableOptionalText,
+    acceptableTextline, acceptableOptionalTextline,
+    acceptableFunction, acceptableOptionalFunction,
+    acceptableList, acceptableOptionalList,
+    acceptableListSatisfying, acceptableOptionalListSatisfying,
+    acceptableOneOf, acceptableOptionalOneOf,
+    acceptableColor, acceptableOptionalColor,
+    acceptableEMailAddress, acceptableOptionalEMailAddress,
+    acceptablePhoneNumber, acceptableOptionalPhoneNumber,
+    acceptableURL, acceptableOptionalURL,
+    acceptableBehavior, acceptableOptionalBehavior,
+    acceptableName, acceptableOptionalName,
+    acceptablePath, acceptableOptionalPath,
     MarkdownAsText, MarkdownAsHTML
 };
 global.JIL = JIL;
