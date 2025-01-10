@@ -8269,6 +8269,7 @@ function startup() {
         AppletStore = localforage.createInstance({
             name: 'WebApp Tinkerer'
         });
+        collectInternalNames();
         startWAT();
     });
 }
