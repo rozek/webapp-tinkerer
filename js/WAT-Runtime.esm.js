@@ -6,7 +6,7 @@
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, expectValue, allowBoolean, expectBoolean, allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowStringMatching, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowEMailAddress, /*allowPhoneNumber,*/ allowURL, HexColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 const allowPhoneNumber = allowTextline; // *C* should be implemented
@@ -92,6 +92,27 @@ export function throwReadOnlyError(Name) {
 //------------------------------------------------------------------------------
 //--                 Classification and Validation Functions                  --
 //------------------------------------------------------------------------------
+/**** allowValue ****/
+export function allowValue(Description, Value, Validator) {
+    if (Value == null) {
+        return undefined;
+    }
+    else {
+        return expectValue(Description, Value, Validator);
+    }
+}
+/**** expectValue ****/
+export function expectValue(Description, Value, Validator) {
+    if (Value == null) {
+        throwError(`MissingArgument: no ${Description} given`);
+    }
+    if ((Validator == null) || (Validator(Value) === true)) {
+        return Value;
+    }
+    else {
+        throwError(`InvalidArgument: the given ${Description} is invalid`);
+    }
+}
 /**** ValueIsIdentifier ****/
 const WAT_IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i;
 export function ValueIsIdentifier(Value) {
@@ -332,6 +353,116 @@ export function ValueIsSerializableObject(Value) {
 /**** allow/expect[ed]SerializableObject ****/
 export const allowSerializableObject = ValidatorForClassifier(ValueIsSerializableObject, acceptNil, 'serializable object'), allowedSerializableObject = allowSerializableObject;
 export const expectSerializableObject = ValidatorForClassifier(ValueIsSerializableObject, rejectNil, 'serializable object'), expectedSerializableObject = expectSerializableObject;
+/**** ValueIsJSON ****/
+export function ValueIsJSON(Value) {
+    try {
+        return ValueIsText(Value) && (JSON.parse(Value) !== undefined); // tricky!
+    }
+    catch (Signal) {
+        return false;
+    }
+}
+/**** allow/expect[ed]JSON ****/
+export const allowJSON = ValidatorForClassifier(ValueIsJSON, acceptNil, 'JSON string'), allowedJSON = allowJSON;
+export const expectJSON = ValidatorForClassifier(ValueIsJSON, rejectNil, 'JSON string'), expectedJSON = expectJSON;
+/**** ValueIsLineList ****/
+export function ValueIsLineList(Value, Pattern) {
+    const Validator = (Pattern == null
+        ? ValueIsTextline
+        : (Value) => ValueIsStringMatching(Value, Pattern));
+    return ValueIsListSatisfying(Value, Validator);
+}
+/**** allow/expect[ed]LineList ****/
+export function allowLineList(Description, Argument, Pattern) {
+    return (Argument == null
+        ? Argument
+        : expectedLineList(Description, Argument, Pattern));
+}
+export const allowedLineList = allowLineList;
+export function expectLineList(Description, Argument, Pattern) {
+    if (Argument == null) {
+        throwError(`MissingArgument: no ${escaped(Description)} given`);
+    }
+    else {
+        const Matcher = (Pattern == null ? undefined : new RegExp(Pattern));
+        const Validator = (Pattern == null
+            ? ValueIsTextline
+            : (Value) => ValueIsStringMatching(Value, Matcher));
+        if (ValueIsListSatisfying(Argument, Validator)) {
+            return Argument;
+        }
+        else {
+            throwError(`InvalidArgument: the given value is no ${escaped(Description)}`);
+        }
+    }
+}
+export const expectedLineList = expectLineList;
+/**** ValueIsNumberList ****/
+export function ValueIsNumberList(Value, minValue, maxValue, withMin, withMax) {
+    const Validator = ((minValue == null) && (maxValue == null)
+        ? ValueIsNumber
+        : (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax));
+    return ValueIsListSatisfying(Value, Validator);
+}
+/**** allow/expect[ed]NumberList ****/
+export function allowNumberList(Description, Argument, minValue, maxValue, withMin, withMax) {
+    return (Argument == null
+        ? Argument
+        : expectedNumberList(Description, Argument, minValue, maxValue, withMin, withMax));
+}
+export const allowedNumberList = allowNumberList;
+export function expectNumberList(Description, Argument, minValue, maxValue, withMin, withMax) {
+    if (Argument == null) {
+        throwError(`MissingArgument: no ${escaped(Description)} given`);
+    }
+    else {
+        const Validator = ((minValue == null) && (maxValue == null)
+            ? ValueIsNumber
+            : (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax));
+        if (ValueIsListSatisfying(Argument, Validator)) {
+            return Argument;
+        }
+        else {
+            throwError(`InvalidArgument: the given value is no ${escaped(Description)}`);
+        }
+    }
+}
+export const expectedNumberList = expectNumberList;
+/**** ValueIsIntegerList ****/
+export function ValueIsIntegerList(Value, minValue, maxValue) {
+    const Validator = ((minValue == null) && (maxValue == null)
+        ? ValueIsInteger
+        : (Value) => ValueIsIntegerInRange(Value, minValue, maxValue));
+    return ValueIsListSatisfying(Value, Validator);
+}
+/**** allow/expect[ed]IntegerList ****/
+export function allowIntegerList(Description, Argument, minValue, maxValue) {
+    return (Argument == null
+        ? Argument
+        : expectedIntegerList(Description, Argument, minValue, maxValue));
+}
+export const allowedIntegerList = allowIntegerList;
+export function expectIntegerList(Description, Argument, minValue, maxValue) {
+    if (Argument == null) {
+        throwError(`MissingArgument: no ${escaped(Description)} given`);
+    }
+    else {
+        const Validator = ((minValue == null) && (maxValue == null)
+            ? ValueIsInteger
+            : (Value) => ValueIsIntegerInRange(Value, minValue, maxValue));
+        if (ValueIsListSatisfying(Argument, Validator)) {
+            return Argument;
+        }
+        else {
+            throwError(`InvalidArgument: the given value is no ${escaped(Description)}`);
+        }
+    }
+}
+export const expectedIntegerList = expectIntegerList;
+/**** acceptableValue ****/
+export function acceptableValue(Value, Validator, Default) {
+    return (Validator(Value) === true ? Value : Default);
+}
 //------------------------------------------------------------------------------
 //--                           Stylesheet Handling                            --
 //------------------------------------------------------------------------------
@@ -610,191 +741,6 @@ function uninstallStylesheetForBehavior(Applet, Category, Behavior) {
     }
 }
 //------------------------------------------------------------------------------
-//--                               Acceptables                                --
-//------------------------------------------------------------------------------
-/**** acceptableBoolean ****/
-export function acceptableBoolean(Value, Default) {
-    return (ValueIsBoolean(Value) ? Value : Default);
-}
-/**** acceptableOptionalBoolean ****/
-export function acceptableOptionalBoolean(Value) {
-    return (ValueIsBoolean(Value) ? Value : undefined);
-}
-/**** acceptableNumber ****/
-export function acceptableNumber(Value, Default) {
-    return (ValueIsNumber(Value) ? Value : Default);
-}
-/**** acceptableOptionalNumber ****/
-export function acceptableOptionalNumber(Value) {
-    return (ValueIsNumber(Value) ? Value : undefined);
-}
-/**** acceptableNumberInRange ****/
-export function acceptableNumberInRange(Value, Default, minValue = -Infinity, maxValue = Infinity, withMin = false, withMax = false) {
-    return (ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax) ? Value : Default);
-}
-/**** acceptableOptionalNumberInRange ****/
-export function acceptableOptionalNumberInRange(Value, minValue = -Infinity, maxValue = Infinity, withMin = false, withMax = false) {
-    return (ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax)
-        ? Value
-        : undefined);
-}
-/**** acceptableInteger ****/
-export function acceptableInteger(Value, Default) {
-    return (ValueIsInteger(Value) ? Value : Default);
-}
-/**** acceptableOptionalInteger ****/
-export function acceptableOptionalInteger(Value) {
-    return (ValueIsInteger(Value) ? Value : undefined);
-}
-/**** acceptableIntegerInRange ****/
-export function acceptableIntegerInRange(Value, Default, minValue = -Infinity, maxValue = Infinity) {
-    return (ValueIsIntegerInRange(Value, minValue, maxValue) ? Value : Default);
-}
-/**** acceptableOptionalIntegerInRange ****/
-export function acceptableOptionalIntegerInRange(Value, minValue = -Infinity, maxValue = Infinity) {
-    return (ValueIsIntegerInRange(Value, minValue, maxValue) ? Value : undefined);
-}
-/**** acceptableOrdinal ****/
-export function acceptableOrdinal(Value, Default) {
-    return (ValueIsOrdinal(Value) ? Value : Default);
-}
-/**** acceptableOptionalOrdinal ****/
-export function acceptableOptionalOrdinal(Value) {
-    return (ValueIsOrdinal(Value) ? Value : undefined);
-}
-/**** acceptableString ****/
-export function acceptableString(Value, Default) {
-    return (ValueIsString(Value) ? Value : Default);
-}
-/**** acceptableOptionalString ****/
-export function acceptableOptionalString(Value) {
-    return (ValueIsString(Value) ? Value : undefined);
-}
-/**** acceptableNonEmptyString ****/
-export function acceptableNonEmptyString(Value, Default) {
-    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : Default);
-}
-/**** acceptableOptionalNonEmptyString ****/
-export function acceptableOptionalNonEmptyString(Value) {
-    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : undefined);
-}
-/**** acceptableStringMatching ****/
-export function acceptableStringMatching(Value, Default, Pattern) {
-    return (ValueIsStringMatching(Value, Pattern) ? Value : Default);
-}
-/**** acceptableOptionalStringMatching ****/
-export function acceptableOptionalStringMatching(Value, Pattern) {
-    return (ValueIsStringMatching(Value, Pattern) ? Value : undefined);
-}
-/**** acceptableText ****/
-const noCtrlCharsButCRLFTABPattern = /^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
-export function acceptableText(Value, Default) {
-    return (ValueIsStringMatching(Value, noCtrlCharsButCRLFTABPattern) ? Value : Default);
-}
-/**** acceptableOptionalText ****/
-export function acceptableOptionalText(Value) {
-    return (ValueIsText(Value) ? Value : undefined);
-}
-/**** acceptableTextline ****/
-export function acceptableTextline(Value, Default) {
-    return (ValueIsTextline(Value) ? Value : Default).replace(/[\f\r\n\v\u0085\u2028\u2029].*$/, '...');
-}
-/**** acceptableOptionalTextline ****/
-export function acceptableOptionalTextline(Value) {
-    const Result = ValueIsTextline(Value) ? Value : undefined;
-    return (Result == null
-        ? undefined
-        : Result.replace(/[\f\r\n\v\u0085\u2028\u2029].*$/, '...'));
-}
-/**** acceptableFunction ****/
-export function acceptableFunction(Value, Default) {
-    return (ValueIsFunction(Value) ? Value : Default);
-}
-/**** acceptableOptionalFunction ****/
-export function acceptableOptionalFunction(Value) {
-    return (ValueIsFunction(Value) ? Value : undefined);
-}
-/**** acceptableList ****/
-export function acceptableList(Value, Default) {
-    return (ValueIsList(Value) ? Value : Default);
-}
-/**** acceptableOptionalList ****/
-export function acceptableOptionalList(Value) {
-    return (ValueIsList(Value) ? Value : undefined);
-}
-/**** acceptableListSatisfying ****/
-export function acceptableListSatisfying(Value, Default, Matcher) {
-    return (ValueIsListSatisfying(Value, Matcher) ? Value : Default);
-}
-/**** acceptableOptionalListSatisfying ****/
-export function acceptableOptionalListSatisfying(Value, Matcher) {
-    return (ValueIsListSatisfying(Value, Matcher) ? Value : undefined);
-}
-/**** acceptableOneOf ****/
-export function acceptableOneOf(Value, Default, ValueList) {
-    return (ValueIsOneOf(Value, ValueList) ? Value : Default);
-}
-/**** acceptableOptionalOneOf ****/
-export function acceptableOptionalOneOf(Value, ValueList) {
-    return (ValueIsOneOf(Value, ValueList) ? Value : undefined);
-}
-/**** acceptableColor ****/
-export function acceptableColor(Value, Default) {
-    return (ValueIsColor(Value) ? Value : Default);
-}
-/**** acceptableOptionalColor ****/
-export function acceptableOptionalColor(Value) {
-    return (ValueIsColor(Value) ? Value : undefined);
-}
-/**** acceptableEMailAddress ****/
-export function acceptableEMailAddress(Value, Default) {
-    return (ValueIsEMailAddress(Value) ? Value : Default);
-}
-/**** acceptableOptionalEMailAddress ****/
-export function acceptableOptionalEMailAddress(Value) {
-    return (ValueIsEMailAddress(Value) ? Value : undefined);
-}
-/**** acceptablePhoneNumber ****/
-export function acceptablePhoneNumber(Value, Default) {
-    return ( /*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : Default);
-}
-/**** acceptableOptionalPhoneNumber ****/
-export function acceptableOptionalPhoneNumber(Value) {
-    return ( /*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : undefined);
-}
-/**** acceptableURL ****/
-export function acceptableURL(Value, Default) {
-    return (ValueIsURL(Value) ? Value : Default);
-}
-/**** acceptableOptionalURL ****/
-export function acceptableOptionalURL(Value) {
-    return (ValueIsURL(Value) ? Value : undefined);
-}
-/**** acceptableBehavior ****/
-export function acceptableBehavior(Value, Default) {
-    return (ValueIsBehavior(Value) ? Value : Default);
-}
-/**** acceptableOptionalBehavior ****/
-export function acceptableOptionalBehavior(Value) {
-    return (ValueIsBehavior(Value) ? Value : undefined);
-}
-/**** acceptableName ****/
-export function acceptableName(Value, Default) {
-    return (ValueIsName(Value) ? Value : Default);
-}
-/**** acceptableOptionalName ****/
-export function acceptableOptionalName(Value) {
-    return (ValueIsName(Value) ? Value : undefined);
-}
-/**** acceptablePath ****/
-export function acceptablePath(Value, Default) {
-    return (ValueIsPath(Value) ? Value : Default);
-}
-/**** acceptableOptionalPath ****/
-export function acceptableOptionalPath(Value) {
-    return (ValueIsPath(Value) ? Value : undefined);
-}
-//------------------------------------------------------------------------------
 //--                             Behavior Support                             --
 //------------------------------------------------------------------------------
 /**** BehaviorIsIntrinsic ****/
@@ -851,9 +797,15 @@ export const WAT_PropertyEditorTypes = [
     'text-input', 'html-input', 'css-input', 'javascript-input', 'json-input',
     'linelist-input', 'numberlist-input'
 ];
+export const WAT_PropertyContainerTypes = ['none', 'observed', 'memoized'];
 /**** forbiddenPropertyNames ****/
 const forbiddenPropertyNames = Object.create(null);
 function collectInternalNames() {
+    Object.assign(forbiddenPropertyNames, {
+        mount: true, unmount: true, render: true, // intrinsic callback names
+        input: true, click: true, dblclick: true,
+        drop: true
+    });
     // @ts-ignore TS2345 allow abstract class as argument
     collectInternalNamesFrom(WAT_Visual);
     collectInternalNamesFrom(WAT_Applet);
@@ -881,7 +833,10 @@ function ValueIsPropertyDescriptor(Value) {
         (Value.Label != null) && !ValueIsTextline(Value.Label) ||
         (Value.EditorType == null) ||
         !ValueIsOneOf(Value.EditorType, WAT_PropertyEditorTypes) ||
-        (Value.readonly != null) && !ValueIsBoolean(Value.readonly)) {
+        (Value.AccessorsFor != null) && !ValueIsOneOf(Value.AccessorsFor, WAT_PropertyContainerTypes) ||
+        (Value.Validator != null) && !ValueIsFunction(Value.Validator) ||
+        (Value.readonly != null) && !ValueIsBoolean(Value.readonly) ||
+        (Value.withCallback != null) && !ValueIsBoolean(Value.withCallback)) {
         return false;
     }
     /**** validate editor-specific settings ****/
@@ -911,20 +866,12 @@ function ValueIsPropertyDescriptor(Value) {
             }
             break;
         case 'number-input':
+        case 'integer-input':
             if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
                 (minValue != null) && !ValueIsFiniteNumber(minValue) ||
                 (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
                 (Stepping != null) && !ValueIsNumberInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
                 (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsFiniteNumber)) {
-                return false;
-            }
-            break;
-        case 'integer-input':
-            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
-                (minValue != null) && !ValueIsInteger(minValue) ||
-                (maxValue != null) && !ValueIsInteger(maxValue) ||
-                (Stepping != null) && !ValueIsIntegerInRange(Stepping, 0, Infinity) && (Stepping !== 'any') ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsInteger)) {
                 return false;
             }
             break;
@@ -994,6 +941,7 @@ function ValueIsPropertyDescriptor(Value) {
         case 'json-input':
         case 'linelist-input':
         case 'numberlist-input':
+        case 'integerlist-input':
             if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
                 (minLength != null) && !ValueIsOrdinal(minLength) ||
                 (maxLength != null) && !ValueIsOrdinal(maxLength) ||
@@ -1009,13 +957,27 @@ function ValueIsPropertyDescriptor(Value) {
 function normalizedPropertyDescriptor(Value) {
     if (!ValueIsPropertyDescriptor(Value))
         throwError(`InvalidArgument: invalid property ${Value.Name == null ? '' : quoted('' + Value.Name)}`);
-    let { Name, Label, EditorType, readonly, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+    let { Name, Label, EditorType, readonly, Default, AccessorsFor, withCallback, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, withMin, withMax, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
     if (Label == null) {
         Label = Name;
     }
     let Descriptor = { Name, Label, EditorType };
     if (readonly != null) {
         Descriptor.readonly = readonly;
+    }
+    if (withCallback != null) {
+        Descriptor.withCallback = withCallback;
+    }
+    if (Default != null) {
+        Descriptor.Default = Default;
+    }
+    if (AccessorsFor == null) {
+        Descriptor.AccessorsFor = 'memoized';
+    }
+    else {
+        if (AccessorsFor !== 'none') {
+            Descriptor.AccessorsFor = AccessorsFor;
+        }
     }
     switch (Value.EditorType) {
         case 'checkbox':
@@ -1130,6 +1092,7 @@ function normalizedPropertyDescriptor(Value) {
         case 'json-input':
         case 'linelist-input':
         case 'numberlist-input':
+        case 'integerlist-input':
             if (Placeholder != null) {
                 Descriptor.Placeholder = Placeholder;
             }
@@ -1148,6 +1111,117 @@ function normalizedPropertyDescriptor(Value) {
             break;
     }
     return Descriptor;
+}
+/**** installAccessorFor ****/
+function installAccessorFor(Visual, Descriptor) {
+    const { minValue, maxValue, Pattern, ValueList } = Descriptor;
+    const RegEx = (Pattern == null ? undefined : new RegExp(Pattern));
+    let Validator = Descriptor.Validator;
+    if (Validator == null) {
+        switch (Descriptor.EditorType) {
+            case 'checkbox':
+            case 'choice':
+                Validator = ValueIsBoolean;
+                break;
+            case 'textline-input':
+            case 'password-input':
+                Validator = (Pattern == null
+                    ? ValueIsTextline
+                    : (Value) => ValueIsStringMatching(Value, RegEx));
+                break;
+            case 'email-address-input':
+                Validator = ValueIsEMailAddress;
+                break;
+            case 'phone-number-input':
+                Validator = ValueIsPhoneNumber;
+                break;
+            case 'url-input':
+                Validator = ValueIsURL;
+                break;
+            case 'search-input':
+                Validator = ValueIsTextline;
+                break;
+            case 'number-input':
+                if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
+                    Validator = ValueIsNumber;
+                }
+                else {
+                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue);
+                }
+                break;
+            case 'integer-input':
+                if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
+                    Validator = ValueIsInteger;
+                }
+                else {
+                    Validator = (Value) => ValueIsIntegerInRange(Value, minValue, maxValue);
+                }
+                break;
+            case 'time-input':
+                Validator = (Value) => ValueIsStringMatching(Value, WAT_TimeRegExp);
+                break;
+            case 'date-time-input':
+                Validator = (Value) => ValueIsStringMatching(Value, WAT_DateTimeRegExp);
+                break;
+            case 'date-input':
+                Validator = (Value) => ValueIsStringMatching(Value, WAT_DateRegExp);
+                break;
+            case 'month-input':
+                Validator = (Value) => ValueIsStringMatching(Value, WAT_MonthRegExp);
+                break;
+            case 'week-input':
+                Validator = (Value) => ValueIsStringMatching(Value, WAT_WeekRegExp);
+                break;
+            case 'color-input':
+                Validator = ValueIsColor;
+                break;
+            case 'drop-down':
+                Validator = (Value) => ValueIsOneOf(Value, ValueList);
+                break;
+            case 'slider':
+                if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
+                    Validator = ValueIsNumber;
+                }
+                else {
+                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue);
+                }
+                break;
+            case 'text-input':
+            case 'html-input':
+            case 'css-input':
+            case 'javascript-input':
+                Validator = ValueIsText;
+                break;
+            case 'json-input':
+                Validator = ValueIsJSON;
+                break;
+            case 'linelist-input':
+                Validator = (Value) => ValueIsLineList(Value, RegEx);
+                break;
+            case 'numberlist-input':
+                Validator = (Value) => ValueIsNumberList(Value, minValue, maxValue);
+                break;
+            case 'integerlist-input':
+                Validator = (Value) => ValueIsIntegerList(Value, minValue, maxValue);
+                break;
+        }
+    }
+    const Container = Descriptor.AccessorsFor, Default = Descriptor.Default;
+    Object.defineProperty(Visual, Descriptor.Name, {
+        configurable: true, enumerable: true,
+        get: () => acceptableValue(Visual[Container][Descriptor.Name], Validator, Default),
+        set: (newValue) => {
+            ;
+            (Default == null ? allowValue : expectValue)(Descriptor.Name, newValue, Validator);
+            if (Visual[Container][Descriptor.Name] !== newValue) {
+                Visual[Container][Descriptor.Name] = (ValueIsList(newValue) ? newValue.slice() : newValue);
+                if (Descriptor.withCallback) {
+                    Visual.on(Descriptor.Name)(newValue);
+                }
+                Visual.rerender();
+            }
+        },
+    });
 }
 //----------------------------------------------------------------------------//
 //                              Callback Support                              //
@@ -1731,7 +1805,17 @@ export class WAT_Visual {
             }
         }).map((Descriptor) => PropertySet[Descriptor.Name]);
         if (ValuesDiffer(this._configurableProperties, newProperties)) {
+            this._configurableProperties.forEach((Descriptor) => {
+                if (Descriptor.AccessorsFor != null) {
+                    delete this[Descriptor.Name];
+                }
+            });
             this._configurableProperties = newProperties;
+            this._configurableProperties.forEach((Descriptor) => {
+                if (Descriptor.AccessorsFor != null) {
+                    installAccessorFor(this, Descriptor);
+                }
+            });
             this.rerender();
         }
     }
@@ -3242,7 +3326,7 @@ export class WAT_Applet extends WAT_Visual {
             }
             Index = Math.max(0, Math.min(Index, this._PageList.length));
         }
-        const Behavior = acceptableOptionalBehavior(Serialization.Behavior);
+        const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
         let newPage = new WAT_Page(Behavior, this);
         this._PageList.splice(Index, 0, newPage);
         // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
@@ -3752,7 +3836,7 @@ export class WAT_Applet extends WAT_Visual {
         }
         if (!ValueIsPlainObject(Serialization))
             throwError('InvalidArgument: the given "Serialization" is no valid WAT applet serialization');
-        const Behavior = acceptableOptionalBehavior(Serialization.Behavior);
+        const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
         const Applet = new WAT_Applet(Behavior);
         const AppletName = Serialization.Name;
         delete Serialization.Name;
@@ -4037,7 +4121,7 @@ export class WAT_Page extends WAT_Visual {
             }
             Index = Math.max(0, Math.min(Index, this._WidgetList.length));
         }
-        const Behavior = acceptableOptionalBehavior(Serialization.Behavior);
+        const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
         let Widget = new WAT_Widget(Behavior, this);
         this._WidgetList.splice(Index, 0, Widget);
         // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
@@ -5390,7 +5474,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Value ****/
             get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
+                return acceptableValue(this.memoized.Value, ValueIsPath);
             },
             set Value(newValue) {
                 var _a;
@@ -5413,7 +5497,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (SourceWidget == null) {
                     if (this.memoized.Value != null) {
                         this.memoized.Value = undefined;
-                        this.on('value-change')();
+                        this.on('Value')();
                         this.rerender();
                     }
                     return;
@@ -5424,7 +5508,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
                 if (this._Value !== SourcePath) {
                     this.memoized.Value = SourcePath;
-                    this.on('value-change')();
+                    this.on('Value')();
                     this.rerender();
                 }
             },
@@ -5511,52 +5595,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter text)' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+            { Name: 'Value', Placeholder: '(enter text)',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true, },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsTextFormat },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, true);
-            },
-            set readonly(newSetting) {
-                allowBoolean('readonly setting', newSetting);
-                if (this.memoized.readonly !== newSetting) {
-                    this.memoized.readonly = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextFormat).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsTextFormat);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, readonly } = this;
@@ -5624,52 +5669,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter HTML)' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+            { Name: 'Value', Placeholder: '(enter HTML)',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'readonly', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsHTMLFormat },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, true);
-            },
-            set readonly(newSetting) {
-                allowBoolean('readonly setting', newSetting);
-                if (this.memoized.readonly !== newSetting) {
-                    this.memoized.readonly = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsHTMLFormat);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, readonly } = this;
@@ -5738,76 +5744,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'url-input', Placeholder: '(enter Image URL)' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'ImageScaling', EditorType: 'drop-down', ValueList: WAT_ImageScalings },
-            { Name: 'ImageAlignment', EditorType: 'drop-down', ValueList: WAT_ImageAlignments },
-            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+            { Name: 'Value', Placeholder: '(enter image URL)',
+                EditorType: 'url-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'ImageScaling', Label: 'Image Scaling', Default: 'contain',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageScalings },
+            { Name: 'ImageAlignment', Label: 'Image Alignment', Default: 'center center',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageAlignments },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsImageFormat },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalURL(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** ImageScaling ****/
-            get ImageScaling() {
-                return acceptableOneOf(this.memoized.ImageScaling, 'contain', WAT_ImageScalings);
-            },
-            set ImageScaling(newSetting) {
-                allowOneOf('image scaling', newSetting, WAT_ImageScalings);
-                if (this.memoized.ImageScaling !== newSetting) {
-                    this.memoized.ImageScaling = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** ImageAlignment ****/
-            get ImageAlignment() {
-                return acceptableOneOf(this.memoized.ImageAlignment, 'center', WAT_ImageAlignments);
-            },
-            set ImageAlignment(newSetting) {
-                allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
-                if (this.memoized.ImageAlignment !== newSetting) {
-                    this.memoized.ImageAlignment = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, true);
-            },
-            set readonly(newSetting) {
-                allowBoolean('readonly setting', newSetting);
-                if (this.memoized.readonly !== newSetting) {
-                    this.memoized.readonly = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsImageFormat).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsImageFormat);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { ImageScaling, ImageAlignment, Enabling, readonly } = this;
@@ -5883,49 +5830,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input', Placeholder: '(enter SVG)' },
-            { Name: 'ImageScaling', EditorType: 'drop-down', ValueList: WAT_ImageScalings },
-            { Name: 'ImageAlignment', EditorType: 'drop-down', ValueList: WAT_ImageAlignments },
+            { Name: 'Value', Placeholder: '(enter SVG)',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'ImageScaling', Label: 'Image Scaling', Default: 'contain',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageScalings },
+            { Name: 'ImageAlignment', Label: 'Image Alignment', Default: 'center center',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageAlignments },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** ImageScaling ****/
-            get ImageScaling() {
-                return acceptableOneOf(this.memoized.ImageScaling, 'contain', WAT_ImageScalings);
-            },
-            set ImageScaling(newSetting) {
-                allowOneOf('image scaling', newSetting, WAT_ImageScalings);
-                if (this.memoized.ImageScaling !== newSetting) {
-                    this.memoized.ImageScaling = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** ImageAlignment ****/
-            get ImageAlignment() {
-                return acceptableOneOf(this.memoized.ImageAlignment, 'center', WAT_ImageAlignments);
-            },
-            set ImageAlignment(newSetting) {
-                allowOneOf('image alignment', newSetting, WAT_ImageAlignments);
-                if (this.memoized.ImageAlignment !== newSetting) {
-                    this.memoized.ImageAlignment = newSetting;
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const DataURL = 'data:image/svg+xml;base64,' + btoa(this.memoized.Value || '');
@@ -5941,73 +5852,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
     const WAT_WebView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'url-input', Placeholder: '(enter URL)' },
-            { Name: 'PermissionsPolicy', EditorType: 'textline-input' },
-            { Name: 'allowsFullscreen', EditorType: 'checkbox' },
-            { Name: 'SandboxPermissions', EditorType: 'textline-input' },
-            { Name: 'ReferrerPolicy', EditorType: 'drop-down', ValueList: WAT_ReferrerPolicies },
+            { Name: 'Value', Placeholder: '(enter URL)',
+                EditorType: 'url-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'PermissionsPolicy', Label: 'Permissions Policy',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'allowsFullscreen', Label: 'allows Fullscreen', Default: false,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'SandboxPermissions', Label: 'Sandbox Permissions', Default: WAT_DefaultSandboxPermissions,
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'ReferrerPolicy', Label: 'Referrer Policy', Default: 'strict-origin-when-cross-origin',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ReferrerPolicies },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalURL(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** PermissionsPolicy ****/
-            get PermissionsPolicy() {
-                return acceptableOptionalTextline(this.memoized.PermissionsPolicy);
-            },
-            set PermissionsPolicy(newSetting) {
-                allowTextline('permissions policy', newSetting);
-                if (this.memoized.PermissionsPolicy !== newSetting) {
-                    this.memoized.PermissionsPolicy = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** allowsFullscreen ****/
-            get allowsFullscreen() {
-                return acceptableBoolean(this.memoized.allowsFullscreen, false);
-            },
-            set allowsFullscreen(newSetting) {
-                allowBoolean('fullscreen permission', newSetting);
-                if (this.memoized.allowsFullscreen !== newSetting) {
-                    this.memoized.allowsFullscreen = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** SandboxPermissions ****/
-            get SandboxPermissions() {
-                return acceptableTextline(this.memoized.SandboxPermissions, WAT_DefaultSandboxPermissions);
-            },
-            set SandboxPermissions(newSetting) {
-                allowTextline('sandbox permissions', newSetting);
-                if (this.memoized.SandboxPermissions !== newSetting) {
-                    this.memoized.SandboxPermissions = newSetting;
-                    this.rerender();
-                }
-            },
-            /**** ReferrerPolicy ****/
-            get ReferrerPolicy() {
-                return acceptableOneOf(this.memoized.ReferrerPolicy, 'strict-origin-when-cross-origin', WAT_ReferrerPolicies);
-            },
-            set ReferrerPolicy(newSetting) {
-                allowOneOf('referrer policy', newSetting, WAT_ReferrerPolicies);
-                if (this.memoized.ReferrerPolicy !== newSetting) {
-                    this.memoized.ReferrerPolicy = newSetting;
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this.memoized;
@@ -6031,21 +5886,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Label', EditorType: 'textline-input', Placeholder: '(enter label)' },
+            { Name: 'Label', Placeholder: '(enter label)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Label ****/
-            get Label() {
-                return acceptableTextline(this.memoized.Label, 'Button');
-            },
-            set Label(newValue) {
-                allowTextline('button label', newValue);
-                if (this.memoized.Label !== newValue) {
-                    this.memoized.Label = newValue;
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const onClick = (Event) => {
@@ -6072,22 +5915,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'checkbox' },
+            { Name: 'Value',
+                EditorType: 'checkbox', AccessorsFor: 'memoized', withCallback: true },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalBoolean(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowBoolean('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const onClick = (Event) => {
@@ -6095,7 +5925,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return consumingEvent(Event);
                 }
                 this.Value = Event.target.checked;
-                this.on('value-change')();
             };
             const Value = this.Value;
             const checked = (Value == true);
@@ -6117,22 +5946,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'checkbox' },
+            { Name: 'Value',
+                EditorType: 'checkbox', AccessorsFor: 'memoized', withCallback: true },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableBoolean(this.memoized.Value, false);
-            },
-            set Value(newValue) {
-                expectBoolean('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const onClick = (Event) => {
@@ -6140,7 +5956,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return consumingEvent(Event);
                 }
                 this.Value = Event.target.checked;
-                this.on('value-change')();
             };
             return html `<input type="radio" class="WAT Radiobutton"
         checked=${this.Value == true}
@@ -6153,82 +5968,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     const WAT_Gauge = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'number-input' },
-            { Name: 'Minimum', EditorType: 'number-input' },
-            { Name: 'lowerBound', EditorType: 'number-input' },
-            { Name: 'Optimum', EditorType: 'number-input' },
-            { Name: 'upperBound', EditorType: 'number-input' },
-            { Name: 'Maximum', EditorType: 'number-input' },
+            { Name: 'Value',
+                EditorType: 'number-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Minimum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'lowerBound', Label: 'lower Bound',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'Optimum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'upperBound', Label: 'upper Bound',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'Maximum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalNumber(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowFiniteNumber('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalNumber(this.memoized.Minimum);
-            },
-            set Minimum(newValue) {
-                allowNumber('minimal value', newValue);
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** lowerBound ****/
-            get lowerBound() {
-                return acceptableOptionalNumber(this.memoized.lowerBound);
-            },
-            set lowerBound(newValue) {
-                allowNumber('lower bound', newValue);
-                if (this.memoized.lowerBound !== newValue) {
-                    this.memoized.lowerBound = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Optimum ****/
-            get Optimum() {
-                return acceptableOptionalNumber(this.memoized.Optimum);
-            },
-            set Optimum(newValue) {
-                allowNumber('optimum', newValue);
-                if (this.memoized.Optimum !== newValue) {
-                    this.memoized.Optimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** upperBound ****/
-            get upperBound() {
-                return acceptableOptionalNumber(this.memoized.upperBound);
-            },
-            set upperBound(newValue) {
-                allowNumber('upper bound', newValue);
-                if (this.memoized.upperBound !== newValue) {
-                    this.memoized.upperBound = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalNumber(this.memoized.Maximum);
-            },
-            set Maximum(newValue) {
-                allowNumber('maximal value', newValue);
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Minimum, lowerBound, Optimum, upperBound, Maximum } = this;
@@ -6258,34 +6010,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'number-input' },
-            { Name: 'Maximum', EditorType: 'number-input' },
+            { Name: 'Value',
+                EditorType: 'number-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Maximum',
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalNumber(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowFiniteNumber('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalNumberInRange(this.memoized.Maximum, 0, Infinity, true);
-            },
-            set Maximum(newValue) {
-                allowNumber('maximal value', newValue);
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Maximum } = this;
@@ -6299,74 +6028,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my._InputElement = createRef();
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'number-input' },
-            { Name: 'Minimum', EditorType: 'number-input' },
-            { Name: 'Stepping', EditorType: 'number-input', Minimum: 0 },
-            { Name: 'Maximum', EditorType: 'number-input' },
-            { Name: 'Hashmarks', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'number-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Minimum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'Stepping',
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
+            { Name: 'Maximum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'Hashmarks', Pattern: HashmarkPattern,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalNumber(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowFiniteNumber('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalNumber(this.memoized.Minimum);
-            },
-            set Minimum(newValue) {
-                allowNumber('minimal value', newValue);
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Stepping ****/
-            get Stepping() {
-                const Candidate = this.memoized.Stepping;
-                return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0, Infinity, false));
-            },
-            set Stepping(newValue) {
-                if (newValue !== 'any') {
-                    allowNumberInRange('step value', newValue, 0, Infinity, false);
-                }
-                if (this.memoized.Stepping !== newValue) {
-                    this.memoized.Stepping = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalNumber(this.memoized.Maximum);
-            },
-            set Maximum(newValue) {
-                allowNumber('maximal value', newValue);
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Hashmarks ****/
-            get Hashmarks() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Hashmarks, HashmarkMatcher);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Hashmarks(newValue) {
-                allowListSatisfying('hashmark list', newValue, HashmarkMatcher);
-                if (ValuesDiffer(this.memoized.Hashmarks, newValue)) {
-                    this.memoized.Hashmarks = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -6432,107 +6104,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
-            { Name: 'SpellChecking', EditorType: 'checkbox' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Pattern',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SpellChecking',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowTextline('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
-            },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
-                    this.rerender();
-                }
-            },
-            /**** SpellChecking ****/
-            get SpellChecking() {
-                return acceptableBoolean(this.memoized.SpellChecking, false);
-            },
-            set SpellChecking(newValue) {
-                expectBoolean('spell check setting', newValue);
-                if (this.memoized.SpellChecking !== newValue) {
-                    this.memoized.SpellChecking = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsTextline);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsTextline);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -6594,82 +6182,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
+            { Name: 'Value',
+                EditorType: 'password-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Pattern',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowTextline('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
-            },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -6723,98 +6248,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'number-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'Minimum', EditorType: 'number-input' },
-            { Name: 'Stepping', EditorType: 'number-input', Minimum: 0 },
-            { Name: 'Maximum', EditorType: 'number-input' },
-            { Name: 'Suggestions', EditorType: 'numberlist-input' },
+            { Name: 'Value',
+                EditorType: 'number-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Minimum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'Stepping',
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
+            { Name: 'Maximum',
+                EditorType: 'number-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions',
+                EditorType: 'numberlist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalNumber(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowFiniteNumber('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalNumber(this.memoized.Minimum);
-            },
-            set Minimum(newValue) {
-                allowNumber('minimal value', newValue);
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Stepping ****/
-            get Stepping() {
-                const Candidate = this.memoized.Stepping;
-                return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0, Infinity, false));
-            },
-            set Stepping(newValue) {
-                if (newValue !== 'any') {
-                    allowNumberInRange('step value', newValue, 0, Infinity, false);
-                }
-                if (this.memoized.Stepping !== newValue) {
-                    this.memoized.Stepping = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalNumber(this.memoized.Maximum);
-            },
-            set Maximum(newValue) {
-                allowNumber('maximal value', newValue);
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsNumber);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsNumber);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -6875,110 +6323,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
-            { Name: 'SpellChecking', EditorType: 'checkbox' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'phone-number-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Pattern',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalPhoneNumber(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowPhoneNumber('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
-            },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
-                    this.rerender();
-                }
-            },
-            /**** SpellChecking ****/
-            get SpellChecking() {
-                return acceptableBoolean(this.memoized.SpellChecking, false);
-            },
-            set SpellChecking(newValue) {
-                expectBoolean('spell check setting', newValue);
-                if (this.memoized.SpellChecking !== newValue) {
-                    this.memoized.SpellChecking = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsPhoneNumber);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsPhoneNumber);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7040,110 +6399,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
-            { Name: 'SpellChecking', EditorType: 'checkbox' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'email-address-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalEMailAddress(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowEMailAddress('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
-            },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
-                    this.rerender();
-                }
-            },
-            /**** SpellChecking ****/
-            get SpellChecking() {
-                return acceptableBoolean(this.memoized.SpellChecking, false);
-            },
-            set SpellChecking(newValue) {
-                expectBoolean('spell check setting', newValue);
-                if (this.memoized.SpellChecking !== newValue) {
-                    this.memoized.SpellChecking = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsEMailAddress);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsEMailAddress);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7205,110 +6473,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
-            { Name: 'SpellChecking', EditorType: 'checkbox' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'url-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Pattern',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SpellChecking',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalURL(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowURL('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
-            },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
-                    this.rerender();
-                }
-            },
-            /**** SpellChecking ****/
-            get SpellChecking() {
-                return acceptableBoolean(this.memoized.SpellChecking, false);
-            },
-            set SpellChecking(newValue) {
-                expectBoolean('spell check setting', newValue);
-                if (this.memoized.SpellChecking !== newValue) {
-                    this.memoized.SpellChecking = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsURL);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsURL);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7370,92 +6551,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'time-input', Stepping: 1 },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'withSeconds', EditorType: 'checkbox' },
-            { Name: 'Minimum', EditorType: 'time-input', Stepping: 1 },
-            { Name: 'Maximum', EditorType: 'time-input', Stepping: 1 },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'time-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'withSeconds', Label: 'with Seconds',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Minimum', Stepping: 1,
+                EditorType: 'time-input', AccessorsFor: 'memoized' },
+            { Name: 'Maximum', Stepping: 1,
+                EditorType: 'time-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions', Pattern: WAT_TimeRegExp,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalStringMatching(this.memoized.Value, WAT_TimeRegExp);
-            },
-            set Value(newValue) {
-                allowStringMatching('value', newValue, WAT_TimeRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** withSeconds ****/
-            get withSeconds() {
-                return acceptableBoolean(this.memoized.withSeconds, false);
-            },
-            set withSeconds(newValue) {
-                expectBoolean('granularity setting', newValue);
-                if (this.memoized.withSeconds !== newValue) {
-                    this.memoized.withSeconds = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_TimeRegExp);
-            },
-            set Minimum(newValue) {
-                allowStringMatching('earliest time', newValue, WAT_TimeRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_TimeRegExp);
-            },
-            set Maximum(newValue) {
-                allowStringMatching('latest time', newValue, WAT_TimeRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, WAT_TimeMatcher);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, WAT_TimeMatcher);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7517,92 +6627,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'date-time-input', Stepping: 1 },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'withSeconds', EditorType: 'checkbox' },
-            { Name: 'Minimum', EditorType: 'date-time-input', Stepping: 1 },
-            { Name: 'Maximum', EditorType: 'date-time-input', Stepping: 1 },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'date-time-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'withSeconds', Label: 'with Seconds',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Minimum', Stepping: 1,
+                EditorType: 'date-time-input', AccessorsFor: 'memoized' },
+            { Name: 'Maximum', Stepping: 1,
+                EditorType: 'date-time-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions', Pattern: WAT_DateTimeRegExp,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalStringMatching(this.memoized.Value, WAT_DateTimeRegExp);
-            },
-            set Value(newValue) {
-                allowStringMatching('value', newValue, WAT_DateTimeRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** withSeconds ****/
-            get withSeconds() {
-                return acceptableBoolean(this.memoized.withSeconds, false);
-            },
-            set withSeconds(newValue) {
-                expectBoolean('granularity setting', newValue);
-                if (this.memoized.withSeconds !== newValue) {
-                    this.memoized.withSeconds = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_DateTimeRegExp);
-            },
-            set Minimum(newValue) {
-                allowStringMatching('earliest point in time', newValue, WAT_DateTimeRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_DateTimeRegExp);
-            },
-            set Maximum(newValue) {
-                allowStringMatching('latest point in time', newValue, WAT_DateTimeRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, WAT_DateTimeMatcher);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, WAT_DateTimeMatcher);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7664,81 +6703,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'date-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'withSeconds', EditorType: 'checkbox' },
-            { Name: 'Minimum', EditorType: 'date-input' },
-            { Name: 'Maximum', EditorType: 'date-input' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'date-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Minimum', Stepping: 1,
+                EditorType: 'date-input', AccessorsFor: 'memoized' },
+            { Name: 'Maximum', Stepping: 1,
+                EditorType: 'date-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions', Pattern: WAT_DateRegExp,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalStringMatching(this.memoized.Value, WAT_DateRegExp);
-            },
-            set Value(newValue) {
-                allowStringMatching('value', newValue, WAT_DateRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_DateRegExp);
-            },
-            set Minimum(newValue) {
-                allowStringMatching('earliest date', newValue, WAT_DateRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_DateRegExp);
-            },
-            set Maximum(newValue) {
-                allowStringMatching('latest date', newValue, WAT_DateRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, WAT_DateMatcher);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, WAT_DateMatcher);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7799,81 +6776,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'week-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'withSeconds', EditorType: 'checkbox' },
-            { Name: 'Minimum', EditorType: 'week-input' },
-            { Name: 'Maximum', EditorType: 'week-input' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'week-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Minimum', Stepping: 1,
+                EditorType: 'week-input', AccessorsFor: 'memoized' },
+            { Name: 'Maximum', Stepping: 1,
+                EditorType: 'week-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions', Pattern: WAT_WeekRegExp,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalStringMatching(this.memoized.Value, WAT_WeekRegExp);
-            },
-            set Value(newValue) {
-                allowStringMatching('value', newValue, WAT_WeekRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_WeekRegExp);
-            },
-            set Minimum(newValue) {
-                allowStringMatching('earliest week', newValue, WAT_WeekRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_WeekRegExp);
-            },
-            set Maximum(newValue) {
-                allowStringMatching('latest week', newValue, WAT_WeekRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, WAT_WeekMatcher);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, WAT_WeekMatcher);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -7934,81 +6849,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'month-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'withSeconds', EditorType: 'checkbox' },
-            { Name: 'Minimum', EditorType: 'month-input' },
-            { Name: 'Maximum', EditorType: 'month-input' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'month-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Minimum', Stepping: 1,
+                EditorType: 'month-input', AccessorsFor: 'memoized' },
+            { Name: 'Maximum', Stepping: 1,
+                EditorType: 'month-input', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions', Pattern: WAT_MonthRegExp,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalStringMatching(this.memoized.Value, WAT_MonthRegExp);
-            },
-            set Value(newValue) {
-                allowStringMatching('value', newValue, WAT_MonthRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Minimum ****/
-            get Minimum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_MonthRegExp);
-            },
-            set Minimum(newValue) {
-                allowStringMatching('earliest month', newValue, WAT_MonthRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Minimum !== newValue) {
-                    this.memoized.Minimum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Maximum ****/
-            get Maximum() {
-                return acceptableOptionalStringMatching(this.memoized.Minimum, WAT_MonthRegExp);
-            },
-            set Maximum(newValue) {
-                allowStringMatching('latest month', newValue, WAT_MonthRegExp);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Maximum !== newValue) {
-                    this.memoized.Maximum = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, WAT_MonthMatcher);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, WAT_MonthMatcher);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -8069,64 +6922,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input' },
-            { Name: 'Placeholder', EditorType: 'text-input' },
-            { Name: 'allowMultiple', EditorType: 'checkbox' },
-            { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'allowMultiple', Label: 'multiple',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** allowMultiple ****/
-            get allowMultiple() {
-                return acceptableBoolean(this.memoized.allowMultiple, false);
-            },
-            set allowMultiple(newValue) {
-                expectBoolean('multiplicity setting', newValue);
-                if (this.memoized.allowMultiple !== newValue) {
-                    this.memoized.allowMultiple = newValue;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextline).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
@@ -8176,64 +6980,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input' },
-            { Name: 'Icon', EditorType: 'url-input' },
-            { Name: 'allowMultiple', EditorType: 'checkbox' },
-            { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Icon',
+                EditorType: 'url-input', AccessorsFor: 'memoized' },
+            { Name: 'allowMultiple', Label: 'multiple',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Icon ****/
-            get Icon() {
-                return acceptableOptionalURL(this.memoized.Icon);
-            },
-            set Icon(newValue) {
-                allowURL('icon URL', newValue);
-                if (this.memoized.Icon !== newValue) {
-                    this.memoized.Icon = newValue;
-                    this.rerender();
-                }
-            },
-            /**** allowMultiple ****/
-            get allowMultiple() {
-                return acceptableBoolean(this.memoized.allowMultiple, false);
-            },
-            set allowMultiple(newValue) {
-                expectBoolean('multiplicity setting', newValue);
-                if (this.memoized.allowMultiple !== newValue) {
-                    this.memoized.allowMultiple = newValue;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextline).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, Icon, Color, allowMultiple, acceptableFileTypes } = this;
@@ -8278,64 +7033,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input' },
-            { Name: 'Placeholder', EditorType: 'text-input' },
-            { Name: 'allowMultiple', EditorType: 'checkbox' },
-            { Name: 'acceptableFileTypes', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'allowMultiple', Label: 'multiple',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (newValue == null) {
-                    newValue = '';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** allowMultiple ****/
-            get allowMultiple() {
-                return acceptableBoolean(this.memoized.allowMultiple, false);
-            },
-            set allowMultiple(newValue) {
-                expectBoolean('multiplicity setting', newValue);
-                if (this.memoized.allowMultiple !== newValue) {
-                    this.memoized.allowMultiple = newValue;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextline).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsTextline);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
@@ -8386,107 +7092,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'Pattern', EditorType: 'textline-input' },
-            { Name: 'SpellChecking', EditorType: 'checkbox' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Pattern',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SpellChecking',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'Suggestions',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowTextline('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Pattern ****/
-            get Pattern() {
-                return acceptableOptionalTextline(this.memoized.Pattern);
-            },
-            set Pattern(newValue) {
-                allowTextline('input pattern', newValue);
-                if (this.memoized.Pattern !== newValue) {
-                    this.memoized.Pattern = newValue;
-                    this.rerender();
-                }
-            },
-            /**** SpellChecking ****/
-            get SpellChecking() {
-                return acceptableBoolean(this.memoized.SpellChecking, false);
-            },
-            set SpellChecking(newValue) {
-                expectBoolean('spell check setting', newValue);
-                if (this.memoized.SpellChecking !== newValue) {
-                    this.memoized.SpellChecking = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsTextline);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsTextline);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -8542,38 +7164,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'color-input' },
-            { Name: 'Suggestions', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'color-input' },
+            { Name: 'Suggestions',
+                EditorType: 'linelist-input' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableColor(this.memoized.Value, '#000000');
-            },
-            set Value(newValue) {
-                allowColor('value', newValue);
-                if (newValue == null) {
-                    newValue = '#000000';
-                }
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = HexColor(newValue);
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Suggestions, ValueIsColor);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsColor);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Suggestions } = this;
@@ -8613,35 +7208,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Options', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Options',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowTextline('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Options ****/
-            get Options() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Options, ValueIsColor);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Options(newValue) {
-                allowListSatisfying('option list', newValue, ValueIsColor);
-                if (ValuesDiffer(this.memoized.Options, newValue)) {
-                    this.memoized.Options = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Options } = this;
@@ -8689,47 +7260,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Icon', EditorType: 'url-input' },
-            { Name: 'Options', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Icon',
+                EditorType: 'url-input', AccessorsFor: 'memoized' },
+            { Name: 'Options',
+                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalTextline(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowTextline('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Icon ****/
-            get Icon() {
-                return acceptableOptionalURL(this.memoized.Icon);
-            },
-            set Icon(newValue) {
-                allowURL('icon URL', newValue);
-                if (this.memoized.Icon !== newValue) {
-                    this.memoized.Icon = newValue;
-                    this.rerender();
-                }
-            },
-            /**** Options ****/
-            get Options() {
-                const Candidate = acceptableOptionalListSatisfying(this.memoized.Options, ValueIsColor);
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Options(newValue) {
-                allowListSatisfying('option list', newValue, ValueIsColor);
-                if (ValuesDiffer(this.memoized.Options, newValue)) {
-                    this.memoized.Options = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Icon, Color, Options } = this;
@@ -8783,109 +7320,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input' },
-            { Name: 'Placeholder', EditorType: 'textline-input' },
-            { Name: 'readonly', EditorType: 'checkbox' },
-            { Name: 'minLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'maxLength', EditorType: 'number-input', Minimum: 0, Stepping: 1 },
-            { Name: 'LineWrapping', EditorType: 'checkbox' },
-            { Name: 'SpellChecking', EditorType: 'checkbox' },
-            { Name: 'acceptableFileTypes', Label: 'File Types', EditorType: 'linelist-input' },
+            { Name: 'Value',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'minLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'maxLength', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'LineWrapping',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'SpellChecking',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsTextFormat },
         ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableOptionalText(this.memoized.Value);
-            },
-            set Value(newValue) {
-                allowText('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('value-change')();
-                    this.rerender();
-                }
-            },
-            /**** Placeholder ****/
-            get Placeholder() {
-                return acceptableOptionalTextline(this.memoized.Placeholder);
-            },
-            set Placeholder(newValue) {
-                allowTextline('input placeholder', newValue);
-                if (this.memoized.Placeholder !== newValue) {
-                    this.memoized.Placeholder = newValue;
-                    this.rerender();
-                }
-            },
-            /**** readonly ****/
-            get readonly() {
-                return acceptableBoolean(this.memoized.readonly, false);
-            },
-            set readonly(newValue) {
-                expectBoolean('readonly setting', newValue);
-                if (this.memoized.readonly !== newValue) {
-                    this.memoized.readonly = newValue;
-                    this.rerender();
-                }
-            },
-            /**** minLength ****/
-            get minLength() {
-                return acceptableOptionalOrdinal(this.memoized.minLength);
-            },
-            set minLength(newValue) {
-                allowOrdinal('minimal input length', newValue);
-                if (this.memoized.minLength !== newValue) {
-                    this.memoized.minLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** maxLength ****/
-            get maxLength() {
-                return acceptableOptionalOrdinal(this.memoized.maxLength);
-            },
-            set maxLength(newValue) {
-                allowOrdinal('maximal input length', newValue);
-                if (this.memoized.maxLength !== newValue) {
-                    this.memoized.maxLength = newValue;
-                    this.rerender();
-                }
-            },
-            /**** LineWrapping ****/
-            get LineWrapping() {
-                return acceptableBoolean(this.memoized.LineWrapping, false);
-            },
-            set LineWrapping(newValue) {
-                expectBoolean('line wrapping setting', newValue);
-                if (this.memoized.LineWrapping !== newValue) {
-                    this.memoized.LineWrapping = newValue;
-                    this.rerender();
-                }
-            },
-            /**** SpellChecking ****/
-            get SpellChecking() {
-                return acceptableBoolean(this.memoized.SpellChecking, false);
-            },
-            set SpellChecking(newValue) {
-                expectBoolean('spell check setting', newValue);
-                if (this.memoized.SpellChecking !== newValue) {
-                    this.memoized.SpellChecking = newValue;
-                    this.rerender();
-                }
-            },
-            /**** acceptableFileTypes ****/
-            get acceptableFileTypes() {
-                return acceptableListSatisfying(this.memoized.acceptableFileTypes, [], ValueIsTextFormat).slice();
-            },
-            set acceptableFileTypes(newSetting) {
-                allowListSatisfying('acceptable file types', newSetting, ValueIsTextFormat);
-                if (newSetting == null) {
-                    newSetting = [];
-                }
-                if (ValuesDiffer(this.memoized.acceptableFileTypes, newSetting)) {
-                    this.memoized.acceptableFileTypes = newSetting.slice();
-                    this.rerender();
-                }
-            },
-        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -9832,7 +8283,7 @@ async function startWAT() {
         AppletElement.classList.add('fullscreen');
         document.body.appendChild(AppletElement);
     }
-    let AppletName = acceptableName(AppletElement.getAttribute('name'), 'WAT-Applet');
+    let AppletName = acceptableValue(AppletElement.getAttribute('name'), ValueIsName, 'WAT-Applet');
     /**** read applet script - if stored separately ****/
     let ScriptElement = document.querySelector('script[type="wat/applet-script"]');
     /**** deserialize applet ****/
@@ -9889,30 +8340,9 @@ function IdOfWidget(Widget) {
 /**** newId - uses nanoid with custom dictionary ****/
 export const newId = customAlphabet(nolookalikesSafe, 21);
 const global = (new Function('return this'))();
-global.WAT = {
+const WAT = global.WAT = {
     Object_assign,
-    acceptableBoolean, acceptableOptionalBoolean,
-    acceptableNumber, acceptableOptionalNumber,
-    acceptableNumberInRange, acceptableOptionalNumberInRange,
-    acceptableInteger, acceptableOptionalInteger,
-    acceptableIntegerInRange, acceptableOptionalIntegerInRange,
-    acceptableOrdinal, acceptableOptionalOrdinal,
-    acceptableString, acceptableOptionalString,
-    acceptableNonEmptyString, acceptableOptionalNonEmptyString,
-    acceptableStringMatching, acceptableOptionalStringMatching,
-    acceptableText, acceptableOptionalText,
-    acceptableTextline, acceptableOptionalTextline,
-    acceptableFunction, acceptableOptionalFunction,
-    acceptableList, acceptableOptionalList,
-    acceptableListSatisfying, acceptableOptionalListSatisfying,
-    acceptableOneOf, acceptableOptionalOneOf,
-    acceptableColor, acceptableOptionalColor,
-    acceptableEMailAddress, acceptableOptionalEMailAddress,
-    acceptablePhoneNumber, acceptableOptionalPhoneNumber,
-    acceptableURL, acceptableOptionalURL,
-    acceptableBehavior, acceptableOptionalBehavior,
-    acceptableName, acceptableOptionalName,
-    acceptablePath, acceptableOptionalPath,
+    acceptableValue, allowValue, expectValue,
     ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier,
     ValueIsName, allowName, allowedName, expectName, expectedName,
     ValueIsPath, allowPath, allowedPath, expectPath, expectedPath,
