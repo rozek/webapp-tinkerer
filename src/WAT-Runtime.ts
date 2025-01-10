@@ -10145,6 +10145,8 @@ console.warn('file drop error',Signal)
         name:'WebApp Tinkerer'
       })
 
+      collectInternalNames()
+
       startWAT()
     })
   }
