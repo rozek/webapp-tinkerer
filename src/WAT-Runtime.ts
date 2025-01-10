@@ -1293,31 +1293,49 @@
 
 /**** acceptableColor ****/
 
-  export function acceptableColor (Value:any, Default:string):string {
+  export function acceptableColor (Value:any, Default:WAT_Color):WAT_Color {
     return (ValueIsColor(Value) ? Value : Default)
   }
 
 /**** acceptableOptionalColor ****/
 
-  export function acceptableOptionalColor (Value:any):string|undefined {
+  export function acceptableOptionalColor (Value:any):WAT_Color|undefined {
     return (ValueIsColor(Value) ? Value : undefined)
+  }
+
+/**** acceptableEMailAddress ****/
+
+  export function acceptableEMailAddress (Value:any, Default:WAT_Textline):WAT_Textline {
+    return (ValueIsEMailAddress(Value) ? Value : Default)
   }
 
 /**** acceptableOptionalEMailAddress ****/
 
-  export function acceptableOptionalEMailAddress (Value:any):string|undefined {
+  export function acceptableOptionalEMailAddress (Value:any):WAT_Textline|undefined {
     return (ValueIsEMailAddress(Value) ? Value : undefined)
+  }
+
+/**** acceptablePhoneNumber ****/
+
+  export function acceptablePhoneNumber (Value:any, Default:WAT_Textline):WAT_Textline {
+    return (/*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : Default)
   }
 
 /**** acceptableOptionalPhoneNumber ****/
 
-  export function acceptableOptionalPhoneNumber (Value:any):string|undefined {
+  export function acceptableOptionalPhoneNumber (Value:any):WAT_Textline|undefined {
     return (/*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : undefined)
+  }
+
+/**** acceptableURL ****/
+
+  export function acceptableURL (Value:any, Default:WAT_Textline):WAT_Textline {
+    return (ValueIsURL(Value) ? Value : Default)
   }
 
 /**** acceptableOptionalURL ****/
 
-  export function acceptableOptionalURL (Value:any):string|undefined {
+  export function acceptableOptionalURL (Value:any):WAT_Textline|undefined {
     return (ValueIsURL(Value) ? Value : undefined)
   }
 
@@ -12341,6 +12359,28 @@ console.warn('file drop error',Signal)
   const global = (new Function('return this'))() as Indexable
   global.WAT = {
     Object_assign,
+    acceptableBoolean, acceptableOptionalBoolean,
+    acceptableNumber, acceptableOptionalNumber,
+    acceptableNumberInRange, acceptableOptionalNumberInRange,
+    acceptableInteger, acceptableOptionalInteger,
+    acceptableIntegerInRange, acceptableOptionalIntegerInRange,
+    acceptableOrdinal, acceptableOptionalOrdinal,
+    acceptableString, acceptableOptionalString,
+    acceptableNonEmptyString, acceptableOptionalNonEmptyString,
+    acceptableStringMatching, acceptableOptionalStringMatching,
+    acceptableText, acceptableOptionalText,
+    acceptableTextline, acceptableOptionalTextline,
+    acceptableFunction, acceptableOptionalFunction,
+    acceptableList, acceptableOptionalList,
+    acceptableListSatisfying, acceptableOptionalListSatisfying,
+    acceptableOneOf, acceptableOptionalOneOf,
+    acceptableColor, acceptableOptionalColor,
+    acceptableEMailAddress, acceptableOptionalEMailAddress,
+    acceptablePhoneNumber, acceptableOptionalPhoneNumber,
+    acceptableURL, acceptableOptionalURL,
+    acceptableBehavior, acceptableOptionalBehavior,
+    acceptableName, acceptableOptionalName,
+    acceptablePath, acceptableOptionalPath,
     MarkdownAsText, MarkdownAsHTML
   }
   global.JIL = JIL
