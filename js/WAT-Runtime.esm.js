@@ -71,7 +71,7 @@ export const WAT_ErrorTypes = [
     'Behaviour Compilation Failure', 'Behaviour Execution Failure',
     'Script Compilation Failure', 'Script Execution Failure',
     '"Value" Setting Failure', 'Rendering Failure',
-    'Callback Failure',
+    'Callback Failure', 'Reactivity Failure',
 ];
 export function throwError(Message) {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
@@ -1985,7 +1985,7 @@ export class WAT_Visual {
                 catch (Signal) {
                     console.warn('execution error in reactive function', Signal);
                     setErrorReport(this, {
-                        Type: 'execution error in reactive function',
+                        Type: 'Reactivity Failure',
                         Sufferer: this, Message: '' + Signal, Cause: Signal
                     });
                 }
@@ -2160,7 +2160,7 @@ export class WAT_Visual {
         catch (Signal) {
             console.warn(`callback ${quoted(CallbackName)} failed`, Signal);
             setErrorReport(this, {
-                Type: 'Callback Handling Failure',
+                Type: 'Callback Failure',
                 Sufferer: this, Message: '' + Signal, Cause: Signal
             });
         }
