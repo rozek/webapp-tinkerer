@@ -260,7 +260,7 @@
     'Behaviour Compilation Failure','Behaviour Execution Failure',
     'Script Compilation Failure',   'Script Execution Failure',
     '"Value" Setting Failure',      'Rendering Failure',
-    'Callback Failure',
+    'Callback Failure',             'Reactivity Failure',
   ]
   export type WAT_ErrorType = typeof WAT_ErrorTypes[number]
 
@@ -2586,7 +2586,7 @@
           } catch (Signal:any) {
 console.warn('execution error in reactive function',Signal)
             setErrorReport(this,{
-              Type:'execution error in reactive function',
+              Type:'Reactivity Failure',
               Sufferer:this, Message:'' + Signal, Cause:Signal
             })
           }
@@ -2804,7 +2804,7 @@ console.warn('Script Execution Failure',Signal)
       } catch (Signal:any) {
 console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
         setErrorReport(this,{
-          Type:'Callback Handling Failure',
+          Type:'Callback Failure',
           Sufferer:this, Message:'' + Signal, Cause:Signal
         })
       }
