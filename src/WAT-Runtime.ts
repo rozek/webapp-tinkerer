@@ -12,7 +12,7 @@
   import {
     ObjectMergedWith as Object_assign,
 //  throwError,
-    quoted,
+    quoted, escaped,
     ValuesAreEqual, ValuesDiffer,
     ValueIsBoolean,
     ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange,
@@ -24,7 +24,6 @@
     ValueIsOneOf,
     ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL,
     ValidatorForClassifier, acceptNil,rejectNil,
-    expectValue,
     allowBoolean, expectBoolean,
     allowNumber, expectNumber, allowFiniteNumber, allowNumberInRange,
       allowInteger, expectInteger, allowIntegerInRange,
@@ -315,6 +314,34 @@
 //------------------------------------------------------------------------------
 //--                 Classification and Validation Functions                  --
 //------------------------------------------------------------------------------
+
+/**** allowValue ****/
+
+  export function allowValue (
+    Description:string, Value:any, Validator?:Function
+  ):any {
+    if (Value == null) {
+      return undefined
+    } else {
+      return expectValue(Description,Value,Validator)
+    }
+  }
+
+/**** expectValue ****/
+
+  export function expectValue (
+    Description:string, Value:any, Validator?:Function
+  ):any {
+    if (Value == null) {
+      throwError(`MissingArgument: no ${Description} given`)
+    }
+
+    if ((Validator == null) || (Validator(Value) === true)) {
+      return Value
+    } else {
+      throwError(`InvalidArgument: the given ${Description} is invalid`)
+    }
+  }
 
 /**** ValueIsIdentifier ****/
 
@@ -781,6 +808,169 @@
     ValueIsSerializableObject, rejectNil, 'serializable object'
   ), expectedSerializableObject = expectSerializableObject
 
+/**** ValueIsJSON ****/
+
+  export function ValueIsJSON (Value:any):boolean {
+    try {
+      return ValueIsText(Value) && (JSON.parse(Value) !== undefined)  // tricky!
+    } catch (Signal) { return false }
+  }
+
+/**** allow/expect[ed]JSON ****/
+
+  export const allowJSON = ValidatorForClassifier(
+    ValueIsJSON, acceptNil, 'JSON string'
+  ), allowedJSON = allowJSON
+
+  export const expectJSON = ValidatorForClassifier(
+    ValueIsJSON, rejectNil, 'JSON string'
+  ), expectedJSON = expectJSON
+
+/**** ValueIsLineList ****/
+
+  export function ValueIsLineList (Value:any, Pattern:RegExp|undefined):boolean {
+    const Validator = (
+      Pattern == null
+      ? ValueIsTextline
+      : (Value:any) => ValueIsStringMatching(Value,Pattern)
+    )
+    return ValueIsListSatisfying(Value,Validator)
+  }
+
+/**** allow/expect[ed]LineList ****/
+
+  export function allowLineList (
+    Description:string, Argument:any, Pattern:string|undefined
+  ):number|null|undefined {
+    return (Argument == null
+      ? Argument
+      : expectedLineList(Description, Argument, Pattern)
+    )
+  }
+  export const allowedLineList = allowLineList
+
+  export function expectLineList (
+    Description:string, Argument:any, Pattern:string|undefined
+  ):number[] {
+    if (Argument == null) {
+      throwError(`MissingArgument: no ${escaped(Description)} given`)
+    } else {
+      const Matcher   = (Pattern == null ? undefined : new RegExp(Pattern))
+      const Validator = (
+        Pattern == null
+        ? ValueIsTextline
+        : (Value:any) => ValueIsStringMatching(Value,Matcher as RegExp)
+      )
+      if (ValueIsListSatisfying(Argument,Validator)) {
+        return Argument
+      } else {
+        throwError(`InvalidArgument: the given value is no ${escaped(Description)}`)
+      }
+    }
+  }
+  export const expectedLineList = expectLineList
+
+/**** ValueIsNumberList ****/
+
+  export function ValueIsNumberList (
+    Value:any, minValue?:number, maxValue?:number, withMin?:boolean, withMax?:boolean
+  ):boolean {
+    const Validator = (
+      (minValue == null) && (maxValue == null)
+      ? ValueIsNumber
+      : (Value:any) => ValueIsNumberInRange(Value, minValue,maxValue, withMin,withMax)
+    )
+    return ValueIsListSatisfying(Value,Validator)
+  }
+
+/**** allow/expect[ed]NumberList ****/
+
+  export function allowNumberList (
+    Description:string, Argument:any,
+    minValue?:number, maxValue?:number, withMin?:boolean, withMax?:boolean
+  ):number[]|null|undefined {
+    return (Argument == null
+      ? Argument
+      : expectedNumberList(Description, Argument, minValue,maxValue, withMin,withMax)
+    )
+  }
+  export const allowedNumberList = allowNumberList
+
+  export function expectNumberList (
+    Description:string, Argument:any,
+    minValue?:number, maxValue?:number, withMin?:boolean, withMax?:boolean
+  ):number[] {
+    if (Argument == null) {
+      throwError(`MissingArgument: no ${escaped(Description)} given`)
+    } else {
+      const Validator = (
+        (minValue == null) && (maxValue == null)
+        ? ValueIsNumber
+        : (Value:any) => ValueIsNumberInRange(Value, minValue,maxValue, withMin,withMax)
+      )
+      if (ValueIsListSatisfying(Argument,Validator)) {
+        return Argument
+      } else {
+        throwError(`InvalidArgument: the given value is no ${escaped(Description)}`)
+      }
+    }
+  }
+  export const expectedNumberList = expectNumberList
+
+/**** ValueIsIntegerList ****/
+
+  export function ValueIsIntegerList (
+    Value:any, minValue?:number, maxValue?:number
+  ):boolean {
+    const Validator = (
+      (minValue == null) && (maxValue == null)
+      ? ValueIsInteger
+      : (Value:any) => ValueIsIntegerInRange(Value, minValue,maxValue)
+    )
+    return ValueIsListSatisfying(Value,Validator)
+  }
+
+/**** allow/expect[ed]IntegerList ****/
+
+  export function allowIntegerList (
+    Description:string, Argument:any, minValue?:number, maxValue?:number
+  ):number[]|null|undefined {
+    return (Argument == null
+      ? Argument
+      : expectedIntegerList(Description, Argument, minValue,maxValue)
+    )
+  }
+  export const allowedIntegerList = allowIntegerList
+
+  export function expectIntegerList (
+    Description:string, Argument:any,
+    minValue?:number, maxValue?:number
+  ):number[] {
+    if (Argument == null) {
+      throwError(`MissingArgument: no ${escaped(Description)} given`)
+    } else {
+      const Validator = (
+        (minValue == null) && (maxValue == null)
+        ? ValueIsInteger
+        : (Value:any) => ValueIsIntegerInRange(Value, minValue,maxValue)
+      )
+      if (ValueIsListSatisfying(Argument,Validator)) {
+        return Argument
+      } else {
+        throwError(`InvalidArgument: the given value is no ${escaped(Description)}`)
+      }
+    }
+  }
+  export const expectedIntegerList = expectIntegerList
+
+/**** acceptableValue ****/
+
+  export function acceptableValue (
+    Value:any, Validator:Function, Default?:any
+  ):any {
+    return (Validator(Value) === true ? Value : Default)
+  }
+
 //------------------------------------------------------------------------------
 //--                           Stylesheet Handling                            --
 //------------------------------------------------------------------------------
@@ -1068,314 +1258,6 @@
   }
 
 //------------------------------------------------------------------------------
-//--                               Acceptables                                --
-//------------------------------------------------------------------------------
-
-/**** acceptableBoolean ****/
-
-  export function acceptableBoolean (Value:any, Default:boolean):boolean {
-    return (ValueIsBoolean(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalBoolean ****/
-
-  export function acceptableOptionalBoolean (Value:any):boolean|undefined {
-    return (ValueIsBoolean(Value) ? Value : undefined)
-  }
-
-/**** acceptableNumber ****/
-
-  export function acceptableNumber (Value:any, Default:number):number {
-    return (ValueIsNumber(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalNumber ****/
-
-  export function acceptableOptionalNumber (Value:any):number|undefined {
-    return (ValueIsNumber(Value) ? Value : undefined)
-  }
-
-/**** acceptableNumberInRange ****/
-
-  export function acceptableNumberInRange (
-    Value:any, Default:number,
-    minValue:number = -Infinity, maxValue:number = Infinity,
-    withMin:boolean = false, withMax:boolean = false
-  ):number {
-    return (ValueIsNumberInRange(Value,minValue,maxValue,withMin,withMax) ? Value : Default)
-  }
-
-/**** acceptableOptionalNumberInRange ****/
-
-  export function acceptableOptionalNumberInRange (
-    Value:any,
-    minValue:number = -Infinity, maxValue:number = Infinity,
-    withMin:boolean = false, withMax:boolean = false
-  ):number|undefined {
-    return (
-      ValueIsNumberInRange(Value,minValue,maxValue,withMin,withMax)
-      ? Value
-      : undefined
-    )
-  }
-
-/**** acceptableInteger ****/
-
-  export function acceptableInteger (Value:any, Default:number):number {
-    return (ValueIsInteger(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalInteger ****/
-
-  export function acceptableOptionalInteger (Value:any):number|undefined {
-    return (ValueIsInteger(Value) ? Value : undefined)
-  }
-
-/**** acceptableIntegerInRange ****/
-
-  export function acceptableIntegerInRange (
-    Value:any, Default:number, minValue:number = -Infinity, maxValue:number = Infinity
-  ):number {
-    return (ValueIsIntegerInRange(Value,minValue,maxValue) ? Value : Default)
-  }
-
-/**** acceptableOptionalIntegerInRange ****/
-
-  export function acceptableOptionalIntegerInRange (
-    Value:any,
-    minValue:number = -Infinity, maxValue:number = Infinity
-  ):number|undefined {
-    return (ValueIsIntegerInRange(Value,minValue,maxValue) ? Value : undefined)
-  }
-
-/**** acceptableOrdinal ****/
-
-  export function acceptableOrdinal (Value:any, Default:number):number {
-    return (ValueIsOrdinal(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalOrdinal ****/
-
-  export function acceptableOptionalOrdinal (
-    Value:any,
-  ):number|undefined {
-    return (ValueIsOrdinal(Value) ? Value : undefined)
-  }
-
-/**** acceptableString ****/
-
-  export function acceptableString (Value:any, Default:string):string {
-    return (ValueIsString(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalString ****/
-
-  export function acceptableOptionalString (Value:any):string|undefined {
-    return (ValueIsString(Value) ? Value : undefined)
-  }
-
-/**** acceptableNonEmptyString ****/
-
-  export function acceptableNonEmptyString (Value:any, Default:string):string {
-    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : Default)
-  }
-
-/**** acceptableOptionalNonEmptyString ****/
-
-  export function acceptableOptionalNonEmptyString (Value:any):string|undefined {
-    return (ValueIsString(Value) && (Value.trim() !== '') ? Value : undefined)
-  }
-
-/**** acceptableStringMatching ****/
-
-  export function acceptableStringMatching (
-    Value:any, Default:string, Pattern:RegExp
-  ):string {
-    return (ValueIsStringMatching(Value,Pattern) ? Value : Default)
-  }
-
-/**** acceptableOptionalStringMatching ****/
-
-  export function acceptableOptionalStringMatching (
-    Value:any, Pattern:RegExp
-  ):string|undefined {
-    return (ValueIsStringMatching(Value,Pattern) ? Value : undefined)
-  }
-
-/**** acceptableText ****/
-
-  const noCtrlCharsButCRLFTABPattern = /^[^\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/
-
-  export function acceptableText (Value:any, Default:string):string {
-    return (ValueIsStringMatching(Value,noCtrlCharsButCRLFTABPattern) ? Value : Default)
-  }
-
-/**** acceptableOptionalText ****/
-
-  export function acceptableOptionalText (Value:any):string|undefined {
-    return (ValueIsText(Value) ? Value : undefined)
-  }
-
-/**** acceptableTextline ****/
-
-  export function acceptableTextline (Value:any, Default:string):string {
-    return (ValueIsTextline(Value) ? Value : Default).replace(
-      /[\f\r\n\v\u0085\u2028\u2029].*$/,'...'
-    )
-  }
-
-/**** acceptableOptionalTextline ****/
-
-  export function acceptableOptionalTextline (Value:any):string|undefined {
-    const Result = ValueIsTextline(Value) ? Value : undefined
-    return (
-      Result == null
-      ? undefined
-      : Result.replace(/[\f\r\n\v\u0085\u2028\u2029].*$/,'...')
-    )
-  }
-
-/**** acceptableFunction ****/
-
-  export function acceptableFunction (Value:any, Default:Function):Function {
-    return (ValueIsFunction(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalFunction ****/
-
-  export function acceptableOptionalFunction (Value:any):Function|undefined {
-    return (ValueIsFunction(Value) ? Value : undefined)
-  }
-
-/**** acceptableList ****/
-
-  export function acceptableList (Value:any, Default:any[]):any[] {
-    return (ValueIsList(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalList ****/
-
-  export function acceptableOptionalList (Value:any):any[]|undefined {
-    return (ValueIsList(Value) ? Value : undefined)
-  }
-
-/**** acceptableListSatisfying ****/
-
-  export function acceptableListSatisfying (
-    Value:any, Default:any[], Matcher:Function
-  ):any[] {
-    return (ValueIsListSatisfying(Value,Matcher) ? Value : Default)
-  }
-
-/**** acceptableOptionalListSatisfying ****/
-
-  export function acceptableOptionalListSatisfying (
-    Value:any, Matcher:Function
-  ):any[]|undefined {
-    return (ValueIsListSatisfying(Value,Matcher) ? Value : undefined)
-  }
-
-/**** acceptableOneOf ****/
-
-  export function acceptableOneOf (
-    Value:any, Default:any, ValueList:any[]
-  ):any {
-    return (ValueIsOneOf(Value,ValueList) ? Value : Default)
-  }
-
-/**** acceptableOptionalOneOf ****/
-
-  export function acceptableOptionalOneOf (
-    Value:any, ValueList:any[]
-  ):any|undefined {
-    return (ValueIsOneOf(Value,ValueList) ? Value : undefined)
-  }
-
-/**** acceptableColor ****/
-
-  export function acceptableColor (Value:any, Default:WAT_Color):WAT_Color {
-    return (ValueIsColor(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalColor ****/
-
-  export function acceptableOptionalColor (Value:any):WAT_Color|undefined {
-    return (ValueIsColor(Value) ? Value : undefined)
-  }
-
-/**** acceptableEMailAddress ****/
-
-  export function acceptableEMailAddress (Value:any, Default:WAT_Textline):WAT_Textline {
-    return (ValueIsEMailAddress(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalEMailAddress ****/
-
-  export function acceptableOptionalEMailAddress (Value:any):WAT_Textline|undefined {
-    return (ValueIsEMailAddress(Value) ? Value : undefined)
-  }
-
-/**** acceptablePhoneNumber ****/
-
-  export function acceptablePhoneNumber (Value:any, Default:WAT_Textline):WAT_Textline {
-    return (/*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalPhoneNumber ****/
-
-  export function acceptableOptionalPhoneNumber (Value:any):WAT_Textline|undefined {
-    return (/*ValueIsPhoneNumber*/ValueIsTextline(Value) ? Value : undefined)
-  }
-
-/**** acceptableURL ****/
-
-  export function acceptableURL (Value:any, Default:WAT_Textline):WAT_Textline {
-    return (ValueIsURL(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalURL ****/
-
-  export function acceptableOptionalURL (Value:any):WAT_Textline|undefined {
-    return (ValueIsURL(Value) ? Value : undefined)
-  }
-
-/**** acceptableBehavior ****/
-
-  export function acceptableBehavior (Value:any, Default:WAT_Behavior):WAT_Behavior {
-    return (ValueIsBehavior(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalBehavior ****/
-
-  export function acceptableOptionalBehavior (Value:any):WAT_Behavior|undefined {
-    return (ValueIsBehavior(Value) ? Value : undefined)
-  }
-
-/**** acceptableName ****/
-
-  export function acceptableName (Value:any, Default:WAT_Name):WAT_Name {
-    return (ValueIsName(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalName ****/
-
-  export function acceptableOptionalName (Value:any):WAT_Name|undefined {
-    return (ValueIsName(Value) ? Value : undefined)
-  }
-
-/**** acceptablePath ****/
-
-  export function acceptablePath (Value:any, Default:WAT_Path):WAT_Path {
-    return (ValueIsPath(Value) ? Value : Default)
-  }
-
-/**** acceptableOptionalPath ****/
-
-  export function acceptableOptionalPath (Value:any):WAT_Path|undefined {
-    return (ValueIsPath(Value) ? Value : undefined)
-  }
-
-//------------------------------------------------------------------------------
 //--                             Behavior Support                             --
 //------------------------------------------------------------------------------
 
@@ -1453,14 +1335,18 @@
   ]
   export type WAT_PropertyEditorType = typeof WAT_PropertyEditorTypes[number]
 
+  export const WAT_PropertyContainerTypes = ['none','observed','memoized']
+  export type  WAT_PropertyContainerType  = typeof WAT_PropertyContainerTypes[number]
+
   export type WAT_PropertyDescriptor = {
     Name:WAT_Identifier, Label:WAT_Textline,
-    EditorType:WAT_PropertyEditorType, readonly?:boolean
+    EditorType:WAT_PropertyEditorType, readonly?:boolean, Validator?:Function,
+    Default?:any, AccessorsFor?:WAT_PropertyContainerType, withCallback?:boolean
   } & {                              // plus additional editor-specific elements
     Placeholder?:WAT_Textline,
-    FalseValue?:string, TrueValue?:string,
+    FalseValue?:WAT_Textline, TrueValue?:WAT_Textline,
     minLength?:number, maxLength?:number,
-    multiple?:boolean, Pattern?:string,
+    multiple?:boolean, Pattern?:WAT_Textline,
     minValue?:any, maxValue?:any, Stepping?:'any'|number,
     Resizability?:'none'|'horizontal'|'vertical'|'both',
     LineWrapping?:boolean, SpellChecking?:boolean,
@@ -1472,6 +1358,12 @@
   const forbiddenPropertyNames:Indexable = Object.create(null)
 
   function collectInternalNames ():void {
+    Object.assign(forbiddenPropertyNames,{
+      mount:true, unmount:true, render:true,         // intrinsic callback names
+      input:true, click:true, dblclick:true,
+      drop:true
+    })
+
 // @ts-ignore TS2345 allow abstract class as argument
     collectInternalNamesFrom(WAT_Visual)
     collectInternalNamesFrom(WAT_Applet)
@@ -1505,7 +1397,10 @@
       (Value.Label != null) && ! ValueIsTextline(Value.Label) ||
       (Value.EditorType == null) ||
       ! ValueIsOneOf(Value.EditorType,WAT_PropertyEditorTypes) ||
-      (Value.readonly != null) && ! ValueIsBoolean(Value.readonly)
+      (Value.AccessorsFor != null) && ! ValueIsOneOf(Value.AccessorsFor,WAT_PropertyContainerTypes) ||
+      (Value.Validator    != null) && ! ValueIsFunction(Value.Validator) ||
+      (Value.readonly     != null) && ! ValueIsBoolean(Value.readonly)   ||
+      (Value.withCallback != null) && ! ValueIsBoolean(Value.withCallback)
     ) { return false }
 
   /**** validate editor-specific settings ****/
@@ -1513,8 +1408,8 @@
     const {
       EditorType,
       Placeholder, FalseValue,TrueValue, minLength,maxLength,multiple,Pattern,
-      minValue,maxValue,Stepping, Resizability,LineWrapping, SpellChecking,
-      ValueList, Hashmarks, Suggestions
+      minValue,maxValue,Stepping, Resizability,LineWrapping,
+      SpellChecking, ValueList, Hashmarks, Suggestions
     } = Value
     switch (EditorType) {
       case 'checkbox':
@@ -1536,26 +1431,18 @@
           (maxLength     != null) && ! ValueIsOrdinal(maxLength) ||
           (multiple      != null) && ! ValueIsBoolean(multiple) && (EditorType === 'email-address-input') ||
           (SpellChecking != null) && ! ValueIsBoolean(SpellChecking) && (EditorType === 'textline-input') ||
-          (Pattern       != null) && ! ValueIsTextline(Pattern)  ||
+          (Pattern       != null) && ! ValueIsTextline(Pattern) ||
           (Suggestions   != null) && ! ValueIsListSatisfying(Suggestions,ValueIsTextline)
         ) { return false }
         break
       case 'number-input':
-        if (
-          (Placeholder   != null) && ! ValueIsTextline(Placeholder)  ||
-          (minValue      != null) && ! ValueIsFiniteNumber(minValue) ||
-          (maxValue      != null) && ! ValueIsFiniteNumber(maxValue) ||
-          (Stepping      != null) && ! ValueIsNumberInRange(Stepping, 0,Infinity, false) && (Stepping !== 'any') ||
-          (Suggestions   != null) && ! ValueIsListSatisfying(Suggestions,ValueIsFiniteNumber)
-        ) { return false }
-        break
       case 'integer-input':
         if (
-          (Placeholder   != null) && ! ValueIsTextline(Placeholder)  ||
-          (minValue      != null) && ! ValueIsInteger(minValue) ||
-          (maxValue      != null) && ! ValueIsInteger(maxValue) ||
-          (Stepping      != null) && ! ValueIsIntegerInRange(Stepping, 0,Infinity) && (Stepping !== 'any') ||
-          (Suggestions   != null) && ! ValueIsListSatisfying(Suggestions,ValueIsInteger)
+          (Placeholder != null) && ! ValueIsTextline(Placeholder)  ||
+          (minValue    != null) && ! ValueIsFiniteNumber(minValue) ||
+          (maxValue    != null) && ! ValueIsFiniteNumber(maxValue) ||
+          (Stepping    != null) && ! ValueIsNumberInRange(Stepping, 0,Infinity, false) && (Stepping !== 'any') ||
+          (Suggestions != null) && ! ValueIsListSatisfying(Suggestions,ValueIsFiniteNumber)
         ) { return false }
         break
       case 'time-input':
@@ -1624,6 +1511,7 @@
       case 'json-input':
       case 'linelist-input':
       case 'numberlist-input':
+      case 'integerlist-input':
         if (
           (Placeholder   != null) && ! ValueIsTextline(Placeholder) ||
           (minLength     != null) && ! ValueIsOrdinal(minLength) ||
@@ -1645,16 +1533,24 @@
     )
 
     let {
-      Name, Label, EditorType, readonly,
+      Name, Label, EditorType, readonly, Default, AccessorsFor, withCallback,
       Placeholder, FalseValue,TrueValue, minLength,maxLength,multiple,Pattern,
-      minValue,maxValue,Stepping, Resizability,LineWrapping, SpellChecking,
-      ValueList, Hashmarks, Suggestions
+      minValue,maxValue, withMin,withMax, Stepping, Resizability,LineWrapping,
+      SpellChecking, ValueList, Hashmarks, Suggestions
     } = Value
 
     if (Label == null) { Label = Name }
 
     let Descriptor:WAT_PropertyDescriptor = { Name, Label, EditorType }
-      if (readonly != null) { Descriptor.readonly = readonly }
+      if (readonly     != null) { Descriptor.readonly     = readonly }
+      if (withCallback != null) { Descriptor.withCallback = withCallback }
+      if (Default      != null) { Descriptor.Default      = Default }
+
+      if (AccessorsFor == null) {
+        Descriptor.AccessorsFor = 'memoized'
+      } else {
+        if (AccessorsFor !== 'none') { Descriptor.AccessorsFor = AccessorsFor }
+      }
 
       switch (Value.EditorType) {
         case 'checkbox':
@@ -1719,6 +1615,7 @@
         case 'json-input':
         case 'linelist-input':
         case 'numberlist-input':
+        case 'integerlist-input':
           if (Placeholder  != null) { Descriptor.Placeholder  = Placeholder }
           if (minLength    != null) { Descriptor.minLength    = minLength }
           if (maxLength    != null) { Descriptor.maxLength    = maxLength }
@@ -1727,6 +1624,84 @@
           break
       }
     return Descriptor
+  }
+
+/**** installAccessorFor ****/
+
+  function installAccessorFor (
+    Visual:Indexable, Descriptor:WAT_PropertyDescriptor
+  ):void {
+    const { minValue,maxValue, Pattern, ValueList } = Descriptor
+    const RegEx = (Pattern == null ? undefined : new RegExp(Pattern))
+
+    let Validator = Descriptor.Validator
+    if (Validator == null) {
+      switch (Descriptor.EditorType) {
+        case 'checkbox':
+        case 'choice':   Validator = ValueIsBoolean; break
+        case 'textline-input':
+        case 'password-input':
+          Validator = (
+            Pattern == null
+            ? ValueIsTextline
+            : (Value:any) => ValueIsStringMatching(Value,RegEx as RegExp)
+          ); break
+        case 'email-address-input': Validator = ValueIsEMailAddress; break
+        case 'phone-number-input':  Validator = ValueIsPhoneNumber;  break
+        case 'url-input':           Validator = ValueIsURL;          break
+        case 'search-input':        Validator = ValueIsTextline;     break
+        case 'number-input':
+          if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
+            Validator = ValueIsNumber
+          } else {
+            Validator = (Value:any) => ValueIsNumberInRange(Value, minValue,maxValue)
+          }
+          break
+        case 'integer-input':
+          if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
+            Validator = ValueIsInteger
+          } else {
+            Validator = (Value:any) => ValueIsIntegerInRange(Value, minValue,maxValue)
+          }
+          break
+        case 'time-input':      Validator = (Value:any) => ValueIsStringMatching(Value,WAT_TimeRegExp);     break
+        case 'date-time-input': Validator = (Value:any) => ValueIsStringMatching(Value,WAT_DateTimeRegExp); break
+        case 'date-input':      Validator = (Value:any) => ValueIsStringMatching(Value,WAT_DateRegExp);     break
+        case 'month-input':     Validator = (Value:any) => ValueIsStringMatching(Value,WAT_MonthRegExp);    break
+        case 'week-input':      Validator = (Value:any) => ValueIsStringMatching(Value,WAT_WeekRegExp);     break
+        case 'color-input':     Validator = ValueIsColor; break
+        case 'drop-down':       Validator = (Value:any) => ValueIsOneOf(Value,ValueList as any[]); break
+        case 'slider':
+          if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
+            Validator = ValueIsNumber
+          } else {
+            Validator = (Value:any) => ValueIsNumberInRange(Value, minValue,maxValue)
+          }
+          break
+        case 'text-input':
+        case 'html-input':
+        case 'css-input':
+        case 'javascript-input':  Validator = ValueIsText; break
+        case 'json-input':        Validator = ValueIsJSON; break
+        case 'linelist-input':    Validator = (Value:any) => ValueIsLineList(Value,RegEx); break
+        case 'numberlist-input':  Validator = (Value:any) => ValueIsNumberList(Value,minValue,maxValue);  break
+        case 'integerlist-input': Validator = (Value:any) => ValueIsIntegerList(Value,minValue,maxValue); break
+      }
+    }
+
+    const Container = Descriptor.AccessorsFor as string, Default = Descriptor.Default
+    Object.defineProperty(Visual, Descriptor.Name, {
+      configurable:true, enumerable:true,
+      get: () => acceptableValue(Visual[Container][Descriptor.Name],Validator as Function,Default),
+      set: (newValue) => {
+        ;(Default == null ? allowValue : expectValue)(Descriptor.Name,newValue,Validator)
+        if (Visual[Container][Descriptor.Name] !== newValue) {
+          Visual[Container][Descriptor.Name] = (ValueIsList(newValue) ? newValue.slice() : newValue)
+          if (Descriptor.withCallback) { Visual.on(Descriptor.Name)(newValue) }
+          Visual.rerender()
+        }
+      },
+    })
   }
 
 //----------------------------------------------------------------------------//
@@ -2190,7 +2165,18 @@
           (Descriptor:WAT_PropertyDescriptor) => PropertySet[Descriptor.Name]
         )
       if (ValuesDiffer(this._configurableProperties,newProperties)) {
+        this._configurableProperties.forEach((Descriptor:WAT_PropertyDescriptor) => {
+          if (Descriptor.AccessorsFor != null) { delete (this as Indexable)[Descriptor.Name] }
+        })
+
         this._configurableProperties = newProperties
+
+        this._configurableProperties.forEach((Descriptor:WAT_PropertyDescriptor) => {
+          if (Descriptor.AccessorsFor != null) {
+            installAccessorFor(this,Descriptor)
+          }
+        })
+
         this.rerender()
       }
     }
@@ -4052,7 +4038,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         Index = Math.max(0,Math.min(Index,this._PageList.length))
       }
 
-      const Behavior = acceptableOptionalBehavior(Serialization.Behavior)
+      const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
       let newPage = new WAT_Page(Behavior,this)
         this._PageList.splice(Index,0,newPage)
@@ -4665,7 +4651,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         'InvalidArgument: the given "Serialization" is no valid WAT applet serialization'
       )
 
-      const Behavior = acceptableOptionalBehavior(Serialization.Behavior)
+      const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
       const Applet = new WAT_Applet(Behavior)
         const AppletName = Serialization.Name
@@ -5032,7 +5018,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         Index = Math.max(0,Math.min(Index,this._WidgetList.length))
       }
 
-      const Behavior = acceptableOptionalBehavior(Serialization.Behavior)
+      const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
       let Widget = new WAT_Widget(Behavior,this)
         this._WidgetList.splice(Index,0,Widget)
@@ -6607,7 +6593,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     /**** Value ****/
 
       get Value ():WAT_Path|undefined {
-        return acceptableOptionalTextline(this.memoized.Value) as WAT_Path
+        return acceptableValue(this.memoized.Value,ValueIsPath) as WAT_Path
       },
 
       set Value (newValue:WAT_Path|WAT_Widget|undefined) {
@@ -6629,7 +6615,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         if (SourceWidget == null) {
           if (this.memoized.Value != null) {
             this.memoized.Value = undefined
-            this.on('value-change')()
+            this.on('Value')()
             this.rerender()
           }
           return
@@ -6645,7 +6631,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
         if (this._Value !== SourcePath) {
           this.memoized.Value = SourcePath
-          this.on('value-change')()
+          this.on('Value')()
           this.rerender()
         }
       },
@@ -6765,59 +6751,13 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',    EditorType:'text-input', Placeholder:'(enter text)' },
-      { Name:'readonly', EditorType:'checkbox' },
-      { Name:'acceptableFileTypes', Label:'File Types', EditorType:'linelist-input' },
+      { Name:'Value',            Placeholder:'(enter text)',
+        EditorType:'text-input', AccessorsFor:'memoized', withCallback:true, },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsTextFormat },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,true)
-      },
-      set readonly (newSetting:boolean) {
-        allowBoolean('readonly setting',newSetting)
-        if (this.memoized.readonly !== newSetting) {
-          this.memoized.readonly = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsTextFormat
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsTextFormat)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -6902,59 +6842,13 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',    EditorType:'text-input', Placeholder:'(enter HTML)' },
-      { Name:'readonly', EditorType:'checkbox' },
-      { Name:'acceptableFileTypes', Label:'File Types', EditorType:'linelist-input' },
+      { Name:'Value',                Placeholder:'(enter HTML)',
+        EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'readonly',             Default:true,
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsHTMLFormat },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,true)
-      },
-      set readonly (newSetting:boolean) {
-        allowBoolean('readonly setting',newSetting)
-        if (this.memoized.readonly !== newSetting) {
-          this.memoized.readonly = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsHTMLFormat
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsHTMLFormat)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7040,89 +6934,17 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',    EditorType:'url-input', Placeholder:'(enter Image URL)' },
-      { Name:'readonly', EditorType:'checkbox' },
-      { Name:'ImageScaling',   EditorType:'drop-down', ValueList:WAT_ImageScalings },
-      { Name:'ImageAlignment', EditorType:'drop-down', ValueList:WAT_ImageAlignments },
-      { Name:'acceptableFileTypes', Label:'File Types', EditorType:'linelist-input' },
+      { Name:'Value',           Placeholder:'(enter image URL)',
+        EditorType:'url-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'readonly',
+        EditorType:'checkbox',  AccessorsFor:'memoized' },
+      { Name:'ImageScaling',     Label:'Image Scaling',   Default:'contain',
+        EditorType:'drop-down',  AccessorsFor:'memoized', ValueList:WAT_ImageScalings },
+      { Name:'ImageAlignment',   Label:'Image Alignment', Default:'center center',
+        EditorType:'drop-down',  AccessorsFor:'memoized', ValueList:WAT_ImageAlignments },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsImageFormat },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalURL(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** ImageScaling ****/
-
-      get ImageScaling ():WAT_ImageScaling|undefined {
-        return acceptableOneOf(this.memoized.ImageScaling,'contain',WAT_ImageScalings)
-      },
-
-      set ImageScaling (newSetting:WAT_ImageScaling|undefined) {
-        allowOneOf('image scaling',newSetting, WAT_ImageScalings)
-        if (this.memoized.ImageScaling !== newSetting) {
-          this.memoized.ImageScaling = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** ImageAlignment ****/
-
-      get ImageAlignment ():WAT_ImageAlignment|undefined {
-        return acceptableOneOf(this.memoized.ImageAlignment,'center',WAT_ImageAlignments)
-      },
-
-      set ImageAlignment (newSetting:WAT_ImageAlignment|undefined) {
-        allowOneOf('image alignment',newSetting, WAT_ImageAlignments)
-        if (this.memoized.ImageAlignment !== newSetting) {
-          this.memoized.ImageAlignment = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,true)
-      },
-      set readonly (newSetting:boolean) {
-        allowBoolean('readonly setting',newSetting)
-        if (this.memoized.readonly !== newSetting) {
-          this.memoized.readonly = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsImageFormat
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsImageFormat)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7218,59 +7040,13 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',          EditorType:'text-input', Placeholder:'(enter SVG)' },
-      { Name:'ImageScaling',   EditorType:'drop-down', ValueList:WAT_ImageScalings },
-      { Name:'ImageAlignment', EditorType:'drop-down', ValueList:WAT_ImageAlignments },
+      { Name:'Value',            Placeholder:'(enter SVG)',
+        EditorType:'text-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'ImageScaling',     Label:'Image Scaling',   Default:'contain',
+        EditorType:'drop-down',  AccessorsFor:'memoized', ValueList:WAT_ImageScalings },
+      { Name:'ImageAlignment',   Label:'Image Alignment', Default:'center center',
+        EditorType:'drop-down',  AccessorsFor:'memoized', ValueList:WAT_ImageAlignments },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** ImageScaling ****/
-
-      get ImageScaling ():WAT_ImageScaling|undefined {
-        return acceptableOneOf(this.memoized.ImageScaling,'contain',WAT_ImageScalings)
-      },
-
-      set ImageScaling (newSetting:WAT_ImageScaling|undefined) {
-        allowOneOf('image scaling',newSetting, WAT_ImageScalings)
-        if (this.memoized.ImageScaling !== newSetting) {
-          this.memoized.ImageScaling = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** ImageAlignment ****/
-
-      get ImageAlignment ():WAT_ImageAlignment|undefined {
-        return acceptableOneOf(this.memoized.ImageAlignment,'center',WAT_ImageAlignments)
-      },
-
-      set ImageAlignment (newSetting:WAT_ImageAlignment|undefined) {
-        allowOneOf('image alignment',newSetting, WAT_ImageAlignments)
-        if (this.memoized.ImageAlignment !== newSetting) {
-          this.memoized.ImageAlignment = newSetting
-          this.rerender()
-        }
-      },
-
-
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7299,89 +7075,17 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',             EditorType:'url-input', Placeholder:'(enter URL)' },
-      { Name:'PermissionsPolicy', EditorType:'textline-input' },
-      { Name:'allowsFullscreen',  EditorType:'checkbox' },
-      { Name:'SandboxPermissions',EditorType:'textline-input' },
-      { Name:'ReferrerPolicy',    EditorType:'drop-down', ValueList:WAT_ReferrerPolicies },
+      { Name:'Value', Placeholder:'(enter URL)',
+        EditorType:'url-input',      AccessorsFor:'memoized', withCallback:true },
+      { Name:'PermissionsPolicy',    Label:'Permissions Policy',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'allowsFullscreen',     Label:'allows Fullscreen',   Default:false,
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'SandboxPermissions',   Label:'Sandbox Permissions', Default:WAT_DefaultSandboxPermissions,
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'ReferrerPolicy',       Label:'Referrer Policy',     Default:'strict-origin-when-cross-origin',
+        EditorType:'drop-down',      AccessorsFor:'memoized', ValueList:WAT_ReferrerPolicies },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalURL(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** PermissionsPolicy ****/
-
-      get PermissionsPolicy ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.PermissionsPolicy)
-      },
-
-      set PermissionsPolicy (newSetting:WAT_Textline|undefined) {
-        allowTextline('permissions policy',newSetting)
-        if (this.memoized.PermissionsPolicy !== newSetting) {
-          this.memoized.PermissionsPolicy = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** allowsFullscreen ****/
-
-      get allowsFullscreen ():boolean {
-        return acceptableBoolean(this.memoized.allowsFullscreen,false)
-      },
-
-      set allowsFullscreen (newSetting:boolean) {
-        allowBoolean('fullscreen permission',newSetting)
-        if (this.memoized.allowsFullscreen !== newSetting) {
-          this.memoized.allowsFullscreen = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** SandboxPermissions ****/
-
-      get SandboxPermissions ():WAT_Textline|undefined {
-        return acceptableTextline(this.memoized.SandboxPermissions,WAT_DefaultSandboxPermissions)
-      },
-
-      set SandboxPermissions (newSetting:WAT_Textline|undefined) {
-        allowTextline('sandbox permissions',newSetting)
-        if (this.memoized.SandboxPermissions !== newSetting) {
-          this.memoized.SandboxPermissions = newSetting
-          this.rerender()
-        }
-      },
-
-    /**** ReferrerPolicy ****/
-
-      get ReferrerPolicy ():WAT_ReferrerPolicy|undefined {
-        return acceptableOneOf(
-          this.memoized.ReferrerPolicy,'strict-origin-when-cross-origin',WAT_ReferrerPolicies
-        )
-      },
-
-      set ReferrerPolicy (newSetting:WAT_ReferrerPolicy|undefined) {
-        allowOneOf('referrer policy',newSetting, WAT_ReferrerPolicies)
-        if (this.memoized.ReferrerPolicy !== newSetting) {
-          this.memoized.ReferrerPolicy = newSetting
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7420,24 +7124,9 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Label', EditorType:'textline-input', Placeholder:'(enter label)' },
+      { Name:'Label',                Placeholder:'(enter label)',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Label ****/
-
-      get Label ():WAT_Textline|undefined {
-        return acceptableTextline(this.memoized.Label,'Button')
-      },
-
-      set Label (newValue:WAT_Textline|undefined) {
-        allowTextline('button label',newValue)
-        if (this.memoized.Label !== newValue) {
-          this.memoized.Label = newValue
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7476,36 +7165,16 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value', EditorType:'checkbox' },
+      { Name:'Value',
+        EditorType:'checkbox', AccessorsFor:'memoized', withCallback:true },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():boolean|undefined {
-        return acceptableOptionalBoolean(this.memoized.Value)
-      },
-
-      set Value (newValue:boolean|undefined) {
-        allowBoolean('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-
-    } as Indexable)
 
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
       const onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-
         this.Value = Event.target.checked
-        this.on('value-change')()
       }
 
       const Value = this.Value
@@ -7540,36 +7209,16 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value', EditorType:'checkbox' },
+      { Name:'Value',
+        EditorType:'checkbox', AccessorsFor:'memoized', withCallback:true },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():boolean|undefined {
-        return acceptableBoolean(this.memoized.Value,false)
-      },
-
-      set Value (newValue:boolean|undefined) {
-        expectBoolean('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-
-    } as Indexable)
 
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
       const onClick = (Event:any) => {
         if (this.Enabling == false) { return consumingEvent(Event) }
-
         this.Value = Event.target.checked
-        this.on('value-change')()
       }
 
       return html`<input type="radio" class="WAT Radiobutton"
@@ -7592,102 +7241,19 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'number-input' },
-      { Name:'Minimum',    EditorType:'number-input' },
-      { Name:'lowerBound', EditorType:'number-input' },
-      { Name:'Optimum',    EditorType:'number-input' },
-      { Name:'upperBound', EditorType:'number-input' },
-      { Name:'Maximum',    EditorType:'number-input' },
+      { Name:'Value',
+        EditorType:'number-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Minimum',
+        EditorType:'number-input', AccessorsFor:'memoized' },
+      { Name:'lowerBound',         Label:'lower Bound',
+        EditorType:'number-input', AccessorsFor:'memoized' },
+      { Name:'Optimum',
+        EditorType:'number-input', AccessorsFor:'memoized' },
+      { Name:'upperBound',         Label:'upper Bound',
+        EditorType:'number-input', AccessorsFor:'memoized' },
+      { Name:'Maximum',
+        EditorType:'number-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Value)
-      },
-
-      set Value (newValue:number|undefined) {
-        allowFiniteNumber('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Minimum)
-      },
-
-      set Minimum (newValue:number|undefined) {
-        allowNumber('minimal value',newValue)
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** lowerBound ****/
-
-      get lowerBound ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.lowerBound)
-      },
-
-      set lowerBound (newValue:number|undefined) {
-        allowNumber('lower bound',newValue)
-        if (this.memoized.lowerBound !== newValue) {
-          this.memoized.lowerBound = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Optimum ****/
-
-      get Optimum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Optimum)
-      },
-
-      set Optimum (newValue:number|undefined) {
-        allowNumber('optimum',newValue)
-        if (this.memoized.Optimum !== newValue) {
-          this.memoized.Optimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** upperBound ****/
-
-      get upperBound ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.upperBound)
-      },
-
-      set upperBound (newValue:number|undefined) {
-        allowNumber('upper bound',newValue)
-        if (this.memoized.upperBound !== newValue) {
-          this.memoized.upperBound = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Maximum)
-      },
-
-      set Maximum (newValue:number|undefined) {
-        allowNumber('maximal value',newValue)
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7733,42 +7299,11 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',   EditorType:'number-input' },
-      { Name:'Maximum', EditorType:'number-input' },
+      { Name:'Value',
+        EditorType:'number-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Maximum',
+        EditorType:'number-input', AccessorsFor:'memoized', minValue:0 },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Value)
-      },
-
-      set Value (newValue:number|undefined) {
-        allowFiniteNumber('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():number|undefined {
-        return acceptableOptionalNumberInRange(this.memoized.Maximum, 0,Infinity, true)
-      },
-
-      set Maximum (newValue:boolean|undefined) {
-        allowNumber('maximal value',newValue)
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7795,93 +7330,17 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',    EditorType:'number-input' },
-      { Name:'Minimum',  EditorType:'number-input' },
-      { Name:'Stepping', EditorType:'number-input', Minimum:0 },
-      { Name:'Maximum',  EditorType:'number-input' },
-      { Name:'Hashmarks',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'number-input',   AccessorsFor:'memoized', withCallback:true },
+      { Name:'Minimum',
+        EditorType:'number-input',   AccessorsFor:'memoized' },
+      { Name:'Stepping',
+        EditorType:'number-input',   AccessorsFor:'memoized', minValue:0 },
+      { Name:'Maximum',
+        EditorType:'number-input',   AccessorsFor:'memoized' },
+      { Name:'Hashmarks',            Pattern:HashmarkPattern,
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Value)
-      },
-
-      set Value (newValue:number|undefined) {
-        allowFiniteNumber('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Minimum)
-      },
-
-      set Minimum (newValue:number|undefined) {
-        allowNumber('minimal value',newValue)
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Stepping ****/
-
-      get Stepping ():number|'any'|undefined {
-        const Candidate = this.memoized.Stepping
-        return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0,Infinity, false))
-      },
-
-      set Stepping (newValue:number|'any'|undefined) {
-        if (newValue !== 'any') {
-          allowNumberInRange('step value',newValue, 0,Infinity, false)
-        }
-        if (this.memoized.Stepping !== newValue) {
-          this.memoized.Stepping = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Maximum)
-      },
-
-      set Maximum (newValue:number|undefined) {
-        allowNumber('maximal value',newValue)
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Hashmarks ****/
-
-      get Hashmarks ():(number|string)[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Hashmarks,HashmarkMatcher
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Hashmarks (newValue:(number|string)[]|undefined) {
-        allowListSatisfying('hashmark list',newValue,HashmarkMatcher)
-        if (ValuesDiffer(this.memoized.Hashmarks,newValue)) {
-          this.memoized.Hashmarks = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7970,135 +7429,23 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',        EditorType:'textline-input' },
-      { Name:'Placeholder',  EditorType:'textline-input' },
-      { Name:'readonly',     EditorType:'checkbox' },
-      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',      EditorType:'textline-input' },
-      { Name:'SpellChecking',EditorType:'checkbox' },
-      { Name:'Suggestions',  EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'Pattern',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'SpellChecking',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Suggestions',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalTextline(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowTextline('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Pattern ****/
-
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
-      },
-
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
-          this.rerender()
-        }
-      },
-
-    /**** SpellChecking ****/
-
-      get SpellChecking ():boolean {
-        return acceptableBoolean(this.memoized.SpellChecking,false)
-      },
-
-      set SpellChecking (newValue:boolean) {
-        expectBoolean('spell check setting',newValue)
-        if (this.memoized.SpellChecking !== newValue) {
-          this.memoized.SpellChecking = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsTextline
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsTextline)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -8186,102 +7533,19 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'textline-input' },
-      { Name:'Placeholder',EditorType:'textline-input' },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'minLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',  EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',    EditorType:'textline-input' },
+      { Name:'Value',
+        EditorType:'password-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'Pattern',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalTextline(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowTextline('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Pattern ****/
-
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
-      },
-
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
-          this.rerender()
-        }
-      },
-
-
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -8358,123 +7622,21 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'number-input' },
-      { Name:'Placeholder',EditorType:'textline-input' },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'Minimum',    EditorType:'number-input' },
-      { Name:'Stepping',   EditorType:'number-input', Minimum:0 },
-      { Name:'Maximum',    EditorType:'number-input' },
-      { Name:'Suggestions',EditorType:'numberlist-input' },
+      { Name:'Value',
+        EditorType:'number-input',   AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Minimum',
+        EditorType:'number-input',   AccessorsFor:'memoized' },
+      { Name:'Stepping',
+        EditorType:'number-input',   AccessorsFor:'memoized', minValue:0 },
+      { Name:'Maximum',
+        EditorType:'number-input',   AccessorsFor:'memoized' },
+      { Name:'Suggestions',
+        EditorType:'numberlist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Value)
-      },
-
-      set Value (newValue:number|undefined) {
-        allowFiniteNumber('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Minimum)
-      },
-
-      set Minimum (newValue:number|undefined) {
-        allowNumber('minimal value',newValue)
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Stepping ****/
-
-      get Stepping ():number|'any'|undefined {
-        const Candidate = this.memoized.Stepping
-        return (Candidate === 'any' ? 'any' : acceptableOptionalNumberInRange(Candidate, 0,Infinity, false))
-      },
-
-      set Stepping (newValue:number|'any'|undefined) {
-        if (newValue !== 'any') {
-          allowNumberInRange('step value',newValue, 0,Infinity, false)
-        }
-        if (this.memoized.Stepping !== newValue) {
-          this.memoized.Stepping = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():number|undefined {
-        return acceptableOptionalNumber(this.memoized.Maximum)
-      },
-
-      set Maximum (newValue:number|undefined) {
-        allowNumber('maximal value',newValue)
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():number[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsNumber
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:number[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsNumber)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -8560,137 +7722,21 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',        EditorType:'textline-input' },
-      { Name:'Placeholder',  EditorType:'textline-input' },
-      { Name:'readonly',     EditorType:'checkbox' },
-      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',      EditorType:'textline-input' },
-      { Name:'SpellChecking',EditorType:'checkbox' },
-      { Name:'Suggestions',  EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'phone-number-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'Pattern',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'Suggestions',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalPhoneNumber(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowPhoneNumber('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Pattern ****/
-
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
-      },
-
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
-          this.rerender()
-        }
-      },
-
-    /**** SpellChecking ****/
-
-      get SpellChecking ():boolean {
-        return acceptableBoolean(this.memoized.SpellChecking,false)
-      },
-
-      set SpellChecking (newValue:boolean) {
-        expectBoolean('spell check setting',newValue)
-        if (this.memoized.SpellChecking !== newValue) {
-          this.memoized.SpellChecking = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsPhoneNumber
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsPhoneNumber)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -8778,137 +7824,19 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',        EditorType:'textline-input' },
-      { Name:'Placeholder',  EditorType:'textline-input' },
-      { Name:'readonly',     EditorType:'checkbox' },
-      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',      EditorType:'textline-input' },
-      { Name:'SpellChecking',EditorType:'checkbox' },
-      { Name:'Suggestions',  EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'email-address-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'Suggestions',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalEMailAddress(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowEMailAddress('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Pattern ****/
-
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
-      },
-
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
-          this.rerender()
-        }
-      },
-
-    /**** SpellChecking ****/
-
-      get SpellChecking ():boolean {
-        return acceptableBoolean(this.memoized.SpellChecking,false)
-      },
-
-      set SpellChecking (newValue:boolean) {
-        expectBoolean('spell check setting',newValue)
-        if (this.memoized.SpellChecking !== newValue) {
-          this.memoized.SpellChecking = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsEMailAddress
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsEMailAddress)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -8996,137 +7924,23 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',        EditorType:'textline-input' },
-      { Name:'Placeholder',  EditorType:'textline-input' },
-      { Name:'readonly',     EditorType:'checkbox' },
-      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',      EditorType:'textline-input' },
-      { Name:'SpellChecking',EditorType:'checkbox' },
-      { Name:'Suggestions',  EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'url-input',      AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'Pattern',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'SpellChecking',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Suggestions',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalURL(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowURL('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Pattern ****/
-
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
-      },
-
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
-          this.rerender()
-        }
-      },
-
-    /**** SpellChecking ****/
-
-      get SpellChecking ():boolean {
-        return acceptableBoolean(this.memoized.SpellChecking,false)
-      },
-
-      set SpellChecking (newValue:boolean) {
-        expectBoolean('spell check setting',newValue)
-        if (this.memoized.SpellChecking !== newValue) {
-          this.memoized.SpellChecking = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsURL
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsURL)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -9214,111 +8028,21 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'time-input', Stepping:1 },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'withSeconds',EditorType:'checkbox' },
-      { Name:'Minimum',    EditorType:'time-input', Stepping:1 },
-      { Name:'Maximum',    EditorType:'time-input', Stepping:1 },
-      { Name:'Suggestions',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'time-input',       AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input',   AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',         AccessorsFor:'memoized' },
+      { Name:'withSeconds',            Label:'with Seconds',
+        EditorType:'checkbox',         AccessorsFor:'memoized' },
+      { Name:'Minimum',                Stepping:1,
+        EditorType:'time-input',       AccessorsFor:'memoized' },
+      { Name:'Maximum',                Stepping:1,
+        EditorType:'time-input',       AccessorsFor:'memoized' },
+      { Name:'Suggestions',            Pattern:WAT_TimeRegExp,
+        EditorType:'linelist-input',   AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Value,WAT_TimeRegExp)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowStringMatching('value',newValue,WAT_TimeRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** withSeconds ****/
-
-      get withSeconds ():boolean {
-        return acceptableBoolean(this.memoized.withSeconds,false)
-      },
-
-      set withSeconds (newValue:boolean) {
-        expectBoolean('granularity setting',newValue)
-        if (this.memoized.withSeconds !== newValue) {
-          this.memoized.withSeconds = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_TimeRegExp)
-      },
-
-      set Minimum (newValue:string|undefined) {
-        allowStringMatching('earliest time',newValue,WAT_TimeRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_TimeRegExp)
-      },
-
-      set Maximum (newValue:string|undefined) {
-        allowStringMatching('latest time',newValue,WAT_TimeRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,WAT_TimeMatcher
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,WAT_TimeMatcher)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -9405,111 +8129,21 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'date-time-input', Stepping:1 },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'withSeconds',EditorType:'checkbox' },
-      { Name:'Minimum',    EditorType:'date-time-input', Stepping:1 },
-      { Name:'Maximum',    EditorType:'date-time-input', Stepping:1 },
-      { Name:'Suggestions',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'date-time-input',  AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input',   AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',         AccessorsFor:'memoized' },
+      { Name:'withSeconds',            Label:'with Seconds',
+        EditorType:'checkbox',         AccessorsFor:'memoized' },
+      { Name:'Minimum',                Stepping:1,
+        EditorType:'date-time-input',  AccessorsFor:'memoized' },
+      { Name:'Maximum',                Stepping:1,
+        EditorType:'date-time-input',  AccessorsFor:'memoized' },
+      { Name:'Suggestions',            Pattern:WAT_DateTimeRegExp,
+        EditorType:'linelist-input',   AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Value,WAT_DateTimeRegExp)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowStringMatching('value',newValue,WAT_DateTimeRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** withSeconds ****/
-
-      get withSeconds ():boolean {
-        return acceptableBoolean(this.memoized.withSeconds,false)
-      },
-
-      set withSeconds (newValue:boolean) {
-        expectBoolean('granularity setting',newValue)
-        if (this.memoized.withSeconds !== newValue) {
-          this.memoized.withSeconds = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateTimeRegExp)
-      },
-
-      set Minimum (newValue:string|undefined) {
-        allowStringMatching('earliest point in time',newValue,WAT_DateTimeRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateTimeRegExp)
-      },
-
-      set Maximum (newValue:string|undefined) {
-        allowStringMatching('latest point in time',newValue,WAT_DateTimeRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,WAT_DateTimeMatcher
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,WAT_DateTimeMatcher)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -9596,97 +8230,19 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'date-input' },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'withSeconds',EditorType:'checkbox' },
-      { Name:'Minimum',    EditorType:'date-input' },
-      { Name:'Maximum',    EditorType:'date-input' },
-      { Name:'Suggestions',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'date-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Minimum',              Stepping:1,
+        EditorType:'date-input',     AccessorsFor:'memoized' },
+      { Name:'Maximum',              Stepping:1,
+        EditorType:'date-input',     AccessorsFor:'memoized' },
+      { Name:'Suggestions',          Pattern:WAT_DateRegExp,
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Value,WAT_DateRegExp)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowStringMatching('value',newValue,WAT_DateRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateRegExp)
-      },
-
-      set Minimum (newValue:string|undefined) {
-        allowStringMatching('earliest date',newValue,WAT_DateRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_DateRegExp)
-      },
-
-      set Maximum (newValue:string|undefined) {
-        allowStringMatching('latest date',newValue,WAT_DateRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,WAT_DateMatcher
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,WAT_DateMatcher)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -9772,97 +8328,19 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'week-input' },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'withSeconds',EditorType:'checkbox' },
-      { Name:'Minimum',    EditorType:'week-input' },
-      { Name:'Maximum',    EditorType:'week-input' },
-      { Name:'Suggestions',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'week-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Minimum',              Stepping:1,
+        EditorType:'week-input',     AccessorsFor:'memoized' },
+      { Name:'Maximum',              Stepping:1,
+        EditorType:'week-input',     AccessorsFor:'memoized' },
+      { Name:'Suggestions',          Pattern:WAT_WeekRegExp,
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Value,WAT_WeekRegExp)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowStringMatching('value',newValue,WAT_WeekRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_WeekRegExp)
-      },
-
-      set Minimum (newValue:string|undefined) {
-        allowStringMatching('earliest week',newValue,WAT_WeekRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_WeekRegExp)
-      },
-
-      set Maximum (newValue:string|undefined) {
-        allowStringMatching('latest week',newValue,WAT_WeekRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,WAT_WeekMatcher
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,WAT_WeekMatcher)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -9948,97 +8426,19 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'month-input' },
-      { Name:'readonly',   EditorType:'checkbox' },
-      { Name:'withSeconds',EditorType:'checkbox' },
-      { Name:'Minimum',    EditorType:'month-input' },
-      { Name:'Maximum',    EditorType:'month-input' },
-      { Name:'Suggestions',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'month-input',    AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Minimum',              Stepping:1,
+        EditorType:'month-input',    AccessorsFor:'memoized' },
+      { Name:'Maximum',              Stepping:1,
+        EditorType:'month-input',    AccessorsFor:'memoized' },
+      { Name:'Suggestions',          Pattern:WAT_MonthRegExp,
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Value,WAT_MonthRegExp)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowStringMatching('value',newValue,WAT_MonthRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Minimum ****/
-
-      get Minimum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_MonthRegExp)
-      },
-
-      set Minimum (newValue:string|undefined) {
-        allowStringMatching('earliest month',newValue,WAT_MonthRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Minimum !== newValue) {
-          this.memoized.Minimum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Maximum ****/
-
-      get Maximum ():string|undefined {
-        return acceptableOptionalStringMatching(this.memoized.Minimum,WAT_MonthRegExp)
-      },
-
-      set Maximum (newValue:string|undefined) {
-        allowStringMatching('latest month',newValue,WAT_MonthRegExp)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Maximum !== newValue) {
-          this.memoized.Maximum = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,WAT_MonthMatcher
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,WAT_MonthMatcher)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10123,75 +8523,15 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',              EditorType:'text-input' },
-      { Name:'Placeholder',        EditorType:'text-input' },
-      { Name:'allowMultiple',      EditorType:'checkbox' },
-      { Name:'acceptableFileTypes',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'allowMultiple',        Label:'multiple',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** allowMultiple ****/
-
-      get allowMultiple ():boolean {
-        return acceptableBoolean(this.memoized.allowMultiple,false)
-      },
-
-      set allowMultiple (newValue:boolean) {
-        expectBoolean('multiplicity setting',newValue)
-        if (this.memoized.allowMultiple !== newValue) {
-          this.memoized.allowMultiple = newValue
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsTextline
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10257,75 +8597,15 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',              EditorType:'text-input' },
-      { Name:'Icon',               EditorType:'url-input' },
-      { Name:'allowMultiple',      EditorType:'checkbox' },
-      { Name:'acceptableFileTypes',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'Icon',
+        EditorType:'url-input',      AccessorsFor:'memoized' },
+      { Name:'allowMultiple',        Label:'multiple',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Icon ****/
-
-      get Icon ():WAT_URL|undefined {
-        return acceptableOptionalURL(this.memoized.Icon)
-      },
-
-      set Icon (newValue:WAT_URL|undefined) {
-        allowURL('icon URL',newValue)
-        if (this.memoized.Icon !== newValue) {
-          this.memoized.Icon = newValue
-          this.rerender()
-        }
-      },
-
-    /**** allowMultiple ****/
-
-      get allowMultiple ():boolean {
-        return acceptableBoolean(this.memoized.allowMultiple,false)
-      },
-
-      set allowMultiple (newValue:boolean) {
-        expectBoolean('multiplicity setting',newValue)
-        if (this.memoized.allowMultiple !== newValue) {
-          this.memoized.allowMultiple = newValue
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsTextline
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10384,75 +8664,15 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',              EditorType:'text-input' },
-      { Name:'Placeholder',        EditorType:'text-input' },
-      { Name:'allowMultiple',      EditorType:'checkbox' },
-      { Name:'acceptableFileTypes',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'allowMultiple',        Label:'multiple',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowText('value',newValue)
-        if (newValue == null) { newValue = '' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** allowMultiple ****/
-
-      get allowMultiple ():boolean {
-        return acceptableBoolean(this.memoized.allowMultiple,false)
-      },
-
-      set allowMultiple (newValue:boolean) {
-        expectBoolean('multiplicity setting',newValue)
-        if (this.memoized.allowMultiple !== newValue) {
-          this.memoized.allowMultiple = newValue
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsTextline
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsTextline)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10519,135 +8739,23 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',        EditorType:'textline-input' },
-      { Name:'Placeholder',  EditorType:'textline-input' },
-      { Name:'readonly',     EditorType:'checkbox' },
-      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'Pattern',      EditorType:'textline-input' },
-      { Name:'SpellChecking',EditorType:'checkbox' },
-      { Name:'Suggestions',  EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'Pattern',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'SpellChecking',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'Suggestions',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalTextline(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowTextline('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Pattern ****/
-
-      get Pattern ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Pattern)
-      },
-
-      set Pattern (newValue:WAT_Textline|undefined) {
-        allowTextline('input pattern',newValue)
-        if (this.memoized.Pattern !== newValue) {
-          this.memoized.Pattern = newValue
-          this.rerender()
-        }
-      },
-
-    /**** SpellChecking ****/
-
-      get SpellChecking ():boolean {
-        return acceptableBoolean(this.memoized.SpellChecking,false)
-      },
-
-      set SpellChecking (newValue:boolean) {
-        expectBoolean('spell check setting',newValue)
-        if (this.memoized.SpellChecking !== newValue) {
-          this.memoized.SpellChecking = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsTextline
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsTextline)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10728,47 +8836,11 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',      EditorType:'color-input' },
-      { Name:'Suggestions',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'color-input' },
+      { Name:'Suggestions',
+        EditorType:'linelist-input' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():WAT_Color {
-        return acceptableColor(this.memoized.Value,'#000000')
-      },
-
-      set Value (newValue:WAT_Color) {
-        allowColor('value',newValue)
-        if (newValue == null) { newValue = '#000000' }
-
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = HexColor(newValue)
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Suggestions ****/
-
-      get Suggestions ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Suggestions,ValueIsColor
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Suggestions (newValue:string[]|undefined) {
-        allowListSatisfying('suggestion list',newValue,ValueIsColor)
-        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
-          this.memoized.Suggestions = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10825,45 +8897,11 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',  EditorType:'textline-input' },
-      { Name:'Options',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Options',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalTextline(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowTextline('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Options ****/
-
-      get Options ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Options,ValueIsColor
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Options (newValue:string[]|undefined) {
-        allowListSatisfying('option list',newValue,ValueIsColor)
-        if (ValuesDiffer(this.memoized.Options,newValue)) {
-          this.memoized.Options = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10926,60 +8964,13 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',  EditorType:'textline-input' },
-      { Name:'Icon',   EditorType:'url-input' },
-      { Name:'Options',EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
+      { Name:'Icon',
+        EditorType:'url-input',      AccessorsFor:'memoized' },
+      { Name:'Options',
+        EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():string|undefined {
-        return acceptableOptionalTextline(this.memoized.Value)
-      },
-
-      set Value (newValue:string|undefined) {
-        allowTextline('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Icon ****/
-
-      get Icon ():WAT_URL|undefined {
-        return acceptableOptionalURL(this.memoized.Icon)
-      },
-
-      set Icon (newValue:WAT_URL|undefined) {
-        allowURL('icon URL',newValue)
-        if (this.memoized.Icon !== newValue) {
-          this.memoized.Icon = newValue
-          this.rerender()
-        }
-      },
-
-    /**** Options ****/
-
-      get Options ():string[]|undefined {
-        const Candidate = acceptableOptionalListSatisfying(
-          this.memoized.Options,ValueIsColor
-        )
-        return (Candidate == null ? undefined : Candidate.slice())
-      },
-
-      set Options (newValue:string[]|undefined) {
-        allowListSatisfying('option list',newValue,ValueIsColor)
-        if (ValuesDiffer(this.memoized.Options,newValue)) {
-          this.memoized.Options = (
-            newValue == null ? undefined : newValue.slice()
-          )
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -11048,133 +9039,23 @@ console.warn('file drop error',Signal)
   /**** custom Properties ****/
 
     my.configurableProperties = [
-      { Name:'Value',        EditorType:'textline-input' },
-      { Name:'Placeholder',  EditorType:'textline-input' },
-      { Name:'readonly',     EditorType:'checkbox' },
-      { Name:'minLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'maxLength',    EditorType:'number-input', Minimum:0, Stepping:1 },
-      { Name:'LineWrapping', EditorType:'checkbox' },
-      { Name:'SpellChecking',EditorType:'checkbox' },
-      { Name:'acceptableFileTypes', Label:'File Types', EditorType:'linelist-input' },
+      { Name:'Value',
+        EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
+      { Name:'Placeholder',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'readonly',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'minLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'maxLength',            minValue:0, Stepping:1,
+        EditorType:'integer-input',  AccessorsFor:'memoized' },
+      { Name:'LineWrapping',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'SpellChecking',
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+        EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsTextFormat },
     ]
-
-    Object_assign(me,{
-    /**** Value ****/
-
-      get Value ():WAT_Text|undefined {
-        return acceptableOptionalText(this.memoized.Value)
-      },
-
-      set Value (newValue:WAT_Text|undefined) {
-        allowText('value',newValue)
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('value-change')()
-          this.rerender()
-        }
-      },
-
-    /**** Placeholder ****/
-
-      get Placeholder ():WAT_Textline|undefined {
-        return acceptableOptionalTextline(this.memoized.Placeholder)
-      },
-
-      set Placeholder (newValue:WAT_Textline|undefined) {
-        allowTextline('input placeholder',newValue)
-        if (this.memoized.Placeholder !== newValue) {
-          this.memoized.Placeholder = newValue
-          this.rerender()
-        }
-      },
-
-    /**** readonly ****/
-
-      get readonly ():boolean {
-        return acceptableBoolean(this.memoized.readonly,false)
-      },
-
-      set readonly (newValue:boolean) {
-        expectBoolean('readonly setting',newValue)
-        if (this.memoized.readonly !== newValue) {
-          this.memoized.readonly = newValue
-          this.rerender()
-        }
-      },
-
-    /**** minLength ****/
-
-      get minLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.minLength)
-      },
-
-      set minLength (newValue:number|undefined) {
-        allowOrdinal('minimal input length',newValue)
-        if (this.memoized.minLength !== newValue) {
-          this.memoized.minLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** maxLength ****/
-
-      get maxLength ():number|undefined {
-        return acceptableOptionalOrdinal(this.memoized.maxLength)
-      },
-
-      set maxLength (newValue:number|undefined) {
-        allowOrdinal('maximal input length',newValue)
-        if (this.memoized.maxLength !== newValue) {
-          this.memoized.maxLength = newValue
-          this.rerender()
-        }
-      },
-
-    /**** LineWrapping ****/
-
-      get LineWrapping ():boolean {
-        return acceptableBoolean(this.memoized.LineWrapping,false)
-      },
-
-      set LineWrapping (newValue:boolean) {
-        expectBoolean('line wrapping setting',newValue)
-        if (this.memoized.LineWrapping !== newValue) {
-          this.memoized.LineWrapping = newValue
-          this.rerender()
-        }
-      },
-
-    /**** SpellChecking ****/
-
-      get SpellChecking ():boolean {
-        return acceptableBoolean(this.memoized.SpellChecking,false)
-      },
-
-      set SpellChecking (newValue:boolean) {
-        expectBoolean('spell check setting',newValue)
-        if (this.memoized.SpellChecking !== newValue) {
-          this.memoized.SpellChecking = newValue
-          this.rerender()
-        }
-      },
-
-    /**** acceptableFileTypes ****/
-
-      get acceptableFileTypes ():WAT_Textline[] {
-        return acceptableListSatisfying(
-          this.memoized.acceptableFileTypes, [], ValueIsTextFormat
-        ).slice()
-      },
-      set acceptableFileTypes (newSetting:WAT_Textline[]) {
-        allowListSatisfying('acceptable file types',newSetting, ValueIsTextFormat)
-        if (newSetting == null) { newSetting = [] }
-
-        if (ValuesDiffer(this.memoized.acceptableFileTypes,newSetting)) {
-          this.memoized.acceptableFileTypes = newSetting.slice()
-          this.rerender()
-        }
-      },
-    } as Indexable)
 
   /**** Renderer ****/
 
@@ -12283,7 +10164,9 @@ console.warn('file drop error',Signal)
       document.body.appendChild(AppletElement)
     }
 
-    let AppletName = acceptableName(AppletElement.getAttribute('name'),'WAT-Applet')
+    let AppletName = acceptableValue(
+      AppletElement.getAttribute('name'),ValueIsName,'WAT-Applet'
+    )
 
   /**** read applet script - if stored separately ****/
 
@@ -12357,30 +10240,9 @@ console.warn('file drop error',Signal)
   export const newId = customAlphabet(nolookalikesSafe,21)
 
   const global = (new Function('return this'))() as Indexable
-  global.WAT = {
+  const WAT:Indexable = global.WAT = {
     Object_assign,
-    acceptableBoolean, acceptableOptionalBoolean,
-    acceptableNumber, acceptableOptionalNumber,
-    acceptableNumberInRange, acceptableOptionalNumberInRange,
-    acceptableInteger, acceptableOptionalInteger,
-    acceptableIntegerInRange, acceptableOptionalIntegerInRange,
-    acceptableOrdinal, acceptableOptionalOrdinal,
-    acceptableString, acceptableOptionalString,
-    acceptableNonEmptyString, acceptableOptionalNonEmptyString,
-    acceptableStringMatching, acceptableOptionalStringMatching,
-    acceptableText, acceptableOptionalText,
-    acceptableTextline, acceptableOptionalTextline,
-    acceptableFunction, acceptableOptionalFunction,
-    acceptableList, acceptableOptionalList,
-    acceptableListSatisfying, acceptableOptionalListSatisfying,
-    acceptableOneOf, acceptableOptionalOneOf,
-    acceptableColor, acceptableOptionalColor,
-    acceptableEMailAddress, acceptableOptionalEMailAddress,
-    acceptablePhoneNumber, acceptableOptionalPhoneNumber,
-    acceptableURL, acceptableOptionalURL,
-    acceptableBehavior, acceptableOptionalBehavior,
-    acceptableName, acceptableOptionalName,
-    acceptablePath, acceptableOptionalPath,
+    acceptableValue, allowValue, expectValue,
     ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier,
     ValueIsName, allowName, allowedName, expectName, expectedName,
     ValueIsPath, allowPath, allowedPath, expectPath, expectedPath,
