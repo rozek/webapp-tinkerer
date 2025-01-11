@@ -1184,7 +1184,42 @@
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
     z-index:1000001;
+  }/**** Mover ****/
+
+  .WAT.Mover {
+    display:block; position:absolute;
+    background:none;
+    user-select:none; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
   }
+
+/**** Shaper ****/
+
+  .WAT.Shaper {
+    display:block; position:absolute; overflow:visible;
+    left:0px; top:0px; right:0px; bottom:0px;
+    outline:dotted 2px orangered;
+    background:none;
+    user-select:none; pointer-events:none;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
+  }
+
+  .WAT.ShaperHandle {
+    display:block; position:absolute;
+    width:8px; height:8px;
+    background:orangered; border:solid 1px darkgray;
+    z-index:100000;
+    user-select:none; pointer-events:auto;
+
+    -webkit-touch-callout:none;
+    -ms-touch-action:none; touch-action:none;
+  }
+
+
 
 /**** common Settings ****/
 
@@ -1805,7 +1840,7 @@
       primaryLongPressDelay, secondaryLongPressDelay,
       onClick, onDblClick, onMultiClick,
       onLongPressIndication, onLongPress,
-      onDragStart, onDragContinuation, onDragFinish, onDragAbortion,
+      onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
     } = OptionSet
 
     if (! (onlyFrom instanceof Element)) {
@@ -1829,7 +1864,7 @@
     allowFunction          ('"onDragStart" callback',onDragStart)
     allowFunction   ('"onDragContinuation" callback',onDragContinuation)
     allowFunction         ('"onDragFinish" callback',onDragFinish)
-    allowFunction       ('"onDragAbortion" callback',onDragAbortion)
+    allowFunction   ('"onDragCancellation" callback',onDragCancellation)
 
   /**** detect configured features and apply defaults ****/
 
@@ -1853,7 +1888,7 @@
 
     const RecognizerMayDrag = (
       (onDragStart  != null) && (onDragContinuation != null) &&
-      (onDragFinish != null) && (onDragAbortion     != null)
+      (onDragFinish != null) && (onDragCancellation != null)
     )
 
   /**** Working Variables ****/
@@ -1998,7 +2033,7 @@
 
       ;({ clientX:curX, clientY:curY } = curEvent = Event)
       if (Status === 'moving') {
-        call(onDragAbortion,[curX-StartX,curY-StartY, StartX,StartY, Event])
+        call(onDragCancellation,[curX-StartX,curY-StartY, StartX,StartY, Event])
       }
 
       Status = ''
@@ -2041,7 +2076,217 @@
     }
   }
 
-//------------------------------------------------------------------------------
+/**** WAT_Mover ****/
+
+  export function WAT_Mover (PropSet:Indexable):any {
+    const {
+      Widget,style,
+      onDragStart,onDragContinuation,onDragFinish,onDragCancellation,
+      onMove
+    } = PropSet
+
+    const DragInfoRef = useRef(null)
+    const DragInfo    = DragInfoRef.current || (DragInfoRef.current = {})
+
+    function handleMove (dx:number,dy:number):void {
+      if (typeof onMove === 'function') {
+        onMove(dx,dy, DragInfo.StartX + dx,DragInfo.StartY + dy)
+      }
+    }
+
+    const RecognizerRef = useRef(null)
+    const Recognizer    = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
+      onlyFrom:   '.WAT.Mover',
+      ClickRadius:0,
+      onDragStart:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        DragInfo.StartX = (Widget == null ? 0 : Widget.x)
+        DragInfo.StartY = (Widget == null ? 0 : Widget.y)
+
+        if (typeof onDragStart === 'function') {
+          onDragStart(dx,dy, x,y, Event)
+        }
+        handleMove(dx,dy)
+      },
+      onDragContinuation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragContinuation === 'function') {
+          onDragContinuation(dx,dy, x,y, Event)
+        }
+        handleMove(dx,dy)
+      },
+      onDragFinish:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragFinish === 'function') {
+          onDragFinish(dx,dy, x,y, Event)
+        }
+        handleMove(dx,dy)
+      },
+      onDragCancellation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragCancellation === 'function') {
+          onDragCancellation(dx,dy, x,y, Event)
+        }
+        handleMove(0,0)
+      },
+    }))
+
+    return html`<div class="WAT Mover" style="${style || ''}"
+      onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+      onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+    />`
+  }
+
+/**** WAT_Shaper ****/
+
+  export function WAT_Shaper (PropSet:Indexable):any {
+    const {
+      Widget,
+      onDragStart,onDragContinuation,onDragFinish,onDragCancellation,
+      onShape
+    } = PropSet
+
+    const GridWidth  = acceptableValue(PropSet.GridWidth, ValueIsCardinal,1)
+    const GridHeight = acceptableValue(PropSet.GridHeight,ValueIsCardinal,1)
+
+    const DragInfoRef = useRef(null)
+    const DragInfo    = DragInfoRef.current || (DragInfoRef.current = {})
+
+  /**** Recognizer ****/
+
+    const RecognizerRef = useRef(null)
+    const Recognizer    = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
+      onlyFrom:   '.WAT_ShaperHandle',
+      ClickRadius:0,
+      onDragStart:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        DragInfo.initialGeometry = Widget.Geometry
+
+        if (typeof onDragStart === 'function') {
+          onDragStart(dx,dy, x,y, Event)
+        }
+        handleShapeChange(dx,dy)
+      },
+      onDragContinuation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragContinuation === 'function') {
+          onDragContinuation(dx,dy, x,y, Event)
+        }
+        handleShapeChange(dx,dy)
+      },
+      onDragFinish:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragFinish === 'function') {
+          onDragFinish(dx,dy, x,y, Event)
+        }
+        handleShapeChange(dx,dy)
+      },
+      onDragCancellation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragCancellation === 'function') {
+          onDragCancellation(dx,dy, x,y, Event)
+        }
+        handleShapeChange(0,0)
+      },
+    }))
+
+  /**** handleShapeChange ****/
+
+    function handleShapeChange (dx:number, dy:number):void {
+      if (typeof onShape !== 'function') { return }
+
+      let dX:number = 0, dY:number = 0, dW:number = 0, dH:number = 0
+      switch (DragInfo.ShapeMode) {
+        case 'nw': dX = dx; dW = -dx; dY = dy; dH = -dy; break
+        case 'n':                     dY = dy; dH = -dy; break
+        case 'ne':          dW = dx;  dY = dy; dH = -dy; break
+        case 'e':           dW = dx;                     break
+        case 'se':          dW = dx;           dH = dy;  break
+        case 's':                              dH = dy;  break
+        case 'sw': dX = dx; dW = -dx;          dH = dy;  break
+        case 'w':  dX = dx; dW = -dx;                    break
+        case 'c':  dX = dx;           dY = dy;
+      }
+
+      let Width:number  = Math.max(0,DragInfo.initialGeometry.Width+dW)
+      let Height:number = Math.max(0,DragInfo.initialGeometry.Height+dH)
+
+      let xl:number = DragInfo.initialGeometry.x+dX, xr = xl + Width
+      let yt:number = DragInfo.initialGeometry.y+dY, yb = yt + Height
+
+    /**** snap-to-grid ****/
+
+      let xl_ = GridWidth*Math.round(xl/GridWidth)
+      let xr_ = GridWidth*Math.round(xr/GridWidth)
+      let yt_ = GridHeight*Math.round(yt/GridHeight)
+      let yb_ = GridHeight*Math.round(yb/GridHeight)
+
+      switch (DragInfo.ShapeMode) {
+        case 'nw': xl = Math.min(xl_,xr); yt = Math.min(yt_,yb); break
+        case 'n':                         yt = Math.min(yt_,yb); break
+        case 'ne': xr = Math.max(xl,xr_); yt = Math.min(yt_,yb); break
+        case 'e':  xr = Math.max(xl,xr_);                        break
+        case 'se': xr = Math.max(xl,xr_); yb = Math.max(yt,yb_); break
+        case 's':                         yb = Math.max(yt,yb_); break
+        case 'sw': xl = Math.min(xl_,xr); yb = Math.max(yt,yb_); break
+        case 'w':  xl = Math.min(xl_,xr);                        break
+        case 'c':  xl = xl_; xr = xl+Width; yt = yt_; yb = yt+Height
+      }
+
+      onShape(xl,yt, xr-xl,yb-yt)
+    }
+
+  /**** handleShapeEvent (actually an event multiplexer) ****/
+
+    function handleShapeEvent (Event:PointerEvent, Mode:string):void {
+      DragInfo.ShapeMode = Mode
+      Recognizer(Event)
+    }
+
+  /**** actual rendering ****/
+
+    const WidgetId = IdOfWidget(Widget)
+    const Geometry = Widget.Geometry
+
+    return html`<div class="WAT Content Shaper">
+      <${WAT_ShaperHandle} key=${WidgetId+'nw'} Mode="nw" Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'nw')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'n'}  Mode="n"  Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'n')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'ne'} Mode="ne" Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'ne')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'e'}  Mode="e"  Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'e')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'se'} Mode="se" Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'se')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'s'}  Mode="s"  Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'s')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'sw'} Mode="sw" Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'sw')}/>
+      <${WAT_ShaperHandle} key=${WidgetId+'w'}  Mode="w"  Geometry=${Geometry}
+        onPointerEvent=${(Event:PointerEvent) => handleShapeEvent(Event,'w')}/>
+    </>`
+  }
+
+/**** WAT_ShaperHandle ****/
+
+  function WAT_ShaperHandle (PropSet:Indexable):any {
+    let { Mode, Geometry, onPointerEvent, ...otherProps } = PropSet
+
+    let { Width,Height } = Geometry
+    const xl = -8, xm = Math.round(Width/2)-4,  xr = Width
+    const yt = -8, ym = Math.round(Height/2)-4, yb = Height
+
+    let CSSGeometry, Cursor
+    switch (Mode) {
+      case 'nw': CSSGeometry = `left:${xl}px; top:${yt}px;`; Cursor = 'nwse'; break
+      case 'n':  CSSGeometry = `left:${xm}px; top:${yt}px;`; Cursor = 'ns';   break
+      case 'ne': CSSGeometry = `left:${xr}px; top:${yt}px;`; Cursor = 'nesw'; break
+      case 'e':  CSSGeometry = `left:${xr}px; top:${ym}px;`; Cursor = 'ew';   break
+      case 'se': CSSGeometry = `left:${xr}px; top:${yb}px;`; Cursor = 'nwse'; break
+      case 's':  CSSGeometry = `left:${xm}px; top:${yb}px;`; Cursor = 'ns';   break
+      case 'sw': CSSGeometry = `left:${xl}px; top:${yb}px;`; Cursor = 'nesw'; break
+      case 'w':  CSSGeometry = `left:${xl}px; top:${ym}px;`; Cursor = 'ew';   break
+    }
+    Cursor = 'cursor:' + Cursor + '-resize'
+
+    return html`<div class="WAD ShapeHandle" style="${CSSGeometry} ${Cursor}" ...${otherProps}
+      onPointerDown=${onPointerEvent} onPointerMove=${onPointerEvent}
+      onPointerUp=${onPointerEvent} onPointerCancel=${onPointerEvent}
+    />`
+  }//------------------------------------------------------------------------------
 //--                                WAT_Visual                                --
 //------------------------------------------------------------------------------
 
@@ -9821,7 +10066,7 @@ console.warn('file drop error',Signal)
         },
         onDragContinuation:(dx:number,dy:number) => this._handleDrag(dx,dy),
         onDragFinish:      (dx:number,dy:number) => this._handleDrag(dx,dy),
-        onDragAbortion:    (dx:number,dy:number) => this._handleDrag(dx,dy),
+        onDragCancellation:(dx:number,dy:number) => this._handleDrag(dx,dy),
       })
     }
 
@@ -10271,7 +10516,7 @@ console.warn('file drop error',Signal)
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    GestureRecognizer,
+    GestureRecognizer, Mover:WAT_Mover, Shaper:WAT_Shaper,
     fromLocalTo, fromViewportTo, fromDocumentTo,
   })
 
