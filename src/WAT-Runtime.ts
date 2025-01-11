@@ -840,7 +840,7 @@
 /**** allow/expect[ed]LineList ****/
 
   export function allowLineList (
-    Description:string, Argument:any, Pattern:string|undefined
+    Description:string, Argument:any, Pattern:RegExp|undefined
   ):number|null|undefined {
     return (Argument == null
       ? Argument
@@ -850,16 +850,15 @@
   export const allowedLineList = allowLineList
 
   export function expectLineList (
-    Description:string, Argument:any, Pattern:string|undefined
+    Description:string, Argument:any, Pattern:RegExp|undefined
   ):number[] {
     if (Argument == null) {
       throwError(`MissingArgument: no ${escaped(Description)} given`)
     } else {
-      const Matcher   = (Pattern == null ? undefined : new RegExp(Pattern))
       const Validator = (
         Pattern == null
         ? ValueIsTextline
-        : (Value:any) => ValueIsStringMatching(Value,Matcher as RegExp)
+        : (Value:any) => ValueIsStringMatching(Value,Pattern)
       )
       if (ValueIsListSatisfying(Argument,Validator)) {
         return Argument
@@ -6802,7 +6801,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
             try {
               for (let Item of Event.dataTransfer.items) {
                 if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                  this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                  this.Value = await FileReadAsText(Item.getAsFile(),Item.type)
                   this.on('input')(Event)
                   break
                 }
@@ -9128,7 +9127,7 @@ console.warn('file drop error',Signal)
             try {
               for (let Item of Event.dataTransfer.items) {
                 if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                  this.Value = await FileReadAsHTML(Item.getAsFile(),Item.type)
+                  this.Value = await FileReadAsText(Item.getAsFile(),Item.type)
                   this.on('input')(Event)
                   break
                 }
@@ -10118,7 +10117,9 @@ console.warn('file drop error',Signal)
 
   export function rerender ():void {
     if (combinedView != null) { combinedView.rerender() }
-  }/**** useDesigner ****/
+  }
+
+/**** useDesigner ****/
 
   let DesignerLayer:Function|undefined = undefined
 
@@ -10242,8 +10243,16 @@ console.warn('file drop error',Signal)
   export const newId = customAlphabet(nolookalikesSafe,21)
 
   const global = (new Function('return this'))() as Indexable
-  const WAT:Indexable = global.WAT = {
-    Object_assign,
+    global.JIL = JIL
+    global.WAT = {}
+  const WAT:Indexable = global.WAT                       // just for convenience
+    for (const [Key,Value] of Object.entries(JIL)) {           // map JIL to WAT
+      if (Key !== 'default') { WAT[Key] = Value }
+    }
+  Object.assign(WAT,{
+    Object_assign, AsyncFunction,
+    newId,
+    throwError, throwReadOnlyError,
     acceptableValue, allowValue, expectValue,
     ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier,
     ValueIsName, allowName, allowedName, expectName, expectedName,
@@ -10259,13 +10268,12 @@ console.warn('file drop error',Signal)
     ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition,
     ValueIsSize, allowSize, allowedSize, expectSize, expectedSize,
     ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry,
-    ValueIsIncompleteGeometry, allowIncompleteGeometry, allowedIncompleteGeometry, expectIncompleteGeometry, expectedIncompleteGeometry,
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    MarkdownAsText, MarkdownAsHTML
-  }
-  global.JIL = JIL
+    GestureRecognizer,
+    fromLocalTo, fromViewportTo, fromDocumentTo,
+  })
 
 /**** start WAT up ****/
 
