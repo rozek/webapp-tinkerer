@@ -126,7 +126,7 @@
   type WAT_BehaviorFunction = (
     this:Indexable, me:Indexable, my:Indexable,
     html:Function, reactively:Function,
-    onRender:Function, onMount:Function, onUnmount:Function,
+    on:Function, onRender:Function, onMount:Function, onUnmount:Function,
     onValueChange:Function,
     installStylesheet:Function, BehaviorIsNew:boolean
   ) => Promise<void>
@@ -2367,11 +2367,11 @@
     const {
       Widget,style,
       onDragStart,onDragContinuation,onDragFinish,onDragCancellation,
-      onDrag, onDroppable
+      onDrag
     } = PropSet
 
     const DropMode = acceptableValue(
-      PropSet.DropMode, (Value:any) => ValueIsOneOf(Value,['touch','enclose'],'enclose')
+      PropSet.DropMode, (Value:any) => ValueIsOneOf(Value,['touch','enclose']),'enclose'
     )
 
     const GridWidth  = acceptableValue(PropSet.GridWidth, ValueIsCardinal,1)
@@ -2379,6 +2379,8 @@
 
     const DragInfoRef = useRef(null)
     const DragInfo    = DragInfoRef.current || (DragInfoRef.current = {})
+
+  /**** handleDrag ****/
 
     function handleDrag (dx:number,dy:number):void {
       if (typeof onDrag !== 'function') { return }
@@ -2388,13 +2390,13 @@
 
       onDrag(x-DragInfo.StartX,y-DragInfo.StartY, x,y)
 
-      const xl = my.x; const xr = xl + my.Width
-      const yt = my.y; const yb = yt + my.Height
+      const xl = Widget.x; const xr = xl + Widget.Width
+      const yt = Widget.y; const yb = yt + Widget.Height
 
-      let CatcherList = my.Page.WidgetList.filter((Widget:WAT_Widget) => {
-        if (Widget === me) { return false }
+      let CatcherList = Widget.Page.WidgetList.filter((Candidate:WAT_Widget) => {
+        if (Widget === Candidate) { return false }
 
-        const { x,y, Width,Height } = Widget.Geometry
+        const { x,y, Width,Height } = Candidate.Geometry
         if (DropMode === 'touch') {
           return (xl <= x + Width)  && (xr >= x) && (yt <= y + Height) && (yb >= y)
         } else {                                       // DropMode === 'enclose'
@@ -2402,8 +2404,35 @@
         }
       })
 
-      let Catcher = CatcherList.findFirst
+      let Catcher = CatcherList.find((Candidate:WAT_Widget) => {
+        try {
+          return (Candidate.on('drop-request')(Widget) === true)
+        } catch (Signal:any) { /* nop - error is already set */ }
+      })
+
+      if (Catcher === DragInfo.Catcher) { return }
+
+      if (DragInfo.Catcher != null) {
+        try { DragInfo.Catcher.on('droppable-left')(Widget) } catch (Signal:any) { /* nop - error is already set */ }
+        try { Widget.on('catcher-left')(DragInfo.Catcher) } catch (Signal:any) { /* nop - error is already set */ }
+      }
+
+      DragInfo.Catcher = Catcher
+      try { Catcher.on('droppable-entered')(Widget) } catch (Signal:any) { /* nop - error is already set */ }
+      try { Widget.on('catcher-entered')(Catcher) } catch (Signal:any) { /* nop - error is already set */ }
     }
+
+  /**** handleDrop ****/
+
+    function handleDrop ():void {
+      if (DragInfo.Catcher != null) {
+        try { DragInfo.Catcher.on('drop')(Widget) } catch (Signal:any) { /* nop - error is already set */ }
+        try { Widget.on('dropped-on')(DragInfo.Catcher) } catch (Signal:any) { /* nop - error is already set */ }
+        delete DragInfo.Catcher
+      }
+    }
+
+  /**** Recognizer ****/
 
     const RecognizerRef = useRef(null)
     const Recognizer    = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
@@ -2429,6 +2458,7 @@
           onDragFinish(dx,dy, x,y, Event)
         }
         handleDrag(dx,dy)
+        handleDrop()
       },
       onDragCancellation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
         if (typeof onDragCancellation === 'function') {
@@ -2981,6 +3011,7 @@ console.warn('execution error in reactive function',Signal)
         }))
       }
 
+      const on            = this.on.bind(this)
       const onRender      = this.on.bind(this,'render')
       const onMount       = this.on.bind(this,'mount')
       const onUnmount     = this.on.bind(this,'unmount')
@@ -3008,7 +3039,7 @@ console.warn('execution error in reactive function',Signal)
           try {
             await Registration.compiledScript.call(this,
               this,this, html,reactively,
-              onRender,onMount,onUnmount,onValueChange,
+              on,onRender,onMount,onUnmount,onValueChange,
               installStylesheetForBehavior.bind(this, Applet,Category,Behavior),
               Registration?.isNew || false
             )
@@ -3038,7 +3069,7 @@ console.warn('Behavior Execution Failure',Signal)
         try {
 // @ts-ignore TS2351 AsyncFunction *is* constructible
           compiledScript = new AsyncFunction(
-            'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+            'me,my, html,reactively, on,onRender,onMount,onUnmount,onValueChange, ' +
             'installStylesheet,BehaviorIsNew',
             activeScript
           )
@@ -3058,7 +3089,7 @@ console.warn('Script Compilation Failure',Signal)
         try {
           await compiledScript.call(this,
             this,this, html,reactively,
-            onRender,onMount,onUnmount,onValueChange,
+            on,onRender,onMount,onUnmount,onValueChange,
             installStylesheet, false // Behavior.isNew
           )
         } catch (Signal:any) {
@@ -3089,7 +3120,7 @@ console.warn('Script Execution Failure',Signal)
         try {
 // @ts-ignore TS2351 AsyncFunction *is* constructible
           compiledScript = new AsyncFunction(
-            'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+            'me,my, html,reactively, on,onRender,onMount,onUnmount,onValueChange, ' +
             'installStylesheet,BehaviorIsNew',
             pendingScript
           )
@@ -3518,7 +3549,7 @@ console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
       try {
 // @ts-ignore TS2351 AsyncFunction *is* constructible
         const compiledScript = new AsyncFunction(
-          'me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+          'me,my, html,reactively, on,onRender,onMount,onUnmount,onValueChange, ' +
           'installStylesheet,BehaviorIsNew',
           Script
         )
@@ -6918,7 +6949,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** plain_Widget ****/
 
   const WAT_plainWidget:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     onRender(() => html`<div class="WAT Content Placeholder"/>`)
@@ -6931,7 +6962,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** Outline ****/
 
   const WAT_Outline:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -6976,7 +7007,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** WidgetPane ****/
 
   const WAT_WidgetPane:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7141,7 +7172,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** TextView ****/
 
   const WAT_TextView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7232,7 +7263,7 @@ console.warn('file drop error',Signal)
 /**** HTMLView ****/
 
   const WAT_HTMLView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7324,7 +7355,7 @@ console.warn('file drop error',Signal)
 /**** ImageView ****/
 
   const WAT_ImageView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7430,7 +7461,7 @@ console.warn('file drop error',Signal)
 /**** SVGView ****/
 
   const WAT_SVGView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7471,7 +7502,7 @@ console.warn('file drop error',Signal)
 /**** WebView ****/
 
   const WAT_WebView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
   /**** custom Properties ****/
@@ -7511,7 +7542,7 @@ console.warn('file drop error',Signal)
 /**** Button ****/
 
   const WAT_Button:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7554,7 +7585,7 @@ console.warn('file drop error',Signal)
 /**** Checkbox ****/
 
   const WAT_Checkbox:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7598,7 +7629,7 @@ console.warn('file drop error',Signal)
 /**** Radiobutton ****/
 
   const WAT_Radiobutton:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7637,7 +7668,7 @@ console.warn('file drop error',Signal)
 /**** Gauge ****/
 
   const WAT_Gauge:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
   /**** custom Properties ****/
@@ -7679,7 +7710,7 @@ console.warn('file drop error',Signal)
 /**** Progressbar ****/
 
   const WAT_Progressbar:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7724,7 +7755,7 @@ console.warn('file drop error',Signal)
 /**** Slider ****/
 
   const WAT_Slider:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -7809,7 +7840,7 @@ console.warn('file drop error',Signal)
 /**** TextlineInput ****/
 
   const WAT_TextlineInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -7913,7 +7944,7 @@ console.warn('file drop error',Signal)
 /**** PasswordInput ****/
 
   const WAT_PasswordInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8002,7 +8033,7 @@ console.warn('file drop error',Signal)
 /**** NumberInput ****/
 
   const WAT_NumberInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8102,7 +8133,7 @@ console.warn('file drop error',Signal)
 /**** PhoneNumberInput ****/
 
   const WAT_PhoneNumberInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8204,7 +8235,7 @@ console.warn('file drop error',Signal)
 /**** EMailAddressInput ****/
 
   const WAT_EMailAddressInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8304,7 +8335,7 @@ console.warn('file drop error',Signal)
 /**** URLInput ****/
 
   const WAT_URLInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8408,7 +8439,7 @@ console.warn('file drop error',Signal)
 /**** TimeInput ****/
 
   const WAT_TimeInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8509,7 +8540,7 @@ console.warn('file drop error',Signal)
 /**** DateTimeInput ****/
 
   const WAT_DateTimeInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8610,7 +8641,7 @@ console.warn('file drop error',Signal)
 /**** DateInput ****/
 
   const WAT_DateInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8708,7 +8739,7 @@ console.warn('file drop error',Signal)
 /**** WeekInput ****/
 
   const WAT_WeekInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8806,7 +8837,7 @@ console.warn('file drop error',Signal)
 /**** MonthInput ****/
 
   const WAT_MonthInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8904,7 +8935,7 @@ console.warn('file drop error',Signal)
 /**** FileInput ****/
 
   const WAT_FileInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -8984,7 +9015,7 @@ console.warn('file drop error',Signal)
 /**** PseudoFileInput ****/
 
   const WAT_PseudoFileInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9043,7 +9074,7 @@ console.warn('file drop error',Signal)
 /**** FileDropArea ****/
 
   const WAT_FileDropArea:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9119,7 +9150,7 @@ console.warn('file drop error',Signal)
 /**** SearchInput ****/
 
   const WAT_SearchInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -9223,7 +9254,7 @@ console.warn('file drop error',Signal)
 /**** ColorInput ****/
 
   const WAT_ColorInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9284,7 +9315,7 @@ console.warn('file drop error',Signal)
 /**** DropDown ****/
 
   const WAT_DropDown:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9345,7 +9376,7 @@ console.warn('file drop error',Signal)
 /**** PseudoDropDown ****/
 
   const WAT_PseudoDropDown:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9419,7 +9450,7 @@ console.warn('file drop error',Signal)
 /**** TextInput ****/
 
   const WAT_TextInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, onRender, onMount,onUnmount, onValueChange,
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -10674,7 +10705,8 @@ console.warn('file drop error',Signal)
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    GestureRecognizer, Mover:WAT_Mover, Resizer:WAT_Resizer, Shaper:WAT_Shaper,
+    GestureRecognizer,
+    Mover:WAT_Mover, Resizer:WAT_Resizer, Shaper:WAT_Shaper, Dragger:WAT_Dragger,
     fromLocalTo, fromViewportTo, fromDocumentTo,
   })
 
