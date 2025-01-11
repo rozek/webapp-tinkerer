@@ -384,10 +384,9 @@ export function expectLineList(Description, Argument, Pattern) {
         throwError(`MissingArgument: no ${escaped(Description)} given`);
     }
     else {
-        const Matcher = (Pattern == null ? undefined : new RegExp(Pattern));
         const Validator = (Pattern == null
             ? ValueIsTextline
-            : (Value) => ValueIsStringMatching(Value, Matcher));
+            : (Value) => ValueIsStringMatching(Value, Pattern));
         if (ValueIsListSatisfying(Argument, Validator)) {
             return Argument;
         }
@@ -5640,7 +5639,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         try {
                             for (let Item of Event.dataTransfer.items) {
                                 if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                    this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
+                                    this.Value = await FileReadAsText(Item.getAsFile(), Item.type);
                                     this.on('input')(Event);
                                     break;
                                 }
@@ -7393,7 +7392,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         try {
                             for (let Item of Event.dataTransfer.items) {
                                 if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                    this.Value = await FileReadAsHTML(Item.getAsFile(), Item.type);
+                                    this.Value = await FileReadAsText(Item.getAsFile(), Item.type);
                                     this.on('input')(Event);
                                     break;
                                 }
@@ -8251,7 +8250,8 @@ export function rerender() {
     if (combinedView != null) {
         combinedView.rerender();
     }
-} /**** useDesigner ****/
+}
+/**** useDesigner ****/
 let DesignerLayer = undefined;
 export function useDesigner(newDesigner) {
     allowFunction('WAT designer', newDesigner); // it's a preact function component
@@ -8341,8 +8341,18 @@ function IdOfWidget(Widget) {
 /**** newId - uses nanoid with custom dictionary ****/
 export const newId = customAlphabet(nolookalikesSafe, 21);
 const global = (new Function('return this'))();
-const WAT = global.WAT = {
-    Object_assign,
+global.JIL = JIL;
+global.WAT = {};
+const WAT = global.WAT; // just for convenience
+for (const [Key, Value] of Object.entries(JIL)) { // map JIL to WAT
+    if (Key !== 'default') {
+        WAT[Key] = Value;
+    }
+}
+Object.assign(WAT, {
+    Object_assign, AsyncFunction,
+    newId,
+    throwError, throwReadOnlyError,
     acceptableValue, allowValue, expectValue,
     ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier,
     ValueIsName, allowName, allowedName, expectName, expectedName,
@@ -8358,13 +8368,12 @@ const WAT = global.WAT = {
     ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition,
     ValueIsSize, allowSize, allowedSize, expectSize, expectedSize,
     ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry,
-    ValueIsIncompleteGeometry, allowIncompleteGeometry, allowedIncompleteGeometry, expectIncompleteGeometry, expectedIncompleteGeometry,
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    MarkdownAsText, MarkdownAsHTML
-};
-global.JIL = JIL;
+    GestureRecognizer,
+    fromLocalTo, fromViewportTo, fromDocumentTo,
+});
 /**** start WAT up ****/
 localforage.config({
     driver: [localforage.INDEXEDDB, localforage.WEBSQL]
