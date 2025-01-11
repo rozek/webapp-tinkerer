@@ -1184,9 +1184,9 @@
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
     z-index:1000001;
-  }/**** Mover ****/
+  }/**** Mover, Resizer ****/
 
-  .WAT.Mover {
+  .WAT.Mover, .WAT.Resizer, .WAT.Dragger {
     display:block; position:absolute;
     background:none;
     user-select:none; pointer-events:auto;
@@ -2085,13 +2085,19 @@
       onMove
     } = PropSet
 
+    const GridWidth  = acceptableValue(PropSet.GridWidth, ValueIsCardinal,1)
+    const GridHeight = acceptableValue(PropSet.GridHeight,ValueIsCardinal,1)
+
     const DragInfoRef = useRef(null)
     const DragInfo    = DragInfoRef.current || (DragInfoRef.current = {})
 
     function handleMove (dx:number,dy:number):void {
-      if (typeof onMove === 'function') {
-        onMove(dx,dy, DragInfo.StartX + dx,DragInfo.StartY + dy)
-      }
+      if (typeof onMove !== 'function') { return }
+
+      let x =  GridWidth*Math.round((DragInfo.StartX + dx)/GridWidth)
+      let y = GridHeight*Math.round((DragInfo.StartY + dy)/GridHeight)
+
+      onMove(x-DragInfo.StartX,y-DragInfo.StartY, x,y)
     }
 
     const RecognizerRef = useRef(null)
@@ -2128,6 +2134,75 @@
     }))
 
     return html`<div class="WAT Mover" style="${style || ''}"
+      onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+      onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+    />`
+  }
+
+/**** WAT_Resizer ****/
+
+  export function WAT_Resizer (PropSet:Indexable):any {
+    const {
+      Widget,style,
+      onDragStart,onDragContinuation,onDragFinish,onDragCancellation,
+      onResize
+    } = PropSet
+
+    const GridWidth  = acceptableValue(PropSet.GridWidth, ValueIsCardinal,1)
+    const GridHeight = acceptableValue(PropSet.GridHeight,ValueIsCardinal,1)
+
+    const minWidth  = acceptableValue(PropSet.minWidth, ValueIsOrdinal,0)
+    const minHeight = acceptableValue(PropSet.minHeight,ValueIsOrdinal,0)
+
+    const DragInfoRef = useRef(null)
+    const DragInfo    = DragInfoRef.current || (DragInfoRef.current = {})
+
+    function handleResize (dx:number,dy:number):void {
+      if (typeof onResize !== 'function') { return }
+
+      let Width  = Math.max(minWidth, DragInfo.StartWidth  + dx)
+      let Height = Math.max(minHeight,DragInfo.StartHeight + dy)
+
+      Width  =  GridWidth*Math.round(Width/GridWidth)
+      Height = GridHeight*Math.round(Height/GridHeight)
+
+      onResize(Width-DragInfo.StartWidth,Height-DragInfo.StartHeight, Width,Height)
+    }
+
+    const RecognizerRef = useRef(null)
+    const Recognizer    = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
+      onlyFrom:   '.WAT.Mover',
+      ClickRadius:0,
+      onDragStart:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        DragInfo.StartWidth  = (Widget == null ? 0 : Widget.Width)
+        DragInfo.StartHeight = (Widget == null ? 0 : Widget.Height)
+
+        if (typeof onDragStart === 'function') {
+          onDragStart(dx,dy, x,y, Event)
+        }
+        handleResize(dx,dy)
+      },
+      onDragContinuation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragContinuation === 'function') {
+          onDragContinuation(dx,dy, x,y, Event)
+        }
+        handleResize(dx,dy)
+      },
+      onDragFinish:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragFinish === 'function') {
+          onDragFinish(dx,dy, x,y, Event)
+        }
+        handleResize(dx,dy)
+      },
+      onDragCancellation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragCancellation === 'function') {
+          onDragCancellation(dx,dy, x,y, Event)
+        }
+        handleResize(0,0)
+      },
+    }))
+
+    return html`<div class="WAT Resizer" style="${style || ''}"
       onPointerDown=${Recognizer} onPointerUp=${Recognizer}
       onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
     />`
@@ -2286,7 +2361,90 @@
       onPointerDown=${onPointerEvent} onPointerMove=${onPointerEvent}
       onPointerUp=${onPointerEvent} onPointerCancel=${onPointerEvent}
     />`
-  }//------------------------------------------------------------------------------
+  }/**** WAT_Dragger ****/
+
+  export function WAT_Dragger (PropSet:Indexable):any {
+    const {
+      Widget,style,
+      onDragStart,onDragContinuation,onDragFinish,onDragCancellation,
+      onDrag, onDroppable
+    } = PropSet
+
+    const DropMode = acceptableValue(
+      PropSet.DropMode, (Value:any) => ValueIsOneOf(Value,['touch','enclose'],'enclose')
+    )
+
+    const GridWidth  = acceptableValue(PropSet.GridWidth, ValueIsCardinal,1)
+    const GridHeight = acceptableValue(PropSet.GridHeight,ValueIsCardinal,1)
+
+    const DragInfoRef = useRef(null)
+    const DragInfo    = DragInfoRef.current || (DragInfoRef.current = {})
+
+    function handleDrag (dx:number,dy:number):void {
+      if (typeof onDrag !== 'function') { return }
+
+      let x =  GridWidth*Math.round((DragInfo.StartX + dx)/GridWidth)
+      let y = GridHeight*Math.round((DragInfo.StartY + dy)/GridHeight)
+
+      onDrag(x-DragInfo.StartX,y-DragInfo.StartY, x,y)
+
+      const xl = my.x; const xr = xl + my.Width
+      const yt = my.y; const yb = yt + my.Height
+
+      let CatcherList = my.Page.WidgetList.filter((Widget:WAT_Widget) => {
+        if (Widget === me) { return false }
+
+        const { x,y, Width,Height } = Widget.Geometry
+        if (DropMode === 'touch') {
+          return (xl <= x + Width)  && (xr >= x) && (yt <= y + Height) && (yb >= y)
+        } else {                                       // DropMode === 'enclose'
+          return (xl >= x) && (xr <= x + Width) && (yt >= y) && (yb <= y + Height)
+        }
+      })
+
+      let Catcher = CatcherList.findFirst
+    }
+
+    const RecognizerRef = useRef(null)
+    const Recognizer    = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
+      onlyFrom:   '.WAT.Dragger',
+      ClickRadius:0,
+      onDragStart:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        DragInfo.StartX = (Widget == null ? 0 : Widget.x)
+        DragInfo.StartY = (Widget == null ? 0 : Widget.y)
+
+        if (typeof onDragStart === 'function') {
+          onDragStart(dx,dy, x,y, Event)
+        }
+        handleDrag(dx,dy)
+      },
+      onDragContinuation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragContinuation === 'function') {
+          onDragContinuation(dx,dy, x,y, Event)
+        }
+        handleDrag(dx,dy)
+      },
+      onDragFinish:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragFinish === 'function') {
+          onDragFinish(dx,dy, x,y, Event)
+        }
+        handleDrag(dx,dy)
+      },
+      onDragCancellation:(dx:number,dy:number, x:number,y:number, Event:PointerEvent) => {
+        if (typeof onDragCancellation === 'function') {
+          onDragCancellation(dx,dy, x,y, Event)
+        }
+        handleDrag(0,0)
+      },
+    }))
+
+    return html`<div class="WAT Dragger" style="${style || ''}"
+      onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+      onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+    />`
+  }
+
+//------------------------------------------------------------------------------
 //--                                WAT_Visual                                --
 //------------------------------------------------------------------------------
 
@@ -10516,7 +10674,7 @@ console.warn('file drop error',Signal)
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    GestureRecognizer, Mover:WAT_Mover, Shaper:WAT_Shaper,
+    GestureRecognizer, Mover:WAT_Mover, Resizer:WAT_Resizer, Shaper:WAT_Shaper,
     fromLocalTo, fromViewportTo, fromDocumentTo,
   })
 
