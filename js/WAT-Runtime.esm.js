@@ -688,7 +688,7 @@ if (WATStyleElement == null) {
     z-index:1000001;
   }/**** Mover, Resizer ****/
 
-  .WAT.Mover, .WAT.Resizer {
+  .WAT.Mover, .WAT.Resizer, .WAT.Dragger {
     display:block; position:absolute;
     background:none;
     user-select:none; pointer-events:auto;
@@ -1874,7 +1874,120 @@ function WAT_ShaperHandle(PropSet) {
       onPointerDown=${onPointerEvent} onPointerMove=${onPointerEvent}
       onPointerUp=${onPointerEvent} onPointerCancel=${onPointerEvent}
     />`;
-} //------------------------------------------------------------------------------
+} /**** WAT_Dragger ****/
+export function WAT_Dragger(PropSet) {
+    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onDrag } = PropSet;
+    const DropMode = acceptableValue(PropSet.DropMode, (Value) => ValueIsOneOf(Value, ['touch', 'enclose']), 'enclose');
+    const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
+    const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
+    const DragInfoRef = useRef(null);
+    const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
+    /**** handleDrag ****/
+    function handleDrag(dx, dy) {
+        if (typeof onDrag !== 'function') {
+            return;
+        }
+        let x = GridWidth * Math.round((DragInfo.StartX + dx) / GridWidth);
+        let y = GridHeight * Math.round((DragInfo.StartY + dy) / GridHeight);
+        onDrag(x - DragInfo.StartX, y - DragInfo.StartY, x, y);
+        const xl = Widget.x;
+        const xr = xl + Widget.Width;
+        const yt = Widget.y;
+        const yb = yt + Widget.Height;
+        let CatcherList = Widget.Page.WidgetList.filter((Candidate) => {
+            if (Widget === Candidate) {
+                return false;
+            }
+            const { x, y, Width, Height } = Candidate.Geometry;
+            if (DropMode === 'touch') {
+                return (xl <= x + Width) && (xr >= x) && (yt <= y + Height) && (yb >= y);
+            }
+            else { // DropMode === 'enclose'
+                return (xl >= x) && (xr <= x + Width) && (yt >= y) && (yb <= y + Height);
+            }
+        });
+        let Catcher = CatcherList.find((Candidate) => {
+            try {
+                return (Candidate.on('drop-request')(Widget) === true);
+            }
+            catch (Signal) { /* nop - error is already set */ }
+        });
+        if (Catcher === DragInfo.Catcher) {
+            return;
+        }
+        if (DragInfo.Catcher != null) {
+            try {
+                DragInfo.Catcher.on('droppable-left')(Widget);
+            }
+            catch (Signal) { /* nop - error is already set */ }
+            try {
+                Widget.on('catcher-left')(DragInfo.Catcher);
+            }
+            catch (Signal) { /* nop - error is already set */ }
+        }
+        DragInfo.Catcher = Catcher;
+        try {
+            Catcher.on('droppable-entered')(Widget);
+        }
+        catch (Signal) { /* nop - error is already set */ }
+        try {
+            Widget.on('catcher-entered')(Catcher);
+        }
+        catch (Signal) { /* nop - error is already set */ }
+    }
+    /**** handleDrop ****/
+    function handleDrop() {
+        if (DragInfo.Catcher != null) {
+            try {
+                DragInfo.Catcher.on('drop')(Widget);
+            }
+            catch (Signal) { /* nop - error is already set */ }
+            try {
+                Widget.on('dropped-on')(DragInfo.Catcher);
+            }
+            catch (Signal) { /* nop - error is already set */ }
+            delete DragInfo.Catcher;
+        }
+    }
+    /**** Recognizer ****/
+    const RecognizerRef = useRef(null);
+    const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
+        onlyFrom: '.WAT.Dragger',
+        ClickRadius: 0,
+        onDragStart: (dx, dy, x, y, Event) => {
+            DragInfo.StartX = (Widget == null ? 0 : Widget.x);
+            DragInfo.StartY = (Widget == null ? 0 : Widget.y);
+            if (typeof onDragStart === 'function') {
+                onDragStart(dx, dy, x, y, Event);
+            }
+            handleDrag(dx, dy);
+        },
+        onDragContinuation: (dx, dy, x, y, Event) => {
+            if (typeof onDragContinuation === 'function') {
+                onDragContinuation(dx, dy, x, y, Event);
+            }
+            handleDrag(dx, dy);
+        },
+        onDragFinish: (dx, dy, x, y, Event) => {
+            if (typeof onDragFinish === 'function') {
+                onDragFinish(dx, dy, x, y, Event);
+            }
+            handleDrag(dx, dy);
+            handleDrop();
+        },
+        onDragCancellation: (dx, dy, x, y, Event) => {
+            if (typeof onDragCancellation === 'function') {
+                onDragCancellation(dx, dy, x, y, Event);
+            }
+            handleDrag(0, 0);
+        },
+    }));
+    return html `<div class="WAT Dragger" style="${style || ''}"
+      onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+      onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+    />`;
+}
+//------------------------------------------------------------------------------
 //--                                WAT_Visual                                --
 //------------------------------------------------------------------------------
 export class WAT_Visual {
@@ -2428,6 +2541,7 @@ export class WAT_Visual {
                 }
             }));
         };
+        const on = this.on.bind(this);
         const onRender = this.on.bind(this, 'render');
         const onMount = this.on.bind(this, 'mount');
         const onUnmount = this.on.bind(this, 'unmount');
@@ -2450,7 +2564,7 @@ export class WAT_Visual {
             }
             else {
                 try {
-                    await Registration.compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), (Registration === null || Registration === void 0 ? void 0 : Registration.isNew) || false);
+                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), (Registration === null || Registration === void 0 ? void 0 : Registration.isNew) || false);
                     Registration.isNew = false;
                 }
                 catch (Signal) {
@@ -2475,7 +2589,7 @@ export class WAT_Visual {
         let compiledScript;
         try {
             // @ts-ignore TS2351 AsyncFunction *is* constructible
-            compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+            compiledScript = new AsyncFunction('me,my, html,reactively, on,onRender,onMount,onUnmount,onValueChange, ' +
                 'installStylesheet,BehaviorIsNew', activeScript);
         }
         catch (Signal) {
@@ -2490,7 +2604,7 @@ export class WAT_Visual {
             return;
         }
         try {
-            await compiledScript.call(this, this, this, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, false // Behavior.isNew
+            await compiledScript.call(this, this, this, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, false // Behavior.isNew
             );
         }
         catch (Signal) {
@@ -2519,7 +2633,7 @@ export class WAT_Visual {
             let compiledScript; // try compiling pending script first
             try {
                 // @ts-ignore TS2351 AsyncFunction *is* constructible
-                compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+                compiledScript = new AsyncFunction('me,my, html,reactively, on,onRender,onMount,onUnmount,onValueChange, ' +
                     'installStylesheet,BehaviorIsNew', pendingScript);
             }
             catch (Signal) {
@@ -2990,7 +3104,7 @@ export class WAT_Applet extends WAT_Visual {
             throwError('InvalidArgument: intrinsic behaviors must not be overwritten');
         try {
             // @ts-ignore TS2351 AsyncFunction *is* constructible
-            const compiledScript = new AsyncFunction('me,my, html,reactively, onRender,onMount,onUnmount,onValueChange, ' +
+            const compiledScript = new AsyncFunction('me,my, html,reactively, on,onRender,onMount,onUnmount,onValueChange, ' +
                 'installStylesheet,BehaviorIsNew', Script);
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior] = {
@@ -5777,12 +5891,12 @@ hljs.registerLanguage('xml', _xml);
 /**** now actually register all intrinsic behaviours ****/
 function registerIntrinsicBehaviorsIn(Applet) {
     /**** plain_Widget ****/
-    const WAT_plainWidget = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_plainWidget = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         onRender(() => html `<div class="WAT Content Placeholder"/>`);
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.plain_Widget', WAT_plainWidget);
     /**** Outline ****/
-    const WAT_Outline = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Outline = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Outline {
         outline:dotted 1px blue;
@@ -5814,7 +5928,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
     /**** WidgetPane ****/
-    const WAT_WidgetPane = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_WidgetPane = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.WidgetPane {
         overflow:hidden;
@@ -5940,7 +6054,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WidgetPane', WAT_WidgetPane);
     /**** TextView ****/
-    const WAT_TextView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TextView = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.TextView {
         overflow-y:scroll;
@@ -6014,7 +6128,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TextView', WAT_TextView);
     /**** HTMLView ****/
-    const WAT_HTMLView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_HTMLView = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.HTMLView {
         overflow-y:scroll;
@@ -6089,7 +6203,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.HTMLView', WAT_HTMLView);
     /**** ImageView ****/
-    const WAT_ImageView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_ImageView = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.ImageView {
         object-fit:contain; object-position:center;
@@ -6175,7 +6289,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.ImageView', WAT_ImageView);
     /**** SVGView ****/
-    const WAT_SVGView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_SVGView = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.SVGView {
         object-fit:contain; object-position:center;
@@ -6202,7 +6316,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SVGView', WAT_SVGView);
     /**** WebView ****/
-    const WAT_WebView = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_WebView = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter URL)',
@@ -6228,7 +6342,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
     /**** Button ****/
-    const WAT_Button = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Button = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Button {
         border:solid 1px black; border-radius:4px;
@@ -6259,7 +6373,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Button', WAT_Button);
     /**** Checkbox ****/
-    const WAT_Checkbox = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Checkbox = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Checkbox {
         left:50%; top:50%;
@@ -6290,7 +6404,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Checkbox', WAT_Checkbox);
     /**** Radiobutton ****/
-    const WAT_Radiobutton = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Radiobutton = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Radiobutton {
         left:50%; top:50%;
@@ -6318,7 +6432,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Radiobutton', WAT_Radiobutton);
     /**** Gauge ****/
-    const WAT_Gauge = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Gauge = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -6345,7 +6459,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Gauge', WAT_Gauge);
     /**** Progressbar ****/
-    const WAT_Progressbar = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Progressbar = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Progressbar {
         -webkit-appearance:none; -moz-appearance:none; appearance:none;
@@ -6377,7 +6491,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar);
     /**** Slider ****/
-    const WAT_Slider = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Slider = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         /**** custom Properties ****/
         my.configurableProperties = [
@@ -6440,7 +6554,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Slider', WAT_Slider);
     /**** TextlineInput ****/
-    const WAT_TextlineInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TextlineInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TextlineInput {
@@ -6518,7 +6632,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
     /**** PasswordInput ****/
-    const WAT_PasswordInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PasswordInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.PasswordInput {
@@ -6584,7 +6698,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
     /**** NumberInput ****/
-    const WAT_NumberInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_NumberInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.NumberInput {
@@ -6659,7 +6773,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.NumberInput', WAT_NumberInput);
     /**** PhoneNumberInput ****/
-    const WAT_PhoneNumberInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PhoneNumberInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.PhoneNumberInput {
@@ -6735,7 +6849,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput);
     /**** EMailAddressInput ****/
-    const WAT_EMailAddressInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_EMailAddressInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.EMailAddressInput {
@@ -6809,7 +6923,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.EMailAddressInput', WAT_EMailAddressInput);
     /**** URLInput ****/
-    const WAT_URLInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_URLInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.URLInput {
@@ -6887,7 +7001,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.URLInput', WAT_URLInput);
     /**** TimeInput ****/
-    const WAT_TimeInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TimeInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TimeInput {
@@ -6963,7 +7077,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput);
     /**** DateTimeInput ****/
-    const WAT_DateTimeInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_DateTimeInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.DateTimeInput {
@@ -7039,7 +7153,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateTimeInput', WAT_DateTimeInput);
     /**** DateInput ****/
-    const WAT_DateInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_DateInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.DateInput {
@@ -7112,7 +7226,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateInput', WAT_DateInput);
     /**** WeekInput ****/
-    const WAT_WeekInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_WeekInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.WeekInput {
@@ -7185,7 +7299,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.WeekInput', WAT_WeekInput);
     /**** MonthInput ****/
-    const WAT_MonthInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_MonthInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.MonthInput {
@@ -7258,7 +7372,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput);
     /**** FileInput ****/
-    const WAT_FileInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_FileInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.FileInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -7322,7 +7436,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileInput', WAT_FileInput);
     /**** PseudoFileInput ****/
-    const WAT_PseudoFileInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PseudoFileInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoFileInput > div {
         display:block; position:absolute;
@@ -7367,7 +7481,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoFileInput', WAT_PseudoFileInput);
     /**** FileDropArea ****/
-    const WAT_FileDropArea = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_FileDropArea = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.FileDropArea {
         display:flex; flex-flow:column nowrap;
@@ -7428,7 +7542,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
     /**** SearchInput ****/
-    const WAT_SearchInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_SearchInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.SearchInput {
@@ -7506,7 +7620,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.SearchInput', WAT_SearchInput);
     /**** ColorInput ****/
-    const WAT_ColorInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_ColorInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.ColorInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -7550,7 +7664,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput);
     /**** DropDown ****/
-    const WAT_DropDown = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_DropDown = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.DropDown {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -7596,7 +7710,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DropDown', WAT_DropDown);
     /**** PseudoDropDown ****/
-    const WAT_PseudoDropDown = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PseudoDropDown = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoDropDown > div {
         display:block; position:absolute;
@@ -7656,7 +7770,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoDropDown', WAT_PseudoDropDown);
     /**** TextInput ****/
-    const WAT_TextInput = async (me, my, html, reactively, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TextInput = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TextInput {
@@ -8725,7 +8839,8 @@ Object.assign(WAT, {
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    GestureRecognizer, Mover: WAT_Mover, Resizer: WAT_Resizer, Shaper: WAT_Shaper,
+    GestureRecognizer,
+    Mover: WAT_Mover, Resizer: WAT_Resizer, Shaper: WAT_Shaper, Dragger: WAT_Dragger,
     fromLocalTo, fromViewportTo, fromDocumentTo,
 });
 /**** start WAT up ****/
