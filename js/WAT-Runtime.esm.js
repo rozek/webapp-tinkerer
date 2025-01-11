@@ -686,9 +686,9 @@ if (WATStyleElement == null) {
     background:url("data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3Csvg width='24px' height='24px' viewBox='0 0 24 24' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M12 17.0001H12.01M12 10.0001V14.0001M6.41209 21.0001H17.588C19.3696 21.0001 20.2604 21.0001 20.783 20.6254C21.2389 20.2985 21.5365 19.7951 21.6033 19.238C21.6798 18.5996 21.2505 17.819 20.3918 16.2579L14.8039 6.09805C13.8897 4.4359 13.4326 3.60482 12.8286 3.32987C12.3022 3.09024 11.6978 3.09024 11.1714 3.32987C10.5674 3.60482 10.1103 4.4359 9.19614 6.09805L3.6082 16.2579C2.74959 17.819 2.32028 18.5996 2.39677 19.238C2.46351 19.7951 2.76116 20.2985 3.21709 20.6254C3.7396 21.0001 4.63043 21.0001 6.41209 21.0001Z' stroke='orange' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='white'/%3E%3C/svg%3E");
     pointer-events:auto;
     z-index:1000001;
-  }/**** Mover ****/
+  }/**** Mover, Resizer ****/
 
-  .WAT.Mover {
+  .WAT.Mover, .WAT.Resizer {
     display:block; position:absolute;
     background:none;
     user-select:none; pointer-events:auto;
@@ -1569,12 +1569,17 @@ export function GestureRecognizer(OptionSet) {
 /**** WAT_Mover ****/
 export function WAT_Mover(PropSet) {
     const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onMove } = PropSet;
+    const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
+    const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
     function handleMove(dx, dy) {
-        if (typeof onMove === 'function') {
-            onMove(dx, dy, DragInfo.StartX + dx, DragInfo.StartY + dy);
+        if (typeof onMove !== 'function') {
+            return;
         }
+        let x = GridWidth * Math.round((DragInfo.StartX + dx) / GridWidth);
+        let y = GridHeight * Math.round((DragInfo.StartY + dy) / GridHeight);
+        onMove(x - DragInfo.StartX, y - DragInfo.StartY, x, y);
     }
     const RecognizerRef = useRef(null);
     const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
@@ -1608,6 +1613,61 @@ export function WAT_Mover(PropSet) {
         },
     }));
     return html `<div class="WAT Mover" style="${style || ''}"
+      onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+      onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+    />`;
+}
+/**** WAT_Resizer ****/
+export function WAT_Resizer(PropSet) {
+    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onResize } = PropSet;
+    const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
+    const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
+    const minWidth = acceptableValue(PropSet.minWidth, ValueIsOrdinal, 0);
+    const minHeight = acceptableValue(PropSet.minHeight, ValueIsOrdinal, 0);
+    const DragInfoRef = useRef(null);
+    const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
+    function handleResize(dx, dy) {
+        if (typeof onResize !== 'function') {
+            return;
+        }
+        let Width = Math.max(minWidth, DragInfo.StartWidth + dx);
+        let Height = Math.max(minHeight, DragInfo.StartHeight + dy);
+        Width = GridWidth * Math.round(Width / GridWidth);
+        Height = GridHeight * Math.round(Height / GridHeight);
+        onResize(Width - DragInfo.StartWidth, Height - DragInfo.StartHeight, Width, Height);
+    }
+    const RecognizerRef = useRef(null);
+    const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
+        onlyFrom: '.WAT.Mover',
+        ClickRadius: 0,
+        onDragStart: (dx, dy, x, y, Event) => {
+            DragInfo.StartWidth = (Widget == null ? 0 : Widget.Width);
+            DragInfo.StartHeight = (Widget == null ? 0 : Widget.Height);
+            if (typeof onDragStart === 'function') {
+                onDragStart(dx, dy, x, y, Event);
+            }
+            handleResize(dx, dy);
+        },
+        onDragContinuation: (dx, dy, x, y, Event) => {
+            if (typeof onDragContinuation === 'function') {
+                onDragContinuation(dx, dy, x, y, Event);
+            }
+            handleResize(dx, dy);
+        },
+        onDragFinish: (dx, dy, x, y, Event) => {
+            if (typeof onDragFinish === 'function') {
+                onDragFinish(dx, dy, x, y, Event);
+            }
+            handleResize(dx, dy);
+        },
+        onDragCancellation: (dx, dy, x, y, Event) => {
+            if (typeof onDragCancellation === 'function') {
+                onDragCancellation(dx, dy, x, y, Event);
+            }
+            handleResize(0, 0);
+        },
+    }));
+    return html `<div class="WAT Resizer" style="${style || ''}"
       onPointerDown=${Recognizer} onPointerUp=${Recognizer}
       onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
     />`;
@@ -8665,7 +8725,7 @@ Object.assign(WAT, {
     ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue,
     ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject,
     BehaviorIsIntrinsic,
-    GestureRecognizer, Mover: WAT_Mover, Shaper: WAT_Shaper,
+    GestureRecognizer, Mover: WAT_Mover, Resizer: WAT_Resizer, Shaper: WAT_Shaper,
     fromLocalTo, fromViewportTo, fromDocumentTo,
 });
 /**** start WAT up ****/
