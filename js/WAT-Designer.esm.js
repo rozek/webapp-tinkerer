@@ -642,7 +642,7 @@ const DesignerState = {
         Expansions: {
             AppletConfiguration: { Scripting: true },
             PageConfiguration: { Scripting: true },
-            WidgetConfiguration: { BehaviorSpecific: true },
+            WidgetConfiguration: { BehaviorSpecific: true, Scripting: true },
         },
         newBehaviorName: '',
         BehaviorExpansions: {},
@@ -912,7 +912,7 @@ function WAD_Dialog(PropSet) {
         },
         onDragContinuation: handleDrag,
         onDragFinish: handleDrag,
-        onDragAbortion: handleDrag,
+        onDragCancellation: handleDrag,
     }), []);
     /**** repositioning on viewport ****/
     const { x: AppletX, y: AppletY } = DesignerState.Applet.Geometry;
@@ -4272,14 +4272,17 @@ function doVisitNextPage() { visitNextPage(); }
 function doVisitHomePage() { visitPage(0); }
 /**** doCreateScreenshot ****/
 function doCreateScreenshot() {
-    const { Applet } = DesignerState;
-    const { Width, Height } = Applet;
+    const { Applet, selectedWidgets } = DesignerState;
+    const VisualToRender = ((selectedWidgets.length === 1) &&
+        (selectedWidgets[0].normalizedBehavior === 'basic_controls.outline')
+        ? selectedWidgets[0] : Applet);
+    const { Width, Height } = VisualToRender;
     const Canvas = document.createElement('canvas');
     Canvas.width = Width;
     Canvas.height = Height;
     const Context = Canvas.getContext('2d');
-    const AppletViewElement = Applet.View;
-    let { left: x, top: y } = AppletViewElement.getBoundingClientRect();
+    const ViewElement = VisualToRender.View;
+    let { left: x, top: y } = ViewElement.getBoundingClientRect();
     x += window.scrollX;
     y += window.scrollY;
     DesignerState.DesignerDisabled = true;
@@ -4299,7 +4302,9 @@ function doCreateScreenshot() {
             Stream.getTracks().forEach((Track) => Track.stop());
             DesignerState.DesignerDisabled = false;
             WAT_rerender();
-            const Name = ((_a = Applet.visitedBoard) === null || _a === void 0 ? void 0 : _a.Name) || Applet.Name || 'WAT-Applet';
+            const Name = (VisualToRender === Applet
+                ? ((_a = Applet.visitedBoard) === null || _a === void 0 ? void 0 : _a.Name) || Applet.Name || 'WAT-Applet'
+                : VisualToRender.Name || 'WAT-Screenshot.png');
             Canvas.toBlob((Blob) => {
                 download(Blob, Name + '.png', 'image/png');
             }, 'image/png');
@@ -4562,7 +4567,7 @@ function WAD_DesignerButton() {
         ClickRadius: 4, MultiClickLimit: 1,
         onClick: openDesigner,
         onDragStart: Dragger, onDragContinuation: Dragger,
-        onDragFinish: Dragger, onDragAbortion: Dragger,
+        onDragFinish: Dragger, onDragCancellation: Dragger,
     }), []);
     const { x, y, isDragging } = DesignerState.DesignerButton;
     /**** repositioning on viewport ****/
@@ -7087,7 +7092,7 @@ function WAD_WidgetConfigurationPane() {
           toggleExpansion=${() => toggleExpansion('Cursor')}
         >
           <${WAD_horizontally}>
-            <${WAD_Label}>Standard</>
+            <${WAD_Label}>Cursor Type</>
             <${WAD_Gap}/>
             <${WAD_DropDown}
               enabled=${selectedWidgets.length > 0}
@@ -7521,7 +7526,7 @@ LayouterState.LassoRecognizer = GestureRecognizer({
         applyLasso();
         WAT_rerender();
     },
-    onDragAbortion: () => {
+    onDragCancellation: () => {
         abortLasso();
         WAT_rerender();
     },
@@ -7574,7 +7579,7 @@ LayouterState.CoverRecognizer = GestureRecognizer({
         doChangeGeometriesBy(LayouterState.shapedWidgets, 'c', dx, dy, LayouterState.initialGeometries);
         finishDraggingAndShaping();
     },
-    onDragAbortion: (dx, dy) => {
+    onDragCancellation: (dx, dy) => {
         doChangeGeometriesBy(LayouterState.shapedWidgets, 'c', dx, dy, LayouterState.initialGeometries);
         abortDraggingAndShaping();
     },
@@ -7596,7 +7601,7 @@ LayouterState.ShapeHandleRecognizer = GestureRecognizer({
         doChangeGeometriesBy(LayouterState.shapedWidgets, LayouterState.ShapeMode, dx, dy, LayouterState.initialGeometries);
         finishDraggingAndShaping();
     },
-    onDragAbortion: (dx, dy) => {
+    onDragCancellation: (dx, dy) => {
         doChangeGeometriesBy(LayouterState.shapedWidgets, LayouterState.ShapeMode, dx, dy, LayouterState.initialGeometries);
         abortDraggingAndShaping();
     }
