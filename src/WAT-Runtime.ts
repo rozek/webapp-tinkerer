@@ -10065,7 +10065,14 @@ console.warn('file drop error',Signal)
   /**** render ****/
 
     public render (PropSet:Indexable):any {
-      const Page = this._Page = PropSet.Page as WAT_Page
+      const Page = PropSet.Page as WAT_Page
+      if ((this._Page != null) && (this._Page !== Page)) {
+        this.componentWillUnmount()          // because preact reuses components
+        this._Page = Page
+        this.componentDidMount()
+      } else {
+        this._Page = Page
+      }
 
       const broken = (Page.isBroken ? 'broken' : '')
 
@@ -10117,7 +10124,14 @@ console.warn('file drop error',Signal)
   /**** render ****/
 
     public render (PropSet:Indexable):any {
-      const Widget = this._Widget = PropSet.Widget as WAT_Widget
+      const Widget = PropSet.Widget as WAT_Widget
+      if ((this._Widget != null) && (this._Widget !== Widget)) {
+        this.componentWillUnmount()          // because preact reuses components
+        this._Widget = Widget
+        this.componentDidMount()
+      } else {
+        this._Widget = Widget
+      }
 
       let { x,y, Width,Height } = PropSet.Geometry
       const CSSGeometry = (
