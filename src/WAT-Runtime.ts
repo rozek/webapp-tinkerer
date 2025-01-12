@@ -7596,6 +7596,8 @@ console.warn('file drop error',Signal)
     onRender(function (this:Indexable) {
       const { Value,Enabling, Icon,Color } = this
 
+      const disabled = (Enabling == false)
+
       const _onClick = (Event:any) => {
         if (Enabling === false) { return consumingEvent(Event) }
         this.on('click')(Event)
@@ -7603,7 +7605,7 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<div class="WAT Content Icon" style="
+      return html`<div class="WAT Content Icon ${disabled ? 'disabled' : ''}" style="
         -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
         background-color:${Color};
       " onClick=${_onClick}/>`
