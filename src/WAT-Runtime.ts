@@ -1154,6 +1154,19 @@
     -ms-touch-action:none; touch-action:none;
   }
 
+/**** AppletOverlay ****/
+
+  .WAT.AppletOverlay {
+    display:block; position:absolute;
+    z-index:1000000;
+    pointer-events:auto;
+  }
+  .WAT.AppletOverlay > .ContentPane {
+    display:block; position:absolute; overflow:auto;
+    left:0px; top:0px; right:0px; bottom:0px;
+    border:none;
+  }
+
 /**** WAT OverlayLayer ****/
 
   .WAT.OverlayLayer {
@@ -1729,6 +1742,7 @@
       get: () => acceptableValue(Visual[Container][Descriptor.Name],Validator as Function,Default),
       set: (newValue) => {
         ;(Default == null ? allowValue : expectValue)(Descriptor.Name,newValue,Validator)
+        if (ValuesAreEqual(newValue,Default)) { newValue = undefined }
         if (Visual[Container][Descriptor.Name] !== newValue) {
           Visual[Container][Descriptor.Name] = (ValueIsList(newValue) ? newValue.slice() : newValue)
           if (Descriptor.withCallback) { Visual.on(Descriptor.Name)(newValue) }
@@ -6952,7 +6966,14 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
-    onRender(() => html`<div class="WAT Content Placeholder"/>`)
+    my.configurableProperties = [
+      { Name:'visiblePattern', Label:'visible Pattern', Default:true,
+        EditorType:'checkbox', AccessorsFor:'memoized' },
+    ]
+
+    onRender(() => {
+      return html`<div class="WAT Content ${my.visiblePattern === true ? 'Placeholder' : ''}"/>`
+    })
   }
 
   registerIntrinsicBehavior(
@@ -7771,7 +7792,7 @@ console.warn('file drop error',Signal)
         EditorType:'number-input',   AccessorsFor:'memoized', minValue:0 },
       { Name:'Maximum',
         EditorType:'number-input',   AccessorsFor:'memoized' },
-      { Name:'Hashmarks',            Pattern:HashmarkPattern,
+      { Name:'Hashmarks',            Pattern:HashmarkPattern, Default:[],
         EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
 
@@ -9332,7 +9353,7 @@ console.warn('file drop error',Signal)
     my.configurableProperties = [
       { Name:'Value',
         EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
-      { Name:'Options',
+      { Name:'Options',              Default:[],
         EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
 
@@ -9401,7 +9422,7 @@ console.warn('file drop error',Signal)
         EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
       { Name:'Icon',
         EditorType:'url-input',      AccessorsFor:'memoized' },
-      { Name:'Options',
+      { Name:'Options',              Default:[],
         EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
 
@@ -10269,23 +10290,31 @@ console.warn('file drop error',Signal)
         this._Dialog = Dialog
       const {
         SourceWidgetPath,
+        asAppletOverlay, fromRight, fromBottom,
         Title, isClosable, isDraggable, isResizable,
         x,y, Width,Height,
       } = Dialog
 
-      const hasTitlebar = (Title != null) || isDraggable || isClosable
+      const asDialog = ! asAppletOverlay
 
-      const resizable    = (isResizable ? 'resizable'    : '')
-      const withTitlebar = (hasTitlebar ? 'withTitlebar' : '')
+      const hasTitlebar = asDialog && (
+        (Title != null) || isDraggable || isClosable
+      )
+
+      const resizable    = (asDialog && isResizable ? 'resizable'    : '')
+      const withTitlebar = (asDialog && hasTitlebar ? 'withTitlebar' : '')
 
     /**** repositioning on viewport ****/
 
-      const { x:AppletX, y:AppletY } = Applet.Geometry
+      const { x:AppletX, y:AppletY, Width:AppletWidth, Height:AppletHeight } = Applet.Geometry
       let { left,top } = fromDocumentTo('viewport',{
-        left:x + AppletX, top:y + AppletY
+        left:x + AppletX + (fromRight  ? Applet.Width  : 0),
+        top: y + AppletY + (fromBottom ? Applet.Height : 0)
       })
-      left = Math.max(0,Math.min(left,document.documentElement.clientWidth-30))
-      top  = Math.max(0,Math.min(top,document.documentElement.clientHeight-30))
+      if (asDialog) {
+        left = Math.max(0,Math.min(left,document.documentElement.clientWidth-30))
+        top  = Math.max(0,Math.min(top,document.documentElement.clientHeight-30))
+      }
 
     /**** Event Handlers ****/
 
@@ -10327,37 +10356,45 @@ console.warn('file drop error',Signal)
 
     /**** actual dialog rendering ****/
 
-      return html`<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
-        left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
-      ">
-        ${hasTitlebar && html`<div class="Titlebar"
-          onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-          onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-        >
-          <div class="Title">${Title}</div>
+      if (asDialog) {
+        return html`<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
+          left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
+        ">
+          ${hasTitlebar && html`<div class="Titlebar"
+            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+          >
+            <div class="Title">${Title}</div>
 
-          ${(isClosable) && html`
-            <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
+            ${(isClosable) && html`
+              <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
+            `}
+          </div>`}
+
+          <div class="ContentPane">${ContentPane}</div>
+
+          ${isResizable && html`
+            <div class="leftResizer"
+              onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+              onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+            />
+            <div class="middleResizer"
+              onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+              onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+            />
+            <div class="rightResizer"
+              onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+              onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+            />
           `}
-        </div>`}
-
-        <div class="ContentPane">${ContentPane}</div>
-
-        ${isResizable && html`
-          <div class="leftResizer"
-            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-          />
-          <div class="middleResizer"
-            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-          />
-          <div class="rightResizer"
-            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-          />
-        `}
-      </div>`
+        </div>`
+      } else {
+        return html`<div class="WAT AppletOverlay" style="
+          left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
+        ">
+          <div class="ContentPane">${ContentPane}</div>
+        </div>`
+      }
     }
   }
 
