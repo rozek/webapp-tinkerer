@@ -6389,6 +6389,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Icon, Color } = this;
+            const disabled = (Enabling == false);
             const _onClick = (Event) => {
                 if (Enabling === false) {
                     return consumingEvent(Event);
@@ -6396,7 +6397,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('click')(Event);
             };
             /**** actual rendering ****/
-            return html `<div class="WAT Content Icon" style="
+            return html `<div class="WAT Content Icon ${disabled ? 'disabled' : ''}" style="
         -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
         background-color:${Color};
       " onClick=${_onClick}/>`;
