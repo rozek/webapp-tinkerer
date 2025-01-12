@@ -17,7 +17,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, escaped, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesAreEqual, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 const allowPhoneNumber = allowTextline; // *C* should be implemented
@@ -656,6 +656,19 @@ if (WATStyleElement == null) {
     -ms-touch-action:none; touch-action:none;
   }
 
+/**** AppletOverlay ****/
+
+  .WAT.AppletOverlay {
+    display:block; position:absolute;
+    z-index:1000000;
+    pointer-events:auto;
+  }
+  .WAT.AppletOverlay > .ContentPane {
+    display:block; position:absolute; overflow:auto;
+    left:0px; top:0px; right:0px; bottom:0px;
+    border:none;
+  }
+
 /**** WAT OverlayLayer ****/
 
   .WAT.OverlayLayer {
@@ -1258,6 +1271,9 @@ function installAccessorFor(Visual, Descriptor) {
         set: (newValue) => {
             ;
             (Default == null ? allowValue : expectValue)(Descriptor.Name, newValue, Validator);
+            if (ValuesAreEqual(newValue, Default)) {
+                newValue = undefined;
+            }
             if (Visual[Container][Descriptor.Name] !== newValue) {
                 Visual[Container][Descriptor.Name] = (ValueIsList(newValue) ? newValue.slice() : newValue);
                 if (Descriptor.withCallback) {
@@ -5892,7 +5908,13 @@ hljs.registerLanguage('xml', _xml);
 function registerIntrinsicBehaviorsIn(Applet) {
     /**** plain_Widget ****/
     const WAT_plainWidget = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        onRender(() => html `<div class="WAT Content Placeholder"/>`);
+        my.configurableProperties = [
+            { Name: 'visiblePattern', Label: 'visible Pattern', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        onRender(() => {
+            return html `<div class="WAT Content ${my.visiblePattern === true ? 'Placeholder' : ''}"/>`;
+        });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.plain_Widget', WAT_plainWidget);
     /**** Outline ****/
@@ -6503,7 +6525,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
             { Name: 'Maximum',
                 EditorType: 'number-input', AccessorsFor: 'memoized' },
-            { Name: 'Hashmarks', Pattern: HashmarkPattern,
+            { Name: 'Hashmarks', Pattern: HashmarkPattern, Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
@@ -7677,7 +7699,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Options',
+            { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
@@ -7731,7 +7753,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'Icon',
                 EditorType: 'url-input', AccessorsFor: 'memoized' },
-            { Name: 'Options',
+            { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
@@ -8490,17 +8512,21 @@ class WAT_DialogView extends Component {
         const { Applet, Dialog } = PropSet;
         this._Applet = Applet;
         this._Dialog = Dialog;
-        const { SourceWidgetPath, Title, isClosable, isDraggable, isResizable, x, y, Width, Height, } = Dialog;
-        const hasTitlebar = (Title != null) || isDraggable || isClosable;
-        const resizable = (isResizable ? 'resizable' : '');
-        const withTitlebar = (hasTitlebar ? 'withTitlebar' : '');
+        const { SourceWidgetPath, asAppletOverlay, fromRight, fromBottom, Title, isClosable, isDraggable, isResizable, x, y, Width, Height, } = Dialog;
+        const asDialog = !asAppletOverlay;
+        const hasTitlebar = asDialog && ((Title != null) || isDraggable || isClosable);
+        const resizable = (asDialog && isResizable ? 'resizable' : '');
+        const withTitlebar = (asDialog && hasTitlebar ? 'withTitlebar' : '');
         /**** repositioning on viewport ****/
-        const { x: AppletX, y: AppletY } = Applet.Geometry;
+        const { x: AppletX, y: AppletY, Width: AppletWidth, Height: AppletHeight } = Applet.Geometry;
         let { left, top } = fromDocumentTo('viewport', {
-            left: x + AppletX, top: y + AppletY
+            left: x + AppletX + (fromRight ? Applet.Width : 0),
+            top: y + AppletY + (fromBottom ? Applet.Height : 0)
         });
-        left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 30));
-        top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 30));
+        if (asDialog) {
+            left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 30));
+            top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 30));
+        }
         /**** Event Handlers ****/
         this._installGestureRecognizer();
         let Recognizer = this._Recognizer;
@@ -8533,37 +8559,46 @@ class WAT_DialogView extends Component {
             return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
         });
         /**** actual dialog rendering ****/
-        return html `<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
-        left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
-      ">
-        ${hasTitlebar && html `<div class="Titlebar"
-          onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-          onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-        >
-          <div class="Title">${Title}</div>
+        if (asDialog) {
+            return html `<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
+          left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
+        ">
+          ${hasTitlebar && html `<div class="Titlebar"
+            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+          >
+            <div class="Title">${Title}</div>
 
-          ${(isClosable) && html `
-            <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
+            ${(isClosable) && html `
+              <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
+            `}
+          </div>`}
+
+          <div class="ContentPane">${ContentPane}</div>
+
+          ${isResizable && html `
+            <div class="leftResizer"
+              onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+              onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+            />
+            <div class="middleResizer"
+              onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+              onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+            />
+            <div class="rightResizer"
+              onPointerDown=${Recognizer} onPointerUp=${Recognizer}
+              onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
+            />
           `}
-        </div>`}
-
-        <div class="ContentPane">${ContentPane}</div>
-
-        ${isResizable && html `
-          <div class="leftResizer"
-            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-          />
-          <div class="middleResizer"
-            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-          />
-          <div class="rightResizer"
-            onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-            onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-          />
-        `}
-      </div>`;
+        </div>`;
+        }
+        else {
+            return html `<div class="WAT AppletOverlay" style="
+          left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
+        ">
+          <div class="ContentPane">${ContentPane}</div>
+        </div>`;
+        }
     }
 }
 //------------------------------------------------------------------------------
