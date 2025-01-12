@@ -8299,7 +8299,15 @@ class WAT_PageView extends Component {
     }
     /**** render ****/
     render(PropSet) {
-        const Page = this._Page = PropSet.Page;
+        const Page = PropSet.Page;
+        if ((this._Page != null) && (this._Page !== Page)) {
+            this.componentWillUnmount(); // because preact reuses components
+            this._Page = Page;
+            this.componentDidMount();
+        }
+        else {
+            this._Page = Page;
+        }
         const broken = (Page.isBroken ? 'broken' : '');
         this._releaseWidgets(this._shownWidgets);
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
@@ -8343,7 +8351,15 @@ class WAT_WidgetView extends Component {
     }
     /**** render ****/
     render(PropSet) {
-        const Widget = this._Widget = PropSet.Widget;
+        const Widget = PropSet.Widget;
+        if ((this._Widget != null) && (this._Widget !== Widget)) {
+            this.componentWillUnmount(); // because preact reuses components
+            this._Widget = Widget;
+            this.componentDidMount();
+        }
+        else {
+            this._Widget = Widget;
+        }
         let { x, y, Width, Height } = PropSet.Geometry;
         const CSSGeometry = ((x != null) && (Width != null) && (y != null) && (Height != null)
             ? `left:${x}px; top:${y}px; width:${Width}px; height:${Height}px; right:auto; bottom:auto;`
