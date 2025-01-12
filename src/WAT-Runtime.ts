@@ -3017,7 +3017,7 @@
           try {
             reactiveFunction()
           } catch (Signal:any) {
-console.warn('execution error in reactive function',Signal)
+            console.warn('execution error in reactive function',Signal)
             setErrorReport(this,{
               Type:'Reactivity Failure',
               Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -3089,7 +3089,7 @@ console.warn('Behavior Execution Failure',Signal)
             activeScript
           )
         } catch (Signal:any) {
-console.warn('Script Compilation Failure',Signal)
+          console.warn('Script Compilation Failure',Signal)
           setErrorReport(this,{
             Type:'Script Compilation Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -3108,7 +3108,7 @@ console.warn('Script Compilation Failure',Signal)
             installStylesheet, false // Behavior.isNew
           )
         } catch (Signal:any) {
-console.warn('Script Execution Failure',Signal)
+          console.warn('Script Execution Failure',Signal)
           setErrorReport(this,{
             Type:'Script Execution Failure',
             Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -3236,7 +3236,7 @@ console.warn('Script Execution Failure',Signal)
       try {
         return Callback.apply(this,ArgList)
       } catch (Signal:any) {
-console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
+        console.warn(`callback ${quoted(CallbackName)} failed`,Signal)
         setErrorReport(this,{
           Type:'Callback Failure',
           Sufferer:this, Message:'' + Signal, Cause:Signal
@@ -7613,7 +7613,7 @@ console.warn('file drop error',Signal)
   }
 
   registerIntrinsicBehavior(
-    Applet, 'widget', 'native_controls.Icon', WAT_Icon
+    Applet, 'widget', 'basic_controls.Icon', WAT_Icon
   )
 
 /**** Button ****/
