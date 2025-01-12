@@ -3969,6 +3969,9 @@ export class WAT_Applet extends WAT_Visual {
     openDialog(Descriptor) {
         expectPlainObject('dialog descriptor', Descriptor);
         expectName('dialog name', Descriptor.Name);
+        allowBoolean('dialog mode', Descriptor.asAppletOverlay);
+        allowBoolean('right anchor setting', Descriptor.fromRight);
+        allowBoolean('bottom anchor setting', Descriptor.fromBottom);
         allowTextline('dialog title', Descriptor.Title);
         allowBoolean('dialog modality', Descriptor.isModal);
         allowBoolean('dialog closability', Descriptor.isClosable);
@@ -3984,17 +3987,21 @@ export class WAT_Applet extends WAT_Visual {
         allowDimension('maximal dialog height', Descriptor.maxHeight);
         allowFunction('"onOpen" callback', Descriptor.onOpen);
         allowFunction('"onClose" callback', Descriptor.onClose);
-        let { Name, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
+        let { Name, asAppletOverlay, fromRight, fromBottom, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
         if (this.DialogIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: a dialog named ${quoted(Descriptor.Name)} is already open`);
+        if (asAppletOverlay == null) {
+            asAppletOverlay = false;
+        }
+        const asDialog = !asAppletOverlay;
         if (isModal == null) {
             isModal = false;
         }
         if (isClosable == null) {
-            isClosable = true;
+            isClosable = asDialog;
         }
         if (isDraggable == null) {
-            isDraggable = true;
+            isDraggable = asDialog;
         }
         if (isResizable == null) {
             isResizable = false;
@@ -4056,10 +4063,11 @@ export class WAT_Applet extends WAT_Visual {
         if (y == null) {
             y = (this.Height - Height) / 2;
         }
-        x = Math.max(0, Math.min(x, this.Width - Width));
-        y = Math.max(0, Math.min(y, this.Height - Height));
+        //    x = Math.max(0, Math.min(x, this.Width-Width))
+        //    y = Math.max(0, Math.min(y,this.Height-Height))
         const Dialog = {
             Name, normalizedName: Name.toLowerCase(), SourceWidgetPath,
+            asAppletOverlay, fromRight, fromBottom,
             Title, isModal, isClosable, isDraggable, isResizable,
             x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight,
             onOpen, onClose
@@ -6363,6 +6371,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
+    /**** Icon ****/
+    const WAT_Icon = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Icon > div {
+        display:block; position:absolute;
+        left:0px; top:0px; right:0px; bottom:0px;
+        -webkit-mask-size:contain;           mask-size:contain;
+        -webkit-mask-position:center center; mask-position:center center;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Icon', Default: 'icons/menu.png',
+                EditorType: 'url-input', AccessorsFor: 'memoized' },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Icon, Color } = this;
+            const _onClick = (Event) => {
+                if (Enabling === false) {
+                    return consumingEvent(Event);
+                }
+                this.on('click')(Event);
+            };
+            /**** actual rendering ****/
+            return html `<div class="WAT Content Icon" style="
+        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+        background-color:${Color};
+      " onClick=${_onClick}/>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Icon', WAT_Icon);
     /**** Button ****/
     const WAT_Button = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -8520,12 +8560,16 @@ class WAT_DialogView extends Component {
         /**** repositioning on viewport ****/
         const { x: AppletX, y: AppletY, Width: AppletWidth, Height: AppletHeight } = Applet.Geometry;
         let { left, top } = fromDocumentTo('viewport', {
-            left: x + AppletX + (fromRight ? Applet.Width : 0),
-            top: y + AppletY + (fromBottom ? Applet.Height : 0)
+            left: x + (fromRight ? AppletWidth : AppletX),
+            top: y + (fromBottom ? AppletHeight : AppletY)
         });
         if (asDialog) {
             left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 30));
             top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 30));
+        }
+        else {
+            left = Math.max(0, Math.min(left, AppletWidth));
+            top = Math.max(0, Math.min(top, AppletHeight));
         }
         /**** Event Handlers ****/
         this._installGestureRecognizer();
