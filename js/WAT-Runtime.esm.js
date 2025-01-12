@@ -664,7 +664,7 @@ if (WATStyleElement == null) {
     pointer-events:auto;
   }
   .WAT.AppletOverlay > .ContentPane {
-    display:block; position:absolute; overflow:auto;
+    display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px;
     border:none;
   }
