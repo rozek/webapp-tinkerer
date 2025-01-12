@@ -6403,7 +6403,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
       " onClick=${_onClick}/>`;
         });
     };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Icon', WAT_Icon);
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Icon', WAT_Icon);
     /**** Button ****/
     const WAT_Button = async (me, my, html, reactively, on, onRender, onMount, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
