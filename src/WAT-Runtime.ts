@@ -274,6 +274,7 @@
 
   type WAT_Dialog = {
     Name:WAT_Name, normalizedName:WAT_Name, SourceWidgetPath:WAT_Path,
+    asAppletOverlay?:boolean, fromRight?:boolean, fromBottom?:boolean,
     Title?:WAT_Textline,
     isModal:boolean, isClosable:boolean, isDraggable:boolean, isResizable:boolean,
     x:WAT_Location, y:WAT_Location, Width:WAT_Dimension, Height:WAT_Dimension,
@@ -4704,6 +4705,9 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     public openDialog (Descriptor:Indexable):void {
       expectPlainObject('dialog descriptor',Descriptor)
         expectName              ('dialog name',Descriptor.Name)
+        allowBoolean            ('dialog mode',Descriptor.asAppletOverlay)
+        allowBoolean   ('right anchor setting',Descriptor.fromRight)
+        allowBoolean  ('bottom anchor setting',Descriptor.fromBottom)
         allowTextline          ('dialog title',Descriptor.Title)
         allowBoolean        ('dialog modality',Descriptor.isModal)
         allowBoolean     ('dialog closability',Descriptor.isClosable)
@@ -4720,7 +4724,8 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         allowFunction     ('"onOpen" callback',Descriptor.onOpen)
         allowFunction    ('"onClose" callback',Descriptor.onClose)
       let {
-        Name, Title, isModal, isClosable, isDraggable, isResizable,
+        Name, asAppletOverlay, fromRight, fromBottom,
+        Title, isModal, isClosable, isDraggable, isResizable,
         x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
         onOpen,onClose
       } = Descriptor
@@ -4729,9 +4734,12 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         `AlreadyOpen: a dialog named ${quoted(Descriptor.Name)} is already open`
       )
 
+      if (asAppletOverlay == null) { asAppletOverlay = false }
+      const asDialog = ! asAppletOverlay
+
       if (isModal     == null) { isModal     = false }
-      if (isClosable  == null) { isClosable  = true }
-      if (isDraggable == null) { isDraggable = true }
+      if (isClosable  == null) { isClosable  = asDialog }
+      if (isDraggable == null) { isDraggable = asDialog }
       if (isResizable == null) { isResizable = false }
       if (Title == null) {
         if (isClosable || isDraggable) { Title = Name }
@@ -4776,11 +4784,12 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       Height = Math.max(minHeight || 0, Math.min(Height,maxHeight || Infinity))
         if (x == null) { x =  (this.Width-Width) /2 }
         if (y == null) { y = (this.Height-Height)/2 }
-      x = Math.max(0, Math.min(x, this.Width-Width))
-      y = Math.max(0, Math.min(y,this.Height-Height))
+//    x = Math.max(0, Math.min(x, this.Width-Width))
+//    y = Math.max(0, Math.min(y,this.Height-Height))
 
       const Dialog:WAT_Dialog = {
         Name, normalizedName:Name.toLowerCase(), SourceWidgetPath,
+        asAppletOverlay, fromRight, fromBottom,
         Title, isModal, isClosable, isDraggable, isResizable,
         x,y, Width,Height, minWidth,maxWidth, minHeight,maxHeight,
         onOpen,onClose
@@ -7560,6 +7569,51 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'basic_controls.WebView', WAT_WebView
   )
 
+/**** Icon ****/
+
+  const WAT_Icon:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onRender, onMount,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.Icon > div {
+        display:block; position:absolute;
+        left:0px; top:0px; right:0px; bottom:0px;
+        -webkit-mask-size:contain;           mask-size:contain;
+        -webkit-mask-position:center center; mask-position:center center;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Icon',            Default:'icons/menu.png',
+        EditorType:'url-input', AccessorsFor:'memoized' },
+    ]
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Value,Enabling, Icon,Color } = this
+
+      const _onClick = (Event:any) => {
+        if (Enabling === false) { return consumingEvent(Event) }
+        this.on('click')(Event)
+      }
+
+    /**** actual rendering ****/
+
+      return html`<div class="WAT Content Icon" style="
+        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+        background-color:${Color};
+      " onClick=${_onClick}/>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'native_controls.Icon', WAT_Icon
+  )
+
 /**** Button ****/
 
   const WAT_Button:WAT_BehaviorFunction = async (
@@ -10306,14 +10360,18 @@ console.warn('file drop error',Signal)
 
     /**** repositioning on viewport ****/
 
-      const { x:AppletX, y:AppletY, Width:AppletWidth, Height:AppletHeight } = Applet.Geometry
+      const { x:AppletX,y:AppletY, Width:AppletWidth,Height:AppletHeight } = Applet.Geometry
       let { left,top } = fromDocumentTo('viewport',{
-        left:x + AppletX + (fromRight  ? Applet.Width  : 0),
-        top: y + AppletY + (fromBottom ? Applet.Height : 0)
+        left:x + (fromRight  ? AppletWidth  : AppletX),
+        top: y + (fromBottom ? AppletHeight : AppletY)
       })
+
       if (asDialog) {
         left = Math.max(0,Math.min(left,document.documentElement.clientWidth-30))
         top  = Math.max(0,Math.min(top,document.documentElement.clientHeight-30))
+      } else {
+        left = Math.max(0,Math.min(left,AppletWidth))
+        top  = Math.max(0,Math.min(top,AppletHeight))
       }
 
     /**** Event Handlers ****/
