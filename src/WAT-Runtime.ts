@@ -177,6 +177,9 @@
 
 /**** configuration-related types ****/
 
+  export const WAT_Overflows = ['visible','hidden','scroll','auto']
+  export type  WAT_Overflow  = typeof WAT_Overflows[number]
+
   export const WAT_FontWeights = [
     'thin','extra-light','light','normal','medium','semi-bold',
     'bold','extra-bold','heavy'
@@ -808,6 +811,39 @@
   export const expectSerializableObject = ValidatorForClassifier(
     ValueIsSerializableObject, rejectNil, 'serializable object'
   ), expectedSerializableObject = expectSerializableObject
+
+/**** ValueIsListOf ****/
+
+  export function ValueIsListOf (Value:any, ValueList:any[]):boolean {
+    return ValueIsListSatisfying(Value,(Value:any) => ValueIsOneOf(Value,ValueList))
+  }
+
+/**** allow/expect[ed]ListOf ****/
+
+  export function allowListOf (
+    Description:string, Argument:any, ValueList:any[]
+  ):number[]|null|undefined {
+    return (Argument == null
+      ? Argument
+      : expectedListOf(Description, Argument, ValueList)
+    )
+  }
+  export const allowedListOf = allowListOf
+
+  export function expectListOf (
+    Description:string, Argument:any, ValueList:any[]
+  ):number[] {
+    if (Argument == null) {
+      throwError(`MissingArgument: no ${escaped(Description)} given`)
+    } else {
+      if (ValueIsListSatisfying(Argument,(Value:any) => ValueIsOneOf(Value,ValueList))) {
+        return Argument
+      } else {
+        throwError(`InvalidArgument: the given value is no ${escaped(Description)}`)
+      }
+    }
+  }
+  export const expectedListOf = expectListOf
 
 /**** ValueIsJSON ****/
 
@@ -1744,7 +1780,7 @@
       set: (newValue) => {
         ;(Default == null ? allowValue : expectValue)(Descriptor.Name,newValue,Validator)
         if (ValuesAreEqual(newValue,Default)) { newValue = undefined }
-        if (Visual[Container][Descriptor.Name] !== newValue) {
+        if (ValuesDiffer  (newValue,Visual[Container][Descriptor.Name])) {
           Visual[Container][Descriptor.Name] = (ValueIsList(newValue) ? newValue.slice() : newValue)
           if (Descriptor.withCallback) { Visual.on(Descriptor.Name)(newValue) }
           Visual.rerender()
@@ -1801,7 +1837,8 @@
     allowErrorReport('error report',ErrorReport)
 
     if (ValuesDiffer(Visual.ErrorReport,ErrorReport)) {
-      (Visual as Indexable)._ErrorReport = ErrorReport
+console.log('setErrorReport',Visual,ErrorReport)
+      ;(Visual as Indexable)._ErrorReport = ErrorReport
       Visual.rerender()
     }
   }
@@ -2929,6 +2966,13 @@
       }
     }
 
+  /**** Overflows ****/
+
+// @ts-ignore TS2378 this getter throws
+    public get Overflows ():WAT_Overflow[]  { throwError('InternalError: "Overflows" has to be overwritten') }
+// @ts-ignore TS2378 this getter throws
+    public set Overflows (_:WAT_Overflow[]) { throwError('InternalError: "Overflows" has to be overwritten') }
+
   /**** unobserved ****/
 
 // @ts-ignore TS2564 allow "_unobserved" to be assigned upon first use
@@ -3239,13 +3283,16 @@ console.warn('Behavior Execution Failure',Signal)
       try {
         let Result = Callback.apply(this,ArgList)
         if (Result instanceof Promise) {
+console.warn('started  tracking asynchronous callback ' + quoted(CallbackName))
           Result.catch((Signal:any) => {
             console.warn(`asynchronous callback ${quoted(CallbackName)} failed`,Signal)
             setErrorReport(this,{
               Type:'Callback Failure',
               Sufferer:this, Message:'' + Signal, Cause:Signal
             })
-          })
+          }).then(() =>
+console.warn('finished tracking asynchronous callback ' + quoted(CallbackName))
+          )
         } else {
           return Result
         }
@@ -3269,12 +3316,6 @@ console.warn('Behavior Execution Failure',Signal)
       this.rerender()
     }
 
-  /**** Rendering - generates the rendering for this widget ****/
-
-    public Rendering ():any {
-      return this.on('render')()
-    }
-
   /**** rerender (to be overwritten) ****/
 
     public abstract rerender (Visual?:WAT_Visual):void
@@ -3287,7 +3328,7 @@ console.warn('Behavior Execution Failure',Signal)
           FontFamily, FontSize, FontWeight, FontStyle,
           TextDecoration, TextShadow, TextAlignment, LineHeight,
           ForegroundColor, hasBackground, BackgroundColor, BackgroundTexture,
-          Opacity, Cursor
+          Opacity, Cursor, Overflows,
         } = this
 
         if (FontFamily != null) { CSSStyleList.push(`font-family:${FontFamily}`) }
@@ -3348,6 +3389,8 @@ console.warn('Behavior Execution Failure',Signal)
 
         if (Opacity != null) { CSSStyleList.push(`opacity:${Opacity/100}`) }
         if (Cursor  != null) { CSSStyleList.push(`cursor:${Cursor}`) }
+
+        CSSStyleList.push(`overflow:${Overflows.join(' ')}`)
       return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';')
     }
     public set CSSStyle (_:string) { throwReadOnlyError('CSSStyle')}
@@ -4341,6 +4384,11 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
     public set Geometry (_:WAT_Geometry) { throwReadOnlyError('Geometry') }
 
+  /**** Overflows ****/
+
+    public get Overflows ():WAT_Overflow[]  { return ['hidden','hidden'] }
+    public set Overflows (_:WAT_Overflow[]) { throwReadOnlyError('Overflows') }
+
   /**** SnapToGrid ****/
 
     protected _SnapToGrid:boolean = false
@@ -5328,6 +5376,26 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
     public set Geometry (_:WAT_Geometry) { throwReadOnlyError('Geometry') }
 
+  /**** Overflows ****/
+
+    protected _Overflows:WAT_Overflow[]|undefined
+
+    public get Overflows ():WAT_Overflow[] {
+      return acceptableValue(
+        this._Overflows,
+        (Value:any) => ValueIsListOf(Value,['hidden','scroll','auto']),
+        ['hidden','hidden']
+      )
+    }
+
+    public set Overflows (newValue:WAT_Overflow[]|undefined) {
+      allowListOf('overflow settings',newValue, ['hidden','scroll','auto'])
+      if (ValuesDiffer(this._Overflows,newValue)) {
+        this._Overflows = (newValue == null ? undefined : newValue.slice())
+        this.rerender()
+      }
+    }
+
   /**** rerender ****/
 
     public rerender ():void {
@@ -6017,22 +6085,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       }
     }
 
-  /**** OverflowVisibility - not inheritable ****/
-
-    protected _OverflowVisibility:boolean|undefined
-
-    public get OverflowVisibility ():boolean|undefined {
-      return this._OverflowVisibility
-    }
-
-    public set OverflowVisibility (newOverflowVisibility:boolean|undefined) {
-      allowBoolean('widget overflow visibility',newOverflowVisibility)
-      if (this._OverflowVisibility !== newOverflowVisibility) {
-        this._OverflowVisibility = newOverflowVisibility
-        this.rerender()
-      }
-    }
-
   /**** rerender ****/
 
     public rerender ():void {
@@ -6046,7 +6098,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       let CSSStyleList:string[] = []
         const {
           BorderWidths, BorderStyles, BorderColors, BorderRadii, BoxShadow,
-          OverflowVisibility,
         } = this
 
         if (BorderWidths != null) {
@@ -6079,10 +6130,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
             BoxShadow.BlurRadius + 'px ' + BoxShadow.SpreadRadius + 'px ' +
             BoxShadow.Color
           )
-        }
-
-        if (OverflowVisibility != null) {
-          CSSStyleList.push(OverflowVisibility == true ? 'visible' : 'hidden')
         }
       return (
         super.CSSStyle +
@@ -6598,6 +6645,25 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       }
 
       this.rerender()
+    }
+
+  /**** Overflows ****/
+
+    protected _Overflows:WAT_Overflow[]|undefined
+
+    public get Overflows ():WAT_Overflow[] {
+      return acceptableValue(
+        this._Overflows,(Value:any) => ValueIsListOf(Value,WAT_Overflows),
+        ['visible','visible']
+      )
+    }
+
+    public set Overflows (newValue:WAT_Overflow[]|undefined) {
+      allowListOf('overflow settings',newValue,WAT_Overflows)
+      if (ValuesDiffer(this._Overflows,newValue)) {
+        this._Overflows = (newValue == null ? undefined : newValue.slice())
+        this.rerender()
+      }
     }
 
   /**** OverlayNamed ****/
@@ -7223,7 +7289,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
   ) => {
     installStylesheet(`
       .WAT.Widget > .WAT.TextView {
-        overflow-y:scroll;
+        white-space:pre-wrap;
       }
     `)
 
@@ -7312,12 +7378,6 @@ console.warn('file drop error',Signal)
     me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
-    installStylesheet(`
-      .WAT.Widget > .WAT.HTMLView {
-        overflow-y:scroll;
-      }
-    `)
-
   /**** custom Properties ****/
 
     my.configurableProperties = [
@@ -9449,14 +9509,13 @@ console.warn('file drop error',Signal)
           const OptionValue = Option.replace(/:.*$/,'').trim()
           let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
           const disabled    = (OptionLabel[0] === '-')
-            if (/^-[^-]+$/.test(OptionLabel)) {
-              OptionLabel = OptionLabel.slice(1)
-            }
-          return html`<option value=${OptionValue} selected=${OptionValue === Value}
-            disabled=${disabled}
-          >
-            ${OptionLabel}
-          </option>`
+          if (/^-[^-]+$/.test(OptionLabel)) {
+            return '<hr/>'
+          } else {
+            return html`<option value=${OptionValue}
+              selected=${OptionValue === Value} disabled=${disabled}
+            >${OptionLabel}</option>`
+          }
         }
       )}</select>`
     })
@@ -9522,14 +9581,13 @@ console.warn('file drop error',Signal)
             const OptionValue = Option.replace(/:.*\$/,'').trim()
             let   OptionLabel = Option.replace(/^[^:]+:/,'').trim()
             const disabled    = (OptionLabel[0] === '-')
-              if (/^-[^-]+$/.test(OptionLabel)) {
-                OptionLabel = OptionLabel.slice(1)
-              }
-            return html`<option value=${OptionValue} selected=${OptionValue === Value}
-              disabled=${disabled}
-            >
-              ${OptionLabel}
-            </option>`
+            if (/^-[^-]+$/.test(OptionLabel)) {
+              return '<hr/>'
+            } else {
+              return html`<option value=${OptionValue}
+                selected=${OptionValue === Value} disabled=${disabled}
+              >${OptionLabel}</option>`
+            }
           })}
         </select>
       </div>`
@@ -10025,15 +10083,14 @@ console.warn('file drop error',Signal)
       const needsModalLayer = (openDialogs.length > 0) &&
                               openDialogs[lastDialogIndex].isModal
 
-      const Rendering = Applet.on('render')()
-      const broken    = (Applet.isBroken ? 'broken' : '')
+      const broken = (Applet.isBroken ? 'broken' : '')
 
       return html`<div class="WAT ${broken} Applet" style="
         ${Applet.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px;
       ">
         ${Applet.isAttached ? html`
-          ${broken === '' ? Rendering : ErrorRenderingFor(Applet)}
+          ${broken === '' ? Applet.on('render')() : ErrorRenderingFor(Applet)}
           ${visitedPage == null
             ? html`<div class="WAT centered" style="width:100%; height:100%"><div>(no page to show)</div></div>`
             : html`<${WAT_PageView} Page=${visitedPage}/>`
@@ -10107,8 +10164,7 @@ console.warn('file drop error',Signal)
         this._Page = Page
       }
 
-      const Rendering = Page.on('render')()
-      const broken    = (Page.isBroken ? 'broken' : '')
+      const broken = (Page.isBroken ? 'broken' : '')
 
       this._releaseWidgets(this._shownWidgets)
 
@@ -10122,7 +10178,7 @@ console.warn('file drop error',Signal)
         ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
       ">
-        ${broken === '' ? Rendering : ErrorRenderingFor(Page)}
+        ${broken === '' ? Page.on('render')() : ErrorRenderingFor(Page)}
         ${WidgetsToShow.toReversed().map((Widget:WAT_Widget) => {
           return html`<${WAT_WidgetView} Widget=${Widget} Geometry=${Widget.Geometry}/>`
         })}
@@ -10181,8 +10237,7 @@ console.warn('file drop error',Signal)
         : ''
       )
 
-      const Rendering = Widget.on('render')()
-      const broken    = (Widget.isBroken ? 'broken' : '')
+      const broken = (Widget.isBroken ? 'broken' : '')
 
       const openOverlays     = (Widget as Indexable)._OverlayList
       const lastOverlayIndex = openOverlays.length-1
@@ -10190,7 +10245,7 @@ console.warn('file drop error',Signal)
       return html`<div class="WAT ${broken} Widget" style="
         ${Widget.CSSStyle} ${CSSGeometry}
       ">
-        ${broken === '' ? Rendering : ErrorRenderingFor(Widget)}
+        ${broken === '' ? Widget.on('render')() : ErrorRenderingFor(Widget)}
       </div>
       ${(broken === '') && (openOverlays.length > 0) ? html`<div class="WAT OverlayLayer"
         style="${CSSGeometry}"
@@ -10259,6 +10314,7 @@ console.warn('file drop error',Signal)
 
     protected _releaseWidgets ():void {
       this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
+      this._shownWidgets = []
     }
 
   /**** componentWillUnmount ****/
@@ -10405,6 +10461,27 @@ console.warn('file drop error',Signal)
         x,y, Width,Height,
       } = Dialog
 
+    /**** leave here if dialog should not be shown... ****/
+
+      const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
+
+      const Visibility = (
+        SourceWidget == null
+        ? true
+        : SourceWidget.on('visibility-request')()
+      )
+      if (Visibility === false) {
+console.log('Dialog._shownWidgets',this._shownWidgets)
+        if (this._shownWidgets.length > 0) {
+console.log('Dialog._releaseWidgets')
+//          this._releaseWidgets()
+//          Applet.rerender() // makes released widgets visible outside the dialog
+        }
+        return ''
+      }
+
+    /**** ...otherwise continue as usual ****/
+
       const asDialog = ! asAppletOverlay
 
       const hasTitlebar = asDialog && (
@@ -10441,7 +10518,7 @@ console.warn('file drop error',Signal)
 
     /**** ContentPane Rendering ****/
 
-      const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
+//    const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
         if (SourceWidget == null) {
           this._shownWidgets = []
         } else {
@@ -10696,12 +10773,19 @@ console.warn('file drop error',Signal)
   }
   const consumingEvent = consumeEvent
 
-/**** rerender ****/
+/**** rerender - sometimes optimizes rerendering ****/
 
   let combinedView:WAT_combinedView|undefined = undefined
+  let RenderRequest:any
 
   export function rerender ():void {
-    if (combinedView != null) { combinedView.rerender() }
+    if (RenderRequest != null) { return }
+    if (combinedView  != null) {
+      RenderRequest = setTimeout(() => {
+        RenderRequest = undefined
+        if (combinedView != null) { combinedView.rerender() }
+      },0)
+    }
   }
 
 /**** useDesigner ****/
