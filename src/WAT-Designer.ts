@@ -1038,7 +1038,7 @@
 
     return html`<div class="WAD Dialog ${resizable ? 'resizable' : ''}" style="
       left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
-    ">
+    " onPointerDown=${() => bringDialogToFront(Name)}>
       <div class="Titlebar"
         onPointerDown=${Recognizer} onPointerUp=${Recognizer}
         onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
