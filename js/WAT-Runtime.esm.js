@@ -8651,11 +8651,9 @@ class WAT_DialogView extends Component {
             ? true
             : SourceWidget.on('visibility-request')());
         if (Visibility === false) {
-            console.log('Dialog._shownWidgets', this._shownWidgets);
             if (this._shownWidgets.length > 0) {
-                console.log('Dialog._releaseWidgets');
-                //          this._releaseWidgets()
-                //          Applet.rerender() // makes released widgets visible outside the dialog
+                this._releaseWidgets();
+                Applet.rerender(); // makes released widgets visible outside the dialog
             }
             return '';
         }
@@ -8704,7 +8702,9 @@ class WAT_DialogView extends Component {
             PaneGeometry.Height -= 10;
         }
         PaneGeometry.Height = Math.max(0, PaneGeometry.Height);
-        const BaseGeometry = SourceWidget.Geometry;
+        const BaseGeometry = (SourceWidget == null
+            ? { x: 0, y: 0, Width: 0, Height: 0 } // just a dummy
+            : SourceWidget.Geometry);
         let ContentPane = this._shownWidgets.toReversed().map((Widget) => {
             let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
             return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
