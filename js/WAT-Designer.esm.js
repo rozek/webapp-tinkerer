@@ -1682,7 +1682,7 @@ function WAD_TextInput(PropSet) {
       <textarea
         disabled=${enabled === false} readonly=${readonly} style="${LineWrapping == true
         ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
-        : undefined}"
+        : undefined}; resize:${Resizability || 'none'}"
         minlength=${minLength} maxlength=${maxLength}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
@@ -2303,6 +2303,14 @@ function WAD_PropertyConfigurator(PropSet) {
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html `
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event) => toggleDialog('ValueEditor', Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2317,6 +2325,14 @@ function WAD_PropertyConfigurator(PropSet) {
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html `
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event) => toggleDialog('ValueEditor', Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2336,6 +2352,14 @@ function WAD_PropertyConfigurator(PropSet) {
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html `
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event) => toggleDialog('ValueEditor', Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2350,6 +2374,14 @@ function WAD_PropertyConfigurator(PropSet) {
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html `
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event) => toggleDialog('ValueEditor', Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2364,6 +2396,14 @@ function WAD_PropertyConfigurator(PropSet) {
             return html `
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html `
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event) => toggleDialog('ValueEditor', Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
