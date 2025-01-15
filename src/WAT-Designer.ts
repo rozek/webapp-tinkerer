@@ -1826,7 +1826,7 @@
           LineWrapping == true
           ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
           : undefined
-        }"
+        }; resize:${Resizability || 'none'}"
         minlength=${minLength} maxlength=${maxLength}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
@@ -2533,6 +2533,14 @@
         return html`
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html`
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2547,6 +2555,14 @@
         return html`
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html`
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2565,6 +2581,14 @@
         return html`
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html`
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2581,6 +2605,14 @@
         return html`
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html`
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
@@ -2599,6 +2631,14 @@
         return html`
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
+
+            ${(Name === 'Value') && html`
+              <${WAD_Gap}/>
+              <${WAD_Icon} Icon="${IconFolder}/clapperboard.png"
+                active=${DialogIsOpen('ValueEditor')}
+                onClick=${(Event:PointerEvent) => toggleDialog('ValueEditor',Event)}
+              />
+            `}
           </>
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
