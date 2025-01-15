@@ -17,7 +17,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, escaped, ValuesAreEqual, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesAreEqual, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, /*allowPhoneNumber,*/ allowURL, HexColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 const allowPhoneNumber = allowTextline; // *C* should be implemented
@@ -563,6 +563,43 @@ if (WATStyleElement == null) {
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
 
+/**** WAT MarkdownView Contents ****/
+
+  .WAT.MarkdownView.Content h1 { font-size:22px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h2 { font-size:20px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h3 { font-size:18px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h4 { font-size:16px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h5 { font-size:15px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h6 { font-size:14px; font-weight:bold; line-height:1.5; margin:0px }
+
+  .WAT.MarkdownView.Content h1:not(:first-child) { margin-top:22px }
+  .WAT.MarkdownView.Content h2:not(:first-child) { margin-top:20px }
+  .WAT.MarkdownView.Content h3:not(:first-child) { margin-top:18px }
+  .WAT.MarkdownView.Content h4:not(:first-child) { margin-top:16px }
+  .WAT.MarkdownView.Content h5:not(:first-child) { margin-top:15px }
+  .WAT.MarkdownView.Content h6:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content p { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content p:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content ul { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content ul:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content ol { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content ol:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content li { margin-left:20px }
+  .WAT.MarkdownView.Content ul, .WAT.MarkdownView.Content ol { padding-left:0px }
+
+  .WAT.MarkdownView.Content code {
+    font-family:Menlo,Courier,monospace;
+    font-size:13px; font-weight:normal; line-height:1.5; margin:0px;
+    padding:2px; background-color:#EEEEEE;
+  }
+
+  .WAT.MarkdownView.Content pre { background-color:#EEEEEE; padding:2px }
+  .WAT.MarkdownView.Content pre > code { padding:0px }
+
 /**** WAT ModalLayer ****/
 
   .WAT.ModalLayer {
@@ -819,6 +856,36 @@ function installStylesheetForBehavior(Applet, Category, Behavior, Stylesheet) {
 /**** uninstallStylesheetForBehavior ****/
 function uninstallStylesheetForBehavior(Applet, Category, Behavior) {
     const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior.toLowerCase()}`;
+    let StyleElement = document.getElementById(StylesheetId);
+    if (StyleElement != null) {
+        StyleElement.remove();
+    }
+}
+/**** installStylesheetForVisual ****/
+function installStylesheetForVisual(Visual, Stylesheet) {
+    expectVisual('WAT visual', Visual);
+    allowText('stylesheet', Stylesheet);
+    const StylesheetId = `WAT-Stylesheet_for_${IdOfVisual(Visual)}`;
+    if ((Stylesheet == null) || (Stylesheet.trim() === '')) {
+        let StyleElement = document.getElementById(StylesheetId);
+        if (StyleElement != null) {
+            StyleElement.remove();
+        }
+    }
+    else {
+        let StyleElement = document.getElementById(StylesheetId);
+        if (StyleElement == null) {
+            StyleElement = document.createElement('style');
+            StyleElement.id = StylesheetId;
+            document.head.appendChild(StyleElement);
+        }
+        StyleElement.textContent = Stylesheet;
+    }
+}
+/**** uninstallStylesheetForVisual ****/
+function uninstallStylesheetForVisual(Visual) {
+    expectVisual('WAT visual', Visual);
+    const StylesheetId = `WAT-Stylesheet_for_${IdOfVisual(Visual)}`;
     let StyleElement = document.getElementById(StylesheetId);
     if (StyleElement != null) {
         StyleElement.remove();
@@ -1850,7 +1917,7 @@ export function WAT_Shaper(PropSet) {
         Recognizer(Event);
     }
     /**** actual rendering ****/
-    const WidgetId = IdOfWidget(Widget);
+    const WidgetId = IdOfVisual(Widget);
     const Geometry = Widget.Geometry;
     return html `<div class="WAT Content Shaper">
       <${WAT_ShaperHandle} key=${WidgetId + 'nw'} Mode="nw" Geometry=${Geometry}
@@ -2590,14 +2657,12 @@ export class WAT_Visual {
             }));
         };
         const on = this.on.bind(this);
+        const onReady = this.on.bind(this, 'ready');
         const onRender = this.on.bind(this, 'render');
         const onMount = this.on.bind(this, 'mount');
         const onUpdate = this.on.bind(this, 'update');
         const onUnmount = this.on.bind(this, 'unmount');
         const onValueChange = this.on.bind(this, 'value-change');
-        function installStylesheet(Stylesheet) {
-            throwError('NotForVisualScripts: visual scripts must not install behavior stylesheets');
-        }
         /**** run behavior script first ****/
         this._ErrorReport = undefined;
         const Applet = this.Applet;
@@ -2613,7 +2678,7 @@ export class WAT_Visual {
             }
             else {
                 try {
-                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), (Registration === null || Registration === void 0 ? void 0 : Registration.isNew) || false);
+                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), (Registration === null || Registration === void 0 ? void 0 : Registration.isNew) || false);
                     Registration.isNew = false;
                 }
                 catch (Signal) {
@@ -2639,7 +2704,7 @@ export class WAT_Visual {
         try {
             // @ts-ignore TS2351 AsyncFunction *is* constructible
             compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+                'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
                 'installStylesheet,BehaviorIsNew', activeScript);
         }
         catch (Signal) {
@@ -2654,7 +2719,7 @@ export class WAT_Visual {
             return;
         }
         try {
-            await compiledScript.call(this, this, this, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, false // Behavior.isNew
+            await compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForVisual.bind(this, this), false // Behavior.isNew
             );
         }
         catch (Signal) {
@@ -2684,7 +2749,7 @@ export class WAT_Visual {
             try {
                 // @ts-ignore TS2351 AsyncFunction *is* constructible
                 compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                    'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+                    'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
                     'installStylesheet,BehaviorIsNew', pendingScript);
             }
             catch (Signal) {
@@ -2696,7 +2761,7 @@ export class WAT_Visual {
                 return;
             }
         }
-        this._activeScript = pendingScript.trim();
+        this._activeScript = pendingScript.replace(/^\s*\n/, '');
         this._pendingScript = undefined;
         this._ScriptError = undefined;
         try {
@@ -2710,7 +2775,8 @@ export class WAT_Visual {
             this.rerender();
             return;
         }
-        this.rerender();
+        this.rerender(); // just to be on the safe side, may be optimized away
+        this.on('ready')();
     }
     get ScriptError() {
         return (this._ScriptError == null ? undefined : Object.assign({}, this._ScriptError));
@@ -3166,7 +3232,7 @@ export class WAT_Applet extends WAT_Visual {
         try {
             // @ts-ignore TS2351 AsyncFunction *is* constructible
             const compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+                'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
                 'installStylesheet,BehaviorIsNew', Script);
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior] = {
@@ -3304,7 +3370,7 @@ export class WAT_Applet extends WAT_Visual {
             this._BehaviorPool[Category][normalizedBehavior].pendingError = undefined;
             // @ts-ignore TS2351 AsyncFunction *is* constructible
             const compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+                'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
                 'installStylesheet,BehaviorIsNew', pendingScript);
         }
         catch (Signal) {
@@ -3866,6 +3932,7 @@ export class WAT_Applet extends WAT_Visual {
         newPage._deserializeConfigurationFrom(Serialization);
         // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
         newPage._deserializeWidgetsFrom(Serialization);
+        newPage.on('ready')();
         this.rerender();
         return newPage;
     }
@@ -4324,8 +4391,6 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
-        //    delete Serialization.Name                // do not deserialize applet name
-        super._deserializeConfigurationFrom(Serialization);
         const deserializeProperty = (Name) => {
             if (Serialization[Name] != null) {
                 try {
@@ -4364,6 +4429,8 @@ export class WAT_Applet extends WAT_Visual {
         if (ValueIsOneOf(Serialization.expectedOrientation, WAT_Orientations)) {
             this._expectedOrientation = Serialization.expectedOrientation;
         }
+        /**** common properties including "activeScript" ****/
+        super._deserializeConfigurationFrom(Serialization);
     }
     /**** deserializedFrom ****/
     static deserializedFrom(JSONString) {
@@ -4388,6 +4455,7 @@ export class WAT_Applet extends WAT_Visual {
         Applet._deserializeBehaviorsFrom(Serialization);
         Applet._deserializeConfigurationFrom(Serialization);
         Applet._deserializePagesFrom(Serialization);
+        Applet.on('ready')();
         return Applet;
     }
     /**** preserve ****/
@@ -4680,12 +4748,13 @@ export class WAT_Page extends WAT_Visual {
             Index = Math.max(0, Math.min(Index, this._WidgetList.length));
         }
         const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
-        let Widget = new WAT_Widget(Behavior, this);
-        this._WidgetList.splice(Index, 0, Widget);
+        let newWidget = new WAT_Widget(Behavior, this);
+        this._WidgetList.splice(Index, 0, newWidget);
         // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
-        Widget._deserializeConfigurationFrom(Serialization);
+        newWidget._deserializeConfigurationFrom(Serialization);
+        newWidget.on('ready')();
         this.rerender();
-        return Widget;
+        return newWidget;
     }
     /**** DuplicateOfWidgetAt ****/
     DuplicateOfWidgetAt(Index) {
@@ -5870,7 +5939,6 @@ export class WAT_Widget extends WAT_Visual {
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
-        super._deserializeConfigurationFrom(Serialization);
         const deserializeProperty = (Name) => {
             if (Serialization[Name] != null) {
                 try {
@@ -5906,6 +5974,8 @@ export class WAT_Widget extends WAT_Visual {
         [
             'Lock', 'Visibility', 'Enabling'
         ].forEach((Name) => deserializeProperty(Name));
+        /**** common properties including "activeScript" ****/
+        super._deserializeConfigurationFrom(Serialization);
     }
 }
 //------------------------------------------------------------------------------
@@ -5979,7 +6049,7 @@ hljs.registerLanguage('xml', _xml);
 /**** now actually register all intrinsic behaviours ****/
 function registerIntrinsicBehaviorsIn(Applet) {
     /**** plain_Widget ****/
-    const WAT_plainWidget = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_plainWidget = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my.configurableProperties = [
             { Name: 'visiblePattern', Label: 'visible Pattern', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
@@ -5990,7 +6060,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.plain_Widget', WAT_plainWidget);
     /**** Outline ****/
-    const WAT_Outline = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Outline = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Outline {
         outline:dotted 1px blue;
@@ -6022,7 +6092,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
     /**** WidgetPane ****/
-    const WAT_WidgetPane = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_WidgetPane = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.WidgetPane {
         overflow:hidden;
@@ -6073,9 +6143,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     this.rerender();
                 }
             },
-            /**** _releaseWidgets ****/
+            /**** _releaseWidgets - releases all widgets shown by this pane ****/
             _shownWidgets: [],
             _releaseWidgets: function () {
+                console.log('releasing all WidgetPane widgets', this._shownWidgets);
                 this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
             },
             componentWillUnmount: function () {
@@ -6148,7 +6219,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WidgetPane', WAT_WidgetPane);
     /**** TextView ****/
-    const WAT_TextView = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TextView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.TextView {
         white-space:pre-wrap;
@@ -6158,9 +6229,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter text)',
                 EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true, },
-            { Name: 'readonly',
+            { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedTextFormats,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsTextFormat },
         ];
         /**** Renderer ****/
@@ -6222,14 +6293,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TextView', WAT_TextView);
     /**** HTMLView ****/
-    const WAT_HTMLView = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_HTMLView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter HTML)',
                 EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedHTMLFormats,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsHTMLFormat },
         ];
         /**** Renderer ****/
@@ -6291,8 +6362,104 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.HTMLView', WAT_HTMLView);
+    /**** MarkdownView ****/
+    const WAT_MarkdownView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        my._Marked = new Marked();
+        my._Marked.setOptions({
+            gfm: true, breaks: true,
+        });
+        //    my._Marked.use(markedKatex({ nonStandard:true }))
+        //  my._HTMLContent = my._Marked.parse(my.Value)           // will be done later
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(enter Markdown)',
+                EditorType: 'text-input' },
+            { Name: 'readonly', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedMarkdownFormats,
+                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsMarkdownFormat },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsText, '');
+            },
+            set Value(newValue) {
+                allowText('value', newValue);
+                if (newValue == null) {
+                    newValue = '';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('Value')();
+                    this._HTMLContent = this._Marked.parse(newValue);
+                    this.rerender();
+                }
+            },
+        });
+        my._HTMLContent = my._Marked.parse(my.Value); // render after deserialization
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, readonly } = this;
+            let acceptableFileTypes = this.acceptableFileTypes;
+            if (acceptableFileTypes.length === 0) {
+                acceptableFileTypes = WAT_supportedMarkdownFormats.slice();
+            }
+            /**** prepare file dropping ****/
+            const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+            function _acceptableDataIn(Event) {
+                if (Event.dataTransfer.types.includes('text/plain')) {
+                    return true;
+                }
+                for (let Item of Event.dataTransfer.items) {
+                    if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            const _onDragOver = (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    Event.dataTransfer.dropEffect = 'copy';
+                }
+            };
+            const _onDrop = async (Event) => {
+                if (_acceptableDataIn(Event)) {
+                    Event.preventDefault();
+                    if (Event.dataTransfer.types.includes('text/plain')) {
+                        const Value = Event.dataTransfer.getData('text');
+                        this.Value = Value;
+                        this.on('input')(Event);
+                    }
+                    else {
+                        try {
+                            for (let Item of Event.dataTransfer.items) {
+                                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                                    this.Value = await FileReadAsMarkdown(Item.getAsFile(), Item.type);
+                                    this.on('input')(Event);
+                                    break;
+                                }
+                            }
+                        }
+                        catch (Signal) {
+                            console.warn('file drop error', Signal);
+                            this.on('drop-error')(Event);
+                        }
+                    }
+                }
+            };
+            /**** actual rendering ****/
+            console.log('#### this._HTMLContent', this._HTMLContent);
+            return html `<div class="WAT Content MarkdownView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        dangerouslySetInnerHTML=${{ __html: this._HTMLContent || '' }}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.MarkdownView', WAT_MarkdownView);
     /**** ImageView ****/
-    const WAT_ImageView = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_ImageView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.ImageView {
         object-fit:contain; object-position:center;
@@ -6301,16 +6468,33 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter image URL)',
-                EditorType: 'url-input', AccessorsFor: 'memoized', withCallback: true },
+                EditorType: 'url-input' },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'ImageScaling', Label: 'Image Scaling', Default: 'contain',
                 EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageScalings },
             { Name: 'ImageAlignment', Label: 'Image Alignment', Default: 'center center',
                 EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageAlignments },
-            { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
+            { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedImageFormats,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsImageFormat },
         ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsURL);
+            },
+            set Value(newValue) {
+                if (ValueIsString(newValue) && (newValue.trim() === '')) {
+                    newValue = undefined;
+                }
+                allowURL('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('Value')();
+                    this.rerender();
+                }
+            },
+        });
         /**** Renderer ****/
         onRender(function () {
             const { ImageScaling, ImageAlignment, Enabling, readonly } = this;
@@ -6378,7 +6562,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.ImageView', WAT_ImageView);
     /**** SVGView ****/
-    const WAT_SVGView = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_SVGView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.SVGView {
         object-fit:contain; object-position:center;
@@ -6405,11 +6589,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SVGView', WAT_SVGView);
     /**** WebView ****/
-    const WAT_WebView = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_WebView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter URL)',
-                EditorType: 'url-input', AccessorsFor: 'memoized', withCallback: true },
+                EditorType: 'url-input' },
             { Name: 'PermissionsPolicy', Label: 'Permissions Policy',
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'allowsFullscreen', Label: 'allows Fullscreen', Default: false,
@@ -6419,6 +6603,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'ReferrerPolicy', Label: 'Referrer Policy', Default: 'strict-origin-when-cross-origin',
                 EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ReferrerPolicies },
         ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsURL);
+            },
+            set Value(newValue) {
+                if (ValueIsString(newValue) && (newValue.trim() === '')) {
+                    newValue = undefined;
+                }
+                allowURL('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('Value')();
+                    this.rerender();
+                }
+            },
+        });
         /**** Renderer ****/
         onRender(function () {
             const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this.memoized;
@@ -6431,7 +6632,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
     /**** Icon ****/
-    const WAT_Icon = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Icon > div {
         display:block; position:absolute;
@@ -6464,7 +6665,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Icon', WAT_Icon);
     /**** Button ****/
-    const WAT_Button = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Button = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Button {
         border:solid 1px black; border-radius:4px;
@@ -6495,7 +6696,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Button', WAT_Button);
     /**** Checkbox ****/
-    const WAT_Checkbox = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Checkbox = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Checkbox {
         left:50%; top:50%;
@@ -6526,7 +6727,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Checkbox', WAT_Checkbox);
     /**** Radiobutton ****/
-    const WAT_Radiobutton = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Radiobutton = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Radiobutton {
         left:50%; top:50%;
@@ -6554,7 +6755,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Radiobutton', WAT_Radiobutton);
     /**** Gauge ****/
-    const WAT_Gauge = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Gauge = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -6581,7 +6782,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Gauge', WAT_Gauge);
     /**** Progressbar ****/
-    const WAT_Progressbar = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Progressbar = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Progressbar {
         -webkit-appearance:none; -moz-appearance:none; appearance:none;
@@ -6613,7 +6814,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar);
     /**** Slider ****/
-    const WAT_Slider = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_Slider = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         /**** custom Properties ****/
         my.configurableProperties = [
@@ -6649,14 +6850,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
-                this.rerender();
             };
             /**** process any other parameters ****/
             const { Minimum, Stepping, Maximum, Hashmarks } = this;
             let HashmarkList = '', HashmarkId;
             if ((Hashmarks != null) && (Hashmarks.length > 0)) {
-                HashmarkId = IdOfWidget(this) + '-Hashmarks';
+                HashmarkId = IdOfVisual(this) + '-Hashmarks';
                 HashmarkList = html `\n<datalist id=${HashmarkId}>
           ${Hashmarks.map((Item) => {
                     Item = '' + Item;
@@ -6676,7 +6877,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Slider', WAT_Slider);
     /**** TextlineInput ****/
-    const WAT_TextlineInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TextlineInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TextlineInput {
@@ -6730,14 +6931,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -6754,7 +6955,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
     /**** PasswordInput ****/
-    const WAT_PasswordInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PasswordInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.PasswordInput {
@@ -6804,7 +7005,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
@@ -6820,7 +7021,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
     /**** NumberInput ****/
-    const WAT_NumberInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_NumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.NumberInput {
@@ -6872,14 +7073,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { Placeholder, readonly, Minimum, Stepping, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -6895,7 +7096,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.NumberInput', WAT_NumberInput);
     /**** PhoneNumberInput ****/
-    const WAT_PhoneNumberInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PhoneNumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.PhoneNumberInput {
@@ -6947,14 +7148,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -6971,7 +7172,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput);
     /**** EMailAddressInput ****/
-    const WAT_EMailAddressInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_EMailAddressInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.EMailAddressInput {
@@ -7021,14 +7222,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7045,7 +7246,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.EMailAddressInput', WAT_EMailAddressInput);
     /**** URLInput ****/
-    const WAT_URLInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_URLInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.URLInput {
@@ -7099,14 +7300,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7123,7 +7324,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.URLInput', WAT_URLInput);
     /**** TimeInput ****/
-    const WAT_TimeInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TimeInput {
@@ -7175,14 +7376,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7199,7 +7400,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput);
     /**** DateTimeInput ****/
-    const WAT_DateTimeInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_DateTimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.DateTimeInput {
@@ -7251,14 +7452,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7275,7 +7476,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateTimeInput', WAT_DateTimeInput);
     /**** DateInput ****/
-    const WAT_DateInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_DateInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.DateInput {
@@ -7325,14 +7526,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7348,7 +7549,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateInput', WAT_DateInput);
     /**** WeekInput ****/
-    const WAT_WeekInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_WeekInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.WeekInput {
@@ -7398,14 +7599,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7421,7 +7622,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.WeekInput', WAT_WeekInput);
     /**** MonthInput ****/
-    const WAT_MonthInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_MonthInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.MonthInput {
@@ -7471,14 +7672,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7494,7 +7695,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput);
     /**** FileInput ****/
-    const WAT_FileInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_FileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.FileInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -7558,7 +7759,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileInput', WAT_FileInput);
     /**** PseudoFileInput ****/
-    const WAT_PseudoFileInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PseudoFileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoFileInput > div {
         display:block; position:absolute;
@@ -7603,7 +7804,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoFileInput', WAT_PseudoFileInput);
     /**** FileDropArea ****/
-    const WAT_FileDropArea = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_FileDropArea = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.FileDropArea {
         display:flex; flex-flow:column nowrap;
@@ -7664,7 +7865,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
     /**** SearchInput ****/
-    const WAT_SearchInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_SearchInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.SearchInput {
@@ -7718,14 +7919,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
             const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7742,7 +7943,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.SearchInput', WAT_SearchInput);
     /**** ColorInput ****/
-    const WAT_ColorInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_ColorInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.ColorInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -7758,6 +7959,35 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Suggestions',
                 EditorType: 'linelist-input' },
         ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsColor, '#000000');
+            },
+            set Value(newValue) {
+                allowColor('value', newValue);
+                if (newValue == null) {
+                    newValue = '#000000';
+                }
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = HexColor(newValue);
+                    this.on('Value')();
+                    this.rerender();
+                }
+            },
+            /**** Suggestions ****/
+            get Suggestions() {
+                const Candidate = acceptableValue(this.memoized.Suggestions, (Value) => ValueIsListSatisfying(Value, ValueIsColor));
+                return (Candidate == null ? undefined : Candidate.slice());
+            },
+            set Suggestions(newValue) {
+                allowListSatisfying('suggestion list', newValue, ValueIsColor);
+                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
+                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
+                    this.rerender();
+                }
+            },
+        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Suggestions } = this;
@@ -7771,7 +8001,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** process any other parameters ****/
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfWidget(this) + '-Suggestions';
+                SuggestionId = IdOfVisual(this) + '-Suggestions';
                 SuggestionList = html `<datalist id=${SuggestionId}>
           ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
         </datalist>`;
@@ -7786,7 +8016,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput);
     /**** DropDown ****/
-    const WAT_DropDown = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_DropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.DropDown {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -7832,7 +8062,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DropDown', WAT_DropDown);
     /**** PseudoDropDown ****/
-    const WAT_PseudoDropDown = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_PseudoDropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoDropDown > div {
         display:block; position:absolute;
@@ -7892,7 +8122,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoDropDown', WAT_PseudoDropDown);
     /**** TextInput ****/
-    const WAT_TextInput = async (me, my, html, reactively, on, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+    const WAT_TextInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TextInput {
@@ -7946,7 +8176,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender();
+                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
@@ -8294,6 +8524,9 @@ class WAT_AppletView extends Component {
         Applet.on('unmount')();
     }
     /**** render ****/
+    // rendering sequence
+    // - Applet -> visitedPage -> Widgets [-> Widgets in case of WidgetPanes]
+    // - openDialogs -> SourceWidget [-> Widgets in case of WidgetPanes]
     render(PropSet) {
         const Applet = this._Applet = PropSet.Applet;
         const visitedPage = Applet.visitedPage;
@@ -8353,16 +8586,20 @@ class WAT_PageView extends Component {
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
-        this._releaseWidgets(this._shownWidgets);
+        this._releaseWidgets();
         const Page = this._Page;
         Page['_View'] = undefined;
         Page.on('unmount')();
     }
-    /**** _releaseWidgets ****/
-    _releaseWidgets(WidgetList) {
-        WidgetList.forEach((Widget) => {
+    /**** _releaseWidgets - releases *all* widgets on this page ****/
+    _releaseWidgets() {
+        if (this._Page == null) {
+            return;
+        }
+        console.log('releasing all Page widgets', this._Page.WidgetList);
+        this._Page.WidgetList.forEach((Widget) => {
             Widget._Pane = undefined;
-            if (Widget.Behavior === 'basic_controls.WidgetPane') {
+            if (Widget.normalizedBehavior === 'basic_controls.widgetpane') {
                 Widget._releaseWidgets();
             }
         });
@@ -8379,7 +8616,8 @@ class WAT_PageView extends Component {
             this._Page = Page;
         }
         const broken = (Page.isBroken ? 'broken' : '');
-        this._releaseWidgets(this._shownWidgets);
+        console.log('rendering page', Page.Name, Page);
+        this._releaseWidgets();
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
         this._shownWidgets = WidgetsToShow;
@@ -8532,7 +8770,12 @@ class WAT_DialogView extends Component {
     }
     /**** _releaseWidgets ****/
     _releaseWidgets() {
-        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+        console.log('releasing all shown Dialog widgets', this._shownWidgets);
+        this._shownWidgets.forEach((Widget) => {
+            if (Widget._Pane === this) {
+                Widget._Pane = undefined;
+            }
+        });
         this._shownWidgets = [];
     }
     /**** componentWillUnmount ****/
@@ -8651,10 +8894,6 @@ class WAT_DialogView extends Component {
             ? true
             : SourceWidget.on('visibility-request')());
         if (Visibility === false) {
-            if (this._shownWidgets.length > 0) {
-                this._releaseWidgets();
-                Applet.rerender(); // makes released widgets visible outside the dialog
-            }
             return '';
         }
         /**** ...otherwise continue as usual ****/
@@ -8683,6 +8922,7 @@ class WAT_DialogView extends Component {
             Applet.closeDialog(Dialog.Name);
         };
         /**** ContentPane Rendering ****/
+        console.log('rendering dialog', Dialog, 'on page', Applet.visitedPage);
         //    const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
         if (SourceWidget == null) {
             this._shownWidgets = [];
@@ -8902,10 +9142,12 @@ const consumingEvent = consumeEvent;
 let combinedView = undefined;
 let RenderRequest;
 export function rerender() {
+    var _a;
     if (RenderRequest != null) {
         return;
     }
     if (combinedView != null) {
+        console.log('>>>> new rendering request', (_a = new Error().stack) === null || _a === void 0 ? void 0 : _a.replace(/^[^\n]+/, ''));
         RenderRequest = setTimeout(() => {
             RenderRequest = undefined;
             if (combinedView != null) {
@@ -8989,15 +9231,15 @@ async function startWAT() {
     window.Applet = Applet; // for testing and debugging purposes only
     console.log('WebApp Tinkerer Runtime is operational');
 }
-/**** IdOfWidget ****/
-const IdForWidget = new WeakMap();
-function IdOfWidget(Widget) {
-    if (IdForWidget.has(Widget)) {
-        return IdForWidget.get(Widget);
+/**** IdOfVisual ****/
+const IdForVisual = new WeakMap();
+function IdOfVisual(Visual) {
+    if (IdForVisual.has(Visual)) {
+        return IdForVisual.get(Visual);
     }
     else {
         let Id = newId();
-        IdForWidget.set(Widget, Id);
+        IdForVisual.set(Visual, Id);
         return Id;
     }
 }
