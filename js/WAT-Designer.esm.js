@@ -24,7 +24,7 @@ import { html, useState, useRef, useEffect, useMemo, useCallback, } from 'htm/pr
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, ValueIsBehavior, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsErrorReport, allowPage, BehaviorIsIntrinsic, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_Overflows, ValueIsBehavior, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsErrorReport, allowPage, BehaviorIsIntrinsic, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
 import mapTouchToMouseFor from 'svelte-touch-to-mouse';
 mapTouchToMouseFor('.WAD.DesignerButton');
 mapTouchToMouseFor('.WAD.Dialog > .Titlebar');
@@ -693,8 +693,9 @@ const DesignerState = {
     selectedWidgets: [],
 };
 /**** open/closeDesigner ****/
-function openDesigner() {
+async function openDesigner() {
     DesignerState.isOpen = true;
+    await restoreDialogs();
     const { DesignerButton, Toolbox } = DesignerState;
     if (isNaN(Toolbox.x) || isNaN(Toolbox.y)) {
         Toolbox.x = DesignerButton.x;
@@ -815,6 +816,7 @@ function openDialog(Name, firstX = 20, firstY = 20) {
     else {
         bringDialogToFront(Name);
     }
+    preserveDialogs();
     WAT_rerender();
 }
 /**** closeDialog ****/
@@ -822,6 +824,7 @@ function closeDialog(Name) {
     let Index = DialogList.indexOf(Name);
     if (Index >= 0) {
         DialogList.splice(Index, 1);
+        preserveDialogs();
         WAT_rerender();
     }
 }
@@ -868,6 +871,7 @@ function WAD_Dialog(PropSet) {
             resizeDialog(dx, dy);
         }
         bringDialogToFront(Name);
+        preserveDialogs();
         WAT_rerender();
     });
     const moveDialog = useCallback((dx, dy) => {
@@ -953,6 +957,43 @@ function WAD_Dialog(PropSet) {
         />
       `}
     </>`;
+}
+/**** preserveDialogs ****/
+let restoringDialogs = false;
+function preserveDialogs() {
+    if (restoringDialogs) {
+        return;
+    }
+    const DialogNames = [
+        'Toolbox', 'Inspector',
+        'SettingsDialog', 'BehaviorEditor', 'SynopsisEditor', 'ValueEditor',
+        'ScriptEditor', 'CodeAssistant', 'SearchDialog',
+    ];
+    const DialogGeometries = {};
+    DialogNames.forEach((DialogName) => {
+        if (DialogIsOpen(DialogName)) {
+            const { x, y, Width, Height } = DesignerState[DialogName];
+            DialogGeometries[DialogName] = { x, y, Width, Height };
+        }
+    });
+    DesignerStore.setItem('DialogGeometries', DialogGeometries);
+}
+/**** restoreDialogs ****/
+async function restoreDialogs() {
+    restoringDialogs = true;
+    try {
+        let DialogGeometries = await DesignerStore.getItem('DialogGeometries');
+        if (DialogGeometries != null) {
+            for (let DialogName in DialogGeometries) {
+                const { x, y, Width, Height } = DialogGeometries[DialogName];
+                Object.assign(DesignerState[DialogName], { x, y, Width, Height });
+                openDialog(DialogName);
+            }
+            bringDialogToFront('Toolbox');
+        }
+    }
+    catch (Signal) { /* nop */ }
+    restoringDialogs = false;
 }
 //------------------------------------------------------------------------------
 //--                              Error Handling                              --
@@ -4520,7 +4561,7 @@ function WAD_DesignerLayer(PropSet) {
     if (!Applet.isAttached) {
         return;
     }
-    if (DesignerState.VisitHistory.length === 0) {
+    if (DesignerState.VisitHistory[DesignerState.VisitIndex] !== Applet.visitedPage) {
         visitPage(Applet.visitedPage);
     }
     /**** if necessary: position DesignerButton ****/
@@ -5023,6 +5064,26 @@ function WAD_AppletConfigurationPane() {
             <${WAD_IntegerInput} style="width:60px"
               Value=${Applet.Opacity} Minimum=${0} Maximum=${100}
               onInput=${(Event) => doConfigureApplet('Opacity', parseFloat(Event.target.value))}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Overflows</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown} Options=${['hidden']}
+              enabled=${false}
+              Value=${Applet.Overflows[0]}
+              onInput=${(Event) => doConfigureApplet('Overflows', [
+        Event.target.value, Applet.Overflows[1]
+    ])}
+            />
+              <div style="width:10px"/>
+            <${WAD_DropDown} Options=${['hidden']}
+              enabled=${false}
+              Value=${Applet.Overflows[1]}
+              onInput=${(Event) => doConfigureApplet('Overflows', [
+        Applet.Overflows[0], Event.target.value
+    ])}
             />
           </>
         </>
@@ -5722,6 +5783,24 @@ function WAD_PageConfigurationPane() {
               onInput=${(Event) => doConfigureVisitedPage('Opacity', parseFloat(Event.target.value))}
             />
           </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Overflows</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown} Options=${['hidden', 'scroll', 'auto']}
+              Value=${visitedPage.Overflows[0]}
+              onInput=${(Event) => doConfigureVisitedPage('Overflows', [
+        Event.target.value, visitedPage.Overflows[1] || 'hidden'
+    ])}
+            />
+              <div style="width:10px"/>
+            <${WAD_DropDown} Options=${['hidden', 'scroll', 'auto']}
+              Value=${visitedPage.Overflows[1]}
+              onInput=${(Event) => doConfigureVisitedPage('Overflows', [
+        visitedPage.Overflows[0] || 'hidden', Event.target.value
+    ])}
+            />
+          </>
         </>
 
         <${WAD_Fold} Label="Geometry"
@@ -6299,12 +6378,28 @@ function WAD_WidgetConfigurationPane() {
           </>
 
           <${WAD_horizontally}>
-            <${WAD_Label}>Overflow</>
+            <${WAD_Label}>Overflows</>
             <${WAD_Gap}/>
-            <${WAD_DropDown} Options=${['hidden', 'visible']}
+            <${WAD_DropDown} Options=${WAT_Overflows}
               enabled=${selectedWidgets.length > 0}
-              Value=${commonValueOf(selectedWidgets.map((Widget) => Widget.OverflowVisibility))}
-              onInput=${(Event) => doConfigureSelectedWidgets('OverflowVisibility', Event.target.value === 'visible')}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.Overflows), 0)}
+              onInput=${(Event) => {
+        const [Overflow_0, Overflow_1] = (commonValueOf(selectedWidgets.map((Widget) => Widget.Overflows || ['visible', 'visible'])));
+        doConfigureSelectedWidgets('Overflows', [
+            Event.target.value, Overflow_1
+        ]);
+    }}
+            />
+              <div style="width:10px"/>
+            <${WAD_DropDown} Options=${WAT_Overflows}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.Overflows), 1)}
+              onInput=${(Event) => {
+        const [Overflow_0, Overflow_1] = (commonValueOf(selectedWidgets.map((Widget) => Widget.Overflows || ['visible', 'visible'])));
+        doConfigureSelectedWidgets('Overflows', [
+            Overflow_0, Event.target.value
+        ]);
+    }}
             />
           </>
 
@@ -8052,7 +8147,14 @@ function consumeEvent(Event) {
 }
 const consumingEvent = consumeEvent;
 /**** inform WAT about this designer ****/
-console.log('starting WebApp Tinkerer Designer...');
-WAD_DesignerLayer.showErrorReport = showErrorReport;
-useDesigner(WAD_DesignerLayer);
-console.log('WebApp Tinkerer Designer is operational');
+let DesignerStore;
+localforage.ready(async function () {
+    DesignerStore = localforage.createInstance({
+        name: 'WAT Designer'
+    });
+    console.log('starting WebApp Tinkerer Designer...');
+    //      WAD_DesignerLayer.showErrorReport = showErrorReport
+    useDesigner(WAD_DesignerLayer);
+    await restoreDialogs();
+    console.log('WebApp Tinkerer Designer is operational');
+});
