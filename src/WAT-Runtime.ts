@@ -126,7 +126,8 @@
   type WAT_BehaviorFunction = (
     this:Indexable, me:Indexable, my:Indexable,
     html:Function, reactively:Function,
-    on:Function, onRender:Function, onMount:Function, onUpdate:Function, onUnmount:Function,
+    on:Function, onReady:Function, onRender:Function,
+    onMount:Function, onUpdate:Function, onUnmount:Function,
     onValueChange:Function,
     installStylesheet:Function, BehaviorIsNew:boolean
   ) => Promise<void>
@@ -1072,6 +1073,43 @@
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
   }
 
+/**** WAT MarkdownView Contents ****/
+
+  .WAT.MarkdownView.Content h1 { font-size:22px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h2 { font-size:20px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h3 { font-size:18px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h4 { font-size:16px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h5 { font-size:15px; font-weight:bold; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content h6 { font-size:14px; font-weight:bold; line-height:1.5; margin:0px }
+
+  .WAT.MarkdownView.Content h1:not(:first-child) { margin-top:22px }
+  .WAT.MarkdownView.Content h2:not(:first-child) { margin-top:20px }
+  .WAT.MarkdownView.Content h3:not(:first-child) { margin-top:18px }
+  .WAT.MarkdownView.Content h4:not(:first-child) { margin-top:16px }
+  .WAT.MarkdownView.Content h5:not(:first-child) { margin-top:15px }
+  .WAT.MarkdownView.Content h6:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content p { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content p:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content ul { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content ul:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content ol { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+  .WAT.MarkdownView.Content ol:not(:first-child) { margin-top:14px }
+
+  .WAT.MarkdownView.Content li { margin-left:20px }
+  .WAT.MarkdownView.Content ul, .WAT.MarkdownView.Content ol { padding-left:0px }
+
+  .WAT.MarkdownView.Content code {
+    font-family:Menlo,Courier,monospace;
+    font-size:13px; font-weight:normal; line-height:1.5; margin:0px;
+    padding:2px; background-color:#EEEEEE;
+  }
+
+  .WAT.MarkdownView.Content pre { background-color:#EEEEEE; padding:2px }
+  .WAT.MarkdownView.Content pre > code { padding:0px }
+
 /**** WAT ModalLayer ****/
 
   .WAT.ModalLayer {
@@ -1336,6 +1374,40 @@
     Applet:WAT_Applet, Category:WAT_Category, Behavior:WAT_Behavior
   ):void {
     const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior.toLowerCase()}`
+
+    let StyleElement = document.getElementById(StylesheetId)
+    if (StyleElement != null) { StyleElement.remove() }
+  }
+
+/**** installStylesheetForVisual ****/
+
+  function installStylesheetForVisual (
+    Visual:WAT_Visual, Stylesheet:WAT_Text|undefined
+  ):void {
+    expectVisual('WAT visual',Visual)
+    allowText   ('stylesheet',Stylesheet)
+
+    const StylesheetId = `WAT-Stylesheet_for_${IdOfVisual(Visual)}`
+    if ((Stylesheet == null) || (Stylesheet.trim() === '')) {
+      let StyleElement = document.getElementById(StylesheetId)
+      if (StyleElement != null) { StyleElement.remove() }
+    } else {
+      let StyleElement = document.getElementById(StylesheetId)
+      if (StyleElement == null) {
+        StyleElement = document.createElement('style')
+          StyleElement.id = StylesheetId
+        document.head.appendChild(StyleElement)
+      }
+      StyleElement.textContent = Stylesheet
+    }
+  }
+
+/**** uninstallStylesheetForVisual ****/
+
+  function uninstallStylesheetForVisual (Visual:WAT_Visual):void {
+    expectVisual('WAT visual',Visual)
+
+    const StylesheetId = `WAT-Stylesheet_for_${IdOfVisual(Visual)}`
 
     let StyleElement = document.getElementById(StylesheetId)
     if (StyleElement != null) { StyleElement.remove() }
@@ -2364,7 +2436,7 @@ console.log('setErrorReport',Visual,ErrorReport)
 
   /**** actual rendering ****/
 
-    const WidgetId = IdOfWidget(Widget)
+    const WidgetId = IdOfVisual(Widget)
     const Geometry = Widget.Geometry
 
     return html`<div class="WAT Content Shaper">
@@ -3071,15 +3143,12 @@ console.log('setErrorReport',Visual,ErrorReport)
       }
 
       const on            = this.on.bind(this)
+      const onReady       = this.on.bind(this,'ready')
       const onRender      = this.on.bind(this,'render')
       const onMount       = this.on.bind(this,'mount')
       const onUpdate      = this.on.bind(this,'update')
       const onUnmount     = this.on.bind(this,'unmount')
       const onValueChange = this.on.bind(this,'value-change')
-
-      function installStylesheet (Stylesheet:WAT_Text|undefined) {
-        throwError('NotForVisualScripts: visual scripts must not install behavior stylesheets')
-      }
 
     /**** run behavior script first ****/
 
@@ -3099,7 +3168,7 @@ console.log('setErrorReport',Visual,ErrorReport)
           try {
             await Registration.compiledScript.call(this,
               this,this, html,reactively,
-              on,onRender,onMount,onUpdate,onUnmount,onValueChange,
+              on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
               installStylesheetForBehavior.bind(this, Applet,Category,Behavior),
               Registration?.isNew || false
             )
@@ -3130,7 +3199,7 @@ console.warn('Behavior Execution Failure',Signal)
 // @ts-ignore TS2351 AsyncFunction *is* constructible
           compiledScript = new AsyncFunction(
             'me,my, html,reactively, ' +
-            'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+            'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
             'installStylesheet,BehaviorIsNew',
             activeScript
           )
@@ -3150,8 +3219,9 @@ console.warn('Behavior Execution Failure',Signal)
         try {
           await compiledScript.call(this,
             this,this, html,reactively,
-            on,onRender,onMount,onUpdate,onUnmount,onValueChange,
-            installStylesheet, false // Behavior.isNew
+            on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+            installStylesheetForVisual.bind(this,this),
+            false // Behavior.isNew
           )
         } catch (Signal:any) {
           console.warn('Script Execution Failure',Signal)
@@ -3182,7 +3252,7 @@ console.warn('Behavior Execution Failure',Signal)
 // @ts-ignore TS2351 AsyncFunction *is* constructible
           compiledScript = new AsyncFunction(
             'me,my, html,reactively, ' +
-            'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+            'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
             'installStylesheet,BehaviorIsNew',
             pendingScript
           )
@@ -3196,7 +3266,7 @@ console.warn('Behavior Execution Failure',Signal)
         }
       }
 
-      this._activeScript  = pendingScript.trim()
+      this._activeScript  = pendingScript.replace(/^\s*\n/,'')
       this._pendingScript = undefined
       this._ScriptError   = undefined
 
@@ -3210,7 +3280,9 @@ console.warn('Behavior Execution Failure',Signal)
         this.rerender()
         return
       }
-      this.rerender()
+      this.rerender()      // just to be on the safe side, may be optimized away
+
+      this.on('ready')()
     }
 
   /**** ScriptError (used by Designer) ****/
@@ -3622,7 +3694,7 @@ console.warn('finished tracking asynchronous callback ' + quoted(CallbackName))
 // @ts-ignore TS2351 AsyncFunction *is* constructible
         const compiledScript = new AsyncFunction(
           'me,my, html,reactively, ' +
-          'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+          'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
           'installStylesheet,BehaviorIsNew',
           Script
         )
@@ -3806,7 +3878,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 // @ts-ignore TS2351 AsyncFunction *is* constructible
         const compiledScript = new AsyncFunction(
           'me,my, html,reactively, ' +
-          'on,onRender,onMount,onUpdate,onUnmount,onValueChange, ' +
+          'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
           'installStylesheet,BehaviorIsNew',
           pendingScript
         )
@@ -4559,6 +4631,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         newPage._deserializeConfigurationFrom(Serialization)
 // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
         newPage._deserializeWidgetsFrom(Serialization)
+        newPage.on('ready')()
 
         this.rerender()
       return newPage
@@ -5120,9 +5193,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
   /**** _deserializeConfigurationFrom ****/
 
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
-//    delete Serialization.Name                // do not deserialize applet name
-      super._deserializeConfigurationFrom(Serialization)
-
       const deserializeProperty = (Name:string) => {
         if (Serialization[Name] != null) {
           try {
@@ -5153,6 +5223,10 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       if (ValueIsOneOf(Serialization.expectedOrientation,WAT_Orientations)) {
         this._expectedOrientation = Serialization.expectedOrientation as WAT_Orientation
       }
+
+    /**** common properties including "activeScript" ****/
+
+      super._deserializeConfigurationFrom(Serialization)
     }
 
   /**** deserializedFrom ****/
@@ -5186,6 +5260,8 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         Applet._deserializeBehaviorsFrom(Serialization)
         Applet._deserializeConfigurationFrom(Serialization)
         Applet._deserializePagesFrom(Serialization)
+
+        Applet.on('ready')()
       return Applet
     }
 
@@ -5560,14 +5636,15 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
       const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
-      let Widget = new WAT_Widget(Behavior,this)
-        this._WidgetList.splice(Index,0,Widget)
+      let newWidget = new WAT_Widget(Behavior,this)
+        this._WidgetList.splice(Index,0,newWidget)
 
 // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
-        Widget._deserializeConfigurationFrom(Serialization)
+        newWidget._deserializeConfigurationFrom(Serialization)
+        newWidget.on('ready')()
 
         this.rerender()
-      return Widget
+      return newWidget
     }
 
   /**** DuplicateOfWidgetAt ****/
@@ -6896,8 +6973,6 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
   /**** _deserializeConfigurationFrom ****/
 
     protected _deserializeConfigurationFrom (Serialization:Serializable):void {
-      super._deserializeConfigurationFrom(Serialization)
-
       const deserializeProperty = (Name:string) => {
         if (Serialization[Name] != null) {
           try {
@@ -6942,6 +7017,10 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
       ;[
         'Lock','Visibility','Enabling'
       ].forEach((Name:string) => deserializeProperty(Name))
+
+    /**** common properties including "activeScript" ****/
+
+      super._deserializeConfigurationFrom(Serialization)
     }
   }
 
@@ -7054,7 +7133,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** plain_Widget ****/
 
   const WAT_plainWidget:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my.configurableProperties = [
@@ -7074,7 +7153,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** Outline ****/
 
   const WAT_Outline:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7119,7 +7198,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** WidgetPane ****/
 
   const WAT_WidgetPane:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7181,11 +7260,12 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         }
       },
 
-  /**** _releaseWidgets ****/
+  /**** _releaseWidgets - releases all widgets shown by this pane ****/
 
     _shownWidgets:[] as WAT_Widget[],
 
     _releaseWidgets: function ():void {
+console.log('releasing all WidgetPane widgets',this._shownWidgets)
       this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
     },
 
@@ -7284,7 +7364,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 /**** TextView ****/
 
   const WAT_TextView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7298,9 +7378,9 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
     my.configurableProperties = [
       { Name:'Value',            Placeholder:'(enter text)',
         EditorType:'text-input', AccessorsFor:'memoized', withCallback:true, },
-      { Name:'readonly',
+      { Name:'readonly',             Default:true,
         EditorType:'checkbox',       AccessorsFor:'memoized' },
-      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:WAT_supportedTextFormats,
         EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsTextFormat },
     ]
 
@@ -7375,7 +7455,7 @@ console.warn('file drop error',Signal)
 /**** HTMLView ****/
 
   const WAT_HTMLView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
   /**** custom Properties ****/
@@ -7385,7 +7465,7 @@ console.warn('file drop error',Signal)
         EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
       { Name:'readonly',             Default:true,
         EditorType:'checkbox',       AccessorsFor:'memoized' },
-      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:WAT_supportedHTMLFormats,
         EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsHTMLFormat },
     ]
 
@@ -7458,10 +7538,129 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'basic_controls.HTMLView', WAT_HTMLView
   )
 
+/**** MarkdownView ****/
+
+  const WAT_MarkdownView:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    my._Marked = new Marked()
+      my._Marked.setOptions({
+        gfm:true, breaks:true,
+      })
+//    my._Marked.use(markedKatex({ nonStandard:true }))
+//  my._HTMLContent = my._Marked.parse(my.Value)           // will be done later
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Value',                Placeholder:'(enter Markdown)',
+        EditorType:'text-input' },
+      { Name:'readonly',             Default:true,
+        EditorType:'checkbox',       AccessorsFor:'memoized' },
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:WAT_supportedMarkdownFormats,
+        EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsMarkdownFormat },
+    ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():WAT_Text {
+        return acceptableValue(this.memoized.Value,ValueIsText,'')
+      },
+
+      set Value (newValue:WAT_Text) {
+        allowText('value',newValue)
+        if (newValue == null) { newValue = '' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('Value')()
+
+          this._HTMLContent = this._Marked.parse(newValue)
+
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+    my._HTMLContent = my._Marked.parse(my.Value) // render after deserialization
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      const { Enabling,readonly } = this
+
+      let acceptableFileTypes = this.acceptableFileTypes
+      if (acceptableFileTypes.length === 0) { acceptableFileTypes = WAT_supportedMarkdownFormats.slice() }
+
+    /**** prepare file dropping ****/
+
+      const allowsDropping = (
+        (Enabling == true) && ! readonly && (acceptableFileTypes.length > 0)
+      )
+
+      function _acceptableDataIn (Event:Indexable):boolean {
+        if (Event.dataTransfer.types.includes('text/plain')) { return true }
+
+        for (let Item of Event.dataTransfer.items) {
+          if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+            return true
+          }
+        }
+        return false
+      }
+
+      const _onDragOver = (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+          Event.dataTransfer.dropEffect = 'copy'
+        }
+      }
+      const _onDrop = async (Event:Indexable) => {
+        if (_acceptableDataIn(Event)) {
+          Event.preventDefault()
+
+          if (Event.dataTransfer.types.includes('text/plain')) {
+            const Value = Event.dataTransfer.getData('text')
+            this.Value = Value
+            this.on('input')(Event)
+          } else {
+            try {
+              for (let Item of Event.dataTransfer.items) {
+                if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
+                  this.Value = await FileReadAsMarkdown(Item.getAsFile(),Item.type)
+                  this.on('input')(Event)
+                  break
+                }
+              }
+            } catch (Signal:any) {
+console.warn('file drop error',Signal)
+              this.on('drop-error')(Event)
+            }
+          }
+        }
+      }
+
+    /**** actual rendering ****/
+console.log('#### this._HTMLContent',this._HTMLContent)
+      return html`<div class="WAT Content MarkdownView"
+        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        dangerouslySetInnerHTML=${{__html:this._HTMLContent || ''}}
+      />`
+    })
+  }
+
+  registerIntrinsicBehavior (
+    Applet, 'widget', 'basic_controls.MarkdownView', WAT_MarkdownView
+  )
+
 /**** ImageView ****/
 
   const WAT_ImageView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7474,16 +7673,37 @@ console.warn('file drop error',Signal)
 
     my.configurableProperties = [
       { Name:'Value',           Placeholder:'(enter image URL)',
-        EditorType:'url-input', AccessorsFor:'memoized', withCallback:true },
+        EditorType:'url-input' },
       { Name:'readonly',
         EditorType:'checkbox',  AccessorsFor:'memoized' },
       { Name:'ImageScaling',     Label:'Image Scaling',   Default:'contain',
         EditorType:'drop-down',  AccessorsFor:'memoized', ValueList:WAT_ImageScalings },
       { Name:'ImageAlignment',   Label:'Image Alignment', Default:'center center',
         EditorType:'drop-down',  AccessorsFor:'memoized', ValueList:WAT_ImageAlignments },
-      { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
+      { Name:'acceptableFileTypes',  Label:'File Types', Default:WAT_supportedImageFormats,
         EditorType:'linelist-input', AccessorsFor:'memoized', Validator:ValueIsImageFormat },
     ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Value,ValueIsURL)
+      },
+
+      set Value (newValue:WAT_URL|undefined) {
+        if (ValueIsString(newValue) && (newValue.trim() === '')) { newValue = undefined }
+        allowURL('value',newValue)
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('Value')()
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7567,7 +7787,7 @@ console.warn('file drop error',Signal)
 /**** SVGView ****/
 
   const WAT_SVGView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7608,14 +7828,14 @@ console.warn('file drop error',Signal)
 /**** WebView ****/
 
   const WAT_WebView:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
   /**** custom Properties ****/
 
     my.configurableProperties = [
       { Name:'Value', Placeholder:'(enter URL)',
-        EditorType:'url-input',      AccessorsFor:'memoized', withCallback:true },
+        EditorType:'url-input' },
       { Name:'PermissionsPolicy',    Label:'Permissions Policy',
         EditorType:'textline-input', AccessorsFor:'memoized' },
       { Name:'allowsFullscreen',     Label:'allows Fullscreen',   Default:false,
@@ -7625,6 +7845,27 @@ console.warn('file drop error',Signal)
       { Name:'ReferrerPolicy',       Label:'Referrer Policy',     Default:'strict-origin-when-cross-origin',
         EditorType:'drop-down',      AccessorsFor:'memoized', ValueList:WAT_ReferrerPolicies },
     ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Value,ValueIsURL)
+      },
+
+      set Value (newValue:WAT_URL|undefined) {
+        if (ValueIsString(newValue) && (newValue.trim() === '')) { newValue = undefined }
+        allowURL('value',newValue)
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('Value')()
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
 
   /**** Renderer ****/
 
@@ -7648,7 +7889,7 @@ console.warn('file drop error',Signal)
 /**** Icon ****/
 
   const WAT_Icon:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7695,7 +7936,7 @@ console.warn('file drop error',Signal)
 /**** Button ****/
 
   const WAT_Button:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7738,7 +7979,7 @@ console.warn('file drop error',Signal)
 /**** Checkbox ****/
 
   const WAT_Checkbox:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7782,7 +8023,7 @@ console.warn('file drop error',Signal)
 /**** Radiobutton ****/
 
   const WAT_Radiobutton:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7821,7 +8062,7 @@ console.warn('file drop error',Signal)
 /**** Gauge ****/
 
   const WAT_Gauge:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
   /**** custom Properties ****/
@@ -7863,7 +8104,7 @@ console.warn('file drop error',Signal)
 /**** Progressbar ****/
 
   const WAT_Progressbar:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -7908,7 +8149,7 @@ console.warn('file drop error',Signal)
 /**** Slider ****/
 
   const WAT_Slider:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -7953,8 +8194,8 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
-        this.rerender()
       }
 
     /**** process any other parameters ****/
@@ -7963,7 +8204,7 @@ console.warn('file drop error',Signal)
 
       let HashmarkList:any = '', HashmarkId
       if ((Hashmarks != null) && (Hashmarks.length > 0)) {
-        HashmarkId = IdOfWidget(this as WAT_Widget) + '-Hashmarks'
+        HashmarkId = IdOfVisual(this as WAT_Widget) + '-Hashmarks'
 
         HashmarkList = html`\n<datalist id=${HashmarkId}>
           ${Hashmarks.map((Item:string|number) => {
@@ -7993,7 +8234,7 @@ console.warn('file drop error',Signal)
 /**** TextlineInput ****/
 
   const WAT_TextlineInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8058,7 +8299,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8071,7 +8312,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8097,7 +8338,7 @@ console.warn('file drop error',Signal)
 /**** PasswordInput ****/
 
   const WAT_PasswordInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8158,7 +8399,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8186,7 +8427,7 @@ console.warn('file drop error',Signal)
 /**** NumberInput ****/
 
   const WAT_NumberInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8249,7 +8490,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8261,7 +8502,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8286,7 +8527,7 @@ console.warn('file drop error',Signal)
 /**** PhoneNumberInput ****/
 
   const WAT_PhoneNumberInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8349,7 +8590,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8362,7 +8603,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8388,7 +8629,7 @@ console.warn('file drop error',Signal)
 /**** EMailAddressInput ****/
 
   const WAT_EMailAddressInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8449,7 +8690,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8462,7 +8703,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8488,7 +8729,7 @@ console.warn('file drop error',Signal)
 /**** URLInput ****/
 
   const WAT_URLInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8553,7 +8794,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8566,7 +8807,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8592,7 +8833,7 @@ console.warn('file drop error',Signal)
 /**** TimeInput ****/
 
   const WAT_TimeInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8655,7 +8896,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8667,7 +8908,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8693,7 +8934,7 @@ console.warn('file drop error',Signal)
 /**** DateTimeInput ****/
 
   const WAT_DateTimeInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8756,7 +8997,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8768,7 +9009,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8794,7 +9035,7 @@ console.warn('file drop error',Signal)
 /**** DateInput ****/
 
   const WAT_DateInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8855,7 +9096,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8867,7 +9108,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8892,7 +9133,7 @@ console.warn('file drop error',Signal)
 /**** WeekInput ****/
 
   const WAT_WeekInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -8953,7 +9194,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -8965,7 +9206,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -8990,7 +9231,7 @@ console.warn('file drop error',Signal)
 /**** MonthInput ****/
 
   const WAT_MonthInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -9051,7 +9292,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -9063,7 +9304,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -9088,7 +9329,7 @@ console.warn('file drop error',Signal)
 /**** FileInput ****/
 
   const WAT_FileInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9168,7 +9409,7 @@ console.warn('file drop error',Signal)
 /**** PseudoFileInput ****/
 
   const WAT_PseudoFileInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9227,7 +9468,7 @@ console.warn('file drop error',Signal)
 /**** FileDropArea ****/
 
   const WAT_FileDropArea:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9303,7 +9544,7 @@ console.warn('file drop error',Signal)
 /**** SearchInput ****/
 
   const WAT_SearchInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -9368,7 +9609,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -9381,7 +9622,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -9407,7 +9648,7 @@ console.warn('file drop error',Signal)
 /**** ColorInput ****/
 
   const WAT_ColorInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9428,6 +9669,44 @@ console.warn('file drop error',Signal)
         EditorType:'linelist-input' },
     ]
 
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():WAT_Color {
+        return acceptableValue(this.memoized.Value,ValueIsColor,'#000000')
+      },
+
+      set Value (newValue:WAT_Color) {
+        allowColor('value',newValue)
+        if (newValue == null) { newValue = '#000000' }
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = HexColor(newValue)
+          this.on('Value')()
+          this.rerender()
+        }
+      },
+
+    /**** Suggestions ****/
+
+      get Suggestions ():string[]|undefined {
+        const Candidate = acceptableValue(
+          this.memoized.Suggestions,(Value:any) => ValueIsListSatisfying(Value,ValueIsColor)
+        )
+        return (Candidate == null ? undefined : Candidate.slice())
+      },
+
+      set Suggestions (newValue:string[]|undefined) {
+        allowListSatisfying('suggestion list',newValue,ValueIsColor)
+        if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+          this.memoized.Suggestions = (
+            newValue == null ? undefined : newValue.slice()
+          )
+          this.rerender()
+        }
+      },
+    } as Indexable)
+
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
@@ -9444,7 +9723,7 @@ console.warn('file drop error',Signal)
 
       let SuggestionList:any = '', SuggestionId
       if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionId = IdOfWidget(this as WAT_Widget) + '-Suggestions'
+        SuggestionId = IdOfVisual(this as WAT_Widget) + '-Suggestions'
 
         SuggestionList = html`<datalist id=${SuggestionId}>
           ${Suggestions.map((Value:string) => html`<option value=${Value}></option>`)}
@@ -9468,7 +9747,7 @@ console.warn('file drop error',Signal)
 /**** DropDown ****/
 
   const WAT_DropDown:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9528,7 +9807,7 @@ console.warn('file drop error',Signal)
 /**** PseudoDropDown ****/
 
   const WAT_PseudoDropDown:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     installStylesheet(`
@@ -9601,7 +9880,7 @@ console.warn('file drop error',Signal)
 /**** TextInput ****/
 
   const WAT_TextInput:WAT_BehaviorFunction = async (
-    me,my, html,reactively, on, onRender, onMount,onUpdate,onUnmount, onValueChange,
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
     installStylesheet,BehaviorIsNew
   ) => {
     my._InputElement = createRef()
@@ -9666,7 +9945,7 @@ console.warn('file drop error',Signal)
       }
 
       const _onBlur = (Event:any) => {
-        this.rerender()
+        this.rerender()            // because "ValueToShow" may now be different
         this.on('blur')(Event)
       }
 
@@ -10074,6 +10353,9 @@ console.warn('file drop error',Signal)
     }
 
   /**** render ****/
+// rendering sequence
+// - Applet -> visitedPage -> Widgets [-> Widgets in case of WidgetPanes]
+// - openDialogs -> SourceWidget [-> Widgets in case of WidgetPanes]
 
     public render (PropSet:Indexable):any {
       const Applet          = this._Applet = PropSet.Applet as WAT_Applet
@@ -10133,7 +10415,7 @@ console.warn('file drop error',Signal)
   /**** componentWillUnmount ****/
 
     public componentWillUnmount ():void {
-      this._releaseWidgets(this._shownWidgets)
+      this._releaseWidgets()
 
       const Page = this._Page as WAT_Page
 
@@ -10141,12 +10423,15 @@ console.warn('file drop error',Signal)
       Page.on('unmount')()
     }
 
-  /**** _releaseWidgets ****/
+  /**** _releaseWidgets - releases *all* widgets on this page ****/
 
-    protected _releaseWidgets (WidgetList:WAT_Widget[]):void {
-      WidgetList.forEach((Widget:Indexable) => {
+    protected _releaseWidgets ():void {
+      if (this._Page == null) { return }
+
+console.log('releasing all Page widgets',this._Page.WidgetList)
+      this._Page.WidgetList.forEach((Widget:Indexable) => {
         Widget._Pane = undefined
-        if (Widget.Behavior === 'basic_controls.WidgetPane') {
+        if (Widget.normalizedBehavior === 'basic_controls.widgetpane') {
           (Widget as Indexable)._releaseWidgets()
         }
       })
@@ -10165,8 +10450,8 @@ console.warn('file drop error',Signal)
       }
 
       const broken = (Page.isBroken ? 'broken' : '')
-
-      this._releaseWidgets(this._shownWidgets)
+console.log('rendering page',Page.Name,Page)
+      this._releaseWidgets()
 
       const WidgetsToShow = (Page.WidgetList as any).filter((Widget:Indexable) => (
         Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))
@@ -10313,7 +10598,10 @@ console.warn('file drop error',Signal)
   /**** _releaseWidgets ****/
 
     protected _releaseWidgets ():void {
-      this._shownWidgets.forEach((Widget:Indexable) => Widget._Pane = undefined)
+console.log('releasing all shown Dialog widgets',this._shownWidgets)
+      this._shownWidgets.forEach((Widget:Indexable) => {
+        if (Widget._Pane === this) { Widget._Pane = undefined }
+      })
       this._shownWidgets = []
     }
 
@@ -10470,13 +10758,7 @@ console.warn('file drop error',Signal)
         ? true
         : SourceWidget.on('visibility-request')()
       )
-      if (Visibility === false) {
-        if (this._shownWidgets.length > 0) {
-          this._releaseWidgets()
-          Applet.rerender() // makes released widgets visible outside the dialog
-        }
-        return ''
-      }
+      if (Visibility === false) { return '' }
 
     /**** ...otherwise continue as usual ****/
 
@@ -10516,6 +10798,7 @@ console.warn('file drop error',Signal)
 
     /**** ContentPane Rendering ****/
 
+console.log('rendering dialog',Dialog,'on page',Applet.visitedPage)
 //    const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
         if (SourceWidget == null) {
           this._shownWidgets = []
@@ -10783,6 +11066,7 @@ console.warn('file drop error',Signal)
   export function rerender ():void {
     if (RenderRequest != null) { return }
     if (combinedView  != null) {
+console.log('>>>> new rendering request',new Error().stack?.replace(/^[^\n]+/,''))
       RenderRequest = setTimeout(() => {
         RenderRequest = undefined
         if (combinedView != null) { combinedView.rerender() }
@@ -10895,16 +11179,16 @@ console.warn('file drop error',Signal)
     console.log('WebApp Tinkerer Runtime is operational')
   }
 
-/**** IdOfWidget ****/
+/**** IdOfVisual ****/
 
-  const IdForWidget:WeakMap<WAT_Widget,string> = new WeakMap()
+  const IdForVisual:WeakMap<WAT_Visual,string> = new WeakMap()
 
-  function IdOfWidget (Widget:WAT_Widget):string {
-    if (IdForWidget.has(Widget)) {
-      return IdForWidget.get(Widget) as string
+  function IdOfVisual (Visual:WAT_Visual):string {
+    if (IdForVisual.has(Visual)) {
+      return IdForVisual.get(Visual) as string
     } else {
       let Id = newId()
-        IdForWidget.set(Widget,Id)
+        IdForVisual.set(Visual,Id)
       return Id
     }
   }
