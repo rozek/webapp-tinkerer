@@ -10471,11 +10471,9 @@ console.warn('file drop error',Signal)
         : SourceWidget.on('visibility-request')()
       )
       if (Visibility === false) {
-console.log('Dialog._shownWidgets',this._shownWidgets)
         if (this._shownWidgets.length > 0) {
-console.log('Dialog._releaseWidgets')
-//          this._releaseWidgets()
-//          Applet.rerender() // makes released widgets visible outside the dialog
+          this._releaseWidgets()
+          Applet.rerender() // makes released widgets visible outside the dialog
         }
         return ''
       }
@@ -10536,7 +10534,11 @@ console.log('Dialog._releaseWidgets')
         if (hasTitlebar) { PaneGeometry.Height -= 30 }
         if (isResizable) { PaneGeometry.Height -= 10 }
         PaneGeometry.Height = Math.max(0,PaneGeometry.Height)
-      const BaseGeometry = SourceWidget.Geometry
+      const BaseGeometry = (
+        SourceWidget == null
+        ? { x:0,y:0, Width:0,Height:0 }                          // just a dummy
+        : SourceWidget.Geometry
+      )
 
       let ContentPane:any[] = (this._shownWidgets as any).toReversed().map(
         (Widget:WAT_Widget) => {
