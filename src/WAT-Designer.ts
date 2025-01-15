@@ -44,7 +44,7 @@
     WAT_Visual, WAT_Applet, WAT_Page, WAT_Widget, WAT_ErrorReport,
     WAT_FontWeights, WAT_FontStyles,
     WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments,
-    WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors,
+    WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_Overflows,
     WAT_ImageScalings, WAT_ImageAlignments, WAT_ReferrerPolicies,
     WAT_Orientations,
     WAT_TimePattern, WAT_DateTimePattern, WAT_DatePattern, WAT_WeekPattern,
@@ -752,8 +752,10 @@
 
 /**** open/closeDesigner ****/
 
-  function openDesigner () {
+  async function openDesigner () {
     DesignerState.isOpen = true
+
+    await restoreDialogs()
 
     const { DesignerButton,Toolbox } = DesignerState
     if (isNaN(Toolbox.x) || isNaN(Toolbox.y)) {
@@ -900,6 +902,7 @@
     } else {
       bringDialogToFront(Name)
     }
+    preserveDialogs()
     WAT_rerender()
   }
 
@@ -909,6 +912,7 @@
     let Index = DialogList.indexOf(Name)
     if (Index >= 0) {
       DialogList.splice(Index,1)
+      preserveDialogs()
       WAT_rerender()
     }
   }
@@ -968,6 +972,7 @@
         resizeDialog(dx,dy)
       }
       bringDialogToFront(Name)
+      preserveDialogs()
       WAT_rerender()
     })
 
@@ -1062,6 +1067,49 @@
         />
       `}
     </>`
+  }
+
+/**** preserveDialogs ****/
+
+  let restoringDialogs:boolean = false
+
+  function preserveDialogs () {
+    if (restoringDialogs) { return }
+
+    const DialogNames = [
+      'Toolbox', 'Inspector',
+      'SettingsDialog', 'BehaviorEditor', 'SynopsisEditor', 'ValueEditor',
+      'ScriptEditor', 'CodeAssistant', 'SearchDialog',
+    ]
+
+    const DialogGeometries:Indexable = {}
+    DialogNames.forEach((DialogName:string) => {
+      if (DialogIsOpen(DialogName)) {
+        const { x,y, Width,Height } = DesignerState[DialogName]
+        DialogGeometries[DialogName] = { x,y, Width,Height }
+      }
+    })
+
+    DesignerStore.setItem('DialogGeometries',DialogGeometries)
+  }
+
+/**** restoreDialogs ****/
+
+  async function restoreDialogs () {
+    restoringDialogs = true
+      try {
+        let DialogGeometries = await DesignerStore.getItem('DialogGeometries')
+        if (DialogGeometries != null) {
+          for (let DialogName in DialogGeometries) {
+            const { x,y, Width,Height } = DialogGeometries[DialogName]
+            Object.assign(DesignerState[DialogName],{ x,y, Width,Height })
+            openDialog(DialogName)
+          }
+
+          bringDialogToFront('Toolbox')
+        }
+      } catch (Signal) { /* nop */ }
+    restoringDialogs = false
   }
 
 //------------------------------------------------------------------------------
@@ -5021,7 +5069,7 @@ console.log('DesignerState',DesignerState)
     const Applet = DesignerState.Applet = PropSet.Applet as WAT_Applet
     if (! Applet.isAttached) { return }
 
-    if (DesignerState.VisitHistory.length === 0) {
+    if (DesignerState.VisitHistory[DesignerState.VisitIndex] !== Applet.visitedPage) {
       visitPage(Applet.visitedPage)
     }
 
@@ -5588,6 +5636,26 @@ console.log('DesignerState',DesignerState)
             <${WAD_IntegerInput} style="width:60px"
               Value=${Applet.Opacity} Minimum=${0} Maximum=${100}
               onInput=${(Event:Indexable) => doConfigureApplet('Opacity',parseFloat(Event.target.value))}
+            />
+          </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Overflows</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown} Options=${['hidden']}
+              enabled=${false}
+              Value=${Applet.Overflows[0]}
+              onInput=${(Event:Indexable) => doConfigureApplet('Overflows',[
+                Event.target.value,Applet.Overflows[1]
+              ])}
+            />
+              <div style="width:10px"/>
+            <${WAD_DropDown} Options=${['hidden']}
+              enabled=${false}
+              Value=${Applet.Overflows[1]}
+              onInput=${(Event:Indexable) => doConfigureApplet('Overflows',[
+                Applet.Overflows[0],Event.target.value
+              ])}
             />
           </>
         </>
@@ -6325,6 +6393,24 @@ console.log('DesignerState',DesignerState)
               onInput=${(Event:Indexable) => doConfigureVisitedPage('Opacity',parseFloat(Event.target.value))}
             />
           </>
+
+          <${WAD_horizontally}>
+            <${WAD_Label}>Overflows</>
+            <${WAD_Gap}/>
+            <${WAD_DropDown} Options=${['hidden','scroll','auto']}
+              Value=${visitedPage.Overflows[0]}
+              onInput=${(Event:Indexable) => doConfigureVisitedPage('Overflows',[
+                Event.target.value,visitedPage.Overflows[1] || 'hidden'
+              ])}
+            />
+              <div style="width:10px"/>
+            <${WAD_DropDown} Options=${['hidden','scroll','auto']}
+              Value=${visitedPage.Overflows[1]}
+              onInput=${(Event:Indexable) => doConfigureVisitedPage('Overflows',[
+                visitedPage.Overflows[0] || 'hidden',Event.target.value
+              ])}
+            />
+          </>
         </>
 
         <${WAD_Fold} Label="Geometry"
@@ -6933,12 +7019,32 @@ console.log('DesignerState',DesignerState)
           </>
 
           <${WAD_horizontally}>
-            <${WAD_Label}>Overflow</>
+            <${WAD_Label}>Overflows</>
             <${WAD_Gap}/>
-            <${WAD_DropDown} Options=${['hidden','visible']}
+            <${WAD_DropDown} Options=${WAT_Overflows}
               enabled=${selectedWidgets.length > 0}
-              Value=${commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.OverflowVisibility))}
-              onInput=${(Event:Indexable) => doConfigureSelectedWidgets('OverflowVisibility',Event.target.value === 'visible')}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Overflows),0)}
+              onInput=${(Event:Indexable) => {
+                const [ Overflow_0,Overflow_1 ] = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Overflows || ['visible','visible']))
+                )
+                doConfigureSelectedWidgets('Overflows',[
+                  Event.target.value,Overflow_1
+                ])
+              }}
+            />
+              <div style="width:10px"/>
+            <${WAD_DropDown} Options=${WAT_Overflows}
+              enabled=${selectedWidgets.length > 0}
+              Value=${commonValueItemOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Overflows),1)}
+              onInput=${(Event:Indexable) => {
+                const [ Overflow_0,Overflow_1 ] = (
+                  commonValueOf(selectedWidgets.map((Widget:WAT_Widget) => Widget.Overflows || ['visible','visible']))
+                )
+                doConfigureSelectedWidgets('Overflows',[
+                  Overflow_0,Event.target.value
+                ])
+              }}
             />
           </>
 
@@ -8884,7 +8990,17 @@ console.log('DesignerState',DesignerState)
 
 /**** inform WAT about this designer ****/
 
-  console.log('starting WebApp Tinkerer Designer...')
-    WAD_DesignerLayer.showErrorReport = showErrorReport
-    useDesigner(WAD_DesignerLayer)
-  console.log('WebApp Tinkerer Designer is operational')
+  let DesignerStore:any
+
+  localforage.ready(async function () {
+    DesignerStore = localforage.createInstance({
+      name:'WAT Designer'
+    })
+
+    console.log('starting WebApp Tinkerer Designer...')
+//      WAD_DesignerLayer.showErrorReport = showErrorReport
+      useDesigner(WAD_DesignerLayer)
+
+      await restoreDialogs()
+    console.log('WebApp Tinkerer Designer is operational')
+  })
