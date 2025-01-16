@@ -2788,7 +2788,10 @@ export class WAT_Visual {
         this.rerender(); // just to be on the safe side, may be optimized away
         this._isReady = true;
         this.on('ready')();
-    }
+        if (this.isMounted) {
+            this.on('mount')();
+        }
+    } // wasn't invoked before because "isReady" was false
     get ScriptError() {
         return (this._ScriptError == null ? undefined : Object.assign({}, this._ScriptError));
     }
@@ -2826,7 +2829,7 @@ export class WAT_Visual {
                 this._CallbackRegistry[normalizedCallbackName] = this._Callback.bind(this, CallbackName, newCallback);
                 if ( // handle a few special cases
                 (normalizedCallbackName === 'ready') && this.isReady ||
-                    (normalizedCallbackName === 'mount') && this.isMounted) {
+                    (normalizedCallbackName === 'mount') && this.isReady && this.isMounted) {
                     // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
                     this._CallbackRegistry[normalizedCallbackName]();
                 }
@@ -6733,25 +6736,24 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'url-input', },
         ];
         Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableValue(this.memoized.Value, ValueIsURL);
+            /**** Icon ****/
+            get Icon() {
+                return acceptableValue(this.memoized.Icon, ValueIsURL);
             },
-            set Value(newValue) {
+            set Icon(newValue) {
                 if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
                     newValue = undefined;
                 }
-                allowURL('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('Value')();
+                allowURL('icon URL', newValue);
+                if (this.memoized.Icon !== newValue) {
+                    this.memoized.Icon = newValue;
                     this.rerender();
                 }
             },
         });
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling, Icon, Color } = this;
+            const { Enabling, Icon, Color } = this;
             const disabled = (Enabling == false);
             const _onClick = (Event) => {
                 if (Enabling === false) {
@@ -7876,12 +7878,28 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Value',
                 EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'Icon',
-                EditorType: 'url-input', AccessorsFor: 'memoized' },
+                EditorType: 'url-input' },
             { Name: 'allowMultiple', Label: 'multiple',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
+        Object_assign(me, {
+            /**** Icon ****/
+            get Icon() {
+                return acceptableValue(this.memoized.Icon, ValueIsURL);
+            },
+            set Icon(newValue) {
+                if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
+                    newValue = undefined;
+                }
+                allowURL('icon URL', newValue);
+                if (this.memoized.Icon !== newValue) {
+                    this.memoized.Icon = newValue;
+                    this.rerender();
+                }
+            },
+        });
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, Icon, Color, allowMultiple, acceptableFileTypes } = this;
@@ -8185,10 +8203,26 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Value',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'Icon',
-                EditorType: 'url-input', AccessorsFor: 'memoized' },
+                EditorType: 'url-input' },
             { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
+        Object_assign(me, {
+            /**** Icon ****/
+            get Icon() {
+                return acceptableValue(this.memoized.Icon, ValueIsURL);
+            },
+            set Icon(newValue) {
+                if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
+                    newValue = undefined;
+                }
+                allowURL('icon URL', newValue);
+                if (this.memoized.Icon !== newValue) {
+                    this.memoized.Icon = newValue;
+                    this.rerender();
+                }
+            },
+        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Icon, Color, Options } = this;
@@ -8581,25 +8615,24 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
         Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableValue(this.memoized.Value, ValueIsURL);
+            /**** Icon ****/
+            get Icon() {
+                return acceptableValue(this.memoized.Icon, ValueIsURL);
             },
-            set Value(newValue) {
+            set Icon(newValue) {
                 if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
                     newValue = undefined;
                 }
-                allowURL('value', newValue);
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('Value')();
+                allowURL('icon URL', newValue);
+                if (this.memoized.Icon !== newValue) {
+                    this.memoized.Icon = newValue;
                     this.rerender();
                 }
             },
         });
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling, Icon, Color } = this;
+            const { Enabling, isActive, Icon, Color } = this;
             const disabled = (Enabling == false);
             const onClick = (Event) => {
                 if (disabled) {
@@ -8607,7 +8640,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 this.on('click')(Event);
             };
-            const { Label, isActive } = this.memoized;
             return html `<div class="WAT Content IconTab ${isActive ? 'active' : ''}">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
