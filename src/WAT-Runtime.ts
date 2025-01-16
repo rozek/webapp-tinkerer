@@ -3290,7 +3290,9 @@ console.warn('Behavior Execution Failure',Signal)
         }
         this.rerender()    // just to be on the safe side, may be optimized away
       this._isReady = true; this.on('ready')()
-    }
+
+      if (this.isMounted) { this.on('mount')() }
+    }                       // wasn't invoked before because "isReady" was false
 
   /**** ScriptError (used by Designer) ****/
 
@@ -3348,7 +3350,7 @@ console.warn('Behavior Execution Failure',Signal)
 
           if (                                     // handle a few special cases
             (normalizedCallbackName === 'ready') && this.isReady ||
-            (normalizedCallbackName === 'mount') && this.isMounted
+            (normalizedCallbackName === 'mount') && this.isReady && this.isMounted
           ) {
 // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
             this._CallbackRegistry[normalizedCallbackName]()
@@ -8029,19 +8031,18 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
-    /**** Value ****/
+    /**** Icon ****/
 
-      get Value ():WAT_URL|undefined {
-        return acceptableValue(this.memoized.Value,ValueIsURL)
+      get Icon ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Icon,ValueIsURL)
       },
 
-      set Value (newValue:WAT_URL|undefined) {
+      set Icon (newValue:WAT_URL|undefined) {
         if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
-        allowURL('value',newValue)
+        allowURL('icon URL',newValue)
 
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('Value')()
+        if (this.memoized.Icon !== newValue) {
+          this.memoized.Icon = newValue
           this.rerender()
         }
       },
@@ -8052,7 +8053,7 @@ console.warn('file drop error',Signal)
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
-      const { Value,Enabling, Icon,Color } = this
+      const { Enabling, Icon,Color } = this
 
       const disabled = (Enabling == false)
 
@@ -9568,12 +9569,32 @@ console.warn('file drop error',Signal)
       { Name:'Value',
         EditorType:'text-input',     AccessorsFor:'memoized', withCallback:true },
       { Name:'Icon',
-        EditorType:'url-input',      AccessorsFor:'memoized' },
+        EditorType:'url-input' },
       { Name:'allowMultiple',        Label:'multiple',
         EditorType:'checkbox',       AccessorsFor:'memoized' },
       { Name:'acceptableFileTypes',  Label:'File Types', Default:[],
         EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
+
+    Object_assign(me,{
+    /**** Icon ****/
+
+      get Icon ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Icon,ValueIsURL)
+      },
+
+      set Icon (newValue:WAT_URL|undefined) {
+        if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
+        allowURL('icon URL',newValue)
+
+        if (this.memoized.Icon !== newValue) {
+          this.memoized.Icon = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
 
   /**** Renderer ****/
 
@@ -9972,10 +9993,30 @@ console.warn('file drop error',Signal)
       { Name:'Value',
         EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true },
       { Name:'Icon',
-        EditorType:'url-input',      AccessorsFor:'memoized' },
+        EditorType:'url-input' },
       { Name:'Options',              Default:[],
         EditorType:'linelist-input', AccessorsFor:'memoized' },
     ]
+
+    Object_assign(me,{
+    /**** Icon ****/
+
+      get Icon ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Icon,ValueIsURL)
+      },
+
+      set Icon (newValue:WAT_URL|undefined) {
+        if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
+        allowURL('icon URL',newValue)
+
+        if (this.memoized.Icon !== newValue) {
+          this.memoized.Icon = newValue
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10420,7 +10461,7 @@ console.warn('file drop error',Signal)
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
-      const { Label,Enabling,isActive } = this.memoized
+      const { Label, Enabling, isActive } = this.memoized
 
       const disabled = (Enabling == false)
 
@@ -10469,19 +10510,18 @@ console.warn('file drop error',Signal)
     ]
 
     Object_assign(me,{
-    /**** Value ****/
+    /**** Icon ****/
 
-      get Value ():WAT_URL|undefined {
-        return acceptableValue(this.memoized.Value,ValueIsURL)
+      get Icon ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Icon,ValueIsURL)
       },
 
-      set Value (newValue:WAT_URL|undefined) {
+      set Icon (newValue:WAT_URL|undefined) {
         if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
-        allowURL('value',newValue)
+        allowURL('icon URL',newValue)
 
-        if (this.memoized.Value !== newValue) {
-          this.memoized.Value = newValue
-          this.on('Value')()
+        if (this.memoized.Icon !== newValue) {
+          this.memoized.Icon = newValue
           this.rerender()
         }
       },
@@ -10492,7 +10532,7 @@ console.warn('file drop error',Signal)
   /**** Renderer ****/
 
     onRender(function (this:Indexable) {
-      const { Value,Enabling, Icon,Color } = this
+      const { Enabling, isActive, Icon,Color } = this
 
       const disabled = (Enabling == false)
 
@@ -10500,8 +10540,6 @@ console.warn('file drop error',Signal)
         if (disabled) { return consumingEvent(Event) }
         this.on('click')(Event)
       }
-
-      const { Label,isActive } = this.memoized
 
       return html`<div class="WAT Content IconTab ${isActive ? 'active' : ''}">
         <div style="
