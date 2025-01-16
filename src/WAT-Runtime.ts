@@ -2696,6 +2696,13 @@ console.log('setErrorReport',Visual,ErrorReport)
       }
     }
 
+  /**** isReady ****/
+
+    protected _isReady:boolean = false
+
+    public get isReady ():boolean  { return this._isReady }
+    public set isReady (_:boolean) { throwReadOnlyError('isReady') }
+
   /**** configurableProperties ****/
 
     protected _configurableProperties:WAT_PropertyDescriptor[] = []
@@ -3270,19 +3277,19 @@ console.warn('Behavior Execution Failure',Signal)
       this._pendingScript = undefined
       this._ScriptError   = undefined
 
-      try {
-        await this.activateScript('rethrow-exception')
-      } catch (Signal:any) {
-        setScriptError(this,{
-          Type:'Script Execution Failure',
-          Sufferer:this, Message:'' + Signal, Cause:Signal
-        })
-        this.rerender()
-        return
-      }
-      this.rerender()      // just to be on the safe side, may be optimized away
-
-      this.on('ready')()
+      this._isReady = false
+        try {
+          await this.activateScript('rethrow-exception')
+        } catch (Signal:any) {
+          setScriptError(this,{
+            Type:'Script Execution Failure',
+            Sufferer:this, Message:'' + Signal, Cause:Signal
+          })
+          this.rerender()
+          return
+        }
+        this.rerender()    // just to be on the safe side, may be optimized away
+      this._isReady = true; this.on('ready')()
     }
 
   /**** ScriptError (used by Designer) ****/
@@ -3339,9 +3346,12 @@ console.warn('Behavior Execution Failure',Signal)
             this, CallbackName, newCallback
           )
 
-          if ((normalizedCallbackName === 'mount') && this.isMounted) {
+          if (                                     // handle a few special cases
+            (normalizedCallbackName === 'ready') && this.isReady ||
+            (normalizedCallbackName === 'mount') && this.isMounted
+          ) {
 // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
-            this._CallbackRegistry['mount']()               // very special case
+            this._CallbackRegistry[normalizedCallbackName]()
           }
         }
 
@@ -4624,7 +4634,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
       const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
-      let newPage = new WAT_Page(Behavior,this)
+      let newPage = new WAT_Page(Behavior,this)       // sets "isReady" to false
         this._PageList.splice(Index,0,newPage)
 
 // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
@@ -4633,7 +4643,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         newPage._deserializeWidgetsFrom(Serialization)
         newPage.on('ready')()
 
-        this.rerender()
+        this._isReady = true; this.rerender()
       return newPage
     }
 
@@ -5247,7 +5257,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
       const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
-      const Applet = new WAT_Applet(Behavior)
+      const Applet = new WAT_Applet(Behavior)         // sets "isReady" to false
         const AppletName = Serialization.Name
         delete Serialization.Name
 
@@ -5261,7 +5271,7 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
         Applet._deserializeConfigurationFrom(Serialization)
         Applet._deserializePagesFrom(Serialization)
 
-        Applet.on('ready')()
+        Applet._isReady = true; Applet.on('ready')()
       return Applet
     }
 
@@ -5636,14 +5646,14 @@ console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`,S
 
       const Behavior = acceptableValue(Serialization.Behavior,ValueIsBehavior)
 
-      let newWidget = new WAT_Widget(Behavior,this)
+      let newWidget = new WAT_Widget(Behavior,this)   // sets "isReady" to false
         this._WidgetList.splice(Index,0,newWidget)
 
 // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
         newWidget._deserializeConfigurationFrom(Serialization)
         newWidget.on('ready')()
 
-        this.rerender()
+        this._isReady = true; this.rerender()
       return newWidget
     }
 
