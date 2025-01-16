@@ -7692,7 +7692,7 @@ console.log('#### this._HTMLContent',this._HTMLContent)
       },
 
       set Value (newValue:WAT_URL|undefined) {
-        if (ValueIsString(newValue) && (newValue.trim() === '')) { newValue = undefined }
+        if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
         allowURL('value',newValue)
 
         if (this.memoized.Value !== newValue) {
@@ -7854,7 +7854,7 @@ console.warn('file drop error',Signal)
       },
 
       set Value (newValue:WAT_URL|undefined) {
-        if (ValueIsString(newValue) && (newValue.trim() === '')) { newValue = undefined }
+        if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
         allowURL('value',newValue)
 
         if (this.memoized.Value !== newValue) {
@@ -7886,6 +7886,116 @@ console.warn('file drop error',Signal)
     Applet, 'widget', 'basic_controls.WebView', WAT_WebView
   )
 
+/**** TitleView ****/
+
+  const WAT_TitleView:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.TitleView {
+        font-size:22px; font-weight:bold; line-height:32px;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+    `)
+
+    my.configurableProperties = [
+      { Name:'Value',                Placeholder:'(enter title)',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true, },
+    ]
+
+    onRender(function (this:Indexable) {
+      return html`<div class="WAT Content TitleView">${my.Value}</>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'basic_controls.TitleView', WAT_TitleView
+  )
+
+/**** SubtitleView ****/
+
+  const WAT_SubtitleView:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.SubtitleView {
+        top:2px;
+        font-size:18px; font-weight:bold; line-height:27px;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+    `)
+
+    my.configurableProperties = [
+      { Name:'Value',                Placeholder:'(enter subtitle)',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true, },
+    ]
+
+    onRender(function (this:Indexable) {
+      return html`<div class="WAT Content SubtitleView">${my.Value}</>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'basic_controls.SubtitleView', WAT_SubtitleView
+  )
+
+/**** LabelView ****/
+
+  const WAT_LabelView:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.LabelView {
+        top:4px;
+        font-size:14px; font-weight:bold; line-height:21px;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+    `)
+
+    my.configurableProperties = [
+      { Name:'Value',                Placeholder:'(enter label)',
+        EditorType:'textline-input', AccessorsFor:'memoized', withCallback:true, },
+    ]
+
+    onRender(function (this:Indexable) {
+      return html`<div class="WAT Content LabelView">${my.Value}</>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'basic_controls.LabelView', WAT_LabelView
+  )
+
+/**** FineprintView ****/
+
+  const WAT_FineprintView:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.FineprintView {
+        font-size:12px; font-weight:normal; line-height:18px;
+        text-overflow:ellipsis;
+      }
+    `)
+
+    my.configurableProperties = [
+      { Name:'Value',            Placeholder:'(enter fineprint)',
+        EditorType:'text-input', AccessorsFor:'memoized', withCallback:true, },
+    ]
+
+    onRender(function (this:Indexable) {
+      return html`<div class="WAT Content FineprintView">${my.Value}</>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'basic_controls.FineprintView', WAT_FineprintView
+  )
+
 /**** Icon ****/
 
   const WAT_Icon:WAT_BehaviorFunction = async (
@@ -7905,8 +8015,29 @@ console.warn('file drop error',Signal)
 
     my.configurableProperties = [
       { Name:'Icon',            Default:'icons/menu.png',
-        EditorType:'url-input', AccessorsFor:'memoized' },
+        EditorType:'url-input', },
     ]
+
+    Object_assign(me,{
+    /**** Value ****/
+
+      get Value ():WAT_URL|undefined {
+        return acceptableValue(this.memoized.Value,ValueIsURL)
+      },
+
+      set Value (newValue:WAT_URL|undefined) {
+        if (ValueIsString(newValue) && (newValue?.trim() === '')) { newValue = undefined }
+        allowURL('value',newValue)
+
+        if (this.memoized.Value !== newValue) {
+          this.memoized.Value = newValue
+          this.on('Value')()
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
 
   /**** Renderer ****/
 
@@ -10022,6 +10153,230 @@ console.warn('file drop error',Signal)
 
   registerIntrinsicBehavior(
     Applet, 'widget', 'native_controls.TextInput', WAT_TextInput
+  )
+
+/**** FlatListView ****/
+
+  const WAT_FlatListView:WAT_BehaviorFunction = async (
+    me,my, html,reactively, on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange,
+    installStylesheet,BehaviorIsNew
+  ) => {
+    installStylesheet(`
+      .WAT.Widget > .WAT.FlatListView {
+        display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
+        overflow:scroll; overflow-x:auto; overflow-y:scroll;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff; padding:0px 2px 0px 4px;
+      }
+
+      .WAT.Widget > .WAT.FlatListView.empty {
+        overflow:hidden;
+        background-color:#EEEEEE;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.Placeholder {
+        display:flex; position:relative;
+          flex-flow:column nowrap; align-items:center; justify-content:center;
+        width:100%; height:100%;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.Placeholder > * {
+        position:relative;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.ListItem {
+        display:block; position:relative; overflow:hidden; flex:0 0 auto;
+        left:0px; top:0px; width:auto; height:22px; line-height:22px;
+        background:none;
+        border:none; border-bottom:solid 1px lightgray;
+        white-space:nowrap; text-overflow:ellipsis;
+        user-select:none; pointer-events:auto;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.ListItem:last-child {
+        border:none; border-bottom:solid 1px transparent;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.ListItem.selected {
+        background:dodgerblue; color:white;
+      }
+    `)
+
+  /**** custom Properties ****/
+
+    my.configurableProperties = [
+      { Name:'Placeholder',          Default:'(empty)',
+        EditorType:'textline-input', AccessorsFor:'memoized' },
+      { Name:'SelectionLimit',       Label:'Selection Limit',
+        EditorType:'integer-input',  AccessorsFor:'memoized',
+        minValue:0, Stepping:1 },
+    ]
+
+    Object_assign(me,{
+    /**** List ****/
+
+      get List ():any[] {
+        return acceptableValue(this._List,ValueIsList,[])
+      },
+
+      set List (newList:any[]) {
+        expectList('list',newList)
+
+        if (ValuesDiffer(this.memoized.List,newList)) {
+          this._List = (newList == null ? undefined : newList.slice())
+          this.rerender()
+        }
+      },
+
+    /**** selectedIndices ****/
+
+      get selectedIndices ():number[] {
+        return (this._selectedIndices || []).slice()
+      },
+
+      set selectedIndices (newList:number[]) {
+        expectListSatisfying('indicies of selected list elements',newList,ValueIsOrdinal)
+        if (ValuesDiffer(this._selectedIndices,newList)) {
+          const selectedIndexSet:Indexable = Object.create(null)
+          this._selectedIndices = newList.filter((selectedIndex:number) => {
+            if (
+              (selectedIndex < this._List.length) &&
+              ! (selectedIndex in selectedIndexSet)
+            ) {
+              selectedIndexSet[selectedIndex] = true
+              return true
+            } else {
+              return false
+            }
+          })
+          this.rerender()
+        }
+      },
+
+
+    } as Indexable)
+
+  /**** Renderer ****/
+
+    onRender(function (this:Indexable) {
+      let { List, Placeholder, SelectionLimit, selectedIndices } = this
+
+    /**** validate selection ****/
+
+      const selectedIndexSet:Indexable = Object.create(null)
+        selectedIndices = selectedIndices.filter((selectedIndex:number) => {
+          if (
+            (selectedIndex < List.length) &&
+            ! (selectedIndex in selectedIndexSet)
+          ) {
+            selectedIndexSet[selectedIndex] = true
+            return true
+          } else {
+            return false
+          }
+        })
+      if (selectedIndices.length > SelectionLimit) {
+        const deselectedIndices = selectedIndices.slice(SelectionLimit)
+
+        selectedIndices.length = SelectionLimit
+        this.on('selection-change')(selectedIndices)
+
+        if (this._onItemDeselected != null) {
+          deselectedIndices.forEach((deselectedIndex:number) => {
+            this.on('item-deselected')(List[deselectedIndex],deselectedIndex)
+          })
+        }
+      }
+
+    /**** _onClick ****/
+
+      const _onClick = (Event:PointerEvent, Index:number):void => {
+        Event.stopImmediatePropagation()
+        Event.preventDefault()
+
+        if (SelectionLimit === 0) { return }
+
+        let SelectionChanged:boolean = false
+        let IndicesToSelect:number[], IndicesToDeselect:number[]
+        if (Event.shiftKey || Event.metaKey) {
+          SelectionChanged = true
+          if (ItemIsSelected(Index)) {
+            IndicesToDeselect = [Index]
+            selectedIndices   = selectedIndices.filter(
+              (selectedIndex:number) => (selectedIndex !== Index)
+            )
+          } else {
+            if (selectedIndices.length === SelectionLimit) {
+              IndicesToDeselect = [selectedIndices.shift()]
+            }
+            IndicesToSelect = [Index]
+            selectedIndices.push(Index)
+          }
+        } else {
+          IndicesToDeselect = selectedIndices.filter(
+            (selectedIndex:number) => (selectedIndex !== Index)
+          )
+          SelectionChanged = ! ItemIsSelected(Index)
+          IndicesToSelect  = (SelectionChanged ? [Index] : [])
+          selectedIndices  = [Index]
+        }
+
+        if (SelectionChanged) {
+          this.on('selection-change')(selectedIndices)
+        }
+
+// @ts-ignore TS2454 let's check IF variables were assigned
+        if (IndicesToDeselect != null) {
+          IndicesToDeselect.forEach((deselectedIndex:number) => {
+            this.on('item-deselected')(List[deselectedIndex],deselectedIndex)
+          })
+        }
+
+// @ts-ignore TS2454 let's check IF variables were assigned
+        if (IndicesToSelect != null) {
+          IndicesToSelect.forEach((selectedIndex:number) => {
+            this.on('item-selected')(List[selectedIndex],selectedIndex)
+          })
+        }
+
+        this.on('click')(Event,Index)
+      }
+
+    /**** _onDblClick ****/
+
+      const _onDblClick = (Event:PointerEvent, Index:number):void => {
+        this.on('double-click')(Event,Index)
+      }
+
+    /**** ItemIsSelected ****/
+
+      function ItemIsSelected (Index:number):boolean {
+        return (Index in selectedIndexSet)
+      }
+
+    /**** actual rendering ****/
+
+      const ItemRenderer = this.on('render-item') || ((Item:any) => html`${Item+''}`)
+
+      return html`<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView">
+        ${
+          List.length === 0
+          ? html`<div class="Placeholder"><div>${Placeholder}</></>`
+          : List.map((Item:any, Index:number) => html`<div
+              class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
+              dangerouslySetInnerHTML=${{
+                __html:ItemRenderer(Item, Index, ItemIsSelected(Index))
+              }}
+              onClick=${(Event:PointerEvent) => _onClick(Event,Index)}
+              onDblClick=${(Event:PointerEvent) => _onDblClick(Event,Index)}
+            />`)
+        }
+      </>`
+    })
+  }
+
+  registerIntrinsicBehavior(
+    Applet, 'widget', 'traditional_controls.FlatListView', WAT_FlatListView
   )
 
 
