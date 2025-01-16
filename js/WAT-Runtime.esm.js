@@ -6720,10 +6720,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
     /**** Icon ****/
     const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
-      .WAT.Widget > .WAT.Icon > div {
+      .WAT.Widget > .WAT.Icon {
         display:block; position:absolute;
         left:0px; top:0px; right:0px; bottom:0px;
-        -webkit-mask-size:contain;           mask-size:contain;
+     /* -webkit-mask-size:contain;           mask-size:contain; */
         -webkit-mask-position:center center; mask-position:center center;
       }
     `);
@@ -8521,6 +8521,102 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.FlatListView', WAT_FlatListView);
+    /**** TextlineTab ****/
+    const WAT_TextlineTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.TextlineTab {
+        font-weight:bold; color:black;
+        text-align:left; text-decoration:none;
+        text-underline-offset:5px; text-underline-position:under;
+        user-select:none;
+      }
+
+      .WAT.Widget > .WAT.active.TextlineTab {
+        text-decoration:underline solid black 2px;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Label', Placeholder: '(enter label)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'isActive', Default: false,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Label, Enabling, isActive } = this.memoized;
+            const disabled = (Enabling == false);
+            const onClick = (Event) => {
+                if (disabled) {
+                    return consumingEvent(Event);
+                }
+                this.on('click')(Event);
+            };
+            return html `<div class="WAT Content TextlineTab ${isActive ? 'active' : ''}" style="
+        line-height:${this.LineHeight || this.Height}px;
+      " disabled=${disabled} onClick=${onClick}
+      >${Label}</>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.TextlineTab', WAT_TextlineTab);
+    /**** IconTab ****/
+    const WAT_IconTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.IconTab        { border:solid 2px transparent; border-radius:0px }
+      .WAT.Widget > .WAT.active.IconTab { border-bottom:solid 2px black }
+
+      .WAT.Widget > .WAT.IconTab > div {
+        display:block; position:absolute;
+        left:0px; top:0px; right:0px; bottom:0px;
+     /* -webkit-mask-size:contain;           mask-size:contain; */
+        -webkit-mask-position:center center; mask-position:center center;
+        user-select:none;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Icon', Default: 'icons/menu.png',
+                EditorType: 'url-input', },
+            { Name: 'isActive', Default: false,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsURL);
+            },
+            set Value(newValue) {
+                if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
+                    newValue = undefined;
+                }
+                allowURL('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('Value')();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Icon, Color } = this;
+            const disabled = (Enabling == false);
+            const onClick = (Event) => {
+                if (disabled) {
+                    return consumingEvent(Event);
+                }
+                this.on('click')(Event);
+            };
+            const { Label, isActive } = this.memoized;
+            return html `<div class="WAT Content IconTab ${isActive ? 'active' : ''}">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        " disabled=${disabled} onClick=${onClick}/>
+      </>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.IconTab', WAT_IconTab);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
