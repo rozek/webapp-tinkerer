@@ -8016,9 +8016,12 @@ console.warn('file drop error',Signal)
   ) => {
     installStylesheet(`
       .WAT.Widget > .WAT.Icon {
-        display:block; position:absolute;
-        left:0px; top:0px; right:0px; bottom:0px;
-     /* -webkit-mask-size:contain;           mask-size:contain; */
+        display:flex; justify-content:center; align-items:center;
+      }
+      .WAT.Widget > .WAT.Icon > div {
+        display:block; position:relative;
+        width:24px; height:24px;
+        -webkit-mask-size:contain;           mask-size:contain;
         -webkit-mask-position:center center; mask-position:center center;
       }
     `)
@@ -8064,10 +8067,12 @@ console.warn('file drop error',Signal)
 
     /**** actual rendering ****/
 
-      return html`<div class="WAT Content Icon ${disabled ? 'disabled' : ''}" style="
-        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-        background-color:${Color};
-      " onClick=${_onClick}/>`
+      return html`<div class="WAT Content Icon ${disabled ? 'disabled' : ''}">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        " onClick=${_onClick}/>
+      </>`
     })
   }
 
