@@ -90,6 +90,11 @@
     "xOffset": 0,
     "yOffset": 0
   },
+  "BehaviorSet": {
+    "applet": {},
+    "page": {},
+    "widget": {}
+  },
   "FontSize": 14,
   "FontStyle": "normal",
   "FontWeight": "normal",
@@ -97,8 +102,8 @@
   "GridHeight": 10,
   "GridWidth": 10,
   "HeadExtensions": "<style>\n  html, body {\n    width:100vw; min-height:100vh;\n    margin:0px; padding:0px;\n\n    background-color: #627AC6;\n    background-image: url(https://rozek.github.io/webapp-tinkerer/common/BinaryTexture_blue.jpg);\n    background-repeat:repeat;\n\n    font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;\n    font-size:14px; font-weight:400; color:white;\n    line-height:150%;\n  }\n</style>",
-  "Height": 600,
-  "Name": "WAT-Applet",
+  "Height": 1290,
+  "Name": "WAT-AppletManager",
   "Opacity": 100,
   "PageList": [
     {
@@ -128,8 +133,10 @@
             30,
             300
           ],
-          "memoized":{"Value": "px",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": "px"
+          }
         },
         {
           "Anchors": [
@@ -144,10 +151,12 @@
             30,
             300
           ],
-          "memoized":{"Placeholder": "H",
-          "Value": 480,
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "Placeholder": "H",
+            "Value": 480,
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -162,8 +171,10 @@
             300
           ],
           "TextAlignment": "center",
-          "memoized":{"Value": "x"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "x"
+          }
         },
         {
           "Anchors": [
@@ -178,10 +189,11 @@
             30,
             300
           ],
-          "Placeholder": "W",
-          "memoized":{"Value": 640,
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "Value": 640,
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -195,8 +207,10 @@
             30,
             300
           ],
-          "memoized":{"Value": "Designer Size",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": "Designer Size"
+          }
         },
         {
           "Anchors": [
@@ -211,12 +225,14 @@
             30,
             150
           ],
-          "memoized":{"Options": [
-            "any",
-            "portrait",
-            "landscape"
-          ],
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Options": [
+              "any",
+              "portrait",
+              "landscape"
+            ]
+          }
         },
         {
           "Anchors": [
@@ -230,8 +246,10 @@
             30,
             150
           ],
-          "memoized":{"Value": "mobile Orientations:",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": "mobile Orientations:"
+          }
         },
         {
           "Anchors": [
@@ -246,8 +264,10 @@
             30,
             180
           ],
-          "memoized":{"Value": true,
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": true
+          }
         },
         {
           "Anchors": [
@@ -261,8 +281,10 @@
             30,
             180
           ],
-          "memoized":{"Value": "with \"mobile Frame\"",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": "with \"mobile Frame\""
+          }
         },
         {
           "Anchors": [
@@ -277,8 +299,10 @@
             30,
             210
           ],
-          "memoized":{"Value": true,
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": true
+          }
         },
         {
           "Anchors": [
@@ -292,8 +316,10 @@
             30,
             240
           ],
-          "memoized":{"Value": "px",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": "px"
+          }
         },
         {
           "Anchors": [
@@ -308,10 +334,12 @@
             30,
             240
           ],
-          "memoized":{"Placeholder": "H",
-          "Value": 480,
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "Placeholder": "H",
+            "Value": 480,
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -326,8 +354,10 @@
             240
           ],
           "TextAlignment": "center",
-          "memoized":{"Value": "x"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "x"
+          }
         },
         {
           "Anchors": [
@@ -342,10 +372,12 @@
             30,
             240
           ],
-          "memoized":{"Placeholder": "W",
-          "Value": 640,
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "Placeholder": "W",
+            "Value": 640,
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -359,8 +391,10 @@
             30,
             240
           ],
-          "memoized":{"Value": "maximal Size"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "maximal Size"
+          }
         },
         {
           "Anchors": [
@@ -374,8 +408,10 @@
             30,
             270
           ],
-          "memoized":{"Value": "px"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "px"
+          }
         },
         {
           "Anchors": [
@@ -390,10 +426,12 @@
             30,
             270
           ],
-          "memoized":{"Placeholder": "H",
-          "Value": 480,
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "Placeholder": "H",
+            "Value": 480,
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -408,8 +446,10 @@
             270
           ],
           "TextAlignment": "center",
-          "memoized":{"Value": "x",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Value": "x"
+          }
         },
         {
           "Anchors": [
@@ -424,10 +464,12 @@
             30,
             270
           ],
-          "memoized":{"Placeholder": "W",
-          "Value": 640,
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "Placeholder": "W",
+            "Value": 640,
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -441,8 +483,10 @@
             30,
             270
           ],
-          "memoized":{"Value": "minimal Size"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "minimal Size"
+          }
         },
         {
           "Anchors": [
@@ -457,9 +501,11 @@
             60,
             450
           ],
-          "memoized":{"Placeholder": "(no Applets yet)",
-          "SelectionLimit": 1,
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Placeholder": "(no Applets yet)",
+            "SelectionLimit": 1
+          }
         },
         {
           "Anchors": [
@@ -475,8 +521,10 @@
             30,
             110
           ],
-          "memoized":{"Label": "Update",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Label": "Update"
+          }
         },
         {
           "Anchors": [
@@ -484,7 +532,6 @@
             "height-bottom"
           ],
           "Behavior": "native_controls.Button",
-          "Enabling": false,
           "Name": "CreateAppletButton",
           "Offsets": [
             40,
@@ -492,8 +539,10 @@
             30,
             110
           ],
-         "memoized":{ "Label": "Create",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Label": "Create"
+          }
         },
         {
           "Anchors": [
@@ -507,8 +556,10 @@
             30,
             210
           ],
-          "memoized":{"Value": "center in Viewport"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "center in Viewport"
+          }
         },
         {
           "Anchors": [
@@ -523,10 +574,12 @@
             30,
             340
           ],
-          "memoized":{"SpellChecking": false,
-          "Value": "Test",
           "hasBackground": false,
-          "readonly": false}
+          "memoized": {
+            "SpellChecking": false,
+            "Value": "Test",
+            "readonly": false
+          }
         },
         {
           "Anchors": [
@@ -540,8 +593,10 @@
             30,
             370
           ],
-          "memoized":{"Value": "Applet Name"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "Applet Name"
+          }
         },
         {
           "Anchors": [
@@ -557,8 +612,10 @@
             30,
             410
           ],
-          "memoized":{"Label": "Purge",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Label": "Purge"
+          }
         },
         {
           "Anchors": [
@@ -574,8 +631,10 @@
             30,
             410
           ],
-          "memoized":{"Label": "Open",
-          "hasBackground": false}
+          "hasBackground": false,
+          "memoized": {
+            "Label": "Open"
+          }
         },
         {
           "Behavior": "basic_controls.LabelView",
@@ -585,8 +644,10 @@
             30,
             30
           ],
-          "memoized":{"Value": "Recent Applets"},
-          "hasBackground": false
+          "hasBackground": false,
+          "memoized": {
+            "Value": "Recent Applets"
+          }
         },
         {
           "Anchors": [
@@ -616,8 +677,8 @@
     "xOffset": 0,
     "yOffset": 0
   },
-  "Width": 800,
-  "activeScript": "",
+  "Width": 1225,
+  "activeScript": "const Applet = me\n  localforage.config({\n    driver: [localforage.INDEXEDDB, localforage.WEBSQL]\n  })\n\n  let AppletStore\n\n  let persistedAppletList  = []\n  let normalizedAppletList = []\n\n  let selectedApplet      = undefined\n  let selectedAppletIndex = -1\n\n  localforage.ready(async function () {\n    AppletStore = localforage.createInstance({\n      name:'WebApp Tinkerer'\n    })\n\n  onMount(async () => {\n    Applet.closeDialog('AppletBrowser')       // useful when script is refreshed\n\n    const {\n      AppletListView,\n      OpenAppletButton, PurgeAppletButton,\n      NameInput,\n      DesignerWidthInput, DesignerHeightInput,\n      minWidthInput, minHeightInput,\n      maxWidthInput, maxHeightInput,\n      CenterCheck, MobileFrameCheck, OrientationChoice,\n      CreateAppletButton, UpdateAppletButton,\n    } = Applet.namedWidgets\n\n    AppletListView.on('render-item',(Item) => Item+'')\n\n/**** Input Handling ****/\n\n  AppletListView.on('selection-change',async (selectedIndices) => {\n    const SelectionIndex = selectedIndices[0]\n    if (SelectionIndex != null) {\n      let AppletName = persistedAppletList[SelectionIndex]\n      selectedApplet = await persistedApplet(AppletName)\n    }\n    await updateSelection()\n    updateEnabling()\n    Applet.rerender()\n  })\n\n  OpenAppletButton.on('click',() => {\n    openApplet(\n      selectedApplet,\n      DesignerWidthInput.Value, DesignerHeightInput.Value,\n      minWidthInput.Value, minHeightInput.Value,\n      maxWidthInput.Value, maxHeightInput.Value,\n      CenterCheck.Value, MobileFrameCheck.Value, OrientationChoice.Value\n    )\n  })\n\n  PurgeAppletButton.on('click',async () => {\n    if (OperationWasConfirmed(\n      `Do you really want to permanently delete applet \"${selectedApplet.Name}\"?`\n    )) {\n      await purgeApplet(selectedApplet)\n      await scanPersistedApplets()\n\n      selectedApplet = undefined\n      await updateSelection()\n\n      updateEnabling()\n      Applet.rerender()\n    }\n  })\n\n  NameInput.on('input',updateEnabling)\n\n  DesignerWidthInput.on('input',updateEnabling)\n  DesignerHeightInput.on('input',updateEnabling)\n\n  minWidthInput.on('input',updateEnabling)\n  minHeightInput.on('input',updateEnabling)\n\n  maxWidthInput.on('input',updateEnabling)\n  maxHeightInput.on('input',updateEnabling)\n\n  CenterCheck.on('click',updateEnabling)\n  MobileFrameCheck.on('click',updateEnabling)\n\n  OrientationChoice.on('input',updateEnabling)\n\n  CreateAppletButton.on('click',async () => {\n    selectedApplet = await newApplet(\n      NameInput.Value,\n      DesignerWidthInput.Value, DesignerHeightInput.Value,\n      minWidthInput.Value, minHeightInput.Value,\n      maxWidthInput.Value, maxHeightInput.Value,\n      CenterCheck.Value, MobileFrameCheck.Value, OrientationChoice.Value\n    )\n    await scanPersistedApplets()\n    await updateSelection()\n\n    updateEnabling()\n    Applet.rerender()\n  })\n\n  UpdateAppletButton.on('click',async () => {\n    await updateApplet(\n      selectedApplet,\n      NameInput.Value,\n      DesignerWidthInput.Value, DesignerHeightInput.Value,\n      minWidthInput.Value, minHeightInput.Value,\n      maxWidthInput.Value, maxHeightInput.Value,\n      CenterCheck.Value, MobileFrameCheck.Value, OrientationChoice.Value\n    )\n    await scanPersistedApplets()\n    await updateSelection()\n\n    updateEnabling()\n    Applet.rerender()\n  })\n\n/**** updateEnabling ****/\n\n  function updateEnabling () {\n    OpenAppletButton.Enabling   = (selectedAppletIndex >= 0)\n    PurgeAppletButton.Enabling  = (selectedAppletIndex >= 0)\n\n    CreateAppletButton.Enabling = (\n      ValueIsName(NameInput.Value) && NameIsNew(NameInput.Value)\n    )\n\n    UpdateAppletButton.Enabling = (\n      (selectedApplet != null) && (\n        (selectedApplet.Name !== NameInput.Value) &&\n          ValueIsName(NameInput.Value) && NameIsNew(NameInput.Value) ||\n        (selectedApplet.Name === NameInput.Value) && (\n          (DesignerWidthInput.Value  !== selectedApplet.Width)  ||\n          (DesignerHeightInput.Value !== selectedApplet.Height) ||\n          (minWidthInput.Value  !== selectedApplet.minWidth)  ||\n          (minHeightInput.Value !== selectedApplet.minHeight) ||\n          (maxWidthInput.Value  !== selectedApplet.maxWidth)  ||\n          (maxHeightInput.Value !== selectedApplet.maxHeight) ||\n          (CenterCheck.Value       !== selectedApplet.toBeCentered) ||\n          (MobileFrameCheck.Value  !== selectedApplet.withMobileFrame) ||\n          (OrientationChoice.Value !== selectedApplet.expectedOrientation)\n        )\n      )\n    )\n  }\n\n/**** NameIsNew ****/\n\n  function NameIsNew (Name) {\n    return (normalizedAppletList.indexOf(Name.toLowerCase()) < 0)\n  }\n\n/**** scanPersistedApplets ****/\n\n  async function scanPersistedApplets () {\n    try {\n      persistedAppletList = (await AppletStore.keys()).sort()\n    } catch (Signal) {\n      persistedAppletList = []\n      console.warn('could not fetch names of persisted applet',Signal)\n    }\n\n    normalizedAppletList = persistedAppletList.map(\n      (Name) => Name.toLowerCase()\n    )\n\n    AppletListView.List = persistedAppletList\n  }                                 // should be followed by \"updateSelection()\"\n\n/**** updateSelection ****/\n\n  async function updateSelection () {\n    if (selectedApplet != null) {\n      selectedAppletIndex = normalizedAppletList.indexOf(\n        selectedApplet.Name.toLowerCase()\n      )\n      if (selectedAppletIndex >= 0) {\n        selectedApplet = await persistedApplet(selectedApplet.Name)\n          NameInput.Value        = selectedApplet.Name\n\n          const { Width,Height } = selectedApplet\n          DesignerWidthInput.Value  = (ValueIsOrdinal(Width)  ? Width  : 0)\n          DesignerHeightInput.Value = (ValueIsOrdinal(Height) ? Height : 0)\n\n          const { minWidth,minHeight } = selectedApplet\n          minWidthInput.Value       = (ValueIsOrdinal(minWidth)  ? minWidth  : 0)\n          minHeightInput.Value      = (ValueIsOrdinal(minHeight) ? minHeight : 0)\n\n          const { maxWidth,maxHeight } = selectedApplet\n          maxWidthInput.Value       = (ValueIsOrdinal(maxWidth)  ? maxWidth  : undefined)\n          maxHeightInput.Value      = (ValueIsOrdinal(maxHeight) ? maxHeight : undefined)\n\n          CenterCheck.Value      = selectedApplet.toBeCentered    || false\n          MobileFrameCheck.Value = selectedApplet.withMobileFrame || false\n\n          OrientationChoice.Value = selectedApplet.expectedOrientation || 'any'\n        AppletListView.selectedIndices = [selectedAppletIndex]\n        return\n      }         // the already known applet could have changed in the background\n    }\n\n    selectedApplet      = undefined\n    selectedAppletIndex = -1\n\n    AppletListView.selectedIndices = []\n  }\n\n/**** persistedApplet ****/\n\n  async function persistedApplet (Name) {\n    try {\n      return JSON.parse(await AppletStore.getItem(Name))\n    } catch (Signal) {\n      throw new Error(\n        `PersistenceReadError: could not read applet \"${Name}\", ` +\n        'reason: ' + Signal\n      )\n    }\n  }\n\n/**** openApplet ****/\n\n  async function openApplet (\n    Applet, DesignerWidth,DesignerHeight,\n    minWidth,minHeight, maxWidth,maxHeight,\n    toBeCentered, withMobileFrame, expectedOrientation\n  ) {\n    const URL = (\n      `WAT-Developer.html?name=${encodeURIComponent(Applet.Name)}&` +\n      (DesignerWidth  > 0 ? `width=${DesignerWidth}&`   : '') +\n      (DesignerHeight > 0 ? `height=${DesignerHeight}&` : '') +\n      (minWidth  > 0 ? `min-width=${minWidth}&`   : '') +\n      (minHeight > 0 ? `min-height=${minHeight}&` : '') +\n      (maxWidth  > 0 ? `max-width=${maxWidth}&`   : '') +\n      (maxHeight > 0 ? `max-height=${maxHeight}&` : '') +\n      `with-mobile-frame=${withMobileFrame ? 'true' : 'false'}&` +\n      `expected-orientation=${expectedOrientation}&` +\n      'center=false&offset=true'               // particularly for the developer\n    )\n    window.open(URL,'_self')\n  }\n\n/**** purgeApplet ****/\n\n  async function purgeApplet (Applet) {\n    try {\n      await AppletStore.removeItem(Applet.Name)\n    } catch (Signal) {\n      throw new Error(\n        `PersistenceWriteError: could not delete project \"${Applet.Name}\", ` +\n        'reason: ' + Signal\n      )\n    }\n  }\n\n/**** newApplet ****/\n\n  async function newApplet (\n    Name, DesignerWidth,DesignerHeight,\n    minWidth,minHeight, maxWidth,maxHeight,\n    toBeCentered, withMobileFrame, expectedOrientation\n  ) {\n    const Serialization = {\n      Name, Width:DesignerWidth,Height:DesignerHeight,\n      minWidth,minHeight, maxWidth,maxHeight,\n      toBeCentered, withMobileFrame, expectedOrientation,\n      PageList:[{ WidgetList:[] }]\n    }\n\n    try {\n      await AppletStore.setItem(Name,JSON.stringify(Serialization))\n    } catch (Signal) {\n      throw new Error(\n        `PersistenceWriteError: could not write applet \"${Name}\", ` +\n        'reason: ' + Signal\n      )\n    }\n\n    return Serialization\n  }\n\n/**** updateApplet (includes renaming) ****/\n\n  async function updateApplet (\n    Applet, Name, DesignerWidth,DesignerHeight,\n    minWidth,minHeight, maxWidth,maxHeight,\n    toBeCentered, withMobileFrame, expectedOrientation\n  ) {\n    const oldName = Applet.Name\n\n    Object.assign(Applet, {\n      Name, Width:DesignerWidth,Height:DesignerHeight,\n      minWidth,minHeight, maxWidth,maxHeight,\n      toBeCentered, withMobileFrame, expectedOrientation\n    })\n\n    try {\n      await AppletStore.setItem(Name,JSON.stringify(Applet))\n    } catch (Signal) {\n      throw new Error(\n        `PersistenceWriteError: could not write applet \"${Name}\", ` +\n        'reason: ' + Signal\n      )\n    }\n\n    if (Name !== oldName) {\n      try {\n        await AppletStore.removeItem(oldName)\n      } catch (Signal) {\n        throw new Error(\n          `PersistenceWriteError: could not delete applet \"${Name}\", ` +\n          'reason: ' + Signal\n        )\n      }\n    }\n  }\n\n/**** OperationWasConfirmed ****/\n\n  function OperationWasConfirmed (Message) {\n    let ConfirmationCode = Math.round(Math.random()*10000).toString()\n      ConfirmationCode += '0000'.slice(ConfirmationCode.length)\n\n    Message = (Message || 'This operation can not be undone.') + '\\n\\n' +\n      'Please, enter the following number if you want to proceed:\\n\\n' +\n      '   ' + ConfirmationCode + '\\n\\n' +\n      'Otherwise, the operation will be cancelled'\n\n    let UserInput = window.prompt(Message,'')\n    if (UserInput === ConfirmationCode) {\n      return true\n    } else {\n      window.alert('Operation will be cancelled')\n      return false\n    }\n  }\n\n/**** ValueIsName ****/\n\n  const WAT_NamePattern = /^[^\\x00-\\x1F\\x7F /#][^\\x00-\\x1F\\x7F/]*$/\n                                // no ctrl.char.s, no \"/\", no leading \" \" or \"#\"\n\n  function ValueIsName (Value) {\n    return (\n      (typeof Value === 'string') && WAT_NamePattern.test(Value) &&\n      (Value.trim() === Value) &&\n      (Value.trim() !== '.') && (Value.trim() !== '..')\n    )\n  }\n\n/**** ValueIsOrdinal ****/\n\n  function ValueIsOrdinal (Value) {\n    return (\n      (typeof Value === 'number') &&\n      (Math.floor(Value) === Value) &&\n      (Value >= 0)\n    )\n  }\n\n    await scanPersistedApplets()\n    await updateSelection()\n    updateEnabling()\n\n    Applet.openDialog({\n      Name: 'AppletBrowser',\n      Title:'Applet Browser',\n      isClosable: true,\n      isDraggable:true,\n      isResizable:true,\n      Width: 320, minWidth: 320,\n      Height:440, minHeight:440,\n      SourceWidget:'Applet Browser/Dialog Contents'\n    })\n  })\n})\n",
   "expectedOrientation": "any",
   "hasBackground": false,
   "toBeCentered": true,
