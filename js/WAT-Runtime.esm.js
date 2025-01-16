@@ -6768,7 +6768,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             return html `<div class="WAT Content Icon ${disabled ? 'disabled' : ''}">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          background-color:${Color || 'black'};
         " onClick=${_onClick}/>
       </>`;
         });
@@ -7871,11 +7871,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
     /**** PseudoFileInput ****/
     const WAT_PseudoFileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
+      .WAT.Widget > .WAT.PseudoFileInput {
+        display:flex; justify-content:center; align-items:center;
+      }
       .WAT.Widget > .WAT.PseudoFileInput > div {
-        display:block; position:absolute;
-        left:0px; top:0px; right:0px; bottom:0px;
+        display:block; position:relative;
+        width:24px; height:24px;
         -webkit-mask-size:contain;           mask-size:contain;
         -webkit-mask-position:center center; mask-position:center center;
+        user-select:none;
       }
     `);
         /**** custom Properties ****/
@@ -7919,7 +7923,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             return html `<label class="WAT Content PseudoFileInput">
         <div style="
           -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          background-color:${Color || 'black'};
         "></div>
         <input type="file" style="display:none"
           multiple=${allowMultiple} accept=${acceptableFileTypes}
@@ -8190,11 +8194,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
     /**** PseudoDropDown ****/
     const WAT_PseudoDropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
+      .WAT.Widget > .WAT.PseudoDropDown {
+        display:flex; justify-content:center; align-items:center;
+      }
       .WAT.Widget > .WAT.PseudoDropDown > div {
-        display:block; position:absolute;
-        left:0px; top:0px; right:0px; bottom:0px;
+        display:block; position:relative;
+        width:24px; height:24px;
         -webkit-mask-size:contain;           mask-size:contain;
         -webkit-mask-position:center center; mask-position:center center;
+        user-select:none;
       }
 
       .WAT.Widget > .WAT.PseudoDropDown > select {
@@ -8604,10 +8612,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
       .WAT.Widget > .WAT.IconTab        { border:solid 2px transparent; border-radius:0px }
       .WAT.Widget > .WAT.active.IconTab { border-bottom:solid 2px black }
 
+      .WAT.Widget > .WAT.IconTab {
+        display:flex; justify-content:center; align-items:center;
+      }
       .WAT.Widget > .WAT.IconTab > div {
-        display:block; position:absolute;
-        left:0px; top:0px; right:0px; bottom:0px;
-     /* -webkit-mask-size:contain;           mask-size:contain; */
+        display:block; position:relative;
+        width:24px; height:24px;
+        -webkit-mask-size:contain;           mask-size:contain;
         -webkit-mask-position:center center; mask-position:center center;
         user-select:none;
       }
