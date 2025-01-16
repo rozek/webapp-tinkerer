@@ -2135,6 +2135,13 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
+        /**** isReady ****/
+        Object.defineProperty(this, "_isReady", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        });
         /**** configurableProperties ****/
         Object.defineProperty(this, "_configurableProperties", {
             enumerable: true,
@@ -2362,6 +2369,8 @@ export class WAT_Visual {
             this.rerender();
         }
     }
+    get isReady() { return this._isReady; }
+    set isReady(_) { throwReadOnlyError('isReady'); }
     get configurableProperties() {
         return this._configurableProperties.map((Descriptor) => (Object.assign({}, Descriptor)));
     }
@@ -2764,6 +2773,7 @@ export class WAT_Visual {
         this._activeScript = pendingScript.replace(/^\s*\n/, '');
         this._pendingScript = undefined;
         this._ScriptError = undefined;
+        this._isReady = false;
         try {
             await this.activateScript('rethrow-exception');
         }
@@ -2776,6 +2786,7 @@ export class WAT_Visual {
             return;
         }
         this.rerender(); // just to be on the safe side, may be optimized away
+        this._isReady = true;
         this.on('ready')();
     }
     get ScriptError() {
@@ -2813,9 +2824,11 @@ export class WAT_Visual {
                 }
                 // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
                 this._CallbackRegistry[normalizedCallbackName] = this._Callback.bind(this, CallbackName, newCallback);
-                if ((normalizedCallbackName === 'mount') && this.isMounted) {
+                if ( // handle a few special cases
+                (normalizedCallbackName === 'ready') && this.isReady ||
+                    (normalizedCallbackName === 'mount') && this.isMounted) {
                     // @ts-ignore TS2532 no, "this._CallbackRegistry" is no longer undefined
-                    this._CallbackRegistry['mount'](); // very special case
+                    this._CallbackRegistry[normalizedCallbackName]();
                 }
             }
             return ((_b = this._CallbackRegistry) === null || _b === void 0 ? void 0 : _b[normalizedCallbackName]) || noCallback;
@@ -3926,13 +3939,14 @@ export class WAT_Applet extends WAT_Visual {
             Index = Math.max(0, Math.min(Index, this._PageList.length));
         }
         const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
-        let newPage = new WAT_Page(Behavior, this);
+        let newPage = new WAT_Page(Behavior, this); // sets "isReady" to false
         this._PageList.splice(Index, 0, newPage);
         // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
         newPage._deserializeConfigurationFrom(Serialization);
         // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
         newPage._deserializeWidgetsFrom(Serialization);
         newPage.on('ready')();
+        this._isReady = true;
         this.rerender();
         return newPage;
     }
@@ -4445,7 +4459,7 @@ export class WAT_Applet extends WAT_Visual {
         if (!ValueIsPlainObject(Serialization))
             throwError('InvalidArgument: the given "Serialization" is no valid WAT applet serialization');
         const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
-        const Applet = new WAT_Applet(Behavior);
+        const Applet = new WAT_Applet(Behavior); // sets "isReady" to false
         const AppletName = Serialization.Name;
         delete Serialization.Name;
         if (ValueIsName(AppletName)) {
@@ -4455,6 +4469,7 @@ export class WAT_Applet extends WAT_Visual {
         Applet._deserializeBehaviorsFrom(Serialization);
         Applet._deserializeConfigurationFrom(Serialization);
         Applet._deserializePagesFrom(Serialization);
+        Applet._isReady = true;
         Applet.on('ready')();
         return Applet;
     }
@@ -4748,11 +4763,12 @@ export class WAT_Page extends WAT_Visual {
             Index = Math.max(0, Math.min(Index, this._WidgetList.length));
         }
         const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
-        let newWidget = new WAT_Widget(Behavior, this);
+        let newWidget = new WAT_Widget(Behavior, this); // sets "isReady" to false
         this._WidgetList.splice(Index, 0, newWidget);
         // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
         newWidget._deserializeConfigurationFrom(Serialization);
         newWidget.on('ready')();
+        this._isReady = true;
         this.rerender();
         return newWidget;
     }
