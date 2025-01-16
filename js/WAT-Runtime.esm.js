@@ -7877,7 +7877,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Icon',
+            { Name: 'Icon', Default: 'icons/arrow-up-from-bracket.png',
                 EditorType: 'url-input' },
             { Name: 'allowMultiple', Label: 'multiple',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
@@ -8202,7 +8202,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Icon',
+            { Name: 'Icon', Default: 'icons/menu.png',
                 EditorType: 'url-input' },
             { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
