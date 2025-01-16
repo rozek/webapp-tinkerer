@@ -6724,9 +6724,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
     const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Icon {
-        display:block; position:absolute;
-        left:0px; top:0px; right:0px; bottom:0px;
-     /* -webkit-mask-size:contain;           mask-size:contain; */
+        display:flex; justify-content:center; align-items:center;
+      }
+      .WAT.Widget > .WAT.Icon > div {
+        display:block; position:relative;
+        width:24px; height:24px;
+        -webkit-mask-size:contain;           mask-size:contain;
         -webkit-mask-position:center center; mask-position:center center;
       }
     `);
@@ -6762,10 +6765,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('click')(Event);
             };
             /**** actual rendering ****/
-            return html `<div class="WAT Content Icon ${disabled ? 'disabled' : ''}" style="
-        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-        background-color:${Color};
-      " onClick=${_onClick}/>`;
+            return html `<div class="WAT Content Icon ${disabled ? 'disabled' : ''}">
+        <div style="
+          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          background-color:${Color};
+        " onClick=${_onClick}/>
+      </>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Icon', WAT_Icon);
