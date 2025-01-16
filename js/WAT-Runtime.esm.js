@@ -6484,7 +6484,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return acceptableValue(this.memoized.Value, ValueIsURL);
             },
             set Value(newValue) {
-                if (ValueIsString(newValue) && (newValue.trim() === '')) {
+                if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
                     newValue = undefined;
                 }
                 allowURL('value', newValue);
@@ -6609,7 +6609,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return acceptableValue(this.memoized.Value, ValueIsURL);
             },
             set Value(newValue) {
-                if (ValueIsString(newValue) && (newValue.trim() === '')) {
+                if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
                     newValue = undefined;
                 }
                 allowURL('value', newValue);
@@ -6631,6 +6631,76 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
+    /**** TitleView ****/
+    const WAT_TitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.TitleView {
+        font-size:22px; font-weight:bold; line-height:32px;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(enter title)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
+        ];
+        onRender(function () {
+            return html `<div class="WAT Content TitleView">${my.Value}</>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TitleView', WAT_TitleView);
+    /**** SubtitleView ****/
+    const WAT_SubtitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.SubtitleView {
+        top:2px;
+        font-size:18px; font-weight:bold; line-height:27px;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(enter subtitle)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
+        ];
+        onRender(function () {
+            return html `<div class="WAT Content SubtitleView">${my.Value}</>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SubtitleView', WAT_SubtitleView);
+    /**** LabelView ****/
+    const WAT_LabelView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.LabelView {
+        top:4px;
+        font-size:14px; font-weight:bold; line-height:21px;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(enter label)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
+        ];
+        onRender(function () {
+            return html `<div class="WAT Content LabelView">${my.Value}</>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.LabelView', WAT_LabelView);
+    /**** FineprintView ****/
+    const WAT_FineprintView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.FineprintView {
+        font-size:12px; font-weight:normal; line-height:18px;
+        text-overflow:ellipsis;
+      }
+    `);
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(enter fineprint)',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true, },
+        ];
+        onRender(function () {
+            return html `<div class="WAT Content FineprintView">${my.Value}</>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.FineprintView', WAT_FineprintView);
     /**** Icon ****/
     const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -6644,8 +6714,25 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Icon', Default: 'icons/menu.png',
-                EditorType: 'url-input', AccessorsFor: 'memoized' },
+                EditorType: 'url-input', },
         ];
+        Object_assign(me, {
+            /**** Value ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsURL);
+            },
+            set Value(newValue) {
+                if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
+                    newValue = undefined;
+                }
+                allowURL('value', newValue);
+                if (this.memoized.Value !== newValue) {
+                    this.memoized.Value = newValue;
+                    this.on('Value')();
+                    this.rerender();
+                }
+            },
+        });
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Icon, Color } = this;
@@ -8238,6 +8325,186 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextInput', WAT_TextInput);
+    /**** FlatListView ****/
+    const WAT_FlatListView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.FlatListView {
+        display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
+        overflow:scroll; overflow-x:auto; overflow-y:scroll;
+        border:solid 1px #888888; border-radius:2px;
+        background:#e8f0ff; padding:0px 2px 0px 4px;
+      }
+
+      .WAT.Widget > .WAT.FlatListView.empty {
+        overflow:hidden;
+        background-color:#EEEEEE;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.Placeholder {
+        display:flex; position:relative;
+          flex-flow:column nowrap; align-items:center; justify-content:center;
+        width:100%; height:100%;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.Placeholder > * {
+        position:relative;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.ListItem {
+        display:block; position:relative; overflow:hidden; flex:0 0 auto;
+        left:0px; top:0px; width:auto; height:22px; line-height:22px;
+        background:none;
+        border:none; border-bottom:solid 1px lightgray;
+        white-space:nowrap; text-overflow:ellipsis;
+        user-select:none; pointer-events:auto;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.ListItem:last-child {
+        border:none; border-bottom:solid 1px transparent;
+      }
+
+      .WAT.Widget > .WAT.FlatListView > div.ListItem.selected {
+        background:dodgerblue; color:white;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Placeholder', Default: '(empty)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SelectionLimit', Label: 'Selection Limit',
+                EditorType: 'integer-input', AccessorsFor: 'memoized',
+                minValue: 0, Stepping: 1 },
+        ];
+        Object_assign(me, {
+            /**** List ****/
+            get List() {
+                return acceptableValue(this._List, ValueIsList, []);
+            },
+            set List(newList) {
+                expectList('list', newList);
+                if (ValuesDiffer(this.memoized.List, newList)) {
+                    this._List = (newList == null ? undefined : newList.slice());
+                    this.rerender();
+                }
+            },
+            /**** selectedIndices ****/
+            get selectedIndices() {
+                return (this._selectedIndices || []).slice();
+            },
+            set selectedIndices(newList) {
+                expectListSatisfying('indicies of selected list elements', newList, ValueIsOrdinal);
+                if (ValuesDiffer(this._selectedIndices, newList)) {
+                    const selectedIndexSet = Object.create(null);
+                    this._selectedIndices = newList.filter((selectedIndex) => {
+                        if ((selectedIndex < this._List.length) &&
+                            !(selectedIndex in selectedIndexSet)) {
+                            selectedIndexSet[selectedIndex] = true;
+                            return true;
+                        }
+                        else {
+                            return false;
+                        }
+                    });
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            let { List, Placeholder, SelectionLimit, selectedIndices } = this;
+            /**** validate selection ****/
+            const selectedIndexSet = Object.create(null);
+            selectedIndices = selectedIndices.filter((selectedIndex) => {
+                if ((selectedIndex < List.length) &&
+                    !(selectedIndex in selectedIndexSet)) {
+                    selectedIndexSet[selectedIndex] = true;
+                    return true;
+                }
+                else {
+                    return false;
+                }
+            });
+            if (selectedIndices.length > SelectionLimit) {
+                const deselectedIndices = selectedIndices.slice(SelectionLimit);
+                selectedIndices.length = SelectionLimit;
+                this.on('selection-change')(selectedIndices);
+                if (this._onItemDeselected != null) {
+                    deselectedIndices.forEach((deselectedIndex) => {
+                        this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
+                    });
+                }
+            }
+            /**** _onClick ****/
+            const _onClick = (Event, Index) => {
+                Event.stopImmediatePropagation();
+                Event.preventDefault();
+                if (SelectionLimit === 0) {
+                    return;
+                }
+                let SelectionChanged = false;
+                let IndicesToSelect, IndicesToDeselect;
+                if (Event.shiftKey || Event.metaKey) {
+                    SelectionChanged = true;
+                    if (ItemIsSelected(Index)) {
+                        IndicesToDeselect = [Index];
+                        selectedIndices = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
+                    }
+                    else {
+                        if (selectedIndices.length === SelectionLimit) {
+                            IndicesToDeselect = [selectedIndices.shift()];
+                        }
+                        IndicesToSelect = [Index];
+                        selectedIndices.push(Index);
+                    }
+                }
+                else {
+                    IndicesToDeselect = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
+                    SelectionChanged = !ItemIsSelected(Index);
+                    IndicesToSelect = (SelectionChanged ? [Index] : []);
+                    selectedIndices = [Index];
+                }
+                if (SelectionChanged) {
+                    this.on('selection-change')(selectedIndices);
+                }
+                // @ts-ignore TS2454 let's check IF variables were assigned
+                if (IndicesToDeselect != null) {
+                    IndicesToDeselect.forEach((deselectedIndex) => {
+                        this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
+                    });
+                }
+                // @ts-ignore TS2454 let's check IF variables were assigned
+                if (IndicesToSelect != null) {
+                    IndicesToSelect.forEach((selectedIndex) => {
+                        this.on('item-selected')(List[selectedIndex], selectedIndex);
+                    });
+                }
+                this.on('click')(Event, Index);
+            };
+            /**** _onDblClick ****/
+            const _onDblClick = (Event, Index) => {
+                this.on('double-click')(Event, Index);
+            };
+            /**** ItemIsSelected ****/
+            function ItemIsSelected(Index) {
+                return (Index in selectedIndexSet);
+            }
+            /**** actual rendering ****/
+            const ItemRenderer = this.on('render-item') || ((Item) => html `${Item + ''}`);
+            return html `<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView">
+        ${List.length === 0
+                ? html `<div class="Placeholder"><div>${Placeholder}</></>`
+                : List.map((Item, Index) => html `<div
+              class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
+              dangerouslySetInnerHTML=${{
+                    __html: ItemRenderer(Item, Index, ItemIsSelected(Index))
+                }}
+              onClick=${(Event) => _onClick(Event, Index)}
+              onDblClick=${(Event) => _onDblClick(Event, Index)}
+            />`)}
+      </>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.FlatListView', WAT_FlatListView);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
