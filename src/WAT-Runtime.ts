@@ -2481,7 +2481,7 @@ console.log('setErrorReport',Visual,ErrorReport)
     }
     Cursor = 'cursor:' + Cursor + '-resize'
 
-    return html`<div class="WAD ShapeHandle" style="${CSSGeometry} ${Cursor}" ...${otherProps}
+    return html`<div class="WAT ShaperHandle" style="${CSSGeometry} ${Cursor}" ...${otherProps}
       onPointerDown=${onPointerEvent} onPointerMove=${onPointerEvent}
       onPointerUp=${onPointerEvent} onPointerCancel=${onPointerEvent}
     />`
