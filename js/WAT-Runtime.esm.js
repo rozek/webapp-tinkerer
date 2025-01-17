@@ -14,6 +14,7 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
+const WAT_Version = '0.1';
 const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
@@ -6741,7 +6742,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Icon ****/
             get Icon() {
-                return acceptableValue(this.memoized.Icon, ValueIsURL);
+                return acceptableValue(this.memoized.Icon, ValueIsURL, '');
             },
             set Icon(newValue) {
                 if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
@@ -7896,7 +7897,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Icon ****/
             get Icon() {
-                return acceptableValue(this.memoized.Icon, ValueIsURL);
+                return acceptableValue(this.memoized.Icon, ValueIsURL, '');
             },
             set Icon(newValue) {
                 if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
@@ -8223,7 +8224,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Icon ****/
             get Icon() {
-                return acceptableValue(this.memoized.Icon, ValueIsURL);
+                return acceptableValue(this.memoized.Icon, ValueIsURL, '');
             },
             set Icon(newValue) {
                 if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
@@ -8633,7 +8634,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Icon ****/
             get Icon() {
-                return acceptableValue(this.memoized.Icon, ValueIsURL);
+                return acceptableValue(this.memoized.Icon, ValueIsURL, '');
             },
             set Icon(newValue) {
                 if (ValueIsString(newValue) && ((newValue === null || newValue === void 0 ? void 0 : newValue.trim()) === '')) {
@@ -9682,6 +9683,7 @@ for (const [Key, Value] of Object.entries(JIL)) { // map JIL to WAT
     }
 }
 Object.assign(WAT, {
+    Version: WAT_Version,
     Object_assign, AsyncFunction,
     newId,
     throwError, throwReadOnlyError,
