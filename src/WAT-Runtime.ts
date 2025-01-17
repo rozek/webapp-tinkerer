@@ -4,6 +4,8 @@
 *                                                                              *
 *******************************************************************************/
 
+  const WAT_Version = '0.1'
+
   const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons'
 
   declare const download:Function
@@ -8037,7 +8039,7 @@ console.warn('file drop error',Signal)
     /**** Icon ****/
 
       get Icon ():WAT_URL|undefined {
-        return acceptableValue(this.memoized.Icon,ValueIsURL)
+        return acceptableValue(this.memoized.Icon,ValueIsURL,'')
       },
 
       set Icon (newValue:WAT_URL|undefined) {
@@ -9589,7 +9591,7 @@ console.warn('file drop error',Signal)
     /**** Icon ****/
 
       get Icon ():WAT_URL|undefined {
-        return acceptableValue(this.memoized.Icon,ValueIsURL)
+        return acceptableValue(this.memoized.Icon,ValueIsURL,'')
       },
 
       set Icon (newValue:WAT_URL|undefined) {
@@ -10015,7 +10017,7 @@ console.warn('file drop error',Signal)
     /**** Icon ****/
 
       get Icon ():WAT_URL|undefined {
-        return acceptableValue(this.memoized.Icon,ValueIsURL)
+        return acceptableValue(this.memoized.Icon,ValueIsURL,'')
       },
 
       set Icon (newValue:WAT_URL|undefined) {
@@ -10529,7 +10531,7 @@ console.warn('file drop error',Signal)
     /**** Icon ****/
 
       get Icon ():WAT_URL|undefined {
-        return acceptableValue(this.memoized.Icon,ValueIsURL)
+        return acceptableValue(this.memoized.Icon,ValueIsURL,'')
       },
 
       set Icon (newValue:WAT_URL|undefined) {
@@ -11751,6 +11753,7 @@ console.log('>>>> new rendering request',new Error().stack?.replace(/^[^\n]+/,''
       if (Key !== 'default') { WAT[Key] = Value }
     }
   Object.assign(WAT,{
+    Version:WAT_Version,
     Object_assign, AsyncFunction,
     newId,
     throwError, throwReadOnlyError,
