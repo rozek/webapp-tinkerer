@@ -2655,7 +2655,17 @@ export class WAT_Visual {
             // @ts-ignore TS2345 do not care about the specific signature of "reactiveFunction"
             registerReactiveFunctionIn(this, computed(() => {
                 try {
-                    reactiveFunction();
+                    const Result = reactiveFunction();
+                    if (Result instanceof Promise) {
+                        console.warn('started  tracking asynchronous reactive function');
+                        Result.catch((Signal) => {
+                            console.warn(`asynchronous reactive function failed`, Signal);
+                            setErrorReport(this, {
+                                Type: 'Reactivity Failure',
+                                Sufferer: this, Message: '' + Signal, Cause: Signal
+                            });
+                        }).then(() => console.warn('finished tracking asynchronous reactive function'));
+                    }
                 }
                 catch (Signal) {
                     console.warn('execution error in reactive function', Signal);
@@ -4359,9 +4369,9 @@ export class WAT_Applet extends WAT_Visual {
     /**** _serializePagesInto ****/
     _serializePagesInto(Serialization) {
         const PageList = this._PageList;
-        if (PageList.length > 0) {
-            Serialization.PageList = PageList.map((Page) => Page.Serialization);
-        }
+        //    if (PageList.length > 0) {              // always serialize the "PageList"
+        Serialization.PageList = PageList.map((Page) => Page.Serialization);
+        //    } // presence of "PageList" is important to recognize applet serialization
     }
     /**** _deserializePagesFrom ****/
     _deserializePagesFrom(Serialization) {
@@ -4479,7 +4489,12 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** preserve ****/
     async preserve() {
-        await AppletStore.setItem(this.Name, JSON.stringify(this.Serialization));
+        try {
+            await AppletStore.setItem(this.Name, JSON.stringify(this.Serialization));
+        }
+        catch (Signal) {
+            console.error('could not preserve applet, reason', Signal);
+        }
     }
     /**** replaceWith ****/
     replaceWith(Serialization) {
@@ -4870,10 +4885,10 @@ export class WAT_Page extends WAT_Visual {
     set Serialization(_) { throwReadOnlyError('Serialization'); }
     /**** _serializeWidgetsInto ****/
     _serializeWidgetsInto(Serialization) {
-        const WidgetList = this._WidgetList;
-        if (WidgetList.length > 0) {
-            Serialization.WidgetList = WidgetList.map((Widget) => Widget.Serialization);
-        }
+        const WidgetList = this._WidgetList || [];
+        //    if (WidgetList.length > 0) {          // always serialize the "WidgetList"
+        Serialization.WidgetList = WidgetList.map((Widget) => Widget.Serialization);
+        //    }            // presence of "WidgetList" makes a page recognizable as such
     }
     /**** _deserializeWidgetsFrom ****/
     _deserializeWidgetsFrom(Serialization) {
@@ -8913,11 +8928,28 @@ class WAT_combinedView extends Component {
     /**** render ****/
     render(PropSet) {
         const Applet = PropSet.Applet;
+        console.log('rendering WAT_combinedView');
+        let AppletRendering;
+        try {
+            AppletRendering = html `<${WAT_AppletView} Applet=${Applet}/>`;
+        }
+        catch (Signal) {
+            console.warn('uncaught Error in Applet Rendering', Signal);
+        }
+        let DesignerRendering;
+        try {
+            DesignerRendering = (Applet.isAttached && (DesignerLayer != null)
+                ? html `<${DesignerLayer} Applet=${Applet}/>`
+                : '');
+        }
+        catch (Signal) {
+            console.warn('uncaught Error in Designer Rendering', Signal);
+        }
         return html `<div style="
         left:0px; top:0px; right:0px; bottom:0px
       ">
-        <${WAT_AppletView} Applet=${Applet}/>
-        ${Applet.isAttached && DesignerLayer && html `<${DesignerLayer} Applet=${Applet}/>`}
+        ${AppletRendering}
+        ${DesignerRendering}
       </div>`;
     }
 }
@@ -9043,12 +9075,12 @@ class WAT_PageView extends Component {
         else {
             this._Page = Page;
         }
-        const broken = (Page.isBroken ? 'broken' : '');
         console.log('rendering page', Page.Name, Page);
         this._releaseWidgets();
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
         this._shownWidgets = WidgetsToShow;
+        const broken = (Page.isBroken ? 'broken' : '');
         return html `<div class="WAT ${broken} Page" style="
         ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
@@ -9105,9 +9137,9 @@ class WAT_WidgetView extends Component {
         const CSSGeometry = ((x != null) && (Width != null) && (y != null) && (Height != null)
             ? `left:${x}px; top:${y}px; width:${Width}px; height:${Height}px; right:auto; bottom:auto;`
             : '');
-        const broken = (Widget.isBroken ? 'broken' : '');
         const openOverlays = Widget._OverlayList;
         const lastOverlayIndex = openOverlays.length - 1;
+        const broken = (Widget.isBroken ? 'broken' : '');
         return html `<div class="WAT ${broken} Widget" style="
         ${Widget.CSSStyle} ${CSSGeometry}
       ">
@@ -9579,7 +9611,12 @@ export function rerender() {
         RenderRequest = setTimeout(() => {
             RenderRequest = undefined;
             if (combinedView != null) {
-                combinedView.rerender();
+                try {
+                    combinedView.rerender();
+                }
+                catch (Signal) {
+                    console.error('caught failure in rendering request', Signal);
+                }
             }
         }, 0);
     }
@@ -9601,6 +9638,11 @@ function startup() {
     localforage.ready(function () {
         AppletStore = localforage.createInstance({
             name: 'WebApp Tinkerer'
+        });
+        window.addEventListener('unhandledrejection', (Event) => {
+            var _a, _b;
+            console.error('caught unhandled error in Promise:', ((_a = Event.reason) === null || _a === void 0 ? void 0 : _a.stack) || ((_b = Event.reason) === null || _b === void 0 ? void 0 : _b.message), Event);
+            Event.preventDefault();
         });
         collectInternalNames();
         startWAT();
