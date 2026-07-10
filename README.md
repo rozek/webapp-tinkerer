@@ -2,9 +2,9 @@
 
 **Design, script and publish web apps the way HyperCard once let you build Mac applications — by directly manipulating the thing you're building, not by writing boilerplate.**
 
-[Live Demo](https://rozek.github.io/webapp-tinkerer/tools/WAT-AppletManager.html)
-
 > 🚧 **Status:** WAT is under active, continuous development. Core concepts (Applets, Pages, Widgets, Behaviors, Scripts) are stable, but individual widget properties and API details may still change.
+
+[Live Demo](https://rozek.github.io/webapp-tinkerer/tools/WAT-AppletManager.html)
 
 ## Table of contents
 
