@@ -996,10 +996,10 @@ async function restoreDialogs() {
 //--                              Error Handling                              --
 //------------------------------------------------------------------------------
 /**** showErrorReport ****/
-function showErrorReport(Visual, ErrorReport) {
+async function showErrorReport(Visual, ErrorReport) {
     if (window.confirm(ErrorReport.Type + '\n\n' + ErrorReport.Message + '\n\n' +
         'Do you want to proceed to the Designer?')) {
-        openDesigner(); // if not yet already done
+        await openDesigner(); // if not yet already done
         const { Sufferer } = ErrorReport;
         switch (true) {
             case ValueIsApplet(Sufferer):
@@ -2889,25 +2889,47 @@ function mayUndo() { return (DesignerState.OperationIndex > 0); }
 function mayRedo() {
     return (DesignerState.OperationIndex < DesignerState.OperationHistory.length);
 }
+/**** updateObjectInOperationHistory ****/
+function updateObjectInOperationHistory(oldObject, newObject) {
+    if ((oldObject == null) || (oldObject === newObject)) {
+        return;
+    }
+    DesignerState.OperationHistory.forEach((Operation) => {
+        Object.getOwnPropertyNames(Operation).forEach((Key) => {
+            const Value = Operation[Key];
+            if (Value === oldObject) {
+                Operation[Key] = newObject;
+            }
+            else {
+                if (ValueIsArray(Value)) {
+                    Value.forEach((Item, i) => {
+                        if (Item === oldObject) {
+                            Value[i] = newObject;
+                        }
+                    });
+                }
+            }
+        });
+    });
+}
 /**** doOperation ****/
 function doOperation(Operation) {
     const { OperationHistory, OperationIndex } = DesignerState;
-    if (OperationIndex < OperationHistory.length) {
-        OperationHistory.length = OperationIndex;
-    }
     try {
         const prevOperation = OperationHistory[OperationIndex - 1];
         if ((prevOperation != null) && Operation.canExtend(prevOperation)) {
             Operation.extend(prevOperation); // may fail
+            OperationHistory.length = OperationIndex; // only upon success
             if (prevOperation.isIrrelevant) {
-                DesignerState.OperationIndex -= 1; // only upon success
+                DesignerState.OperationIndex -= 1;
                 OperationHistory.length = DesignerState.OperationIndex;
             }
             DesignerState.Applet.preserve();
         }
         else {
             Operation.doNow(); // may fail
-            OperationHistory.push(Operation); // only upon success
+            OperationHistory.length = OperationIndex; // only upon success
+            OperationHistory.push(Operation);
             DesignerState.OperationIndex += 1;
             DesignerState.Applet.preserve();
         }
@@ -3266,7 +3288,7 @@ class WAD_AppletConfigurationOperation extends WAD_Operation {
     }
     /**** isIrrelevant ****/
     get isIrrelevant() {
-        return (this._newValue === this._oldValue);
+        return ValuesAreEqual(this._newValue, this._oldValue);
     }
     set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
     /**** doNow ****/
@@ -3383,10 +3405,12 @@ class WAD_PageDeserializationOperation extends WAD_Operation {
     /**** doNow ****/
     doNow() {
         const Applet = DesignerState.Applet;
+        const oldPages = this._newPages;
         const newPages = this._newPages = [];
         this._Serializations.forEach((Serialization, i) => {
             const newPage = Applet.PageDeserializedAt(Serialization, this._StartIndex + i);
             newPages.push(newPage);
+            updateObjectInOperationHistory(oldPages[i], newPage);
         });
         selectPages(newPages);
     }
@@ -3658,10 +3682,12 @@ class WAD_PageDeletionOperation extends WAD_Operation {
     /**** undo ****/
     undo() {
         const { Applet } = DesignerState;
+        const oldPages = this._Pages;
         const newPages = this._Pages = [];
         this._Serializations.forEach((Serialization, i) => {
             const newPage = Applet.PageDeserializedAt(Serialization, this._Indices[i]);
             newPages.push(newPage);
+            updateObjectInOperationHistory(oldPages[i], newPage);
         });
         selectPages(newPages);
     }
@@ -3710,10 +3736,12 @@ class WAD_WidgetDeserializationOperation extends WAD_Operation {
     set isIrrelevant(_) { throwReadOnlyError('isIrrelevant'); }
     /**** doNow ****/
     doNow() {
+        const oldWidgets = this._newWidgets;
         const newWidgets = this._newWidgets = [];
         this._Serializations.forEach((Serialization, i) => {
             const newWidget = this._Page.WidgetDeserializedAt(Serialization, this._StartIndex + i);
             newWidgets.push(newWidget);
+            updateObjectInOperationHistory(oldWidgets[i], newWidget);
         });
         selectWidgets(newWidgets);
     }
@@ -4073,10 +4101,12 @@ class WAD_WidgetDeletionOperation extends WAD_Operation {
     }
     /**** undo ****/
     undo() {
+        const oldWidgets = this._Widgets;
         const newWidgets = this._Widgets = [];
         this._Serializations.forEach((Serialization, i) => {
             const newWidget = this._Page.WidgetDeserializedAt(Serialization, this._Indices[i]);
             newWidgets.push(newWidget);
+            updateObjectInOperationHistory(oldWidgets[i], newWidget);
         });
         selectWidgets(newWidgets);
     }
@@ -4163,7 +4193,7 @@ function doShiftSelectedPagesDown() {
 function doShiftSelectedPagesToBottom() {
     const selectedPages = sortedPageSelection();
     const SelectionCount = selectedPages.length;
-    const StartIndex = DesignerState.Applet.PageCount + 2 - SelectionCount;
+    const StartIndex = DesignerState.Applet.PageCount - SelectionCount;
     const IndexList = Array.from({ length: selectedPages.length }, (_, i) => StartIndex + i);
     doOperation(new WAD_PageShiftOperation(selectedPages, IndexList));
 }
@@ -4361,7 +4391,7 @@ function doShiftSelectedWidgetsDown() {
 function doShiftSelectedWidgetsToBottom() {
     const selectedWidgets = sortedWidgetSelection();
     const SelectionCount = selectedWidgets.length;
-    const StartIndex = DesignerState.Applet.visitedPage.WidgetCount + 2 - SelectionCount;
+    const StartIndex = DesignerState.Applet.visitedPage.WidgetCount - SelectionCount;
     const IndexList = Array.from({ length: selectedWidgets.length }, (_, i) => StartIndex + i);
     doOperation(new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
 }
@@ -4456,7 +4486,14 @@ function doImport(FileContent, Type) {
     let { Applet } = DesignerState;
     let visitedPage = Applet.visitedPage;
     if (looksLikeBehaviorSet(Serialization)) {
-        Applet.deserializeBehaviorsFrom(Serialization);
+        const BehaviorSet = Serialization.BehaviorSet;
+        for (const Category in BehaviorSet) {
+            (BehaviorSet[Category] || []).forEach((Registration) => {
+                doOperation(new WAD_BehaviorDeserializationOperation({
+                    BehaviorSet: { [Category]: [Registration] }
+                }));
+            });
+        }
         return;
     }
     if (looksLikePage(Serialization)) {
@@ -4535,7 +4572,8 @@ function doExport(Scope) {
             suggestedFileName = (((_a = Pages[0]) === null || _a === void 0 ? void 0 : _a.Name) || 'WAT-Page') + '.json';
             break;
         case 'selected Widgets':
-            const Widgets = DesignerState.selectedWidgets;
+            const Widgets = sortedWidgetSelection();
+            // @ts-ignore TS2322 allow assignment
             Serialization = Widgets.map((Widget) => Widget.Serialization);
             suggestedFileName = (((_b = Widgets[0]) === null || _b === void 0 ? void 0 : _b.Name) || 'WAT-Widgets') + '.json';
             break;
@@ -4696,8 +4734,12 @@ function selectedWidgetsMayBeShiftedUp() {
 }
 /**** selectedWidgetsMayBeShiftedDown ****/
 function selectedWidgetsMayBeShiftedDown() {
+    const visitedPage = DesignerState.Applet.visitedPage;
+    if (visitedPage == null) {
+        return false;
+    }
     const selectedWidgets = sortedWidgetSelection();
-    const StartIndex = DesignerState.Applet.visitedPage.WidgetCount - selectedWidgets.length;
+    const StartIndex = visitedPage.WidgetCount - selectedWidgets.length;
     return selectedWidgets.some((Widget, i) => Widget.Index < StartIndex + i);
 }
 //----------------------------------------------------------------------------//
@@ -4716,17 +4758,23 @@ Object.assign(DesignerState, {
 function resizeApplet() {
     const Applet = DesignerState.Applet;
     let { Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries } = DesignerState.AppletResizer; // null = "use current setting", 0 = default
-    if (Width === 0) {
+    if ((Width == null) || isNaN(Width) || (Width === 0)) {
         Width = Applet.Width;
     }
-    if (Height === 0) {
+    if ((Height == null) || isNaN(Height) || (Height === 0)) {
         Height = Applet.Height;
     }
-    if (minWidth === 0) {
-        minWidth = 0;
+    if ((minWidth == null) || isNaN(minWidth)) {
+        minWidth = Applet.minWidth;
     }
-    if (minHeight === 0) {
-        minHeight = 0;
+    if ((minHeight == null) || isNaN(minHeight)) {
+        minHeight = Applet.minHeight;
+    }
+    if ((maxWidth == null) || isNaN(maxWidth)) {
+        maxWidth = Applet.maxWidth;
+    }
+    if ((maxHeight == null) || isNaN(maxHeight)) {
+        maxHeight = Applet.maxHeight;
     }
     if (maxWidth === 0) {
         maxWidth = undefined;
@@ -4734,8 +4782,8 @@ function resizeApplet() {
     if (maxHeight === 0) {
         maxHeight = undefined;
     }
-    Width = Math.max(minWidth || Applet.minWidth, Math.min(Width || Applet.Width, maxWidth == null ? Infinity : maxWidth));
-    Height = Math.max(minHeight || Applet.minHeight, Math.min(Height || Applet.Height, maxHeight == null ? Infinity : maxHeight));
+    Width = Math.max(minWidth !== null && minWidth !== void 0 ? minWidth : 0, Math.min(Width, maxWidth == null ? Infinity : maxWidth));
+    Height = Math.max(minHeight !== null && minHeight !== void 0 ? minHeight : 0, Math.min(Height, maxHeight == null ? Infinity : maxHeight));
     resizeAppletTo(Applet, Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries);
 }
 /**** shrinkApplet ****/
@@ -4839,7 +4887,8 @@ function WAD_DesignerLayer(PropSet) {
     if (!Applet.isAttached) {
         return;
     }
-    if (DesignerState.VisitHistory[DesignerState.VisitIndex] !== Applet.visitedPage) {
+    if ((Applet.visitedPage != null) &&
+        (DesignerState.VisitHistory[DesignerState.VisitIndex] !== Applet.visitedPage)) {
         visitPage(Applet.visitedPage);
     }
     /**** if necessary: position DesignerButton ****/

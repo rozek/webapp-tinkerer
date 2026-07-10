@@ -3874,8 +3874,8 @@ export class WAT_Applet extends WAT_Visual {
             return;
         }
         this.registerBehaviorOfCategory(Category, Behavior, pendingScript);
-        // @ts-ignore TS7053 allow indexing
-        this._BehaviorPool[Category][normalizedBehavior].pendingScript = pendingScript;
+        // the new registration has no "pendingScript" - which lets the guard
+        // above return early upon the next invocation
         this.rerender();
     }
     /**** groupedBehaviorListOfCategory ****/
@@ -4786,8 +4786,9 @@ export class WAT_Applet extends WAT_Visual {
         // the pool (unlike "this.BehaviorSet") still contains "pendingScript"s
         const serializedBehavior = (Registration) => {
             const { activeScript, pendingScript } = Registration;
-            return (pendingScript == null // keeps the old (and compact) format
-                ? activeScript // whenever possible
+            return ((pendingScript == null) || // keeps the old (and compact) format
+                (pendingScript === activeScript) // whenever possible
+                ? activeScript
                 : { activeScript, pendingScript });
         };
         Serialization.BehaviorSet = { applet: {}, page: {}, widget: {} };
@@ -8123,6 +8124,184 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Icon', WAT_Icon);
+    /**** value lists for straight and curved Arrows ****/
+    const WAT_ArrowDirections = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
+    const WAT_ArrowRotations = ['cw', 'ccw'];
+    const WAT_ArrowTipPositions = ['n', 'e', 's', 'w'];
+    const WAT_ArrowHeadPositions = ['none', 'start', 'end', 'both'];
+    /**** StraightArrow ****/
+    const WAT_StraightArrow = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.StraightArrow {
+        overflow:visible;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Direction', Default: 'e',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ArrowDirections },
+            { Name: 'ArrowHeads', Label: 'Arrow Heads', Default: 'end',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ArrowHeadPositions },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Width, Height } = this.Geometry;
+            const Color = this.ForegroundColor || 'black';
+            const Direction = this.Direction || 'e';
+            const ArrowHeads = this.ArrowHeads || 'end';
+            const xm = Width / 2, ym = Height / 2;
+            let x1, y1, x2, y2;
+            switch (Direction) {
+                case 'n':
+                    x1 = xm;
+                    y1 = Height;
+                    x2 = xm;
+                    y2 = 0;
+                    break;
+                case 'ne':
+                    x1 = 6;
+                    y1 = Height - 6;
+                    x2 = Width - 6;
+                    y2 = 6;
+                    break;
+                case 'e':
+                    x1 = 0;
+                    y1 = ym;
+                    x2 = Width;
+                    y2 = ym;
+                    break;
+                case 'se':
+                    x1 = 6;
+                    y1 = 6;
+                    x2 = Width - 6;
+                    y2 = Height - 6;
+                    break;
+                case 's':
+                    x1 = xm;
+                    y1 = 0;
+                    x2 = xm;
+                    y2 = Height;
+                    break;
+                case 'sw':
+                    x1 = Width - 6;
+                    y1 = 6;
+                    x2 = 6;
+                    y2 = Height - 6;
+                    break;
+                case 'w':
+                    x1 = Width;
+                    y1 = ym;
+                    x2 = 0;
+                    y2 = ym;
+                    break;
+                default:
+                    x1 = Width - 6;
+                    y1 = Height - 6;
+                    x2 = 6;
+                    y2 = 6; // 'nw'
+            }
+            const HeadAtStart = (ArrowHeads === 'start') || (ArrowHeads === 'both');
+            const HeadAtEnd = (ArrowHeads === 'end') || (ArrowHeads === 'both');
+            const SVGSource = `
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+          width="${Width}" height="${Height}"
+        >
+          <defs>
+            <marker id="arrow-head" orient="auto-start-reverse"
+              markerWidth="5" markerHeight="4"
+              refX="4" refY="2"
+            >
+              <path d="M0,0 V4 L5,2 Z" fill="${Color}"/>
+            </marker>
+          </defs>
+
+          <path stroke-width="3" stroke="${Color}" fill="none"
+            ${HeadAtStart ? 'marker-start="url(#arrow-head)"' : ''}
+            ${HeadAtEnd ? 'marker-end="url(#arrow-head)"' : ''}
+            d="M ${x1},${y1} L ${x2},${y2}"
+          />
+        </svg>
+      `;
+            const DataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SVGSource);
+            return html `<img class="WAT Content StraightArrow" src=${DataURL}/>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.StraightArrow', WAT_StraightArrow);
+    /**** CurvedArrow ****/
+    const WAT_CurvedArrow = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.CurvedArrow {
+        overflow:visible;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Direction', Default: 'cw',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ArrowRotations },
+            { Name: 'TipPosition', Label: 'Tip Position', Default: 'n',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ArrowTipPositions },
+            { Name: 'ArrowHeads', Label: 'Arrow Heads', Default: 'end',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ArrowHeadPositions },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Width: W, Height: H } = this.Geometry;
+            const Color = this.ForegroundColor || 'black';
+            const Direction = this.Direction || 'cw';
+            const TipPosition = this.TipPosition || 'n';
+            const ArrowHeads = this.ArrowHeads || 'end';
+            let Arc;
+            switch (Direction + ' ' + TipPosition) {
+                case 'cw n':
+                    Arc = `M ${W},${H - 6} A ${W - 6} ${H - 18} 0 0 1 6 12`;
+                    break;
+                case 'cw e':
+                    Arc = `M 6,${H} A ${W - 18} ${H - 6} 0 0 1 ${W - 12} 6`;
+                    break;
+                case 'cw s':
+                    Arc = `M 0,6 A ${W - 6} ${H - 18} 0 0 1 ${W - 6} ${H - 12}`;
+                    break;
+                case 'cw w':
+                    Arc = `M ${W - 6},0 A ${W - 18} ${H - 6} 0 0 1 12 ${H - 6}`;
+                    break;
+                case 'ccw n':
+                    Arc = `M 0,${H - 6} A ${W - 6} ${H - 18} 0 0 0 ${W - 6} 12`;
+                    break;
+                case 'ccw e':
+                    Arc = `M 6,0 A ${W - 18} ${H - 6} 0 0 0 ${W - 12} ${H - 6}`;
+                    break;
+                case 'ccw s':
+                    Arc = `M ${W},6 A ${W - 6} ${H - 18} 0 0 0 6 ${H - 12}`;
+                    break;
+                default: Arc = `M ${W - 6},${H} A ${W - 18} ${H - 6} 0 0 0 12 6`; // 'ccw w'
+            }
+            const HeadAtStart = (ArrowHeads === 'start') || (ArrowHeads === 'both');
+            const HeadAtEnd = (ArrowHeads === 'end') || (ArrowHeads === 'both');
+            const SVGSource = `
+        <svg version="1.1" xmlns="http://www.w3.org/2000/svg"
+          width="${W}" height="${H}"
+        >
+          <defs>
+            <marker id="arrow-head" orient="auto-start-reverse"
+              markerWidth="5" markerHeight="4"
+              refX="0" refY="2"
+            >
+              <path d="M0,0 V4 L5,2 Z" fill="${Color}"/>
+            </marker>
+          </defs>
+
+          <path stroke-width="3" stroke="${Color}" fill="none"
+            ${HeadAtStart ? 'marker-start="url(#arrow-head)"' : ''}
+            ${HeadAtEnd ? 'marker-end="url(#arrow-head)"' : ''}
+            d="${Arc}"
+          />
+        </svg>
+      `;
+            const DataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(SVGSource);
+            return html `<img class="WAT Content CurvedArrow" src=${DataURL}/>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.CurvedArrow', WAT_CurvedArrow);
     /**** Button ****/
     const WAT_Button = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
