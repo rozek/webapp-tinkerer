@@ -353,7 +353,12 @@ export function ValueIsSerializableValue(Value, visitedObjects = new WeakSet()) 
             } // recursion detected
             visitedObjects.add(Value);
             try {
-                return ValueIsListSatisfying(Value, (Item) => ValueIsSerializableValue(Item, visitedObjects));
+                return ValueIsListSatisfying(Value, (Item) => {
+                    if (Item === undefined) {
+                        return false;
+                    } // JSON would make "null" of it
+                    return ValueIsSerializableValue(Item, visitedObjects);
+                });
             }
             finally {
                 visitedObjects.delete(Value);
@@ -1249,7 +1254,9 @@ function normalizedPropertyDescriptor(Value) {
         Descriptor.Validator = Validator;
     }
     if (Default != null) {
-        Descriptor.Default = Default;
+        Descriptor.Default = ( // do not share
+        ValueIsList(Default) ? Default.slice() : Default // given list default
+        );
     }
     if (withMin != null) {
         Descriptor.withMin = withMin;
@@ -1416,7 +1423,9 @@ function installAccessorFor(Visual, Descriptor) {
     const { minValue, maxValue, withMin, withMax, Pattern, ValueList } = Descriptor;
     const RegEx = (Pattern == null
         ? undefined
-        : Pattern instanceof RegExp ? Pattern : new RegExp('^(?:' + Pattern + ')$'));
+        : Pattern instanceof RegExp // anchor given RegExp as well
+            ? new RegExp('^(?:' + Pattern.source + ')$', Pattern.flags)
+            : new RegExp('^(?:' + Pattern + ')$'));
     let Validator = Descriptor.Validator;
     if (Validator == null) {
         switch (Descriptor.EditorType) {
@@ -1444,7 +1453,7 @@ function installAccessorFor(Visual, Descriptor) {
                 break;
             case 'number-input':
                 if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
-                    Validator = ValueIsNumber;
+                    Validator = ValueIsFiniteNumber; // reject NaN and Infinity
                 }
                 else {
                     Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax);
@@ -1481,7 +1490,7 @@ function installAccessorFor(Visual, Descriptor) {
                 break;
             case 'slider':
                 if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
-                    Validator = ValueIsNumber;
+                    Validator = ValueIsFiniteNumber; // reject NaN and Infinity
                 }
                 else {
                     Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax);
@@ -1500,7 +1509,9 @@ function installAccessorFor(Visual, Descriptor) {
                 Validator = (Value) => ValueIsLineList(Value, RegEx);
                 break;
             case 'numberlist-input':
-                Validator = (Value) => ValueIsNumberList(Value, minValue, maxValue, withMin, withMax);
+                Validator = (Value) => (ValueIsNumberList(Value, minValue, maxValue, withMin, withMax) &&
+                    Value.every(ValueIsFiniteNumber) // reject NaN and Infinity
+                );
                 break;
             case 'integerlist-input':
                 Validator = (Value) => ValueIsIntegerList(Value, minValue, maxValue);
@@ -1510,17 +1521,22 @@ function installAccessorFor(Visual, Descriptor) {
     const Container = Descriptor.AccessorsFor, Default = Descriptor.Default;
     Object.defineProperty(Visual, Descriptor.Name, {
         configurable: true, enumerable: true,
-        get: () => acceptableValue(Visual[Container][Descriptor.Name], Validator, Default),
+        get: () => {
+            const Result = acceptableValue(Visual[Container][Descriptor.Name], Validator, Default);
+            return ( // never hand out the list default itself...
+            ValueIsList(Result) && (Result === Default) ? Result.slice() : Result); // ...as it could be mutated by the caller
+        },
         set: (newValue) => {
             ;
             (Default == null ? allowValue : expectValue)(Descriptor.Name, newValue, Validator);
+            const originalValue = newValue; // for callbacks, prior normalization
             if (ValuesAreEqual(newValue, Default)) {
                 newValue = undefined;
             }
             if (ValuesDiffer(newValue, Visual[Container][Descriptor.Name])) {
                 Visual[Container][Descriptor.Name] = (ValueIsList(newValue) ? newValue.slice() : newValue);
                 if (Descriptor.withCallback) {
-                    Visual.on(Descriptor.Name)(newValue);
+                    Visual.on(Descriptor.Name)(originalValue);
                 }
                 Visual.rerender();
             }
@@ -2324,6 +2340,7 @@ export function WAT_Dragger(PropSet) {
     function handleDrop() {
         const { Widget } = PropsRef.current;
         if (DragInfo.Catcher != null) {
+            // *C* NOTE: key "drop" is also used by file inputs with signature (Event,FileList) - handlers must discriminate
             try {
                 DragInfo.Catcher.on('drop')(Widget);
             }
@@ -2979,9 +2996,15 @@ export class WAT_Visual {
         let activeScript = (this._activeScript || '').trim();
         this._CallbackRegistry = undefined;
         unregisterAllReactiveFunctionsFrom(this);
+        uninstallStylesheetForVisual(this); // new script may no longer install one
         /**** prepare for script execution ****/
+        const isStale = () => (activationToken !== this._activationToken);
+        // stale (i.e., overtaken) activation runs must not register anything
         const reactively = (reactiveFunction) => {
             expectFunction('reactive function', reactiveFunction);
+            if (isStale()) {
+                return;
+            }
             // @ts-ignore TS2345 do not care about the specific signature of "reactiveFunction"
             registerReactiveFunctionIn(this, computed(() => {
                 try {
@@ -3006,13 +3029,20 @@ export class WAT_Visual {
                 }
             }));
         };
-        const on = this.on.bind(this);
-        const onReady = this.on.bind(this, 'ready');
-        const onRender = this.on.bind(this, 'render');
-        const onMount = this.on.bind(this, 'mount');
-        const onUpdate = this.on.bind(this, 'update');
-        const onUnmount = this.on.bind(this, 'unmount');
-        const onValueChange = this.on.bind(this, 'Value');
+        const on = (CallbackName, ...ArgList) => ((ArgList.length > 0) && isStale() // guard registrations/deletions...
+            ? noCallback // ...but keep the one-argument lookup
+            // @ts-ignore TS2556 spreading preserves "arguments.length" for "on"
+            : this.on(CallbackName, ...ArgList));
+        const onOf = (CallbackName) => (...ArgList) => ((ArgList.length > 0) && isStale()
+            ? noCallback
+            // @ts-ignore TS2556 spreading preserves "arguments.length" for "on"
+            : this.on(CallbackName, ...ArgList));
+        const onReady = onOf('ready');
+        const onRender = onOf('render');
+        const onMount = onOf('mount');
+        const onUpdate = onOf('update');
+        const onUnmount = onOf('unmount');
+        const onValueChange = onOf('Value');
         /**** run behavior script first ****/
         this._ErrorReport = undefined;
         const Applet = this.Applet;
@@ -3039,7 +3069,11 @@ export class WAT_Visual {
                 const BehaviorIsNew = Registration.isNew || false;
                 Registration.isNew = false; // only the first activation run sees it
                 try {
-                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), BehaviorIsNew);
+                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, (Stylesheet) => {
+                        if (!isStale()) {
+                            installStylesheetForBehavior(Applet, Category, Behavior, Stylesheet);
+                        }
+                    }, BehaviorIsNew);
                     if (activationToken !== this._activationToken) {
                         return;
                     }
@@ -3084,7 +3118,11 @@ export class WAT_Visual {
             return;
         }
         try {
-            await compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForVisual.bind(this, this), false // Behavior.isNew
+            await compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, (Stylesheet) => {
+                if (!isStale()) {
+                    installStylesheetForVisual(this, Stylesheet);
+                }
+            }, false // Behavior.isNew
             );
             if (activationToken !== this._activationToken) {
                 return;
@@ -3341,10 +3379,23 @@ export class WAT_Visual {
     set isMounted(_) { throwReadOnlyError('isMounted'); }
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
+        let serializableMemoized = undefined;
         if (this._memoized != null) { // test serializability of "memoized" as well
-            if (!ValueIsSerializableValue(this._memoized)) {
-                throwError('NotSerializable: cannot serialize "memoized" of visual ' +
-                    quoted(this.Path));
+            for (const Key in this._memoized) { // ...but per entry: unserializable
+                if (!this._memoized.hasOwnProperty(Key)) {
+                    continue;
+                } // entries...
+                if (ValueIsSerializableValue(this._memoized[Key])) { // ...are just...
+                    if (serializableMemoized == null) {
+                        serializableMemoized = {};
+                    }
+                    serializableMemoized[Key] = this._memoized[Key]; // ...left out...
+                }
+                else { // ...with a warning...
+                    console.warn('NotSerializable: cannot serialize entry ' + quoted(Key) +
+                        ' of "memoized" in visual ' + quoted(this.Path) +
+                        ' - this entry will be skipped');
+                }
             }
         }
         /**** then perform the actual serialization ****/
@@ -3358,8 +3409,8 @@ export class WAT_Visual {
             'Opacity', 'Overflows', 'Cursor',
             'activeScript', 'pendingScript',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
-        if (this._memoized != null) {
-            Serialization.memoized = structuredClone(this._memoized);
+        if (serializableMemoized != null) {
+            Serialization.memoized = structuredClone(serializableMemoized);
         }
     }
     /**** _deserializeConfigurationFrom ****/
@@ -3385,6 +3436,16 @@ export class WAT_Visual {
             'Opacity', 'Overflows', 'Cursor',
             /*'activeScript',*/ 'pendingScript',
         ].forEach((Name) => deserializeProperty(Name));
+        /**** migrate legacy "OverflowVisibility" serializations ****/
+        if ((Serialization.Overflows == null) &&
+            ('OverflowVisibility' in Serialization)) {
+            try {
+                this.Overflows = (Serialization.OverflowVisibility
+                    ? ['visible', 'visible']
+                    : ['hidden', 'hidden']);
+            }
+            catch (Signal) { /* nop - e.g., applets do not support "Overflows" */ }
+        }
         if (ValueIsPlainObject(Serialization.memoized)) {
             try {
                 Object.assign(this.memoized, structuredClone(Serialization.memoized));
@@ -3582,6 +3643,7 @@ export class WAT_Applet extends WAT_Visual {
     get AssetsBase() {
         return this._AssetsBase || 'https://rozek.github.io/webapp-tinkerer/';
     }
+    // *C* "AssetsBase" is not serialized - a scripted setting does not survive a reload
     set AssetsBase(newURL) {
         allowURL('assets base URL', newURL);
         if (this._AssetsBase !== newURL) {
@@ -4388,6 +4450,24 @@ export class WAT_Applet extends WAT_Visual {
         }
         catch (Signal) {
             this._PageList.splice(Index, 1);
+            /**** fully release the now orphaned page and its widgets ****/
+            // @ts-ignore TS2446 allow accessing protected member
+            newPage._WidgetList.forEach((Widget) => {
+                unregisterAllReactiveFunctionsFrom(Widget);
+                uninstallStylesheetForVisual(Widget);
+                // @ts-ignore TS2341 allow accessing private member
+                Widget._activationToken = (Widget._activationToken || 0) + 1;
+                // cancels any running script activation
+                // @ts-ignore TS2446 allow accessing protected member
+                Widget._Container = undefined;
+            });
+            unregisterAllReactiveFunctionsFrom(newPage);
+            uninstallStylesheetForVisual(newPage);
+            // @ts-ignore TS2341 allow accessing private member
+            newPage._activationToken = (newPage._activationToken || 0) + 1;
+            // cancels any running script activation
+            // @ts-ignore TS2446 allow accessing protected member
+            newPage._Container = undefined;
             throw Signal;
         }
         makeVisualReady(newPage);
@@ -4478,11 +4558,17 @@ export class WAT_Applet extends WAT_Visual {
         Page._WidgetList.forEach((Widget) => {
             unregisterAllReactiveFunctionsFrom(Widget);
             uninstallStylesheetForVisual(Widget);
+            // @ts-ignore TS2341 allow accessing private member
+            Widget._activationToken = (Widget._activationToken || 0) + 1;
+            // cancels any running script activation
             // @ts-ignore TS2446 allow accessing protected member
             Widget._Container = undefined;
         });
         unregisterAllReactiveFunctionsFrom(Page);
         uninstallStylesheetForVisual(Page);
+        // @ts-ignore TS2341 allow accessing private member
+        Page._activationToken = (Page._activationToken || 0) + 1;
+        // cancels any running script activation
         const oldIndex = this._PageList.indexOf(Page);
         this._PageList.splice(oldIndex, 1);
         // @ts-ignore TS2446 allow accessing protected member
@@ -4500,11 +4586,17 @@ export class WAT_Applet extends WAT_Visual {
             Page._WidgetList.forEach((Widget) => {
                 unregisterAllReactiveFunctionsFrom(Widget);
                 uninstallStylesheetForVisual(Widget);
+                // @ts-ignore TS2341 allow accessing private member
+                Widget._activationToken = (Widget._activationToken || 0) + 1;
+                // cancels any running script activation
                 // @ts-ignore TS2446 allow accessing protected member
                 Widget._Container = undefined;
             });
             unregisterAllReactiveFunctionsFrom(Page);
             uninstallStylesheetForVisual(Page);
+            // @ts-ignore TS2341 allow accessing private member
+            Page._activationToken = (Page._activationToken || 0) + 1;
+            // cancels any running script activation
             // @ts-ignore TS2446 allow accessing protected member
             Page._Container = undefined;
         });
@@ -4690,27 +4782,34 @@ export class WAT_Applet extends WAT_Visual {
     set Serialization(_) { throwReadOnlyError('Serialization'); }
     /**** _serializeBehaviorsInto ****/
     _serializeBehaviorsInto(Serialization) {
-        const BehaviorSet = this.BehaviorSet;
+        const BehaviorPool = this._BehaviorPool;
+        // the pool (unlike "this.BehaviorSet") still contains "pendingScript"s
+        const serializedBehavior = (Registration) => {
+            const { activeScript, pendingScript } = Registration;
+            return (pendingScript == null // keeps the old (and compact) format
+                ? activeScript // whenever possible
+                : { activeScript, pendingScript });
+        };
         Serialization.BehaviorSet = { applet: {}, page: {}, widget: {} };
-        Object.keys(BehaviorSet.applet).forEach((normalizedBehavior) => {
+        Object.keys(BehaviorPool.applet).forEach((normalizedBehavior) => {
             if (!BehaviorIsIntrinsic(normalizedBehavior)) {
-                const { Name, activeScript } = BehaviorSet.applet[normalizedBehavior];
+                const Registration = BehaviorPool.applet[normalizedBehavior];
                 // @ts-ignore TS18047 Serialization.BehaviorSet is not null
-                Serialization.BehaviorSet.applet[Name] = activeScript;
+                Serialization.BehaviorSet.applet[Registration.Name] = serializedBehavior(Registration);
             }
         });
-        Object.keys(BehaviorSet.page).forEach((normalizedBehavior) => {
+        Object.keys(BehaviorPool.page).forEach((normalizedBehavior) => {
             if (!BehaviorIsIntrinsic(normalizedBehavior)) {
-                const { Name, activeScript } = BehaviorSet.page[normalizedBehavior];
+                const Registration = BehaviorPool.page[normalizedBehavior];
                 // @ts-ignore TS18047 Serialization.BehaviorSet is not null
-                Serialization.BehaviorSet.page[Name] = activeScript;
+                Serialization.BehaviorSet.page[Registration.Name] = serializedBehavior(Registration);
             }
         });
-        Object.keys(BehaviorSet.widget).forEach((normalizedBehavior) => {
+        Object.keys(BehaviorPool.widget).forEach((normalizedBehavior) => {
             if (!BehaviorIsIntrinsic(normalizedBehavior)) {
-                const { Name, activeScript } = BehaviorSet.widget[normalizedBehavior];
+                const Registration = BehaviorPool.widget[normalizedBehavior];
                 // @ts-ignore TS18047 Serialization.BehaviorSet is not null
-                Serialization.BehaviorSet.widget[Name] = activeScript;
+                Serialization.BehaviorSet.widget[Registration.Name] = serializedBehavior(Registration);
             }
         });
         return;
@@ -4721,13 +4820,21 @@ export class WAT_Applet extends WAT_Visual {
         if (!ValueIsPlainObject(BehaviorSet)) {
             return;
         }
+        const ScriptsOf = (SerializedBehavior) => (ValueIsPlainObject(SerializedBehavior)
+            ? SerializedBehavior // new format (w/ object)
+            : { activeScript: SerializedBehavior } // old format (w/ string)
+        );
         // @ts-ignore TS18047 BehaviorSet is not null
         const AppletBehaviorSet = BehaviorSet['applet'];
         if (ValueIsPlainObject(AppletBehaviorSet)) {
             Object.entries(AppletBehaviorSet).forEach(([Name, Script]) => {
-                if (ValueIsBehavior(Name) && ValueIsText(Script)) {
+                const { activeScript, pendingScript } = ScriptsOf(Script);
+                if (ValueIsBehavior(Name) && ValueIsText(activeScript)) {
                     try {
-                        this.registerBehaviorOfCategory('applet', Name, Script);
+                        this.registerBehaviorOfCategory('applet', Name, activeScript);
+                        if (ValueIsText(pendingScript)) {
+                            this._BehaviorPool.applet[Name.toLowerCase()].pendingScript = pendingScript;
+                        }
                     }
                     catch (Signal) {
                         console.warn(`could not register applet behavior ${quoted(Name)}`, Signal);
@@ -4739,9 +4846,13 @@ export class WAT_Applet extends WAT_Visual {
         const PageBehaviorSet = BehaviorSet['page'];
         if (ValueIsPlainObject(PageBehaviorSet)) {
             Object.entries(PageBehaviorSet).forEach(([Name, Script]) => {
-                if (ValueIsBehavior(Name) && ValueIsText(Script)) {
+                const { activeScript, pendingScript } = ScriptsOf(Script);
+                if (ValueIsBehavior(Name) && ValueIsText(activeScript)) {
                     try {
-                        this.registerBehaviorOfCategory('page', Name, Script);
+                        this.registerBehaviorOfCategory('page', Name, activeScript);
+                        if (ValueIsText(pendingScript)) {
+                            this._BehaviorPool.page[Name.toLowerCase()].pendingScript = pendingScript;
+                        }
                     }
                     catch (Signal) {
                         console.warn(`could not register page behavior ${quoted(Name)}`, Signal);
@@ -4753,9 +4864,13 @@ export class WAT_Applet extends WAT_Visual {
         const WidgetBehaviorSet = BehaviorSet['widget'];
         if (ValueIsPlainObject(WidgetBehaviorSet)) {
             Object.entries(WidgetBehaviorSet).forEach(([Name, Script]) => {
-                if (ValueIsBehavior(Name) && ValueIsText(Script)) {
+                const { activeScript, pendingScript } = ScriptsOf(Script);
+                if (ValueIsBehavior(Name) && ValueIsText(activeScript)) {
                     try {
-                        this.registerBehaviorOfCategory('widget', Name, Script);
+                        this.registerBehaviorOfCategory('widget', Name, activeScript);
+                        if (ValueIsText(pendingScript)) {
+                            this._BehaviorPool.widget[Name.toLowerCase()].pendingScript = pendingScript;
+                        }
                     }
                     catch (Signal) {
                         console.warn(`could not register widget behavior ${quoted(Name)}`, Signal);
@@ -4808,6 +4923,7 @@ export class WAT_Applet extends WAT_Visual {
             delete Serialization.activeScript;
         }
         /**** additional properties used by the "WAT Applet Manager" ****/
+        // *C* "Width"/"Height" are write-only for the applet manager - they are never deserialized
         if (this._View != null) { // "Width" and "Height" require an attached applet
             this._serializePropertyInto('Width', Serialization);
             this._serializePropertyInto('Height', Serialization);
@@ -4839,16 +4955,16 @@ export class WAT_Applet extends WAT_Visual {
         if (ValueIsBoolean(Serialization.toBeCentered)) {
             this._toBeCentered = Serialization.toBeCentered;
         }
-        if (ValueIsOrdinal(Serialization.minWidth)) {
+        if (ValueIsDimension(Serialization.minWidth)) {
             this._minWidth = Serialization.minWidth;
         }
-        if (ValueIsOrdinal(Serialization.minHeight)) {
+        if (ValueIsDimension(Serialization.minHeight)) {
             this._minHeight = Serialization.minHeight;
         }
-        if (ValueIsOrdinal(Serialization.maxWidth)) {
+        if (ValueIsDimension(Serialization.maxWidth)) {
             this._maxWidth = Serialization.maxWidth;
         }
-        if (ValueIsOrdinal(Serialization.maxHeight)) {
+        if (ValueIsDimension(Serialization.maxHeight)) {
             this._maxHeight = Serialization.maxHeight;
         }
         if (ValueIsBoolean(Serialization.withMobileFrame)) {
@@ -4928,6 +5044,10 @@ export class WAT_Applet extends WAT_Visual {
             this._isReady = false;
             this.closeAllOverlays();
             this.clear();
+            this._resetConfiguration(); // don't let old applet state "bleed through"
+            const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
+            this._Behavior = Behavior;
+            this._normalizedBehavior = (Behavior == null ? undefined : Behavior.toLowerCase());
             this._BehaviorPool = {
                 applet: Object.create(null),
                 page: Object.create(null),
@@ -4952,6 +5072,42 @@ export class WAT_Applet extends WAT_Visual {
             makeVisualReady(this);
             this.rerender();
         }
+    }
+    /**** _resetConfiguration - reset all optional state to its default ****/
+    _resetConfiguration() {
+        this._activeScript = undefined;
+        this._pendingScript = undefined;
+        this._ScriptError = undefined;
+        this._memoized = {};
+        this._Behavior = undefined;
+        this._normalizedBehavior = undefined;
+        this._Synopsis = undefined;
+        this._FontFamily = undefined;
+        this._FontSize = undefined;
+        this._FontWeight = undefined;
+        this._FontStyle = undefined;
+        this._TextDecoration = undefined;
+        this._TextShadow = undefined;
+        this._TextAlignment = undefined;
+        this._LineHeight = undefined;
+        this._ForegroundColor = undefined;
+        this._hasBackground = false;
+        this._BackgroundColor = undefined;
+        this._BackgroundTexture = undefined;
+        this._Opacity = undefined;
+        this._Cursor = undefined;
+        this._minWidth = undefined;
+        this._maxWidth = undefined;
+        this._minHeight = undefined;
+        this._maxHeight = undefined;
+        this._SnapToGrid = false;
+        this._GridWidth = 10;
+        this._GridHeight = 10;
+        this._HeadExtensions = '';
+        this._toBeCentered = true;
+        this._withMobileFrame = false;
+        this._expectedOrientation = 'any';
+        this._AssetsBase = undefined;
     }
 }
 //------------------------------------------------------------------------------
@@ -5316,6 +5472,9 @@ export class WAT_Page extends WAT_Visual {
         }
         unregisterAllReactiveFunctionsFrom(Widget);
         uninstallStylesheetForVisual(Widget);
+        // @ts-ignore TS2341 allow accessing private member
+        Widget._activationToken = (Widget._activationToken || 0) + 1;
+        // cancels any running script activation
         const oldIndex = this._WidgetList.indexOf(Widget);
         this._WidgetList.splice(oldIndex, 1);
         // @ts-ignore TS2446 allow accessing protected member
@@ -5327,6 +5486,9 @@ export class WAT_Page extends WAT_Visual {
         this._WidgetList.forEach((Widget) => {
             unregisterAllReactiveFunctionsFrom(Widget);
             uninstallStylesheetForVisual(Widget);
+            // @ts-ignore TS2341 allow accessing private member
+            Widget._activationToken = (Widget._activationToken || 0) + 1;
+            // cancels any running script activation
             // @ts-ignore TS2446 allow accessing protected member
             Widget._Container = undefined;
         });
@@ -6231,7 +6393,7 @@ export class WAT_Widget extends WAT_Visual {
         return this._Offsets.slice();
     }
     set Offsets(newOffsets) {
-        expectListSatisfying('widget offsets', newOffsets, (Value) => (Value == null) || ValueIsFiniteNumber(Value), 4, 4);
+        expectListSatisfying('widget offsets', newOffsets, (Value) => (Value == null) || ValueIsFiniteNumber(Value), undefined, 4, 4);
         // more specific validations will follow below
         const curAnchors = this.Anchors;
         const curOffsets = this.Offsets;
@@ -7260,6 +7422,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
     /**** WidgetPane ****/
     const WAT_WidgetPane = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        var _a, _b;
         installStylesheet(`
       .WAT.Widget > .WAT.WidgetPane {
         overflow:hidden;
@@ -7268,10 +7431,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
-                EditorType: 'textline-input', Placeholder: '(enter content path)' },
+                EditorType: 'textline-input', AccessorsFor: 'none', Placeholder: '(enter content path)' },
             { Name: 'visiblePattern', Label: 'visible Pattern', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
+        (_b = (_a = me)._releaseWidgets) === null || _b === void 0 ? void 0 : _b.call(_a);
+        // *C* release widgets still claimed from a previous script activation
         Object_assign(me, {
             /**** Value ****/
             get Value() {
@@ -7303,7 +7468,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 if (this.memoized.Value !== SourcePath) {
                     this.memoized.Value = SourcePath;
-                    this.on('Value')();
+                    this.on('Value')(SourcePath);
                     this.rerender();
                 }
             },
@@ -7384,7 +7549,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             return html `<div class="WAT Content WidgetPane ${withPattern ? 'Placeholder' : ''}">
         ${WidgetsToShow.toReversed().map((Widget) => {
                 let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
-                return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+                return html `<${WAT_WidgetView} key=${IdOfVisual(Widget)} Widget=${Widget} Geometry=${Geometry}/>`;
             })}
       </div>`;
         });
@@ -7561,7 +7726,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter Markdown)',
-                EditorType: 'text-input' },
+                EditorType: 'text-input', AccessorsFor: 'none' },
             { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedMarkdownFormats,
@@ -7580,7 +7745,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
-                    this.on('Value')();
+                    this.on('Value')(newValue);
                     this._HTMLContent = this._Marked.parse(newValue);
                     this.rerender();
                 }
@@ -7659,7 +7824,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter image URL)',
-                EditorType: 'url-input' },
+                EditorType: 'url-input', AccessorsFor: 'none' },
             { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'ImageScaling', Label: 'Image Scaling', Default: 'contain',
@@ -7682,7 +7847,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 allowURL('value', newValue);
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
-                    this.on('Value')();
+                    this.on('Value')(newValue);
                     this.rerender();
                 }
             },
@@ -7751,7 +7916,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** actual rendering ****/
             return html `<img class="WAT Content ImageView"
         src=${ImageURL || ''}
-        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+        style="object-fit:${ImageScaling === 'stretch' ? 'fill' : ImageScaling}; object-position:${ImageAlignment}"
         onDragOver=${allowsDropping ? _onDragOver : undefined}
         onDrop=${allowsDropping ? _onDrop : undefined}
         onClick=${_onClick}
@@ -7781,7 +7946,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             const { ImageScaling, ImageAlignment } = this;
             return html `<img class="WAT Content SVGView"
         src=${DataURL}
-        style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
+        style="object-fit:${ImageScaling === 'stretch' ? 'fill' : ImageScaling}; object-position:${ImageAlignment}"
       />`;
         });
     };
@@ -7791,7 +7956,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter URL)',
-                EditorType: 'url-input' },
+                EditorType: 'url-input', AccessorsFor: 'none' },
             { Name: 'PermissionsPolicy', Label: 'Permissions Policy',
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'allowsFullscreen', Label: 'allows Fullscreen', Default: false,
@@ -7813,7 +7978,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 allowURL('value', newValue);
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
-                    this.on('Value')();
+                    this.on('Value')(newValue);
                     this.rerender();
                 }
             },
@@ -7919,7 +8084,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Icon', Default: 'icons/circle-information.png',
-                EditorType: 'url-input', },
+                EditorType: 'url-input', AccessorsFor: 'none' },
         ];
         Object_assign(me, {
             /**** Icon ****/
@@ -8122,7 +8287,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Minimum',
                 EditorType: 'number-input', AccessorsFor: 'memoized' },
             { Name: 'Stepping',
-                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0, withMin: false },
             { Name: 'Maximum',
                 EditorType: 'number-input', AccessorsFor: 'memoized' },
             { Name: 'Hashmarks', Pattern: HashmarkPattern, Default: [],
@@ -8204,7 +8369,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
             { Name: 'SpellChecking',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
@@ -8282,7 +8448,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
         ];
         /**** Renderer ****/
         onRender(function () {
@@ -8346,7 +8513,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Minimum',
                 EditorType: 'number-input', AccessorsFor: 'memoized' },
             { Name: 'Stepping',
-                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0, withMin: false },
             { Name: 'Maximum',
                 EditorType: 'number-input', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
@@ -8424,7 +8591,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
             { Name: 'SpellChecking',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
@@ -8502,7 +8670,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
             { Name: 'SpellChecking',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
@@ -8580,7 +8749,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
             { Name: 'SpellChecking',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
@@ -8653,9 +8823,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'withSeconds', Label: 'with Seconds',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum', Stepping: 1,
+            { Name: 'Minimum',
                 EditorType: 'time-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum', Stepping: 1,
+            { Name: 'Maximum',
                 EditorType: 'time-input', AccessorsFor: 'memoized' },
             { Name: 'Suggestions', Pattern: WAT_TimeRegExp,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
@@ -8727,9 +8897,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'withSeconds', Label: 'with Seconds',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum', Stepping: 1,
+            { Name: 'Minimum',
                 EditorType: 'date-time-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum', Stepping: 1,
+            { Name: 'Maximum',
                 EditorType: 'date-time-input', AccessorsFor: 'memoized' },
             { Name: 'Suggestions', Pattern: WAT_DateTimeRegExp,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
@@ -8799,13 +8969,20 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'date-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum', Stepping: 1,
+            { Name: 'Minimum',
                 EditorType: 'date-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum', Stepping: 1,
+            { Name: 'Maximum',
                 EditorType: 'date-input', AccessorsFor: 'memoized' },
             { Name: 'Suggestions', Pattern: WAT_DateRegExp,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
+        { // *C* migrate pre-anchor datetime-local values
+            const memoized = me.memoized;
+            const Value = memoized === null || memoized === void 0 ? void 0 : memoized.Value;
+            if (ValueIsString(Value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(Value)) {
+                memoized.Value = Value.slice(0, 10);
+            }
+        }
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -8870,13 +9047,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'week-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum', Stepping: 1,
+            { Name: 'Minimum',
                 EditorType: 'week-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum', Stepping: 1,
+            { Name: 'Maximum',
                 EditorType: 'week-input', AccessorsFor: 'memoized' },
             { Name: 'Suggestions', Pattern: WAT_WeekRegExp,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
+        { // *C* migrate pre-anchor datetime-local values
+            const memoized = me.memoized;
+            const Value = memoized === null || memoized === void 0 ? void 0 : memoized.Value;
+            if (ValueIsString(Value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(Value)) {
+                console.warn('WeekInput: discarding pre-anchor datetime-local value', Value);
+                delete memoized.Value;
+            }
+        }
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -8941,13 +9126,20 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'month-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum', Stepping: 1,
+            { Name: 'Minimum',
                 EditorType: 'month-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum', Stepping: 1,
+            { Name: 'Maximum',
                 EditorType: 'month-input', AccessorsFor: 'memoized' },
             { Name: 'Suggestions', Pattern: WAT_MonthRegExp,
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
+        { // *C* migrate pre-anchor datetime-local values
+            const memoized = me.memoized;
+            const Value = memoized === null || memoized === void 0 ? void 0 : memoized.Value;
+            if (ValueIsString(Value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(Value)) {
+                memoized.Value = Value.slice(0, 7);
+            }
+        }
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling } = this;
@@ -9045,6 +9237,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return;
                 }
                 this.Value = acceptedFiles.map((File) => File.name).join('\n');
+                // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
                 await this.on('input')(Event, acceptedFiles);
                 Event.target.value = '';
             };
@@ -9098,7 +9291,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Value',
                 EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'Icon', Default: 'icons/arrow-up-from-bracket.png',
-                EditorType: 'url-input' },
+                EditorType: 'url-input', AccessorsFor: 'none' },
             { Name: 'allowMultiple', Label: 'multiple',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
@@ -9149,6 +9342,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return;
                 }
                 this.Value = acceptedFiles.map((File) => File.name).join('\n');
+                // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
                 await this.on('input')(Event, acceptedFiles);
                 Event.target.value = '';
             };
@@ -9223,6 +9417,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return;
                 }
                 this.Value = acceptedFiles.map((File) => File.name).join('\n');
+                // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
                 await this.on('input')(Event, acceptedFiles);
                 Event.target.value = '';
             };
@@ -9281,7 +9476,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
             { Name: 'SpellChecking',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
@@ -9343,9 +9539,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
-                EditorType: 'color-input' },
+                EditorType: 'color-input', AccessorsFor: 'none' },
             { Name: 'Suggestions',
-                EditorType: 'linelist-input' },
+                EditorType: 'linelist-input', AccessorsFor: 'none',
+                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsColor) },
         ];
         Object_assign(me, {
             /**** Value ****/
@@ -9489,7 +9686,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Value',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'Icon', Default: 'icons/drop-down.png',
-                EditorType: 'url-input' },
+                EditorType: 'url-input', AccessorsFor: 'none' },
             { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
@@ -9730,7 +9927,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'SelectionLimit', Label: 'Selection Limit',
                 EditorType: 'integer-input', AccessorsFor: 'memoized',
-                minValue: 0, Stepping: 1 },
+                minValue: 0, Stepping: 1 }, // *C* SelectionLimit == null means "unlimited"
         ];
         Object_assign(me, {
             /**** List ****/
@@ -9770,6 +9967,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             let { List, Placeholder, SelectionLimit, selectedIndices } = this;
+            const effectiveSelectionLimit = (SelectionLimit == null ? Infinity : SelectionLimit);
             /**** validate selection ****/
             const oldSelectedIndices = (this._selectedIndices || []).slice();
             const selectedIndexSet = Object.create(null);
@@ -9783,9 +9981,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return false;
                 }
             });
-            let deselectedIndices = [];
-            if (selectedIndices.length > SelectionLimit) {
-                deselectedIndices = selectedIndices.slice(SelectionLimit);
+            if (selectedIndices.length > effectiveSelectionLimit) {
+                const deselectedIndices = selectedIndices.slice(SelectionLimit);
                 selectedIndices.length = SelectionLimit;
                 deselectedIndices.forEach((deselectedIndex) => {
                     delete selectedIndexSet[deselectedIndex];
@@ -9793,10 +9990,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
             }
             this._selectedIndices = selectedIndices;
             if (ValuesDiffer(oldSelectedIndices, selectedIndices)) {
+                const IndicesToDeselect = oldSelectedIndices.filter((selectedIndex) => !(selectedIndex in selectedIndexSet));
+                const IndicesToSelect = selectedIndices.filter((selectedIndex) => (oldSelectedIndices.indexOf(selectedIndex) < 0));
                 setTimeout(() => {
                     this.on('selection-change')(selectedIndices);
-                    deselectedIndices.forEach((deselectedIndex) => {
+                    IndicesToDeselect.forEach((deselectedIndex) => {
                         this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
+                    });
+                    IndicesToSelect.forEach((selectedIndex) => {
+                        this.on('item-selected')(List[selectedIndex], selectedIndex);
                     });
                 }, 0);
             }
@@ -9804,7 +10006,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             const _onClick = (Event, Index) => {
                 Event.stopImmediatePropagation();
                 Event.preventDefault();
-                if (SelectionLimit === 0) {
+                if (effectiveSelectionLimit === 0) {
                     this.on('click')(Event, Index);
                     return;
                 }
@@ -9817,7 +10019,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         selectedIndices = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
                     }
                     else {
-                        if (selectedIndices.length === SelectionLimit) {
+                        if (selectedIndices.length >= effectiveSelectionLimit) {
                             IndicesToDeselect = [selectedIndices.shift()];
                         }
                         IndicesToSelect = [Index];
@@ -9902,8 +10104,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Label, isActive } = this.memoized;
-            const { Enabling } = this;
+            const { Label, isActive, Enabling } = this;
             const disabled = (Enabling == false);
             const onClick = (Event) => {
                 if (disabled) {
@@ -9938,7 +10139,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Icon', Default: 'icons/menu.png',
-                EditorType: 'url-input', },
+                EditorType: 'url-input', AccessorsFor: 'none' },
             { Name: 'isActive', Default: false,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
@@ -9961,7 +10162,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, isActive, Icon, Color } = this;
-            const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/circle-information.png' : this.Icon);
+            const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/menu.png' : this.Icon);
             const disabled = (Enabling == false);
             const onClick = (Event) => {
                 if (disabled) {
@@ -10310,14 +10511,15 @@ class WAT_AppletView extends Component {
         const visitedPage = Applet.visitedPage;
         const openOverlays = Applet._OverlayList;
         const lastOverlayIndex = openOverlays.length - 1;
+        let topmostVisibility = undefined;
         let needsModalLayer = (openOverlays.length > 0) &&
             openOverlays[lastOverlayIndex].isModal;
         if (needsModalLayer) { // but not if the topmost modal overlay is hidden
             const SourceWidget = Applet.WidgetAtPath(openOverlays[lastOverlayIndex].SourceWidgetPath);
-            const Visibility = (SourceWidget == null
+            topmostVisibility = (SourceWidget == null
                 ? true
-                : SourceWidget.on('visibility-request')()); // "WAT_AppletOverlayView" renders '' if Visibility === false
-            if (Visibility === false) {
+                : SourceWidget.on('visibility-request')() !== false); // "WAT_AppletOverlayView" renders '' if Visibility === false
+            if (topmostVisibility === false) {
                 needsModalLayer = false;
             }
         }
@@ -10338,7 +10540,8 @@ class WAT_AppletView extends Component {
       ">
         ${openOverlays.map((Overlay, Index) => html `
           ${(Index === lastOverlayIndex) && needsModalLayer ? html `<${WAT_ModalLayer}/>` : ''}
-          <${WAT_AppletOverlayView} key=${Overlay.Name} Applet=${Applet} Overlay=${Overlay}/>
+          <${WAT_AppletOverlayView} key=${Overlay.Name} Applet=${Applet} Overlay=${Overlay}
+            Visibility=${Index === lastOverlayIndex ? topmostVisibility : undefined}/>
         `)}
       </div>` : ''}`;
     }
@@ -10449,7 +10652,7 @@ class WAT_PageView extends Component {
       ">
         ${broken === '' ? Page.on('render')() : ErrorRenderingFor(Page)}
         ${WidgetsToShow.toReversed().map((Widget) => {
-            return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Widget.Geometry}/>`;
+            return html `<${WAT_WidgetView} key=${IdOfVisual(Widget)} Widget=${Widget} Geometry=${Widget.Geometry}/>`;
         })}
       </div>`;
     }
@@ -10489,11 +10692,13 @@ class WAT_WidgetView extends Component {
     /**** componentWillUnmount ****/
     componentWillUnmount() {
         const Widget = this._Widget;
-        Widget['_View'] = undefined;
-        if (typeof Widget.componentWillUnmount === 'function') {
-            Widget.componentWillUnmount();
-        }
-        Widget.on('unmount')();
+        if (Widget['_View'] === this._Ref.current) {
+            Widget['_View'] = undefined;
+            if (typeof Widget.componentWillUnmount === 'function') {
+                Widget.componentWillUnmount();
+            }
+            Widget.on('unmount')();
+        } // otherwise another view already owns this widget's _View
     }
     /**** render ****/
     render(PropSet) {
@@ -10648,8 +10853,18 @@ class WAT_AppletOverlayView extends Component {
         // @ts-ignore TS2445 I know, it's a hack, but allow access to protected member here
         this._Overlay._View = this;
         const Base = this._Ref.current;
-        Base['_Applet'] = this._Applet;
-        Base['_Overlay'] = this._Overlay;
+        if (Base != null) { // "render" returns '' for a hidden overlay
+            Base['_Applet'] = this._Applet;
+            Base['_Overlay'] = this._Overlay;
+        }
+    }
+    /**** componentDidUpdate ****/
+    componentDidUpdate() {
+        const Base = this._Ref.current;
+        if (Base != null) { // set expandos again after overlay became visible
+            Base['_Applet'] = this._Applet;
+            Base['_Overlay'] = this._Overlay;
+        }
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
@@ -10776,9 +10991,9 @@ class WAT_AppletOverlayView extends Component {
         const fromBottom = (Anchoring[1] === 'bottom');
         /**** leave here if overlay should not be shown... ****/
         const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath);
-        const Visibility = (SourceWidget == null
-            ? true
-            : SourceWidget.on('visibility-request')()); // an invisible SourceWidget is shown if visibility-request returns true
+        const Visibility = (PropSet.Visibility != null // "WAT_AppletView" may already
+            ? PropSet.Visibility // have determined the visibility
+            : (SourceWidget == null ? true : SourceWidget.on('visibility-request')())); // an invisible SourceWidget is shown if visibility-request returns true
         if (Visibility === false) {
             return '';
         }
@@ -10848,7 +11063,7 @@ class WAT_AppletOverlayView extends Component {
                 (y < 0) || (y + Height > PaneGeometry.Height)) {
                 ContentPaneIsTooSmall = true;
             }
-            return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+            return html `<${WAT_WidgetView} key=${IdOfVisual(Widget)} Widget=${Widget} Geometry=${Geometry}/>`;
         });
         /**** actual overlay rendering ****/
         if (asDialog) {
@@ -11012,8 +11227,10 @@ class WAT_WidgetOverlayView extends Component {
         // @ts-ignore TS2445 I know, it's a hack, but allow access to protected member here
         this._Overlay._View = this;
         const Base = this._Ref.current;
-        Base['_Widget'] = this._Widget;
-        Base['_Overlay'] = this._Overlay;
+        if (Base != null) { // just a defensive guard
+            Base['_Widget'] = this._Widget;
+            Base['_Overlay'] = this._Overlay;
+        }
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
@@ -11103,7 +11320,7 @@ class WAT_WidgetOverlayView extends Component {
             : SourceWidget.Geometry);
         let ContentPane = this._shownWidgets.toReversed().map((Widget) => {
             let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
-            return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
+            return html `<${WAT_WidgetView} key=${IdOfVisual(Widget)} Widget=${Widget} Geometry=${Geometry}/>`;
         });
         /**** actual overlay rendering ****/
         return html `<div ref=${this._Ref} class="WAT WidgetOverlay" style="

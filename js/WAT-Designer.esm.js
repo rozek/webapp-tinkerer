@@ -2492,7 +2492,7 @@ function generateEmbeddableApplet() {
 /**** generateStandaloneWebApp - with separate script and without designer ****/
 function generateStandaloneWebApp(withDesigner = false) {
     const { Applet } = DesignerState;
-    const AppletName = Applet.Name || 'WAT-Applet';
+    const AppletName = (Applet.Name || 'WAT-Applet').replace(/["'`\\$<>&]/g, '_');
     const Serialization = Applet.Serialization;
     const AppletScript = Serialization.Script;
     delete Serialization.Script;
@@ -2627,7 +2627,7 @@ function generatedWebAppFromWidget(BaseWidget) {
         return;
     }
     const { Applet } = DesignerState;
-    const AppletName = BaseWidget.Name || 'WAT-Applet';
+    const AppletName = (BaseWidget.Name || 'WAT-Applet').replace(/["'`\\$<>&]/g, '_');
     const AppletWidgets = (BaseWidget.normalizedBehavior === 'basic_controls.outline'
         ? BaseWidget.bundledWidgets()
         : [BaseWidget]);
@@ -4908,7 +4908,7 @@ function WAD_DesignerButton() {
 //--                               WAD_Toolbox                                --
 //------------------------------------------------------------------------------
 function WAD_Toolbox() {
-    const { Applet, isLayouting, selectedBehavior, selectedWidgets, shelvedWidgets } = DesignerState;
+    const { Applet, isLayouting, selectedBehavior, selectedPages, selectedWidgets, shelvedWidgets } = DesignerState;
     const toggleLayouting = useCallback(() => {
         DesignerState.isLayouting = !DesignerState.isLayouting;
         WAT_rerender();
@@ -4972,7 +4972,9 @@ function WAD_Toolbox() {
           Placeholder="(please choose)" Value=""
           OptionList=${[
         (selectedBehavior == null ? '-' : '') + 'selected Behavior',
-        'Applet', 'active Page', 'selected Pages', 'selected Widgets',
+        'Applet', 'active Page',
+        (selectedPages.length === 0 ? '-' : '') + 'selected Pages',
+        (selectedWidgets.length === 0 ? '-' : '') + 'selected Widgets',
         '----', 'Applet Design', 'Applet Script'
     ]}
           onInput=${(Event) => {
