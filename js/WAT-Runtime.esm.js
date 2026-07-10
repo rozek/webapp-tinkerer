@@ -942,9 +942,6 @@ function installStylesheetForBehavior(Applet, Category, Behavior, Stylesheet) {
     let Registration = Applet._BehaviorPool[Category][Behavior.toLowerCase()];
     if (Registration == null)
         throwError(`InternalError: no registration for ${Category} behaviour ${quoted(Behavior)} found`);
-    if (!Registration.isNew) {
-        return;
-    }
     const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior.toLowerCase()}`;
     if ((Stylesheet == null) || (Stylesheet.trim() === '')) {
         let StyleElement = document.getElementById(StylesheetId);
