@@ -5164,7 +5164,7 @@ function WAD_BehaviorBrowserPane() {
     /**** handle list item rendering and selection ****/
     const groupedBehaviorList = Applet.groupedBehaviorListOfCategory(selectedCategory);
     const GroupList = [], customGroupList = Object.keys(groupedBehaviorList);
-    ['basic', 'native', 'traditional', 'mobile', 'wearable'].forEach((Prefix) => {
+    ['basic', 'native', 'other', 'mobile', 'wearable'].forEach((Prefix) => {
         const GroupName = Prefix + '_controls';
         if (GroupName in groupedBehaviorList) {
             GroupList.push(GroupName);
