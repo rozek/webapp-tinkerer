@@ -8153,6 +8153,13 @@ function WAD_LayouterLayer() {
     function handleCoverEvent(Event, Widget) {
         LayouterState.ShapeMode = 'c';
         LayouterState.pointedWidget = Widget;
+        if ( // select an unselected widget already on
+        (Event.type === 'pointerdown') && // "pointerdown" - i.e. BEFORE the
+            !Event.shiftKey && !Event.metaKey && // recognizer grabs the pointer
+            !WidgetIsSelected(Widget) // capture; selecting only later
+        ) { // in "onDragStart" would re-render during
+            selectWidgets([Widget]); // the drag, abort it and revert the widget
+        }
         LayouterState.CoverRecognizer(Event);
     }
     /**** handleShapeEvent ****/
