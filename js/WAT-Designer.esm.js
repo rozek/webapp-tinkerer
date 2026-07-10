@@ -14,26 +14,26 @@ var __rest = (this && this.__rest) || function (s, e) {
         }
     return t;
 };
-const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { 
 //  throwError,
-quoted, HTMLsafe, ValuesAreEqual, ValueIsOrdinal, ValueIsText, ValueIsPlainObject, ValueIsArray, ValueIsList, ValueIsListSatisfying, allowOrdinal, allowTextline, expectList, allowListSatisfying, allowFunction, allowOneOf, } from 'javascript-interface-library';
+quoted, HTMLsafe, ValuesAreEqual as _ValuesAreEqual, ValueIsNumber, ValueIsOrdinal, ValueIsText, ValueIsTextline, ValueIsPlainObject, ValueIsArray, ValueIsList, ValueIsListSatisfying, allowOrdinal, allowTextline, expectList, allowListSatisfying, allowFunction, allowOneOf, } from 'javascript-interface-library';
+function ValuesAreEqual(a, b, Mode) {
+    try {
+        return _ValuesAreEqual(a, b, Mode);
+    }
+    catch (Signal) {
+        console.error('ValuesAreEqual failed comparing', a, 'with', b, 'reason:', Signal);
+    }
+    ;
+    return false;
+}
 import Conversion from 'svelte-coordinate-conversion';
 const { fromViewportTo } = Conversion;
 import { html, useState, useRef, useEffect, useMemo, useCallback, } from 'htm/preact';
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_Overflows, ValueIsBehavior, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsErrorReport, allowPage, BehaviorIsIntrinsic, GestureRecognizer, useDesigner, rerender as WAT_rerender, } from "./WAT-Runtime.esm.js";
-import mapTouchToMouseFor from 'svelte-touch-to-mouse';
-mapTouchToMouseFor('.WAD.DesignerButton');
-mapTouchToMouseFor('.WAD.Dialog > .Titlebar');
-mapTouchToMouseFor('.WAD.Dialog > .leftResizer');
-mapTouchToMouseFor('.WAD.Dialog > .middleResizer');
-mapTouchToMouseFor('.WAD.Dialog > .rightResizer');
-mapTouchToMouseFor('.WAD.LayouterLayer');
-mapTouchToMouseFor('.WAD.Cover');
-mapTouchToMouseFor('.WAD.ShapeHandle');
+import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_Overflows, WAT_Orientations, ValueIsBehavior, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsErrorReport, allowPage, acceptableValue, ValueIsLineList, ValueIsNumberList, BehaviorIsIntrinsic, GestureRecognizer, useDesigner, rerender as WAT_rerender, OperationWasConfirmed, } from "./WAT-Runtime.esm.js";
 /**** constants for special input situations ****/
 const noSelection = {};
 const multipleValues = {};
@@ -68,10 +68,13 @@ appendStyle(`
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px;
     padding:0px;
-    background:none; color:black;
+    background:none;
+
+    color:black;
     font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
     font-size:14px; font-weight:400; line-height:1.4; color:black;
     text-align:left; text-shadow:none;
+
     z-index:2000000;
     pointer-events:none;
   }
@@ -209,10 +212,6 @@ appendStyle(`
     background:#e8f0ff; padding:0px 2px 0px 2px;
     pointer-events:auto;
   }
-  .WAD.DropDown > select:read-only {
-    background:transparent;
-  }
-
 /**** PseudoDropDown ****/
 
   .WAD.PseudoDropDown {
@@ -387,7 +386,7 @@ appendStyle(`
   .WAD.Fold {
     display:block; position:relative;
     left:0px; top:0px; width:100%; bottom:auto;
-    margin:none; margin-bottom:2px;
+    margin:0px; margin-bottom:2px;
   }
 
   .WAD.Fold-Header {
@@ -610,6 +609,9 @@ appendStyle(`
 
 
 `.trimLeft());
+/**** AssetsBase, IconFolder ****/
+let AssetsBase = 'https://rozek.github.io/webapp-tinkerer/';
+let IconFolder = AssetsBase + 'icons/';
 //------------------------------------------------------------------------------
 //--                              Designer State                              --
 //------------------------------------------------------------------------------
@@ -624,7 +626,7 @@ const DesignerState = {
     },
     Toolbox: {
         Title: 'Toolbox', View: undefined,
-        x: NaN, y: NaN, Width: 132, Height: 194,
+        x: NaN, y: NaN, Width: 134, Height: 194,
     },
     Inspector: {
         Title: 'Inspector', View: undefined,
@@ -662,6 +664,7 @@ const DesignerState = {
         Title: 'Synopsis Editor', View: undefined,
         x: NaN, y: NaN, Width: 320, Height: 240,
         minWidth: 320, minHeight: 240,
+        Scope: 'Applet',
     },
     ValueEditor: {
         Title: 'Value Editor', View: undefined,
@@ -719,7 +722,7 @@ function selectPages(PageList) {
 function sortedPageSelection() {
     const IndexSet = [];
     DesignerState.selectedPages.forEach((Page) => IndexSet[Page.Index] = Page);
-    const IndexList = Object.keys(IndexSet).map(Number).sort();
+    const IndexList = Object.keys(IndexSet).map(Number).sort((a, b) => a - b);
     return IndexList.map((Index) => IndexSet[Index]);
 }
 /**** selectWidgets ****/
@@ -737,7 +740,7 @@ function selectWidgets(SelectionA, SelectionB = []) {
 function sortedWidgetSelection() {
     const IndexSet = [];
     DesignerState.selectedWidgets.forEach((Widget) => IndexSet[Widget.Index] = Widget);
-    const IndexList = Object.keys(IndexSet).map(Number).sort();
+    const IndexList = Object.keys(IndexSet).map(Number).sort((a, b) => a - b);
     return IndexList.map((Index) => IndexSet[Index]);
 }
 /**** WidgetIsSelected ****/
@@ -764,7 +767,7 @@ function commonValueItemOf(ValueList, Entry) {
         case undefined:
         case noSelection:
         case multipleValues: return commonValue;
-        default: return (typeof commonValue === 'object'
+        default: return (typeof commonValue === 'object' // also works for arrays
             ? commonValue[Entry]
             : commonValue);
     }
@@ -780,26 +783,20 @@ function commonListLiteralOf(ValueList) {
         default: return commonValue.join('\n');
     }
 }
-//----------------------------------------------------------------------------//
-//                           Confirmation Handling                            //
-//----------------------------------------------------------------------------//
-function OperationWasConfirmed(Message) {
-    let ConfirmationCode = Math.round(Math.random() * 10000).toString();
-    ConfirmationCode += '0000'.slice(ConfirmationCode.length);
-    Message = (Message || 'This operation can not be undone.') + '\n\n' +
-        'Please, enter the following number if you want to proceed:\n\n' +
-        '   ' + ConfirmationCode + '\n\n' +
-        'Otherwise, the operation will be cancelled';
-    let UserInput = window.prompt(Message, '');
-    if (UserInput === ConfirmationCode) {
-        return true;
-    }
-    else {
-        window.alert('Operation will be cancelled');
-        return false;
-    }
+/**** commonListValueOf - like commonValueOf, but sentinel-safe for lists ****/
+function commonListValueOf(ValueList) {
+    const commonValue = commonValueOf(ValueList);
+    return ((commonValue === noSelection) || (commonValue === multipleValues)
+        ? ValueList.filter(ValueIsList)[0] || []
+        : commonValue);
 }
-//------------------------------------------------------------------------------
+/**** commonObjectValueOf - like commonValueOf, but sentinel-safe f. objects ****/
+function commonObjectValueOf(ValueList) {
+    const commonValue = commonValueOf(ValueList);
+    return ((commonValue === noSelection) || (commonValue === multipleValues)
+        ? ValueList.filter(ValueIsPlainObject)[0] || {}
+        : commonValue);
+} //------------------------------------------------------------------------------
 //--                             Dialog Handling                              --
 //------------------------------------------------------------------------------
 const DialogList = []; // dialogs are only visible if Designer is open
@@ -861,7 +858,7 @@ function WAD_Dialog(PropSet) {
     const DragInfo = useMemo(() => ({
         Mode: undefined,
         StartX: NaN, StartY: NaN, initialGeometry: undefined
-    }));
+    }), []);
     /**** dialog dragging and resizing ****/
     const handleDrag = useCallback((dx, dy) => {
         if (DragInfo.Mode === 'drag') {
@@ -1073,7 +1070,7 @@ function WAD_Icon(PropSet) {
                 onClick(Event);
             }
         }
-    }, [enabled]);
+    }, [enabled, onClick]);
     let Classes = ['WAD Icon'];
     if (enabled === false) {
         Classes.push('disabled');
@@ -1127,7 +1124,7 @@ function WAD_Checkbox(PropSet) {
     useEffect(() => CheckboxRef.current.indeterminate = indeterminate, [indeterminate]);
     return html `<div class="WAD Checkbox" style=${style}>
       <input type="checkbox" ref=${CheckboxRef}
-        disabled=${(enabled === false) && (readonly === false)}
+        disabled=${(enabled === false) || (readonly === true)}
         checked=${checked}
         ...${otherProps}
       />
@@ -1137,6 +1134,7 @@ function WAD_Checkbox(PropSet) {
 //--                            WAD_TextlineInput                             --
 //------------------------------------------------------------------------------
 function WAD_TextlineInput(PropSet) {
+    var _a;
     let { Type, // for similar input elements
     enabled, readonly, Value, Placeholder, minLength, maxLength, multiple, Pattern, SpellChecking, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
@@ -1161,15 +1159,16 @@ function WAD_TextlineInput(PropSet) {
             break;
         default: ValueToShow = Value;
     }
+    let wrong = '';
     if (document.activeElement === InputElement.current) {
+        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
         ValueToShow = shownValue.current;
     }
     else {
         shownValue.current = ValueToShow;
     }
-    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
     /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
     let SuggestionList = '';
     if ((Suggestions != null) && (Suggestions.length > 0)) {
         SuggestionList = html `<datalist id=${SuggestionId}>
@@ -1209,6 +1208,7 @@ function WAD_TextlineInput(PropSet) {
 //--                             WAD_NumberInput                              --
 //------------------------------------------------------------------------------
 function WAD_NumberInput(PropSet) {
+    var _a;
     let { enabled, readonly, Value, Placeholder, Suggestions, Minimum, Maximum, StepValue, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
     , ["enabled", "readonly", "Value", "Placeholder", "Suggestions", "Minimum", "Maximum", "StepValue", "onInput", "onBlur", "style"]);
@@ -1232,15 +1232,16 @@ function WAD_NumberInput(PropSet) {
             break;
         default: ValueToShow = Value;
     }
+    let wrong = '';
     if (document.activeElement === InputElement.current) {
+        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
         ValueToShow = shownValue.current;
     }
     else {
         shownValue.current = ValueToShow;
     }
-    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
     /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
     let SuggestionList = '';
     if ((Suggestions != null) && (Suggestions.length > 0)) {
         SuggestionList = html `<datalist id=${SuggestionId}>
@@ -1280,7 +1281,7 @@ function WAD_NumberInput(PropSet) {
 //------------------------------------------------------------------------------
 function WAD_IntegerInput(PropSet) {
     PropSet = Object.assign({}, PropSet);
-    if (PropSet.Value != null) {
+    if (ValueIsNumber(PropSet.Value)) {
         PropSet.Value = Math.round(PropSet.Value);
     }
     if (PropSet.Minimum != null) {
@@ -1290,7 +1291,7 @@ function WAD_IntegerInput(PropSet) {
         PropSet.Maximum = Math.round(PropSet.Maximum);
     }
     if (PropSet.Suggestions != null) {
-        PropSet.Suggestions = PropSet.Suggestions.map((Value) => Math.round);
+        PropSet.Suggestions = PropSet.Suggestions.map((Value) => Math.round(Value));
     }
     PropSet.StepValue = 1;
     return WAD_NumberInput(PropSet);
@@ -1299,6 +1300,7 @@ function WAD_IntegerInput(PropSet) {
 //--                                WAD_Slider                                --
 //------------------------------------------------------------------------------
 function WAD_Slider(PropSet) {
+    var _a;
     let { enabled, readonly, Value, Minimum, Maximum, StepValue, Hashmarks, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
     , ["enabled", "readonly", "Value", "Minimum", "Maximum", "StepValue", "Hashmarks", "onInput", "onBlur", "style"]);
@@ -1318,15 +1320,16 @@ function WAD_Slider(PropSet) {
             break;
         default: ValueToShow = Value;
     }
+    let wrong = '';
     if (document.activeElement === InputElement.current) {
+        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
         ValueToShow = shownValue.current;
     }
     else {
         shownValue.current = ValueToShow;
     }
-    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
     /**** Hashmark Handling ****/
-    const HashmarkId = useMemo(() => newId() + '-Hashmarks');
+    const HashmarkId = useMemo(() => newId() + '-Hashmarks', []);
     let HashmarkList = '';
     if ((Hashmarks != null) && (Hashmarks.length > 0)) {
         HashmarkList = html `\n<datalist id=${HashmarkId}>
@@ -1368,6 +1371,7 @@ function WAD_Slider(PropSet) {
 //--                              WAD_TimeInput                               --
 //------------------------------------------------------------------------------
 function WAD_TimeInput(PropSet) {
+    var _a;
     let { Type, // for similar input elements
     enabled, readonly, Value, Placeholder, Minimum, Maximum, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
@@ -1392,15 +1396,16 @@ function WAD_TimeInput(PropSet) {
             break;
         default: ValueToShow = Value;
     }
+    let wrong = '';
     if (document.activeElement === InputElement.current) {
+        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
         ValueToShow = shownValue.current;
     }
     else {
         shownValue.current = ValueToShow;
     }
-    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
     /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
     let SuggestionList = '';
     if ((Suggestions != null) && (Suggestions.length > 0)) {
         SuggestionList = html `<datalist id=${SuggestionId}>
@@ -1425,7 +1430,7 @@ function WAD_TimeInput(PropSet) {
         }
     });
     /**** actual Rendering ****/
-    return html `<div class="WAD TextLineInput ${wrong}" style=${style}>
+    return html `<div class="WAD TimeInput ${wrong}" style=${style}>
       <input type=${Type || 'time'}
         disabled=${enabled === false} readonly=${readonly}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
@@ -1462,8 +1467,8 @@ function WAD_DropDown(PropSet) {
         ${Placeholder == null
         ? ''
         : html `<option value="" disabled>${Placeholder}</option>`}
-        <option disabled selected=${(Value || '') === ''}>(please select)</>
-        ${(Options || []).map((Option) => html `<option selected=${Option === Value}>${Option}</>`)}
+        <option disabled selected=${(ValueToShow || '') === ''}>(please select)</>
+        ${(Options || []).map((Option) => html `<option selected=${Option === ValueToShow}>${Option}</>`)}
       </select>
     </>`;
 }
@@ -1523,7 +1528,7 @@ function WAD_BehaviorDropDown(PropSet) {
         return html `<optgroup label="${Prefix}">
             ${SuffixList.map((Suffix) => html `<option
               value=${Prefix + '.' + Suffix} selected=${ValueToShow === Prefix + '.' + Suffix}
-            >${Suffix}</option`)}
+            >${Suffix}</option>`)}
           </optgroup>`;
     })}
       </select>
@@ -1545,7 +1550,7 @@ function WAD_BehaviorPseudoDropDown(PropSet) {
         return html `<optgroup label="${Prefix}">
             ${SuffixList.map((Suffix) => html `<option
               value=${Prefix + '.' + Suffix}
-            >${Suffix}</option`)}
+            >${Suffix}</option>`)}
           </optgroup>`;
     })}
       </select>
@@ -1568,6 +1573,7 @@ function WAD_PseudoFileInput(PropSet) {
 //--                              WAD_ColorInput                              --
 //------------------------------------------------------------------------------
 function WAD_ColorInput(PropSet) {
+    var _a;
     let { enabled, readonly, Value, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
     /**** Value Handling ****/
     , ["enabled", "readonly", "Value", "Suggestions", "onInput", "onBlur", "style"]);
@@ -1589,15 +1595,16 @@ function WAD_ColorInput(PropSet) {
             break;
         default: ValueToShow = Value;
     }
+    let wrong = '';
     if (document.activeElement === InputElement.current) {
+        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
         ValueToShow = shownValue.current;
     }
     else {
         shownValue.current = ValueToShow;
     }
-    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
     /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions');
+    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
     let SuggestionList = '';
     if ((Suggestions != null) && (Suggestions.length > 0)) {
         SuggestionList = html `<datalist id=${SuggestionId}>
@@ -1635,6 +1642,7 @@ function WAD_ColorInput(PropSet) {
 //--                              WAD_TextInput                               --
 //------------------------------------------------------------------------------
 function WAD_TextInput(PropSet) {
+    var _a;
     let { enabled, readonly, Value, Placeholder, minLength, maxLength, Resizability, LineWrapping, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "Placeholder", "minLength", "maxLength", "Resizability", "LineWrapping", "onInput", "onBlur", "style"]);
     const shownValue = useRef('');
     const InputElement = useRef(null);
@@ -1655,13 +1663,14 @@ function WAD_TextInput(PropSet) {
             break;
         default: ValueToShow = Value;
     }
+    let wrong = '';
     if (document.activeElement === InputElement.current) {
+        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
         ValueToShow = shownValue.current;
     }
     else {
         shownValue.current = ValueToShow;
     }
-    const wrong = (ValueToShow !== shownValue.current ? 'wrong' : '');
     const _onInput = useCallback((Event) => {
         Event.stopPropagation();
         //    Event.preventDefault() // NO!
@@ -1681,8 +1690,8 @@ function WAD_TextInput(PropSet) {
     return html `<div class="WAD TextInput ${wrong}" style=${style}>
       <textarea
         disabled=${enabled === false} readonly=${readonly} style="${LineWrapping == true
-        ? 'white-space:pre; overflow-wrap:break-word; hyphens:auto'
-        : undefined}; resize:${Resizability || 'none'}"
+        ? 'white-space:pre-wrap; overflow-wrap:break-word; hyphens:auto'
+        : 'white-space:pre'}; resize:${Resizability || 'none'}"
         minlength=${minLength} maxlength=${maxLength}
         ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
         ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
@@ -1705,7 +1714,7 @@ function WAD_FlatListView(PropSet) {
     allowFunction('item selection callback', onItemSelected);
     allowFunction('item deselection callback', onItemDeselected);
     if (ItemRenderer == null) {
-        ItemRenderer = (Item) => html `${Item + ''}`;
+        ItemRenderer = (Item) => HTMLsafe(Item + '');
     }
     if (Placeholder == null) {
         Placeholder = '(empty)';
@@ -1730,15 +1739,18 @@ function WAD_FlatListView(PropSet) {
     });
     if (selectedIndices.length > SelectionLimit) {
         const deselectedIndices = selectedIndices.slice(SelectionLimit);
+        const truncatedIndices = selectedIndices.slice(0, SelectionLimit);
         selectedIndices.length = SelectionLimit;
-        if (onSelectionChange != null) {
-            onSelectionChange(selectedIndices);
-        }
-        if (onItemDeselected != null) {
-            deselectedIndices.forEach((deselectedIndex) => {
-                onItemDeselected(List[deselectedIndex], deselectedIndex);
-            });
-        }
+        setTimeout(() => {
+            if (onSelectionChange != null) {
+                onSelectionChange(truncatedIndices);
+            }
+            if (onItemDeselected != null) {
+                deselectedIndices.forEach((deselectedIndex) => {
+                    onItemDeselected(List[deselectedIndex], deselectedIndex);
+                });
+            }
+        }, 0);
     }
     function _onClick(Event, Index) {
         Event.stopImmediatePropagation();
@@ -1801,7 +1813,7 @@ function WAD_FlatListView(PropSet) {
       ${List.length === 0
         ? html `<div class="Placeholder"><div>${Placeholder}</></>`
         : List.map((Item, Index) => html `<div
-            class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
+            class="ListItem ${ItemIsSelected(Index) ? 'selected' : ''}"
             dangerouslySetInnerHTML=${{
             __html: ItemRenderer(Item, Index, ItemIsSelected(Index))
         }}
@@ -1928,7 +1940,7 @@ function WAD_NestedListView(PropSet) {
                 PathsToDeselect = selectedPaths.filter((Path) => (!ItemInContainer(Path, ContainerPath)));
                 selectedPaths = selectedPaths.filter((Path) => (ItemInContainer(Path, ContainerPath)));
                 if (selectedPaths.length === SelectionLimit) {
-                    PathsToDeselect.push([selectedPaths.shift()]);
+                    PathsToDeselect.push(selectedPaths.shift());
                 }
                 PathsToSelect = [ItemPath];
                 selectedPaths.push(ItemPath);
@@ -1988,7 +2000,7 @@ function WAD_NestedListView(PropSet) {
         }
     }
     function renderedItem(Item, Path) {
-        const Offset = (Path.length - 1) * Indentation;
+        const Offset = (Path.length > 1 ? Indentation : 0);
         const isSelected = ItemIsSelected(Path);
         const isExpanded = ItemIsExpanded(Path);
         let ContentList = ContentListOfItem(Item);
@@ -2080,7 +2092,7 @@ function WAD_PropertyConfigurator(PropSet) {
             <${WAD_Gap}/>
             <${WAD_DropDown}
               enabled=${Enabling} readonly=${readonly}
-              Value=${Value == true ? TrueValue : FalseValue}
+              Value=${(Value === noSelection) || (Value === multipleValues) ? Value : (Value == true ? TrueValue : FalseValue)}
               Options=${[FalseValue, TrueValue]}
               onInput=${(Event) => onInput(Event.target.value === TrueValue)}
             />
@@ -2213,7 +2225,7 @@ function WAD_PropertyConfigurator(PropSet) {
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
             <${WAD_Gap}/>
-            <${WAD_TimeInput} Type="date-time-local"
+            <${WAD_TimeInput} Type="datetime-local"
               enabled=${Enabling} readonly=${readonly}
               Value=${Value} Placeholder=${Placeholder} Suggestions=${Suggestions}
               Minimum=${minValue} Maximum=${maxValue}
@@ -2265,7 +2277,7 @@ function WAD_PropertyConfigurator(PropSet) {
           <${WAD_horizontally}>
             <${WAD_Label}>${Label}</>
             <${WAD_Gap}/>
-            <${WAD_ColorInput} Type="week"
+            <${WAD_ColorInput}
               enabled=${Enabling} readonly=${readonly}
               Value=${Value} Suggestions=${Suggestions}
               onInput=${(Event) => onInput(Event.target.value)}
@@ -2367,7 +2379,7 @@ function WAD_PropertyConfigurator(PropSet) {
             Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
-            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/, '\n').split('\n'))}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n'))}
           />
         `;
         case 'numberlist-input':
@@ -2389,7 +2401,7 @@ function WAD_PropertyConfigurator(PropSet) {
             Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
-            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/, '\n').split('\n').map((Line) => parseFloat(Line)))}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n').map((Line) => parseFloat(Line)))}
           />
         `;
         case 'integerlist-input':
@@ -2411,7 +2423,7 @@ function WAD_PropertyConfigurator(PropSet) {
             Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
-            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/, '\n').split('\n').map((Line) => parseFloat(Line)))}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n').map((Line) => parseInt(Line, 10)))}
           />
         `;
     }
@@ -2436,14 +2448,14 @@ function looksLikeBehaviorSet(Serialization) {
 }
 /**** looksLikeApplet ****/
 function looksLikeApplet(Serialization) {
-    return (ValueIsPlainObject(Serialization) && ((Serialization.PageList == null) ||
-        ValueIsListSatisfying(Serialization.PageList, looksLikePage)));
+    return (ValueIsPlainObject(Serialization) &&
+        ValueIsListSatisfying(Serialization.PageList, looksLikePage)); // a proper "PageList" identifies an applet
 }
 /**** looksLikePage ****/
 function looksLikePage(Serialization) {
     return (ValueIsPlainObject(Serialization) &&
-        !('PageList' in Serialization) && ((Serialization.WidgetList == null) ||
-        ValueIsListSatisfying(Serialization.WidgetList, looksLikeWidget)));
+        (Serialization.PageList == null) &&
+        ValueIsListSatisfying(Serialization.WidgetList, looksLikeWidget)); // a proper "WidgetList" identifies a page
 }
 /**** looksLikePageList ****/
 function looksLikePageList(Serialization) {
@@ -2453,7 +2465,7 @@ function looksLikePageList(Serialization) {
 function looksLikeWidget(Serialization) {
     return (ValueIsPlainObject(Serialization) &&
         (Serialization.PageList == null) &&
-        (Serialization.WidgetList == null));
+        (Serialization.WidgetList == null)); // neither "PageList" nor "WidgetList"? that should be a widget
 }
 /**** looksLikeWidgetList ****/
 function looksLikeWidgetList(Serialization) {
@@ -2467,7 +2479,7 @@ function generateEmbeddableApplet() {
     const { Applet } = DesignerState;
     const AppletName = Applet.Name || 'WAT-Applet';
     const Serialization = JSON.stringify(Applet.Serialization);
-    const AppletSource = `${'<'}script type="wat/applet">${Serialization}${'<'}/script>`;
+    const AppletSource = `${'<'}script type="wat/applet">${Serialization.replace(/<\//g, '<\\/')}${'<'}/script>`;
     const encodedSource = (new TextEncoder()).encode(AppletSource);
     const decodedSource = (new TextDecoder()).decode(encodedSource);
     if (AppletSource === decodedSource) {
@@ -2487,7 +2499,7 @@ function generateStandaloneWebApp(withDesigner = false) {
     const { HeadExtensions, minWidth, maxWidth, minHeight, maxHeight, toBeCentered, withMobileFrame, expectedOrientation } = Applet;
     const AppletSource = `
 <!DOCTYPE html>
-<html lang="en" charset="utf-8" style="width:100%">
+<html lang="en" style="width:100%">
  <head>
   <meta charset="utf-8"/>
 
@@ -2500,6 +2512,7 @@ function generateStandaloneWebApp(withDesigner = false) {
     html, body { width:100%; height:100%; width:100vw; height:100vh; margin:0px; padding:0px }
     html       { overflow:hidden scroll }
   </style>
+  <link rel="stylesheet" href="https://rozek.github.io/marked-katex-extension/dist/katex.min.css">
 
   ${'<'}script type="importmap">
   {
@@ -2511,11 +2524,12 @@ function generateStandaloneWebApp(withDesigner = false) {
       "nanoid-dictionary":           "https://rozek.github.io/nanoid-dictionary/dist/nanoid-dictionary.esm.js",
       "svelte-coordinate-conversion":"https://rozek.github.io/svelte-coordinate-conversion/dist/svelte-coordinate-conversion.esm.js",
       "svelte-touch-to-mouse":       "https://rozek.github.io/svelte-touch-to-mouse/dist/svelte-touch-to-mouse.esm.js",
-      "wat-runtime":                 "https://rozek.github.io/webapp-tinkerer/js/wat-runtime.esm.js",
-      "wat-designer":                "https://rozek.github.io/webapp-tinkerer/js/wat-designer.esm.js",
+
+      "wat-runtime": "https://rozek.github.io/webapp-tinkerer/js/wat-runtime.esm.js",
+      "wat-designer":"https://rozek.github.io/webapp-tinkerer/js/wat-designer.esm.js",
 
       "marked":                "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js",
-      "marked-katex-extension":"https://cdn.jsdelivr.net/npm/marked-katex-extension/+esm",
+      "marked-katex-extension":"https://rozek.github.io/marked-katex-extension/dist/marked-katex-extension.esm.js",
       "marked-highlight":      "https://cdn.jsdelivr.net/npm/marked-highlight/+esm",
       "highlight.js/lib/core":                "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/highlight.min.js",
       "highlight.js/lib/languages/css":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/css.min.js",
@@ -2523,9 +2537,7 @@ function generateStandaloneWebApp(withDesigner = false) {
       "highlight.js/lib/languages/java":      "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/java.min.js",
       "highlight.js/lib/languages/json":      "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/json.min.js",
       "highlight.js/lib/languages/typescript":"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/typescript.min.js",
-      "highlight.js/lib/languages/xml":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/xml.min.js",
-
-      "katex": "https://cdn.jsdelivr.net/npm/katex/+esm"
+      "highlight.js/lib/languages/xml":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/xml.min.js"
     }
   }
   ${'<'}/script>
@@ -2548,8 +2560,8 @@ function generateStandaloneWebApp(withDesigner = false) {
   const ViewportWidth  = window.innerWidth
   const ViewportHeight = window.innerHeight
 
-  let Width  = Math.max(minWidth,  Math.min(ViewportWidth,  maxWidth  == null ? Infinity : maxWidth))
-  let Height = Math.max(minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight))
+  let Width  = Math.max(minWidth  == null ? 0 : minWidth,  Math.min(ViewportWidth,  maxWidth  == null ? Infinity : maxWidth))
+  let Height = Math.max(minHeight == null ? 0 : minHeight, Math.min(ViewportHeight, maxHeight == null ? Infinity : maxHeight))
                         // uses any available space - does not use designer size
 
   if ((Width >= ViewportWidth) && (Height >= ViewportHeight)) {
@@ -2579,7 +2591,7 @@ function generateStandaloneWebApp(withDesigner = false) {
   }
 
   document.write(\`
-  <div type="wat/applet" name="${AppletName}" class="${withMobileFrame ? 'withMobileFrame' : ''}" style="
+  <div type="wat/applet" name="${HTMLsafe(AppletName)}" class="\${withMobileFrame ? 'withMobileFrame' : ''}" style="
     display:block; position:absolute;
     left:\${OffsetX}px; top:\${OffsetY}px; width:\${Width}px; height:\${Height}px;
     \${minWidth  == null ? '' : \`min-width:\${minWidth}px; \`}
@@ -2591,10 +2603,10 @@ function generateStandaloneWebApp(withDesigner = false) {
   \`)
   ${'<'}/script>
 
-  ${'<'}script type="wat/applet">${JSON.stringify(Serialization)}${'<'}/script>
+  ${'<'}script type="wat/applet">${JSON.stringify(Serialization).replace(/<\//g, '<\\/')}${'<'}/script>
   ${(AppletScript || '').trim() === ''
         ? ''
-        : `${'<'}script type="wat/applet-script">${AppletScript}\n${'<'}/script>`}
+        : `${'<'}script type="wat/applet-script">${AppletScript.replace(/<\/script/gi, '<\\/script')}\n${'<'}/script>`}
  </head>
  <body></body>
 </html>
@@ -2608,7 +2620,201 @@ function generateStandaloneWebApp(withDesigner = false) {
         window.alert('this WebApp generation is not stable');
     }
 }
-//------------------------------------------------------------------------------
+/**** generatedWebAppFromWidget ****/
+function generatedWebAppFromWidget(BaseWidget) {
+    if (BaseWidget == null) {
+        window.alert('No Widget selected');
+        return;
+    }
+    const { Applet } = DesignerState;
+    const AppletName = BaseWidget.Name || 'WAT-Applet';
+    const AppletWidgets = (BaseWidget.normalizedBehavior === 'basic_controls.outline'
+        ? BaseWidget.bundledWidgets()
+        : [BaseWidget]);
+    const { Width, Height } = BaseWidget.Size;
+    let { maxWidth, maxHeight, initialMaxWidth, initialMaxHeight } = BaseWidget;
+    if (maxWidth == null) {
+        maxWidth = Width;
+    }
+    if (maxHeight == null) {
+        maxHeight = Height;
+    }
+    if (initialMaxWidth == null) {
+        initialMaxWidth = maxWidth;
+    }
+    if (initialMaxHeight == null) {
+        initialMaxHeight = maxHeight;
+    }
+    const serializedWidgets = AppletWidgets.map((Widget) => Widget.Serialization);
+    const BaseGeometry = BaseWidget.Geometry;
+    const PaneGeometry = { x: 0, y: 0, Width, Height };
+    serializedWidgets.forEach((Serialization, i) => {
+        const Widget = AppletWidgets[i];
+        let Geometry = GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
+        updateGeometryOf(Serialization, Geometry, PaneGeometry);
+    });
+    /**** updateGeometryOf ****/
+    function updateGeometryOf(Serialization, WidgetGeometry, PaneGeometry) {
+        let { x: newX, y: newY, Width: newWidth, Height: newHeight } = WidgetGeometry;
+        const curAnchors = Serialization.Anchors || ['left-width', 'top-height'];
+        /**** keep any new Width and Height settings within confiured limits ****/
+        newWidth = Math.max(0, Serialization.minWidth || 0, Math.min(newWidth, Serialization.maxWidth == null ? Infinity : Serialization.maxWidth));
+        newHeight = Math.max(0, Serialization.minHeight || 0, Math.min(newHeight, Serialization.maxHeight == null ? Infinity : Serialization.maxHeight));
+        /**** now update any affected Offsets ****/
+        const { Width: outerWidth, Height: outerHeight } = PaneGeometry;
+        switch (curAnchors[0] || 'left-width') {
+            case 'left-width':
+                Serialization.Offsets[0] = newX;
+                Serialization.Offsets[1] = newWidth;
+                break;
+            case 'width-right':
+                Serialization.Offsets[0] = newWidth;
+                Serialization.Offsets[1] = outerWidth - newX - newWidth;
+                break;
+            case 'left-right':
+                Serialization.Offsets[0] = newX;
+                Serialization.Offsets[1] = outerWidth - newX - newWidth;
+        }
+        switch (curAnchors[1] || 'top-height') {
+            case 'top-height':
+                Serialization.Offsets[2] = newY;
+                Serialization.Offsets[3] = newHeight;
+                break;
+            case 'height-bottom':
+                Serialization.Offsets[2] = newHeight;
+                Serialization.Offsets[3] = outerHeight - newY - newHeight;
+                break;
+            case 'top-bottom':
+                Serialization.Offsets[2] = newY;
+                Serialization.Offsets[3] = outerHeight - newY - newHeight;
+        }
+    }
+    const customBehaviorSet = { widget: {} };
+    AppletWidgets.forEach((Widget) => {
+        const Behavior = Widget.Behavior;
+        if (Behavior == null) {
+            return;
+        }
+        if (!BehaviorIsIntrinsic(Behavior)) {
+            const normalizedName = Behavior.toLowerCase();
+            const Registration = Applet._BehaviorPool.widget[normalizedName];
+            if (Registration != null) {
+                customBehaviorSet.widget[Registration.Name] = Registration.activeScript;
+            }
+        }
+    });
+    const Serialization = {
+        Name: AppletName, BehaviorSet: customBehaviorSet,
+        Width, Height, toBeCentered: true, withMobileFrame: false,
+        minWidth: Width, maxWidth, minHeight: Height, maxHeight,
+        PageList: [{ WidgetList: serializedWidgets }]
+    };
+    const AppletSource = `
+<!DOCTYPE html>
+<html lang="en" style="width:100%">
+ <head>
+  <meta charset="utf-8"/>
+
+  <meta name="viewport"         content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"/>
+  <meta name="format-detection" content="telephone=no">
+
+  <style>
+    html { text-size-adjust:100% }
+
+    html, body { width:100%; height:100%; width:100vw; height:100vh; margin:0px; padding:0px }
+    html       { overflow:hidden }
+  </style>
+  <link rel="stylesheet" href="https://rozek.github.io/marked-katex-extension/dist/katex.min.css">
+
+  ${'<'}script type="importmap">
+  {
+    "imports": {
+      "javascript-interface-library":"https://rozek.github.io/javascript-interface-library/dist/javascript-interface-library.esm.js",
+      "htm/preact":                  "https://rozek.github.io/htm/preact/standalone.module.js",
+      "hyperactiv":                  "https://rozek.github.io/hyperactiv/dist/index.mjs",
+      "nanoid":                      "https://rozek.github.io/nanoid/dist/nanoid.esm.js",
+      "nanoid-dictionary":           "https://rozek.github.io/nanoid-dictionary/dist/nanoid-dictionary.esm.js",
+      "svelte-coordinate-conversion":"https://rozek.github.io/svelte-coordinate-conversion/dist/svelte-coordinate-conversion.esm.js",
+      "svelte-touch-to-mouse":       "https://rozek.github.io/svelte-touch-to-mouse/dist/svelte-touch-to-mouse.esm.js",
+
+      "wat-runtime": "https://rozek.github.io/webapp-tinkerer/js/wat-runtime.esm.js",
+      "wat-designer":"https://rozek.github.io/webapp-tinkerer/js/wat-designer.esm.js",
+
+      "marked":                "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js",
+      "marked-katex-extension":"https://rozek.github.io/marked-katex-extension/dist/marked-katex-extension.esm.js",
+      "marked-highlight":      "https://cdn.jsdelivr.net/npm/marked-highlight/+esm",
+      "highlight.js/lib/core":                "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/highlight.min.js",
+      "highlight.js/lib/languages/css":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/css.min.js",
+      "highlight.js/lib/languages/javascript":"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/javascript.min.js",
+      "highlight.js/lib/languages/java":      "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/java.min.js",
+      "highlight.js/lib/languages/json":      "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/json.min.js",
+      "highlight.js/lib/languages/typescript":"https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/typescript.min.js",
+      "highlight.js/lib/languages/xml":       "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/languages/xml.min.js"
+    }
+  }
+  ${'<'}/script>
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/localforage.min.js">${'<'}/script>
+  ${'<'}script src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js" type="module">${'<'}/script>
+
+  ${'<'}script>
+  AppletFromWidget = true      // global variable indicating this type of applet
+
+  let [
+    minWidth,maxWidth, minHeight,maxHeight, initialMaxWidth,initialMaxHeight,
+    toBeCentered,withMobileFrame
+  ] = [
+    ${Width},${maxWidth}, ${Height},${maxHeight}, ${initialMaxWidth},${initialMaxHeight},
+    true,false
+  ]
+
+  const ViewportWidth  = window.innerWidth
+  const ViewportHeight = window.innerHeight
+
+  let Width  = Math.max(minWidth,  Math.min(ViewportWidth,  initialMaxWidth  || maxWidth  || Infinity))
+  let Height = Math.max(minHeight, Math.min(ViewportHeight, initialMaxHeight || maxHeight || Infinity))
+
+  let OffsetX = (
+    (Width < ViewportWidth) && toBeCentered
+    ? Math.floor((ViewportWidth-Width)/2)
+    : 0
+  )
+  let OffsetY = (
+    (Height < ViewportHeight) && toBeCentered
+    ? Math.floor((ViewportHeight-Height)/2)
+    : 0
+  )
+
+  document.write(\`
+ <div style="
+   display:flex; justify-content:center; align-items:center;
+   position:absolute; left:0px; top:0px; right:0px; bottom:0px;
+ ">
+  <div type="wat/applet" name="${HTMLsafe(AppletName)}" style="
+    display:block; position:relative;
+    width:\${Width}px; height:\${Height}px;
+    \${minWidth  == null ? '' : \`min-width:\${minWidth}px; \`}
+    \${maxWidth  == null ? '' : \`max-width:\${maxWidth}px; \`}
+    \${minHeight == null ? '' : \`min-height:\${minHeight}px; \`}
+    \${maxHeight == null ? '' : \`max-height:\${maxHeight}px; \`}
+  "></div>
+ </div>
+  \`)
+  ${'<'}/script>
+
+  ${'<'}script type="wat/applet">${JSON.stringify(Serialization).replace(/<\//g, '<\\/')}${'<'}/script>
+ </head>
+ <body></body>
+</html>
+    `.trim();
+    const encodedSource = (new TextEncoder()).encode(AppletSource);
+    const decodedSource = (new TextDecoder()).decode(encodedSource);
+    if (AppletSource === decodedSource) {
+        download(encodedSource, AppletName + '.html', 'text/html;charset=utf-8');
+    }
+    else {
+        window.alert('this WebApp generation is not stable');
+    }
+} //------------------------------------------------------------------------------
 //--                                  Shelf                                   --
 //------------------------------------------------------------------------------
 Object.assign(DesignerState, {
@@ -2660,9 +2866,10 @@ function visitPage(Page) {
 }
 /**** validateVisitHistory ****/
 function validateVisitHistory() {
+    var _a;
     const VisitHistory = DesignerState.VisitHistory; // reference, not copy!
     for (let i = VisitHistory.length - 1; i >= 0; i--) {
-        if (VisitHistory[i].Applet == null) {
+        if (((_a = VisitHistory[i]) === null || _a === void 0 ? void 0 : _a.Applet) == null) {
             VisitHistory.splice(i, 1);
             if (DesignerState.VisitIndex >= i) {
                 DesignerState.VisitIndex -= 1;
@@ -2694,6 +2901,7 @@ function doOperation(Operation) {
             Operation.extend(prevOperation); // may fail
             if (prevOperation.isIrrelevant) {
                 DesignerState.OperationIndex -= 1; // only upon success
+                OperationHistory.length = DesignerState.OperationIndex;
             }
             DesignerState.Applet.preserve();
         }
@@ -3238,7 +3446,7 @@ class WAD_PageConfigurationOperation extends WAD_Operation {
     /**** canExtend ****/
     canExtend(otherOperation) {
         return ((otherOperation instanceof WAD_PageConfigurationOperation) &&
-            ValuesAreEqual(otherOperation._Pages, this._Pages) &&
+            ValuesAreEqual(otherOperation._Pages, this._Pages, 'by-reference') &&
             (otherOperation._PropertyName === this._PropertyName) &&
             this._oldValues.every((oldValue) => ValuesAreEqual(oldValue, otherOperation._newValue)));
     }
@@ -3366,7 +3574,7 @@ class WAD_PageShiftOperation extends WAD_Operation {
     /**** canExtend ****/
     canExtend(otherOperation) {
         return ((otherOperation instanceof WAD_PageShiftOperation) &&
-            ValuesAreEqual(otherOperation._Pages, this._Pages) &&
+            ValuesAreEqual(otherOperation._Pages, this._Pages, 'by-reference') &&
             ValuesAreEqual(otherOperation._newIndices, this._oldIndices));
     }
     /**** isIrrelevant ****/
@@ -3421,7 +3629,7 @@ class WAD_PageDeletionOperation extends WAD_Operation {
         });
         const IndexSet = [];
         Pages.forEach((Page) => IndexSet[Page.Index] = Page);
-        this._Indices = Object.keys(IndexSet).map(Number).sort();
+        this._Indices = Object.keys(IndexSet).map(Number).sort((a, b) => a - b);
         this._Pages = this._Indices.map((Index) => IndexSet[Index]);
         this._Serializations = this._Pages.map((Page) => Page.Serialization);
     }
@@ -3564,7 +3772,7 @@ class WAD_WidgetConfigurationOperation extends WAD_Operation {
     /**** canExtend ****/
     canExtend(otherOperation) {
         return ((otherOperation instanceof WAD_WidgetConfigurationOperation) &&
-            ValuesAreEqual(otherOperation._Widgets, this._Widgets) &&
+            ValuesAreEqual(otherOperation._Widgets, this._Widgets, 'by-reference') &&
             (otherOperation._PropertyName === this._PropertyName) &&
             ValuesAreEqual(this._oldValues, otherOperation._newValues));
     }
@@ -3701,7 +3909,7 @@ class WAD_WidgetShapeOperation extends WAD_Operation {
     /**** canExtend ****/
     canExtend(otherOperation) {
         return ((otherOperation instanceof WAD_WidgetShapeOperation) &&
-            ValuesAreEqual(otherOperation._Widgets, this._Widgets) &&
+            ValuesAreEqual(otherOperation._Widgets, this._Widgets, 'by-reference') &&
             this._oldGeometries.every((Geometry, i) => ValuesAreEqual(otherOperation._newGeometries[i], Geometry)));
     }
     /**** isIrrelevant ****/
@@ -3774,7 +3982,7 @@ class WAD_WidgetShiftOperation extends WAD_Operation {
     /**** canExtend ****/
     canExtend(otherOperation) {
         return ((otherOperation instanceof WAD_WidgetShiftOperation) &&
-            ValuesAreEqual(otherOperation._Widgets, this._Widgets) &&
+            ValuesAreEqual(otherOperation._Widgets, this._Widgets, 'by-reference') &&
             ValuesAreEqual(otherOperation._newIndices, this._oldIndices));
     }
     /**** isIrrelevant ****/
@@ -3838,7 +4046,7 @@ class WAD_WidgetDeletionOperation extends WAD_Operation {
             throwError('InvalidArgument: the given widgets do not all belong to the same page');
         const IndexSet = [];
         Widgets.forEach((Widget) => IndexSet[Widget.Index] = Widget);
-        this._Indices = Object.keys(IndexSet).map(Number).sort();
+        this._Indices = Object.keys(IndexSet).map(Number).sort((a, b) => a - b);
         this._Widgets = this._Indices.map((Index) => IndexSet[Index]);
         this._Serializations = this._Widgets.map((Widget) => Widget.Serialization);
     }
@@ -3906,12 +4114,15 @@ function doCreatePage(Behavior) {
     const { Applet, selectedPages } = DesignerState;
     const InsertionIndex = (selectedPages.length === 0
         ? Applet.PageCount
-        : Math.max(selectedPages.map((Page) => Page.Index)) + 1);
+        : Math.max(...selectedPages.map((Page) => Page.Index)) + 1);
     doOperation(new WAD_PageDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior), WidgetList: [] }], InsertionIndex));
 }
 /**** doDuplicateSelectedPages ****/
 function doDuplicateSelectedPages() {
     const selectedPages = sortedPageSelection();
+    if (selectedPages.length === 0) {
+        return;
+    }
     const InsertionIndex = selectedPages[selectedPages.length - 1].Index + 1;
     doOperation(new WAD_PageDeserializationOperation(selectedPages.map((Page) => Page.Serialization), InsertionIndex));
 }
@@ -3936,7 +4147,7 @@ function doShiftSelectedPagesToTop() {
 /**** doShiftSelectedPagesUp ****/
 function doShiftSelectedPagesUp() {
     const selectedPages = sortedPageSelection();
-    const StartIndex = selectedPages[0].Index - 1;
+    const StartIndex = Math.max(0, selectedPages[0].Index - 1);
     const IndexList = Array.from({ length: selectedPages.length }, (_, i) => StartIndex + i);
     doOperation(new WAD_PageShiftOperation(selectedPages, IndexList));
 }
@@ -4134,7 +4345,7 @@ function doShiftSelectedWidgetsToTop() {
 /**** doShiftSelectedWidgetsUp ****/
 function doShiftSelectedWidgetsUp() {
     const selectedWidgets = sortedWidgetSelection();
-    const StartIndex = selectedWidgets[0].Index - 1;
+    const StartIndex = Math.max(0, selectedWidgets[0].Index - 1);
     const IndexList = Array.from({ length: selectedWidgets.length }, (_, i) => StartIndex + i);
     doOperation(new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
 }
@@ -4187,6 +4398,9 @@ function doPasteShelvedWidgets() {
         return;
     }
     const visitedPage = DesignerState.Applet.visitedPage;
+    if (visitedPage == null) {
+        return;
+    }
     doOperation(new WAD_WidgetDeserializationOperation(DesignerState.shelvedWidgets, visitedPage, 0));
 }
 /**** doImportFromFile ****/
@@ -4214,8 +4428,9 @@ function handleFileLoaded(File, Event) {
 /**** doImport ****/
 function doImport(FileContent, Type) {
     switch (Type) {
+        case 'text/javascript':
         case 'application/javascript':
-            if ((DesignerState.Applet.pendingScript != null) &&
+            if ((DesignerState.Applet.pendingScript == null) ||
                 OperationWasConfirmed('Applet Script Import\n\n' +
                     'You are about to overwrite the script of this applet')) {
                 doConfigureApplet('pendingScript', FileContent);
@@ -4306,6 +4521,10 @@ function doExport(Scope) {
             suggestedFileName = (Applet.Name || 'WAT-Applet') + '.json';
             break;
         case 'active Page':
+            if (Applet.visitedPage == null) {
+                window.alert('no page is currently visited');
+                return;
+            }
             Serialization = Applet.visitedPage.Serialization;
             suggestedFileName = (Applet.visitedPage.Name || 'WAT-Page') + '.json';
             break;
@@ -4340,7 +4559,9 @@ function doExport(Scope) {
     const encodedJSON = (new TextEncoder()).encode(SerializationString);
     const decodedJSON = (new TextDecoder()).decode(encodedJSON);
     if (SerializationString === decodedJSON) {
-        download(encodedJSON, suggestedFileName, 'text/html;charset=utf-8');
+        download(encodedJSON, suggestedFileName, (Scope === 'Applet Script'
+            ? 'text/javascript;charset=utf-8'
+            : 'application/json;charset=utf-8'));
     }
     else {
         window.alert('this export is not stable');
@@ -4350,7 +4571,7 @@ function doExport(Scope) {
 function doVisitPrevPage() { visitPrevPage(); }
 function doVisitNextPage() { visitNextPage(); }
 /**** doVisitHomePage ****/
-function doVisitHomePage() { visitPage(0); }
+function doVisitHomePage() { visitPage(DesignerState.Applet.Page(0)); }
 /**** doCreateScreenshot ****/
 function doCreateScreenshot() {
     const { Applet, selectedWidgets } = DesignerState;
@@ -4363,9 +4584,7 @@ function doCreateScreenshot() {
     Canvas.height = Height;
     const Context = Canvas.getContext('2d');
     const ViewElement = VisualToRender.View;
-    let { left: x, top: y } = ViewElement.getBoundingClientRect();
-    x += window.scrollX;
-    y += window.scrollY;
+    const { left: x, top: y } = ViewElement.getBoundingClientRect();
     DesignerState.DesignerDisabled = true;
     WAT_rerender();
     window.requestAnimationFrame(async () => {
@@ -4378,14 +4597,16 @@ function doCreateScreenshot() {
             const Video = document.createElement('video');
             Video.srcObject = Stream;
             await Video.play();
+            const ScaleX = Video.videoWidth / window.innerWidth;
+            const ScaleY = Video.videoHeight / window.innerHeight;
             // @ts-ignore TS18047 "Context" is not null
-            Context.drawImage(Video, x, y, Width, Height, 0, 0, Width, Height);
+            Context.drawImage(Video, x * ScaleX, y * ScaleY, Width * ScaleX, Height * ScaleY, 0, 0, Width, Height);
             Stream.getTracks().forEach((Track) => Track.stop());
             DesignerState.DesignerDisabled = false;
             WAT_rerender();
             const Name = (VisualToRender === Applet
-                ? ((_a = Applet.visitedBoard) === null || _a === void 0 ? void 0 : _a.Name) || Applet.Name || 'WAT-Applet'
-                : VisualToRender.Name || 'WAT-Screenshot.png');
+                ? ((_a = Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.Name) || Applet.Name || 'WAT-Applet'
+                : VisualToRender.Name || 'WAT-Screenshot');
             Canvas.toBlob((Blob) => {
                 download(Blob, Name + '.png', 'image/png');
             }, 'image/png');
@@ -4407,6 +4628,9 @@ function doGenerateApplet(Variant) {
         case 'with Designer':
             generateStandaloneWebApp(true);
             break;
+        case 'from selected Widget':
+            generatedWebAppFromWidget(DesignerState.selectedWidgets[0]);
+            break;
         default: console.error('InvalidArgument: invalid generation variant ' + quoted(Variant));
     }
 }
@@ -4426,13 +4650,13 @@ function doPrintApplet() {
             PrinterDoc.write(Applet.View.innerHTML);
             PrinterDoc.write('</body></html>');
             PrinterDoc.close();
-            PrinterFrame.contentWindow.focus();
-            PrinterFrame.contentWindow.print();
-            window.addEventListener('afterprint', function () {
+            PrinterFrame.contentWindow.addEventListener('afterprint', function () {
                 document.body.removeChild(PrinterFrame);
                 DesignerState.DesignerDisabled = false;
                 WAT_rerender();
             }, { once: true });
+            PrinterFrame.contentWindow.focus();
+            PrinterFrame.contentWindow.print();
         }
         catch (Signal) {
             console.error('Error while printing', Signal);
@@ -4441,7 +4665,20 @@ function doPrintApplet() {
             window.alert('Print Error\n\n' + Signal);
         }
     });
-} /**** selectedPagesMayBeShiftedUp ****/
+} /**** doRemoveLocalBackup ****/
+async function doRemoveLocalBackup() {
+    const { Applet } = DesignerState;
+    if (OperationWasConfirmed('Applet Backup Removal\n\n' +
+        'You are about to remove the local backup of this applet')) {
+        await Applet.removeLocalBackup();
+        setTimeout(() => {
+            window.alert('Applet Backup was removed\n\n' +
+                'Reload this page to make the removal permanent or apply any ' +
+                'change to create a new backup');
+        }, 100);
+    }
+}
+/**** selectedPagesMayBeShiftedUp ****/
 function selectedPagesMayBeShiftedUp() {
     const selectedPages = sortedPageSelection();
     return selectedPages.some((Page, i) => Page.Index > i);
@@ -4475,31 +4712,30 @@ Object.assign(DesignerState, {
         PaddingX: undefined, PaddingY: undefined,
     },
 });
-console.log('DesignerState', DesignerState);
 /**** resizeApplet ****/
 function resizeApplet() {
     const Applet = DesignerState.Applet;
-    let { Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries } = DesignerState.AppletResizer;
-    if ((Width || 0) === 0) {
+    let { Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries } = DesignerState.AppletResizer; // null = "use current setting", 0 = default
+    if (Width === 0) {
         Width = Applet.Width;
     }
-    if ((Height || 0) === 0) {
+    if (Height === 0) {
         Height = Applet.Height;
     }
-    if ((minWidth || 0) === 0) {
-        minWidth = Applet.minWidth;
+    if (minWidth === 0) {
+        minWidth = 0;
     }
-    if ((minHeight || 0) === 0) {
-        minHeight = Applet.minHeight;
+    if (minHeight === 0) {
+        minHeight = 0;
     }
-    if ((maxWidth || 0) === 0) {
-        maxWidth = Applet.maxWidth;
+    if (maxWidth === 0) {
+        maxWidth = undefined;
     }
-    if ((maxHeight || 0) === 0) {
-        maxHeight = Applet.maxHeight;
+    if (maxHeight === 0) {
+        maxHeight = undefined;
     }
-    Width = Math.max(minWidth, Math.min(Width, maxWidth == null ? Infinity : maxWidth));
-    Height = Math.max(minHeight, Math.min(Height, maxHeight == null ? Infinity : maxHeight));
+    Width = Math.max(minWidth || Applet.minWidth, Math.min(Width || Applet.Width, maxWidth == null ? Infinity : maxWidth));
+    Height = Math.max(minHeight || Applet.minHeight, Math.min(Height || Applet.Height, maxHeight == null ? Infinity : maxHeight));
     resizeAppletTo(Applet, Width, Height, minWidth, minHeight, maxWidth, maxHeight, keepGeometries);
 }
 /**** shrinkApplet ****/
@@ -4577,8 +4813,8 @@ function resizeAppletTo(Applet, Width, Height, minWidth, minHeight, maxWidth, ma
         const HostElement = (_b = (_a = Applet.View) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.parentElement;
         HostElement.style.width = Width + 'px';
         HostElement.style.height = Height + 'px';
-        HostElement.style.minWidth = (minWidth == null ? 'none' : minWidth + 'px');
-        HostElement.style.minHeight = (minHeight == null ? 'none' : minHeight + 'px');
+        HostElement.style.minWidth = (minWidth == null ? 'auto' : minWidth + 'px');
+        HostElement.style.minHeight = (minHeight == null ? 'auto' : minHeight + 'px');
         HostElement.style.maxWidth = (maxWidth == null ? 'none' : maxWidth + 'px');
         HostElement.style.maxHeight = (maxHeight == null ? 'none' : maxHeight + 'px');
         if (Applet.withMobileFrame) {
@@ -4596,6 +4832,8 @@ function WAD_DesignerLayer(PropSet) {
     if (DesignerState.DesignerDisabled) {
         return;
     }
+    AssetsBase = PropSet.AssetsBase;
+    IconFolder = AssetsBase + 'icons/';
     /**** if need be: initialize VisitHistory ****/
     const Applet = DesignerState.Applet = PropSet.Applet;
     if (!Applet.isAttached) {
@@ -4629,7 +4867,7 @@ function WAD_DesignerLayer(PropSet) {
 function WAD_DesignerButton() {
     const DragInfo = useMemo(() => ({
         StartX: NaN, StartY: NaN, initialX: NaN, initialY: NaN
-    }));
+    }), []);
     const Dragger = useCallback((dx, dy, StartX, StartY, Event) => {
         const DesignerButton = DesignerState.DesignerButton;
         if ((DragInfo.StartX != StartX) || (DragInfo.StartY != StartY)) {
@@ -4688,7 +4926,7 @@ function WAD_Toolbox() {
           groupedOptionList=${Applet.groupedBehaviorListOfCategory('widget')}
           onInput=${(Event) => {
         doCreateWidget(Event.target.value);
-        Event.target.value = '';
+        Event.target.value = '-';
     }}
         />
         <${WAD_Icon} Icon="${IconFolder}/pen-ruler.png"
@@ -4725,7 +4963,10 @@ function WAD_Toolbox() {
           enabled=${mayRedo()} onClick=${redoOperation}
         />
         <${WAD_PseudoFileInput} Icon="${IconFolder}/arrow-up-from-bracket.png"
-          onChange=${doImportFromFile}
+          onChange=${(Event) => {
+        doImportFromFile(Event);
+        Event.target.value = null;
+    }}
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/arrow-down-to-bracket.png"
           Placeholder="(please choose)" Value=""
@@ -4763,7 +5004,11 @@ function WAD_Toolbox() {
         />
         <${WAD_PseudoDropDown} Icon="${IconFolder}/clapperboard-play.png"
           Placeholder="(please choose)" Value=""
-          OptionList=${['without Designer', 'with Designer']}
+          OptionList=${[
+        'without Designer', 'with Designer',
+        '----',
+        'from selected Widget',
+    ]}
           onInput=${(Event) => {
         doGenerateApplet(Event.target.value);
         Event.target.value = '';
@@ -4864,7 +5109,7 @@ function WAD_BehaviorBrowserPane() {
         Inspector.ScrollPositions.BehaviorBrowser = Event.target.scrollTop;
     }
     const scrollablePane = useRef(null);
-    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    useEffect(() => scrollablePane.current.scrollTop = ScrollPosition, []);
     /**** handle list item rendering and selection ****/
     const groupedBehaviorList = Applet.groupedBehaviorListOfCategory(selectedCategory);
     const GroupList = [], customGroupList = Object.keys(groupedBehaviorList);
@@ -4889,8 +5134,8 @@ function WAD_BehaviorBrowserPane() {
             Classes.push('unused');
         }
         return `<span
-          class=${Classes.length === 0 ? undefined : Classes.join(' ')}
-        >${Behavior.replace(/^.*[.]/, '')}</span>`;
+          class="${Classes.join(' ')}"
+        >${HTMLsafe(Behavior.replace(/^.*[.]/, ''))}</span>`;
     });
     const selectedBehaviorIndices = Object.create(null);
     GroupList.forEach((GroupName) => {
@@ -5015,7 +5260,7 @@ function WAD_AppletConfigurationPane() {
         Inspector.ScrollPositions.AppletConfiguration = Event.target.scrollTop;
     }
     const scrollablePane = useRef(null);
-    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    useEffect(() => scrollablePane.current.scrollTop = ScrollPosition, []);
     /**** prepare behavior-specific properties ****/
     const configurableProperties = Applet.configurableProperties;
     let PropertyEditors = [];
@@ -5128,7 +5373,7 @@ function WAD_AppletConfigurationPane() {
           </>
         </>
 
-        <${WAD_Fold} Label="Geometry"
+        <${WAD_Fold} Label="Geometry (static)"
           Expansion=${Expansions.Geometry}
           toggleExpansion=${() => toggleExpansion('Geometry')}
         >
@@ -5196,7 +5441,7 @@ function WAD_AppletConfigurationPane() {
             <${WAD_Gap}/>
             <${WAD_Checkbox}
               Value=${Applet.withMobileFrame}
-              onInput=${(Event) => doConfigureApplet('toBeCentered', Event.target.checked)}
+              onInput=${(Event) => doConfigureApplet('withMobileFrame', Event.target.checked)}
             />
           </>
 
@@ -5204,13 +5449,13 @@ function WAD_AppletConfigurationPane() {
             <${WAD_Label}>expected mobile Orientation</>
             <${WAD_Gap}/>
             <${WAD_DropDown}
-              Value=${Applet.expectedOrientation}
-              onInput=${(Event) => doConfigureApplet('expectedOrientation', Event.target.checked)}
+              Value=${Applet.expectedOrientation} Options=${WAT_Orientations}
+              onInput=${(Event) => doConfigureApplet('expectedOrientation', Event.target.value)}
             />
           </>
         </>
 
-        <${WAD_Fold} Label="Applet Resizing"
+        <${WAD_Fold} Label="Applet Resizing (changes Geometry)"
           Expansion=${Expansions.AppletResizing}
           toggleExpansion=${() => toggleExpansion('AppletResizing')}
         >
@@ -5380,7 +5625,7 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_c = Applet.TextShadow) === null || _c === void 0 ? void 0 : _c.xOffset}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
@@ -5390,7 +5635,7 @@ function WAD_AppletConfigurationPane() {
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_d = Applet.TextShadow) === null || _d === void 0 ? void 0 : _d.yOffset}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
@@ -5403,7 +5648,7 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_e = Applet.TextShadow) === null || _e === void 0 ? void 0 : _e.BlurRadius}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (Applet.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
@@ -5499,17 +5744,17 @@ function WAD_AppletConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_j = Applet.BackgroundTexture) === null || _j === void 0 ? void 0 : _j.xOffset}
               onInput=${(Event) => {
         const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureApplet('BackgroundTexture', {
-            isActive, ImageURL, Mode, xOffset: Event.target.value, yOffset
+            isActive, ImageURL, Mode, xOffset: parseFloat(Event.target.value), yOffset
         });
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_k = Applet.BackgroundTexture) === null || _k === void 0 ? void 0 : _k.yOffset}
               onInput=${(Event) => {
         const { isActive, ImageURL, Mode, xOffset, yOffset } = (Applet.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
@@ -5547,20 +5792,6 @@ function WAD_AppletConfigurationPane() {
               onInput=${(Event) => doConfigureApplet('GridHeight', parseFloat(Event.target.value))}
             />
           </>
-        </>        <${WAD_Fold} Label="Head Extensions"
-          Expansion=${Expansions.HeadExtensions}
-          toggleExpansion=${() => toggleExpansion('HeadExtensions')}
-        >
-          <${WAD_horizontally}>
-            <${WAD_Label}>${'<'}head${'>'} Exensions</>
-          </>
-
-          <${WAD_TextInput} Placeholder="(enter <head> extensions)" style="
-            flex:1 0 auto; padding-top:4px; min-height:60px;
-            white-space:pre;
-          " Value=${Applet.HeadExtensions}
-            onInput=${(Event) => doConfigureApplet('HeadExtensions', Event.target.value)}
-          />
         </>        <${WAD_Fold} Label="Behavior-specific Settings"
           Expansion=${Expansions.BehaviorSpecific}
           toggleExpansion=${() => toggleExpansion('BehaviorSpecific')}
@@ -5604,6 +5835,24 @@ function WAD_AppletConfigurationPane() {
           " Value=${pendingScript == null ? activeScript : pendingScript}
             onInput=${(Event) => setPendingScriptTo(Event.target.value)}
           />
+        </>        <${WAD_Fold} Label="Developer Functions"
+          Expansion=${Expansions.Developer}
+          toggleExpansion=${() => toggleExpansion('Developer')}
+        >
+          <${WAD_horizontally}>
+            <${WAD_Label}>${'<'}head${'>'} Extensions</>
+          </>
+
+          <${WAD_TextInput} Placeholder="(enter <head> extensions)" style="
+            flex:1 0 auto; padding-top:4px; min-height:60px;
+            white-space:pre;
+          " Value=${Applet.HeadExtensions}
+            onInput=${(Event) => doConfigureApplet('HeadExtensions', Event.target.value)}
+          />
+
+          <${WAD_horizontally}>
+            <${WAD_Button} onClick=${doRemoveLocalBackup}>Remove Local Backup</>
+          </>
         </>
       </>
 
@@ -5633,7 +5882,7 @@ function WAD_PageBrowserPane() {
         if (Applet.visitedPage === Page) {
             Style += 'font-weight:bold; text-decoration:underline';
         }
-        return `<span style="${Style}">${HTMLsafe_(Page.Name) || `(unnamed ${Page.Behavior || 'page'})`}</span>`;
+        return `<span style="${Style}">${HTMLsafe_(Page.Name) || `(unnamed ${HTMLsafe(Page.Behavior || 'page')})`}</span>`;
     });
     const selectedPageIndices = selectedPages.map((Page) => Page.Index);
     const updatePageSelection = useCallback((selectedIndices) => {
@@ -5657,7 +5906,7 @@ function WAD_PageBrowserPane() {
           groupedOptionList=${Applet.groupedBehaviorListOfCategory('page')}
           onInput=${(Event) => {
         doCreatePage(Event.target.value);
-        Event.target.value = '';
+        Event.target.value = '-';
     }}
         />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
@@ -5717,6 +5966,12 @@ function WAD_PageBrowserPane() {
 function WAD_PageConfigurationPane() {
     var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
     const { Applet, Inspector } = DesignerState;
+    if (Applet.visitedPage == null) {
+        return html `<div class="WAD InspectorPane"><div style="
+        flex:1 0 auto; height:40px; line-height:40px;
+        font-style:italic; text-align:center
+      ">(no page is currently visited)</div></div>`;
+    }
     /**** remember fold expansions ****/
     const Expansions = Inspector.Expansions.PageConfiguration;
     function toggleExpansion(Name) {
@@ -5729,7 +5984,7 @@ function WAD_PageConfigurationPane() {
         Inspector.ScrollPositions.PageConfiguration = Event.target.scrollTop;
     }
     const scrollablePane = useRef(null);
-    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
+    useEffect(() => scrollablePane.current.scrollTop = ScrollPosition, []);
     /**** prepare behavior-specific properties ****/
     const { visitedPage } = Applet;
     const configurableProperties = visitedPage.configurableProperties;
@@ -5955,7 +6210,7 @@ function WAD_PageConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_c = visitedPage.TextShadow) === null || _c === void 0 ? void 0 : _c.xOffset}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (visitedPage.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
@@ -5965,7 +6220,7 @@ function WAD_PageConfigurationPane() {
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_d = visitedPage.TextShadow) === null || _d === void 0 ? void 0 : _d.yOffset}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (visitedPage.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
@@ -5978,7 +6233,7 @@ function WAD_PageConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_e = visitedPage.TextShadow) === null || _e === void 0 ? void 0 : _e.BlurRadius}
               onInput=${(Event) => {
         const { isActive, xOffset, yOffset, BlurRadius, Color } = (visitedPage.TextShadow || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' });
@@ -6074,17 +6329,17 @@ function WAD_PageConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_j = visitedPage.BackgroundTexture) === null || _j === void 0 ? void 0 : _j.xOffset}
               onInput=${(Event) => {
         const { isActive, ImageURL, Mode, xOffset, yOffset } = (visitedPage.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureVisitedPage('BackgroundTexture', {
-            isActive, ImageURL, Mode, xOffset: Event.target.value, yOffset
+            isActive, ImageURL, Mode, xOffset: parseFloat(Event.target.value), yOffset
         });
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               Value=${(_k = visitedPage.BackgroundTexture) === null || _k === void 0 ? void 0 : _k.yOffset}
               onInput=${(Event) => {
         const { isActive, ImageURL, Mode, xOffset, yOffset } = (visitedPage.BackgroundTexture || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
@@ -6164,7 +6419,7 @@ function WAD_WidgetBrowserPane() {
     const WidgetListItemRenderer = useCallback((Widget, Index, selected) => {
         const WidgetName = Widget.Name;
         if (WidgetName == null) {
-            return `<span style="font-style:italic">(unnamed ${Widget.Behavior || 'widget'})</span>`;
+            return `<span style="font-style:italic">(unnamed ${HTMLsafe(Widget.Behavior || 'widget')})</span>`;
         }
         else {
             return HTMLsafe(WidgetName);
@@ -6193,7 +6448,7 @@ function WAD_WidgetBrowserPane() {
           groupedOptionList=${Applet.groupedBehaviorListOfCategory('widget')}
           onInput=${(Event) => {
         doCreateWidget(Event.target.value);
-        Event.target.value = '';
+        Event.target.value = '-';
     }}
         />
         <${WAD_Icon} Icon="${IconFolder}/clone.png"
@@ -6259,41 +6514,7 @@ function WAD_WidgetConfigurationPane() {
         Inspector.ScrollPositions.WidgetConfiguration = Event.target.scrollTop;
     }
     const scrollablePane = useRef(null);
-    useEffect(() => scrollablePane.current.base.scrollTop = ScrollPosition, []);
-    /**** handle value input ****/
-    let ValueType = 'string';
-    let ValueToEdit = commonValueOf(selectedWidgets.map((Widget) => Widget.Value));
-    switch (true) {
-        case (ValueToEdit == null):
-        case (ValueToEdit === multipleValues):
-        case (ValueToEdit === noSelection):
-            break;
-        default:
-            ValueType = typeof ValueToEdit;
-            if (ValueType === 'object') {
-                ValueToEdit = JSON.stringify(ValueToEdit, null, 2);
-            }
-            else {
-                ValueToEdit = '' + ValueToEdit;
-            }
-    }
-    function _onValueInput(Event) {
-        const editedValue = Event.target.value;
-        let Value = undefined;
-        switch (ValueType) {
-            case 'boolean':
-                Value = Boolean(editedValue);
-                break;
-            case 'number':
-                Value = Number(editedValue);
-                break;
-            case 'string':
-                Value = editedValue;
-                break;
-            default: Value = JSON.parse(editedValue); // may fail!
-        }
-        doConfigureSelectedWidgets('Value', Value);
-    }
+    useEffect(() => scrollablePane.current.scrollTop = ScrollPosition, []);
     /**** prepare behavior-specific properties ****/
     let configurableProperties = commonValueOf(selectedWidgets.map((Widget) => Widget.configurableProperties));
     if (!ValueIsList(configurableProperties)) {
@@ -6326,7 +6547,10 @@ function WAD_WidgetConfigurationPane() {
     const ErrorReport = commonValueOf(selectedWidgets.map((Widget) => Widget.ErrorReport));
     const ScriptError = commonValueOf(selectedWidgets.map((Widget) => Widget.ScriptError));
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
-    const ReportToShow = ScriptError || ErrorReport;
+    let ReportToShow = ScriptError || ErrorReport;
+    if (!ValueIsErrorReport(ReportToShow)) {
+        ReportToShow = undefined;
+    }
     DesignerState.Inspector.ReportToShow = ReportToShow; // *C* workaround
     const setPendingScriptTo = useCallback((newScript) => {
         doConfigureSelectedWidgets('pendingScript', newScript);
@@ -6424,7 +6648,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.Overflows), 0)}
               onInput=${(Event) => {
-        const [Overflow_0, Overflow_1] = (commonValueOf(selectedWidgets.map((Widget) => Widget.Overflows || ['visible', 'visible'])));
+        const [Overflow_0, Overflow_1] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.Overflows || ['visible', 'visible'])));
         doConfigureSelectedWidgets('Overflows', [
             Event.target.value, Overflow_1
         ]);
@@ -6435,7 +6659,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.Overflows), 1)}
               onInput=${(Event) => {
-        const [Overflow_0, Overflow_1] = (commonValueOf(selectedWidgets.map((Widget) => Widget.Overflows || ['visible', 'visible'])));
+        const [Overflow_0, Overflow_1] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.Overflows || ['visible', 'visible'])));
         doConfigureSelectedWidgets('Overflows', [
             Overflow_0, Event.target.value
         ]);
@@ -6640,7 +6864,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'isActive')}
               onInput=${(Event) => {
-        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+        const { isActive, Line, Color, Style, Thickness } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
             || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
         doConfigureSelectedWidgets('TextDecoration', {
             isActive: Event.target.checked, Line, Color, Style, Thickness
@@ -6656,7 +6880,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Line')}
               Options=${WAT_TextDecorationLines}
               onInput=${(Event) => {
-        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+        const { isActive, Line, Color, Style, Thickness } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
             || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
         doConfigureSelectedWidgets('TextDecoration', {
             isActive, Line: Event.target.value, Color, Style, Thickness
@@ -6671,7 +6895,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Color')}
               onInput=${(Event) => {
-        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+        const { isActive, Line, Color, Style, Thickness } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
             || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
         doConfigureSelectedWidgets('TextDecoration', {
             isActive, Line, Color: Event.target.value, Style, Thickness
@@ -6687,7 +6911,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Style')}
               Options=${WAT_TextDecorationStyles}
               onInput=${(Event) => {
-        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+        const { isActive, Line, Color, Style, Thickness } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
             || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
         doConfigureSelectedWidgets('TextDecoration', {
             isActive, Line, Color, Style: Event.target.value, Thickness
@@ -6698,11 +6922,11 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Thickness [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextDecoration), 'Thickness')}
               onInput=${(Event) => {
-        const { isActive, Line, Color, Style, Thickness } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
+        const { isActive, Line, Color, Style, Thickness } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextDecoration
             || { isActive: false, Line: 'none', Color: 'black', Style: 'solid', Thickness: 1 })));
         doConfigureSelectedWidgets('TextDecoration', {
             isActive, Line, Color, Style, Thickness: parseFloat(Event.target.value)
@@ -6718,7 +6942,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'isActive')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive: Event.target.checked, xOffset, yOffset, BlurRadius, Color
@@ -6733,7 +6957,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'Color')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset, yOffset, BlurRadius, Color: Event.target.value
@@ -6744,11 +6968,11 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'xOffset')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset: parseFloat(Event.target.value), yOffset, BlurRadius, Color
@@ -6756,11 +6980,11 @@ function WAD_WidgetConfigurationPane() {
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'yOffset')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset, yOffset: parseFloat(Event.target.value), BlurRadius, Color
@@ -6771,11 +6995,11 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Blur Radius [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.TextShadow), 'BlurRadius')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
+        const { isActive, xOffset, yOffset, BlurRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.TextShadow
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, Color: 'black' })));
         doConfigureSelectedWidgets('TextShadow', {
             isActive, xOffset, yOffset, BlurRadius: parseFloat(Event.target.value), Color
@@ -6840,7 +7064,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture), 'isActive')}
               onInput=${(Event) => {
-        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
             || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureSelectedWidgets('BackgroundTexture', {
             isActive: Event.target.checked, ImageURL, Mode, xOffset, yOffset
@@ -6856,7 +7080,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture), 'Mode')}
               Options=${WAT_BackgroundModes}
               onInput=${(Event) => {
-        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
             || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureSelectedWidgets('BackgroundTexture', {
             isActive, ImageURL, Mode: Event.target.value, xOffset, yOffset
@@ -6871,7 +7095,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture), 'ImageURL')}
               onInput=${(Event) => {
-        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
             || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureSelectedWidgets('BackgroundTexture', {
             isActive, ImageURL: Event.target.value, Mode, xOffset, yOffset
@@ -6882,23 +7106,23 @@ function WAD_WidgetConfigurationPane() {
           <${WAD_horizontally}>
             <${WAD_Label} style="padding-left:10px">Offset (dx,dy) [px]</>
             <${WAD_Gap}/>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture), 'xOffset')}
               onInput=${(Event) => {
-        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
             || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureSelectedWidgets('BackgroundTexture', {
-            isActive, ImageURL, Mode, xOffset: Event.target.value, yOffset
+            isActive, ImageURL, Mode, xOffset: parseFloat(Event.target.value), yOffset
         });
     }}
             />
               <div style="width:20px; padding-top:4px; text-align:center">,</div>
-            <${WAD_IntegerInput} readonly style="width:60px"
+            <${WAD_IntegerInput} style="width:60px"
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture), 'yOffset')}
               onInput=${(Event) => {
-        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
+        const { isActive, ImageURL, Mode, xOffset, yOffset } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BackgroundTexture))
             || { isActive: false, ImageURL: '', Mode: 'tile', xOffset: 0, yOffset: 0 });
         doConfigureSelectedWidgets('BackgroundTexture', {
             isActive, ImageURL, Mode, xOffset, yOffset: parseFloat(Event.target.value)
@@ -6923,7 +7147,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 0)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
+        const [Style_0, Style_1, Style_2, Style_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Event.target.value, Style_1, Style_2, Style_3
         ]);
@@ -6935,7 +7159,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 0)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
+        const [Width_0, Width_1, Width_2, Width_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             parseFloat(Event.target.value), Width_1, Width_2, Width_3
         ]);
@@ -6946,7 +7170,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 0)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
+        const [Color_0, Color_1, Color_2, Color_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Event.target.value, Color_1, Color_2, Color_3
         ]);
@@ -6962,7 +7186,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 1)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
+        const [Style_0, Style_1, Style_2, Style_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Style_0, Event.target.value, Style_2, Style_3
         ]);
@@ -6974,7 +7198,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 1)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
+        const [Width_0, Width_1, Width_2, Width_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             Width_0, parseFloat(Event.target.value), Width_2, Width_3
         ]);
@@ -6985,7 +7209,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 1)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
+        const [Color_0, Color_1, Color_2, Color_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Color_0, Event.target.value, Color_2, Color_3
         ]);
@@ -7001,7 +7225,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 2)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
+        const [Style_0, Style_1, Style_2, Style_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Style_0, Style_1, Event.target.value, Style_3
         ]);
@@ -7013,7 +7237,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 2)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
+        const [Width_0, Width_1, Width_2, Width_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             Width_0, Width_1, parseFloat(Event.target.value), Width_3
         ]);
@@ -7024,7 +7248,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 2)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
+        const [Color_0, Color_1, Color_2, Color_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Color_0, Color_1, Event.target.value, Color_3
         ]);
@@ -7040,7 +7264,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderStyles), 3)}
               Options=${WAT_BorderStyles}
               onInput=${(Event) => {
-        const [Style_0, Style_1, Style_2, Style_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
+        const [Style_0, Style_1, Style_2, Style_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderStyles || ['none', 'none', 'none', 'none'])));
         doConfigureSelectedWidgets('BorderStyles', [
             Style_0, Style_1, Style_2, Event.target.value
         ]);
@@ -7052,7 +7276,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderWidths), 3)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Width_0, Width_1, Width_2, Width_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
+        const [Width_0, Width_1, Width_2, Width_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderWidths || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderWidths', [
             Width_0, Width_1, Width_2, parseFloat(Event.target.value)
         ]);
@@ -7063,7 +7287,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderColors), 3)}
               onInput=${(Event) => {
-        const [Color_0, Color_1, Color_2, Color_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
+        const [Color_0, Color_1, Color_2, Color_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderColors || ['black', 'black', 'black', 'black'])));
         doConfigureSelectedWidgets('BorderColors', [
             Color_0, Color_1, Color_2, Event.target.value
         ]);
@@ -7082,7 +7306,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 0)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
             parseFloat(Event.target.value), Radius_1, Radius_2, Radius_3
         ]);
@@ -7094,7 +7318,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 1)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
             Radius_0, parseFloat(Event.target.value), Radius_2, Radius_3
         ]);
@@ -7109,7 +7333,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 3)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
             Radius_0, Radius_1, Radius_2, parseFloat(Event.target.value)
         ]);
@@ -7121,7 +7345,7 @@ function WAD_WidgetConfigurationPane() {
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BorderRadii), 2)}
               Minimum=${0}
               onInput=${(Event) => {
-        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
+        const [Radius_0, Radius_1, Radius_2, Radius_3] = (commonListValueOf(selectedWidgets.map((Widget) => Widget.BorderRadii || [0, 0, 0, 0])));
         doConfigureSelectedWidgets('BorderRadii', [
             Radius_0, Radius_1, parseFloat(Event.target.value), Radius_3
         ]);
@@ -7140,7 +7364,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'isActive')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
+        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
         doConfigureSelectedWidgets('BoxShadow', {
             isActive: Event.target.checked, xOffset, yOffset, BlurRadius, SpreadRadius, Color
@@ -7155,7 +7379,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'Color')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
+        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
         doConfigureSelectedWidgets('BoxShadow', {
             isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color: Event.target.value
@@ -7170,7 +7394,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'xOffset')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
+        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
         doConfigureSelectedWidgets('BoxShadow', {
             isActive, xOffset: parseFloat(Event.target.value), yOffset, BlurRadius, SpreadRadius, Color
@@ -7182,7 +7406,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'yOffset')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
+        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
         doConfigureSelectedWidgets('BoxShadow', {
             isActive, xOffset, yOffset: parseFloat(Event.target.value), BlurRadius, SpreadRadius, Color
@@ -7197,7 +7421,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'BlurRadius')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
+        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
         doConfigureSelectedWidgets('BoxShadow', {
             isActive, xOffset, yOffset, BlurRadius: parseFloat(Event.target.value), SpreadRadius, Color
@@ -7212,7 +7436,7 @@ function WAD_WidgetConfigurationPane() {
               enabled=${selectedWidgets.length > 0}
               Value=${commonValueItemOf(selectedWidgets.map((Widget) => Widget.BoxShadow), 'SpreadRadius')}
               onInput=${(Event) => {
-        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
+        const { isActive, xOffset, yOffset, BlurRadius, SpreadRadius, Color } = (commonObjectValueOf(selectedWidgets.map((Widget) => Widget.BoxShadow))
             || { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 5, SpreadRadius: 0, Color: 'black' });
         doConfigureSelectedWidgets('BoxShadow', {
             isActive, xOffset, yOffset, BlurRadius, SpreadRadius: parseFloat(Event.target.value), Color
@@ -7322,7 +7546,7 @@ function WAD_BehaviorEditor() {
     let activeScript, pendingScript;
     let ErrorReport, ScriptError;
     ({
-        activeScript, pendingScript, ErrorReport
+        activeScript, pendingScript, ErrorReport, ScriptError
     } = (Applet._BehaviorPool[selectedCategory][(selectedBehavior || '').toLowerCase()] || {}));
     const ScriptIsPending = ValueIsText(pendingScript) && (pendingScript !== activeScript);
     const ReportToShow = ScriptError || ErrorReport;
@@ -7392,6 +7616,7 @@ DesignerState.BehaviorEditor.View = WAD_BehaviorEditor;
 //--                            WAD_SynopsisEditor                            --
 //------------------------------------------------------------------------------
 function WAD_SynopsisEditor() {
+    var _a;
     const onClose = useCallback(() => closeDialog('SynopsisEditor'));
     const { Applet } = DesignerState;
     let Synopsis;
@@ -7401,7 +7626,7 @@ function WAD_SynopsisEditor() {
             Synopsis = Applet.Synopsis;
             break;
         case 'visitedPage':
-            Synopsis = Applet.visitedPage.Synopsis;
+            Synopsis = (_a = Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.Synopsis;
             break;
         case 'selectedWidgets':
             const { selectedWidgets } = DesignerState;
@@ -7447,36 +7672,87 @@ DesignerState.SynopsisEditor.View = WAD_SynopsisEditor;
 function WAD_ValueEditor() {
     const onClose = useCallback(() => closeDialog('ValueEditor'));
     const { selectedWidgets } = DesignerState;
-    let ValueType = 'string';
+    let enabled = (selectedWidgets.length > 0);
+    let EditorType = commonValueOf(selectedWidgets.map((Widget) => {
+        var _a;
+        return (_a = Widget.configurableProperty('Value')) === null || _a === void 0 ? void 0 : _a.EditorType;
+    }));
+    let ValueType;
+    switch (EditorType) {
+        case 'textline-input':
+        case 'password-input':
+        case 'search-input':
+        case 'phone-number-input':
+        case 'email-address-input':
+        case 'url-input':
+        case 'color-input':
+        case 'drop-down':
+            ValueType = 'textline';
+            break;
+        case 'number-input':
+        case 'integer-input':
+        case 'slider':
+            ValueType = 'number';
+            break;
+        case 'text-input':
+        case 'html-input':
+        case 'css-input':
+        case 'javascript-input':
+        case 'json-input':
+            ValueType = 'text';
+            break;
+        case 'linelist-input':
+            ValueType = 'linelist';
+            break;
+        case 'numberlist-input':
+            ValueType = 'numberlist';
+            break;
+    }
+    enabled = enabled && (ValueType != null);
     let ValueToEdit = commonValueOf(selectedWidgets.map((Widget) => Widget.Value));
     switch (true) {
         case (ValueToEdit == null):
         case (ValueToEdit === multipleValues):
         case (ValueToEdit === noSelection):
+            break; // editor will be disabled anyway
+        case (ValueType === 'textline'):
+            ValueToEdit = acceptableValue(ValueToEdit, ValueIsTextline, '');
+            break;
+        case (ValueType === 'number'):
+            ValueToEdit = acceptableValue(ValueToEdit, ValueIsNumber, 0) + '';
+            break;
+        case (ValueType === 'text'):
+            ValueToEdit = acceptableValue(ValueToEdit, ValueIsText, '');
+            break;
+        case (ValueType === 'linelist'):
+            ValueToEdit = acceptableValue(ValueToEdit, ValueIsLineList, []).join('\n');
+            break;
+        case (ValueType === 'numberlist'):
+            ValueToEdit = acceptableValue(ValueToEdit, ValueIsNumberList, []).join('\n');
             break;
         default:
-            ValueType = typeof ValueToEdit;
-            if (ValueType === 'object') {
-                ValueToEdit = JSON.stringify(ValueToEdit, null, 2);
-            }
-            else {
-                ValueToEdit = '' + ValueToEdit;
-            }
+            ValueToEdit = '';
     }
     function _onValueInput(Event) {
         const editedValue = Event.target.value;
         let Value = undefined;
         switch (ValueType) {
-            case 'boolean':
-                Value = Boolean(editedValue);
+            case 'textline':
+                Value = editedValue.split('\n')[0];
                 break;
             case 'number':
                 Value = Number(editedValue);
                 break;
-            case 'string':
+            case 'text':
                 Value = editedValue;
                 break;
-            default: Value = JSON.parse(editedValue); // may fail!
+            case 'linelist':
+                Value = editedValue.split('\n');
+                break;
+            case 'numberlist':
+                Value = editedValue.split('\n').map(Number).filter((Value) => !isNaN(Value));
+                break;
+            default: Value = editedValue;
         }
         doConfigureSelectedWidgets('Value', Value);
     }
@@ -7493,7 +7769,7 @@ function WAD_ValueEditor() {
         />
       </>
       <${WAD_TextInput} Placeholder="(enter value)" style="flex:1 0 auto; padding-top:4px"
-        enabled=${selectedWidgets.length > 0}
+        enabled=${enabled}
         Value=${ValueToEdit} onInput=${_onValueInput}
       />
      </>
@@ -7632,8 +7908,8 @@ const LayouterState = {
     initialGeometries: [], // initial geometries of "shapedWidgets"
     LassoMode: 'enclose',
     SelectionBeforeLasso: [],
-    LassoStart: { x: 0, y: 0 },
-    LassoEnd: { x: 0, y: 0 },
+    LassoStart: undefined,
+    LassoEnd: undefined,
 };
 /**** focusLayouterLayer ****/
 LayouterState.LayouterLayer = undefined;
@@ -7821,7 +8097,7 @@ function abortDraggingAndShaping() {
 function WAD_LayouterLayer() {
     const { Applet, selectedWidgets } = DesignerState;
     const visitedPage = Applet.visitedPage;
-    const WidgetList = visitedPage.WidgetList;
+    const WidgetList = (visitedPage === null || visitedPage === void 0 ? void 0 : visitedPage.WidgetList) || [];
     /**** handleCoverEvent ****/
     function handleCoverEvent(Event, Widget) {
         LayouterState.ShapeMode = 'c';
@@ -7844,20 +8120,21 @@ function WAD_LayouterLayer() {
         LassoRecognizer(Event);
     }, []);
     const onKeyDown = useCallback(async (Event) => {
+        var _a;
         if (Event.ctrlKey || Event.metaKey) {
-            switch (Event.key) {
+            switch (Event.key.toLowerCase()) {
                 case 'a':
                     consumeEvent(Event);
-                    return selectWidgets(Event.shiftKey ? [] : DesignerState.Applet.visitedPage.WidgetList);
+                    return selectWidgets(Event.shiftKey ? [] : ((_a = DesignerState.Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.WidgetList) || []);
                 case 'o':
                     consumeEvent(Event);
                     if ('showOpenFilePicker' in window) {
-                        // @ts-ignore TS18046 allow "window.showOpenFilePicker"
-                        const FileList = await window.showOpenFilePicker();
-                        if (FileList.length === 0) {
-                            return;
-                        }
                         try {
+                            // @ts-ignore TS18046 allow "window.showOpenFilePicker"
+                            const FileList = await window.showOpenFilePicker();
+                            if (FileList.length === 0) {
+                                return;
+                            }
                             const File = await FileList[0].getFile();
                             let FileType = '';
                             switch (FileList[0].name.replace(/^.*[.]/, '')) {
@@ -7871,6 +8148,9 @@ function WAD_LayouterLayer() {
                             doImport(await File.text(), FileType);
                         }
                         catch (Signal) {
+                            if ((Signal === null || Signal === void 0 ? void 0 : Signal.name) === 'AbortError') {
+                                return;
+                            }
                             window.alert('Could not import file\n\nReason: ' + Signal);
                         }
                     }
@@ -8071,7 +8351,8 @@ function WAD_ShapeHandle(PropSet) {
     />`;
 } /**** horizontal Guides ****/
 function horizontalGuides() {
-    const WidgetList = DesignerState.Applet.visitedPage.WidgetList;
+    var _a;
+    const WidgetList = ((_a = DesignerState.Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.WidgetList) || [];
     const selectedWidgets = DesignerState.selectedWidgets;
     const EdgeSet = {};
     const CenterSet = {};
@@ -8120,7 +8401,8 @@ function horizontalGuides() {
 }
 /**** vertical Guides ****/
 function verticalGuides() {
-    const WidgetList = DesignerState.Applet.visitedPage.WidgetList;
+    var _a;
+    const WidgetList = ((_a = DesignerState.Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.WidgetList) || [];
     const selectedWidgets = DesignerState.selectedWidgets;
     const EdgeSet = {};
     const CenterSet = {};
@@ -8180,6 +8462,43 @@ function IdOfWidget(Widget) {
 }
 /**** newId - uses nanoid with custom dictionary ****/
 export const newId = customAlphabet(nolookalikesSafe, 21);
+/**** GeometryOfWidgetRelativeTo ****/
+function GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
+    const WidgetAnchors = Widget.Anchors;
+    const { x: WidgetX, y: WidgetY, Width: WidgetWidth, Height: WidgetHeight } = Widget.Geometry;
+    const { minWidth, minHeight, maxWidth, maxHeight } = Widget;
+    const { x: BaseX, y: BaseY, Width: BaseWidth, Height: BaseHeight } = BaseGeometry;
+    const { x: PaneX, y: PaneY, Width: PaneWidth, Height: PaneHeight } = PaneGeometry;
+    let x, y, Width, Height;
+    switch (WidgetAnchors[0]) {
+        case 'left-width':
+            x = WidgetX - BaseX;
+            Width = WidgetWidth;
+            break;
+        case 'width-right':
+            x = PaneWidth - (BaseX + BaseWidth - (WidgetX + WidgetWidth)) - WidgetWidth;
+            Width = WidgetWidth;
+            break;
+        case 'left-right':
+            x = WidgetX - BaseX;
+            Width = Math.max(minWidth || 0, Math.min(PaneWidth - BaseWidth + WidgetWidth, maxWidth || Infinity));
+    }
+    switch (WidgetAnchors[1]) {
+        case 'top-height':
+            y = WidgetY - BaseY;
+            Height = WidgetHeight;
+            break;
+        case 'height-bottom':
+            y = PaneHeight - (BaseY + BaseHeight - (WidgetY + WidgetHeight)) - WidgetHeight;
+            Height = WidgetHeight;
+            break;
+        case 'top-bottom':
+            y = WidgetY - BaseY;
+            Height = Math.max(minHeight || 0, Math.min(PaneHeight - BaseHeight + WidgetHeight, maxHeight || Infinity));
+    }
+    // @ts-ignore TS5905 all variables will be assigned by now
+    return { x, y, Width, Height };
+}
 /**** consume/consumingEvent ****/
 function consumeEvent(Event) {
     Event.stopPropagation();
@@ -8195,6 +8514,5 @@ localforage.ready(async function () {
     console.log('starting WebApp Tinkerer Designer...');
     //      WAD_DesignerLayer.showErrorReport = showErrorReport
     useDesigner(WAD_DesignerLayer);
-    await restoreDialogs();
     console.log('WebApp Tinkerer Designer is operational');
 });

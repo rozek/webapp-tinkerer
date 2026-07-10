@@ -15,24 +15,37 @@ var __rest = (this && this.__rest) || function (s, e) {
     return t;
 };
 const WAT_Version = '0.1';
-const IconFolder = 'https://rozek.github.io/webapp-tinkerer/icons';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, escaped, ValuesAreEqual, ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, /*allowPhoneNumber,*/ allowURL, HexColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, HexColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
+function ValuesAreEqual(a, b, Mode) {
+    try {
+        return _ValuesAreEqual(a, b, Mode);
+    }
+    catch (Signal) {
+        console.error('ValuesAreEqual failed comparing', a, 'with', b, 'reason:', Signal);
+    }
+    ;
+    return false;
+}
+function ValuesDiffer(a, b, Mode) {
+    try {
+        return _ValuesDiffer(a, b, Mode);
+    }
+    catch (Signal) {
+        console.error('ValuesDiffer failed comparing', a, 'with', b, 'reason:', Signal);
+    }
+    ;
+    return true;
+}
 const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
-const allowPhoneNumber = allowTextline; // *C* should be implemented
 import { render, html, Component, createRef, useRef, useEffect, useCallback } from 'htm/preact';
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
-import mapTouchToMouseFor from 'svelte-touch-to-mouse';
-mapTouchToMouseFor('.WAT.Dialog > .Titlebar');
-mapTouchToMouseFor('.WAT.Dialog > .leftResizer');
-mapTouchToMouseFor('.WAT.Dialog > .middleResizer');
-mapTouchToMouseFor('.WAT.Dialog > .rightResizer');
 import Conversion from 'svelte-coordinate-conversion';
 const { fromLocalTo, fromViewportTo, fromDocumentTo } = Conversion;
 export { fromLocalTo, fromViewportTo, fromDocumentTo };
@@ -86,6 +99,7 @@ export const WAT_ErrorTypes = [
     '"Value" Setting Failure', 'Rendering Failure',
     'Callback Failure', 'Reactivity Failure',
 ];
+/**** throwError - simplifies construction of named errors ****/
 export function throwError(Message) {
     let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
     if (Match == null) {
@@ -326,22 +340,41 @@ export function ValueIsErrorReport(Value) {
 export const allowErrorReport = ValidatorForClassifier(ValueIsErrorReport, acceptNil, 'WAT error report'), allowedErrorReport = allowErrorReport;
 export const expectErrorReport = ValidatorForClassifier(ValueIsErrorReport, rejectNil, 'WAT error report'), expectedErrorReport = expectErrorReport;
 /**** ValueIsSerializableValue ****/
-export function ValueIsSerializableValue(Value) {
+export function ValueIsSerializableValue(Value, visitedObjects = new WeakSet()) {
     switch (true) {
-        case (Value === null):
+        case (Value == null): // deliberately also allows undefined
         case ValueIsBoolean(Value):
-        case ValueIsNumber(Value):
+        case ValueIsFiniteNumber(Value): // NaN/Infinity are not serializable
         case ValueIsString(Value):
-        case ValueIsListSatisfying(Value, ValueIsSerializableValue):
             return true;
-        case ValueIsPlainObject(Value): // *C* check for recursion
-            for (let Property in Value) {
-                if (Value.hasOwnProperty(Property) &&
-                    !ValueIsSerializableValue(Value[Property])) {
-                    return false;
-                }
+        case ValueIsList(Value):
+            if (visitedObjects.has(Value)) {
+                return false;
+            } // recursion detected
+            visitedObjects.add(Value);
+            try {
+                return ValueIsListSatisfying(Value, (Item) => ValueIsSerializableValue(Item, visitedObjects));
             }
-            return true;
+            finally {
+                visitedObjects.delete(Value);
+            }
+        case ValueIsPlainObject(Value):
+            if (visitedObjects.has(Value)) {
+                return false;
+            } // recursion detected
+            visitedObjects.add(Value);
+            try {
+                for (let Property in Value) {
+                    if (Value.hasOwnProperty(Property) &&
+                        !ValueIsSerializableValue(Value[Property], visitedObjects)) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            finally {
+                visitedObjects.delete(Value);
+            }
     }
     return false;
 }
@@ -500,6 +533,21 @@ export const expectedIntegerList = expectIntegerList;
 export function acceptableValue(Value, Validator, Default) {
     return (Validator(Value) === true ? Value : Default);
 }
+/**** ActivationStack ****/
+export function ActivationStack() {
+    const StackTrace = new Error().stack || '';
+    const StackLines = StackTrace.split('\n');
+    const OwnLineIndex = StackLines.findIndex((Line) => Line.includes('ActivationStack'));
+    return (OwnLineIndex < 0
+        ? StackTrace.replace(/^[^\n]+\n[^\n]+/, '')
+        : StackLines.slice(OwnLineIndex + 1).join('\n'));
+}
+/**** DesignerAssetsBase ****/
+let DesignerAssetsBase = 'https://rozek.github.io/webapp-tinkerer/';
+/**** URLhasSchema ****/
+export function URLhasSchema(Value) {
+    return ValueIsURL(Value) && ValueIsStringMatching(Value, /^[a-z][a-z0-9+.-]*:\/\//i);
+}
 //------------------------------------------------------------------------------
 //--                           Stylesheet Handling                            --
 //------------------------------------------------------------------------------
@@ -573,24 +621,30 @@ if (WATStyleElement == null) {
   .WAT.MarkdownView.Content h5 { font-size:15px; font-weight:bold; line-height:1.5; margin:0px }
   .WAT.MarkdownView.Content h6 { font-size:14px; font-weight:bold; line-height:1.5; margin:0px }
 
-  .WAT.MarkdownView.Content h1:not(:first-child) { margin-top:22px }
-  .WAT.MarkdownView.Content h2:not(:first-child) { margin-top:20px }
-  .WAT.MarkdownView.Content h3:not(:first-child) { margin-top:18px }
-  .WAT.MarkdownView.Content h4:not(:first-child) { margin-top:16px }
-  .WAT.MarkdownView.Content h5:not(:first-child) { margin-top:15px }
-  .WAT.MarkdownView.Content h6:not(:first-child) { margin-top:14px }
+  .WAT.MarkdownView.Content h1:not(:first-child) { margin-top:11px }
+  .WAT.MarkdownView.Content h2:not(:first-child) { margin-top:10px }
+  .WAT.MarkdownView.Content h3:not(:first-child) { margin-top:9px }
+  .WAT.MarkdownView.Content h4:not(:first-child) { margin-top:8px }
+  .WAT.MarkdownView.Content h5:not(:first-child) { margin-top:8px }
+  .WAT.MarkdownView.Content h6:not(:first-child) { margin-top:7px }
 
   .WAT.MarkdownView.Content p { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
-  .WAT.MarkdownView.Content p:not(:first-child) { margin-top:14px }
+  .WAT.MarkdownView.Content p:not(:first-child) { margin-top:7px }
 
   .WAT.MarkdownView.Content ul { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
-  .WAT.MarkdownView.Content ul:not(:first-child) { margin-top:14px }
+  .WAT.MarkdownView.Content ul:not(:first-child) { margin-top:7px }
 
   .WAT.MarkdownView.Content ol { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
-  .WAT.MarkdownView.Content ol:not(:first-child) { margin-top:14px }
+  .WAT.MarkdownView.Content ol:not(:first-child) { margin-top:7px }
 
   .WAT.MarkdownView.Content li { margin-left:20px }
   .WAT.MarkdownView.Content ul, .WAT.MarkdownView.Content ol { padding-left:0px }
+
+  .WAT.MarkdownView.Content blockquote {
+    margin:7px 0px 0px 10px;
+    padding:0px 0px 0px 6px;
+    border:none; border-left:solid 4px lightgray;
+  }
 
   .WAT.MarkdownView.Content code {
     font-family:Menlo,Courier,monospace;
@@ -598,9 +652,44 @@ if (WATStyleElement == null) {
     padding:2px; background-color:#EEEEEE;
   }
 
-  .WAT.MarkdownView.Content pre { background-color:#EEEEEE; padding:2px }
+  .WAT.MarkdownView.Content pre { background-color:#EEEEEE; padding:2px 0px 2px 6px }
+  .WAT.MarkdownView.Content pre:not(:first-child) { margin-top:7px }
   .WAT.MarkdownView.Content pre > code { padding:0px }
 
+/**** Syntax Highlighing ****/
+
+  .hljs {
+    display:block;
+    overflow-x:auto;
+    padding:0.5em;
+    background:#f0f0f0;
+    color:#444444;
+  }
+
+  .hljs-comment, .hljs-quote                     { font-style:italic;  color:#999988 }
+  .hljs-keyword, .hljs-selector-tag, .hljs-subst { font-weight:bold;   color:#333333 }
+  .hljs-string,  .hljs-doctag                    { color:#dd1144 }
+  .hljs-number                                   { color:#009999 }
+  .hljs-title, .hljs-section, .hljs-selector-id  { font-weight:bold;   color:#990000 }
+  .hljs-class .hljs-title, .hljs-type            { font-weight:bold;   color:#445588 }
+  .hljs-variable, .hljs-template-variable        { color:#336699 }
+  .hljs-attr                                     { color:#007700 }
+  .hljs-tag, .hljs-name                          { font-weight:normal; color:#000080}
+  .hljs-regexp                                   { color:#009926 }
+  .hljs-symbol, .hljs-bullet, .hljs-link, .hljs-meta, .hljs-selector-pseudo { color:#990073 }
+  .hljs-built_in, .hljs-builtin-name             { color:#0086b3 }
+  .hljs-deletion                                 { background:#ffdddd }
+  .hljs-addition                                 { background:#ddffdd }
+  .hljs-emphasis                                 { font-style:italic }
+  .hljs-strong                                   { font-weight:bold }
+  .hljs.language-html, .hljs.language-xml        { color:#333333 }
+  .hljs.language-css .hljs-selector-class,
+  .hljs.language-css .hljs-selector-tag,
+  .hljs.language-css .hljs-attribute             { color:#1e347b }
+  .hljs.language-javascript .hljs-keyword        { color:#0000aa }
+  .hljs.language-typescript .hljs-keyword        { color:#0000aa }
+  .hljs.language-java .hljs-keyword              { color:#bb9966 }
+  .hljs.language-json .hljs-attribute            { color:#0000aa }
 /**** WAT ModalLayer ****/
 
   .WAT.ModalLayer {
@@ -613,21 +702,39 @@ if (WATStyleElement == null) {
 
 /**** WAT Underlay ****/
 
-  .WAT.Underlay {
+  .WAT.WidgetUnderlay {
     display:block; position:fixed;
     left:0px; top:0px; right:auto; bottom:auto; width:100%; height:100%;
     pointer-events:auto;
   }
-  .WAT.modal.Underlay {
-    background:black; opacity:0.1;
+  .WAT.WidgetUnderlay.modal {
+    background:rgba(0,0,0,0.1);
   }
 
-/**** WAT DialogLayer ****/
+/**** WAT AppletOverlayLayer ****/
 
-  .WAT.DialogLayer {
+  .WAT.AppletOverlayLayer {
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
     pointer-events:none;
+
+    color:black;
+    font-family:'Source Sans Pro','Helvetica Neue',Helvetica,Arial,sans-serif;
+    font-size:14px; font-weight:400; line-height:1.4; color:black;
+    text-align:left; text-shadow:none;
+  }
+
+/**** AppletOverlay ****/
+
+  .WAT.AppletOverlay {
+    display:block; position:absolute;
+    z-index:1000000;
+    pointer-events:auto;
+  }
+  .WAT.AppletOverlay > .ContentPane {
+    display:block; position:absolute; overflow:visible;
+    left:0px; top:0px; right:0px; bottom:0px;
+    border:none;
   }
 
 /**** Dialog ****/
@@ -640,6 +747,8 @@ if (WATStyleElement == null) {
     z-index:1000000;
     pointer-events:auto;
   }
+
+/**** Dialog Components ****/
 
   .WAT.Dialog.withTitlebar > .Titlebar {
     display:block; position:absolute; overflow:hidden;
@@ -720,30 +829,17 @@ if (WATStyleElement == null) {
     -ms-touch-action:none; touch-action:none;
   }
 
-/**** AppletOverlay ****/
+/**** WAT WidgetOverlayLayer ****/
 
-  .WAT.AppletOverlay {
-    display:block; position:absolute;
-    z-index:1000000;
-    pointer-events:auto;
-  }
-  .WAT.AppletOverlay > .ContentPane {
-    display:block; position:absolute; overflow:visible;
-    left:0px; top:0px; right:0px; bottom:0px;
-    border:none;
-  }
-
-/**** WAT OverlayLayer ****/
-
-  .WAT.OverlayLayer {
+  .WAT.WidgetOverlayLayer {
     display:block; position:absolute; overflow:visible;
     left:0px; top:0px; right:0px; bottom:0px; width:auto; height:auto;
     pointer-events:none;
   }
 
-/**** Overlay ****/
+/**** WidgetOverlay ****/
 
-  .WAT.Overlay {
+  .WAT.WidgetOverlay {
     display:block; position:fixed;
     background:white; color:black;
     box-shadow:0px 0px 10px 0px rgba(0,0,0,0.5);
@@ -802,11 +898,23 @@ if (WATStyleElement == null) {
 
 /**** common Settings ****/
 
+  div.WAT {
+    touch-action:none; user-select:none;
+    -webkit-touch-callout:none;
+  }
+
+  .WAT img {
+    -webkit-user-drag:none; -khtml-user-drag:none;
+    -moz-user-drag:none; -o-user-drag:none;
+    user-drag: none;
+    user-select: none;
+  }
+
   .disabled, [disabled] { opacity:0.3 }
   .readonly             { background:none }
   .no-pointer-events    { pointer-events:none }
 
-  .textured { background-image:repeat }
+  .textured { background-repeat:repeat }
 
   .centered {
     display:flex; align-items:center; justify-content:center;
@@ -837,7 +945,7 @@ function installStylesheetForBehavior(Applet, Category, Behavior, Stylesheet) {
     if (!Registration.isNew) {
         return;
     }
-    const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior}`;
+    const StylesheetId = `WAT-Stylesheet_for_${Category}_Behavior_${Behavior.toLowerCase()}`;
     if ((Stylesheet == null) || (Stylesheet.trim() === '')) {
         let StyleElement = document.getElementById(StylesheetId);
         if (StyleElement != null) {
@@ -910,9 +1018,9 @@ function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
     // @ts-ignore TS7053 allow indexing
     if (Applet._BehaviorPool[Category][normalizedName] != null)
         throwError(`InvalidArgument:a behaviour for ${Category}s with the name ${Name} has already been registered`);
-    const activeScript = compiledScript.toString()
-        .replace(/^[^\n]+\n/, '') // removes first line (i.e., function head)
-        .replace(/\n[^\n]+$/, ''); // removes last line (with trailing "}")
+    const ScriptSource = compiledScript.toString();
+    const activeScript = ScriptSource.slice(// extracts the mere function body
+    ScriptSource.indexOf('{') + 1, ScriptSource.lastIndexOf('}')).trim();
     // @ts-ignore TS7053 allow indexing
     Applet._BehaviorPool[Category][normalizedName] = {
         Category, Name, activeScript, compiledScript, isNew: true
@@ -927,7 +1035,7 @@ async function brokenBehavior(Visual) {
     const Signal = Applet._BehaviorPool[Category][Behavior.toLowerCase()].Error;
     setErrorReport(Visual, {
         Type: 'Behaviour Compilation Failure',
-        Sufferer: Visual, Message: '' + Signal, Cause: Error
+        Sufferer: Visual, Message: '' + Signal, Cause: Signal
     });
 }
 /**** missingBehavior ****/
@@ -947,7 +1055,7 @@ export const WAT_PropertyEditorTypes = [
     'time-input', 'date-time-input', 'date-input', 'month-input', 'week-input',
     'color-input', 'drop-down', 'slider',
     'text-input', 'html-input', 'css-input', 'javascript-input', 'json-input',
-    'linelist-input', 'numberlist-input'
+    'linelist-input', 'numberlist-input', 'integerlist-input'
 ];
 export const WAT_PropertyContainerTypes = ['none', 'observed', 'memoized'];
 /**** forbiddenPropertyNames ****/
@@ -956,32 +1064,42 @@ function collectInternalNames() {
     Object.assign(forbiddenPropertyNames, {
         mount: true, unmount: true, render: true, // intrinsic callback names
         input: true, click: true, dblclick: true,
-        drop: true
+        drop: true, ready: true
     });
     // @ts-ignore TS2345 allow abstract class as argument
     collectInternalNamesFrom(WAT_Visual);
     collectInternalNamesFrom(WAT_Applet);
     collectInternalNamesFrom(WAT_Page);
     collectInternalNamesFrom(WAT_Widget);
-    delete forbiddenPropertyNames['Value']; // "Value" may be customized
+    delete forbiddenPropertyNames['value']; // "Value" may be customized
 }
 function collectInternalNamesFrom(WAT_Class) {
     Object.getOwnPropertyNames(WAT_Class.prototype).forEach((Name) => {
         if (!Name.startsWith('_')) {
-            forbiddenPropertyNames[Name] = true;
+            forbiddenPropertyNames[Name.toLowerCase()] = true;
         }
     });
 }
 /**** validatePropertyName ****/
 function validatePropertyName(Name) {
-    if (Name in forbiddenPropertyNames)
+    if (Name.toLowerCase() in forbiddenPropertyNames)
         throwError('InvalidArgument: forbidden property name ' + quoted(Name));
+}
+/**** PatternIsCompilable ****/
+function PatternIsCompilable(Pattern) {
+    try {
+        new RegExp(Pattern);
+        return true;
+    }
+    catch (Signal) {
+        return false;
+    }
 }
 /**** ValueIsPropertyDescriptor ****/
 function ValueIsPropertyDescriptor(Value) {
     if (!ValueIsPlainObject(Value) ||
         !ValueIsIdentifier(Value.Name) ||
-        (Value.Name in forbiddenPropertyNames) ||
+        (Value.Name.toLowerCase() in forbiddenPropertyNames) ||
         (Value.Label != null) && !ValueIsTextline(Value.Label) ||
         (Value.EditorType == null) ||
         !ValueIsOneOf(Value.EditorType, WAT_PropertyEditorTypes) ||
@@ -1010,9 +1128,9 @@ function ValueIsPropertyDescriptor(Value) {
             if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
                 (minLength != null) && !ValueIsOrdinal(minLength) ||
                 (maxLength != null) && !ValueIsOrdinal(maxLength) ||
-                (multiple != null) && !ValueIsBoolean(multiple) && (EditorType === 'email-address-input') ||
-                (SpellChecking != null) && !ValueIsBoolean(SpellChecking) && (EditorType === 'textline-input') ||
-                (Pattern != null) && !ValueIsTextline(Pattern) ||
+                (multiple != null) && !ValueIsBoolean(multiple) ||
+                (SpellChecking != null) && !ValueIsBoolean(SpellChecking) ||
+                (Pattern != null) && !((Pattern instanceof RegExp) || ValueIsTextline(Pattern) && PatternIsCompilable(Pattern)) ||
                 (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsTextline)) {
                 return false;
             }
@@ -1101,6 +1219,16 @@ function ValueIsPropertyDescriptor(Value) {
                 (LineWrapping != null) && !ValueIsBoolean(LineWrapping)) {
                 return false;
             }
+            if ((EditorType === 'linelist-input') &&
+                (Pattern != null) && !((Pattern instanceof RegExp) || ValueIsTextline(Pattern) && PatternIsCompilable(Pattern))) {
+                return false;
+            }
+            if ((EditorType === 'numberlist-input') || (EditorType === 'integerlist-input')) {
+                if ((minValue != null) && !ValueIsFiniteNumber(minValue) ||
+                    (maxValue != null) && !ValueIsFiniteNumber(maxValue)) {
+                    return false;
+                }
+            }
             break;
     }
     return true;
@@ -1108,8 +1236,8 @@ function ValueIsPropertyDescriptor(Value) {
 /**** normalizedPropertyDescriptor ****/
 function normalizedPropertyDescriptor(Value) {
     if (!ValueIsPropertyDescriptor(Value))
-        throwError(`InvalidArgument: invalid property ${Value.Name == null ? '' : quoted('' + Value.Name)}`);
-    let { Name, Label, EditorType, readonly, Default, AccessorsFor, withCallback, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, withMin, withMax, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+        throwError(`InvalidArgument: invalid property ${(Value === null || Value === void 0 ? void 0 : Value.Name) == null ? '' : quoted('' + (Value === null || Value === void 0 ? void 0 : Value.Name))}`);
+    let { Name, Label, EditorType, readonly, Validator, Default, AccessorsFor, withCallback, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, withMin, withMax, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
     if (Label == null) {
         Label = Name;
     }
@@ -1120,8 +1248,17 @@ function normalizedPropertyDescriptor(Value) {
     if (withCallback != null) {
         Descriptor.withCallback = withCallback;
     }
+    if (Validator != null) {
+        Descriptor.Validator = Validator;
+    }
     if (Default != null) {
         Descriptor.Default = Default;
+    }
+    if (withMin != null) {
+        Descriptor.withMin = withMin;
+    }
+    if (withMax != null) {
+        Descriptor.withMax = withMax;
     }
     if (AccessorsFor == null) {
         Descriptor.AccessorsFor = 'memoized';
@@ -1202,7 +1339,7 @@ function normalizedPropertyDescriptor(Value) {
         case 'color-input':
             break;
         case 'drop-down':
-            Descriptor.ValueList = ValueList;
+            Descriptor.ValueList = ValueList.slice();
             break;
         case 'slider':
             if (minValue != null) {
@@ -1260,14 +1397,29 @@ function normalizedPropertyDescriptor(Value) {
             if (LineWrapping != null) {
                 Descriptor.LineWrapping = LineWrapping;
             }
+            if (EditorType === 'linelist-input') {
+                if (Pattern != null) {
+                    Descriptor.Pattern = Pattern;
+                }
+            }
+            if ((EditorType === 'numberlist-input') || (EditorType === 'integerlist-input')) {
+                if (minValue != null) {
+                    Descriptor.minValue = minValue;
+                }
+                if (maxValue != null) {
+                    Descriptor.maxValue = maxValue;
+                }
+            }
             break;
     }
     return Descriptor;
 }
 /**** installAccessorFor ****/
 function installAccessorFor(Visual, Descriptor) {
-    const { minValue, maxValue, Pattern, ValueList } = Descriptor;
-    const RegEx = (Pattern == null ? undefined : new RegExp(Pattern));
+    const { minValue, maxValue, withMin, withMax, Pattern, ValueList } = Descriptor;
+    const RegEx = (Pattern == null
+        ? undefined
+        : Pattern instanceof RegExp ? Pattern : new RegExp('^(?:' + Pattern + ')$'));
     let Validator = Descriptor.Validator;
     if (Validator == null) {
         switch (Descriptor.EditorType) {
@@ -1298,7 +1450,7 @@ function installAccessorFor(Visual, Descriptor) {
                     Validator = ValueIsNumber;
                 }
                 else {
-                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue);
+                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax);
                 }
                 break;
             case 'integer-input':
@@ -1335,7 +1487,7 @@ function installAccessorFor(Visual, Descriptor) {
                     Validator = ValueIsNumber;
                 }
                 else {
-                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue);
+                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax);
                 }
                 break;
             case 'text-input':
@@ -1351,7 +1503,7 @@ function installAccessorFor(Visual, Descriptor) {
                 Validator = (Value) => ValueIsLineList(Value, RegEx);
                 break;
             case 'numberlist-input':
-                Validator = (Value) => ValueIsNumberList(Value, minValue, maxValue);
+                Validator = (Value) => ValueIsNumberList(Value, minValue, maxValue, withMin, withMax);
                 break;
             case 'integerlist-input':
                 Validator = (Value) => ValueIsIntegerList(Value, minValue, maxValue);
@@ -1382,6 +1534,38 @@ function installAccessorFor(Visual, Descriptor) {
 //                              Callback Support                              //
 //----------------------------------------------------------------------------//
 function noCallback() { }
+/**** makeVisualReady ****/
+function makeVisualReady(Visual) {
+    var _a, _b;
+    switch (Visual.Category) {
+        case 'applet':
+            if (!Visual.isReady) {
+                // @ts-ignore TS2445 allow access to "_isReady"
+                Visual._isReady = true;
+                Visual.on('ready')();
+            }
+            ;
+            Visual.PageList.forEach((Page) => makeVisualReady(Page));
+            break;
+        case 'page':
+            if ((_a = Visual.Applet) === null || _a === void 0 ? void 0 : _a.isReady) {
+                if (!Visual.isReady) {
+                    // @ts-ignore TS2445 allow access to "_isReady"
+                    Visual._isReady = true;
+                    Visual.on('ready')();
+                }
+                ;
+                Visual.WidgetList.forEach((Widget) => makeVisualReady(Widget));
+            }
+            break;
+        case 'widget':
+            if (((_b = Visual.Page) === null || _b === void 0 ? void 0 : _b.isReady) && !Visual.isReady) {
+                // @ts-ignore TS2445 allow access to "_isReady"
+                Visual._isReady = true;
+                Visual.on('ready')();
+            }
+    }
+}
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
@@ -1403,6 +1587,7 @@ function unregisterAllReactiveFunctionsFrom(Visual) {
     reactiveFunctions.forEach((reactiveFunction) => {
         dispose(reactiveFunction);
     });
+    reactiveFunctions.length = 0;
 }
 //------------------------------------------------------------------------------
 //--                              Error Handling                              --
@@ -1502,6 +1687,7 @@ export function GestureRecognizer(OptionSet) {
     /**** Working Variables ****/
     let Status = '', StartX = 0, StartY = 0;
     let curEvent, curX, curY;
+    let curPointerId = undefined;
     let lastClickCount = 0, lastClickTime = 0;
     let LongPressTimer, LongPressState = '';
     /**** actual recognizer ****/
@@ -1516,16 +1702,51 @@ export function GestureRecognizer(OptionSet) {
     };
     /**** onPointerDown ****/
     function onPointerDown(Event) {
+        if ((Status !== '') && (Event.pointerId !== curPointerId)) {
+            return;
+        }
+        // ignore other pointers
         if (Event.buttons !== 1) { // only handle events for primary button
             if (Status !== '') {
                 onPointerCancel(Event);
             }
             return;
         }
+        const Target = Event.target;
+        if (neverFrom != null) {
+            if (neverFrom instanceof Element) {
+                if (neverFrom.contains(Target)) {
+                    return;
+                }
+            }
+            else {
+                if (Target.closest(neverFrom) != null) {
+                    return;
+                }
+            }
+        }
+        if (onlyFrom != null) {
+            if (onlyFrom instanceof Element) {
+                if (!onlyFrom.contains(Target)) {
+                    return;
+                }
+            }
+            else {
+                if (Target.closest(onlyFrom) == null) {
+                    return;
+                }
+            }
+        }
         // @ts-ignore TS18047,TS2339 allow "Event.target.setPointerCapture"
         Event.target.setPointerCapture(Event.pointerId);
         Event.stopPropagation(); // consume event
         Event.preventDefault();
+        if (LongPressTimer != null) {
+            clearTimeout(LongPressTimer);
+        }
+        LongPressState = '';
+        LongPressTimer = undefined;
+        curPointerId = Event.pointerId;
         Status = 'observing'; // i.e., before choice between "click" and "drag"
         StartX = curX = Event.clientX;
         curEvent = Event;
@@ -1540,6 +1761,9 @@ export function GestureRecognizer(OptionSet) {
         if (Status === '') {
             return;
         } // recognizer is not active yet
+        if (Event.pointerId !== curPointerId) {
+            return;
+        } // ignore other pointers
         if (Event.buttons !== 1) { // only handle events for primary button
             if (Status !== '') {
                 onPointerCancel(Event);
@@ -1558,8 +1782,8 @@ export function GestureRecognizer(OptionSet) {
                 if (LongPressTimer != null) {
                     clearTimeout(LongPressTimer);
                 }
-                if (LongPressState !== 'preparing') {
-                    call(onLongPressIndication, [false, Event, curX, curY, StartX, StartY]);
+                if ((LongPressState === 'waiting') || (LongPressState === 'ready')) {
+                    call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
                 }
                 LongPressState = '';
                 LongPressTimer = undefined;
@@ -1574,6 +1798,9 @@ export function GestureRecognizer(OptionSet) {
         if (Status === '') {
             return;
         } // recognizer is not active yet
+        if (Event.pointerId !== curPointerId) {
+            return;
+        } // ignore other pointers
         if (Event.buttons !== 0) { // only handle events for primary button
             if (Status !== '') {
                 onPointerCancel(Event);
@@ -1627,12 +1854,16 @@ export function GestureRecognizer(OptionSet) {
             call(onDragFinish, [curX - StartX, curY - StartY, StartX, StartY, Event]);
         }
         Status = '';
+        curPointerId = undefined;
     }
     /**** onPointerCancel ****/
     function onPointerCancel(Event) {
         if (Status === '') {
             return;
         } // recognizer is not active yet
+        if (Event.pointerId !== curPointerId) {
+            return;
+        } // ignore other pointers
         Event.stopPropagation(); // consume event
         Event.preventDefault();
         ({ clientX: curX, clientY: curY } = curEvent = Event);
@@ -1645,11 +1876,12 @@ export function GestureRecognizer(OptionSet) {
         if (LongPressTimer != null) {
             clearTimeout(LongPressTimer);
         }
-        if (LongPressState !== 'preparing') {
+        if ((LongPressState === 'waiting') || (LongPressState === 'ready')) {
             call(onLongPressIndication, [false, curX, curY, StartX, StartY, Event]);
         }
         LongPressState = '';
         LongPressTimer = undefined;
+        curPointerId = undefined;
     }
     /**** long-press timeout handling ****/
     function handleLongPressTimeout() {
@@ -1682,9 +1914,15 @@ export function WAT_Mover(PropSet) {
     const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onMove } = PropSet;
     const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
+    const PropsRef = useRef(null);
+    PropsRef.current = {
+        Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
+        onMove, GridWidth, GridHeight
+    };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
     function handleMove(dx, dy) {
+        const { onMove, GridWidth, GridHeight } = PropsRef.current;
         if (typeof onMove !== 'function') {
             return;
         }
@@ -1697,6 +1935,7 @@ export function WAT_Mover(PropSet) {
         onlyFrom: '.WAT.Mover',
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
+            const { Widget, onDragStart } = PropsRef.current;
             DragInfo.StartX = (Widget == null ? 0 : Widget.x);
             DragInfo.StartY = (Widget == null ? 0 : Widget.y);
             if (typeof onDragStart === 'function') {
@@ -1705,22 +1944,27 @@ export function WAT_Mover(PropSet) {
             handleMove(dx, dy);
         },
         onDragContinuation: (dx, dy, x, y, Event) => {
+            const { onDragContinuation } = PropsRef.current;
             if (typeof onDragContinuation === 'function') {
                 onDragContinuation(dx, dy, x, y, Event);
             }
             handleMove(dx, dy);
         },
         onDragFinish: (dx, dy, x, y, Event) => {
+            const { onDragFinish } = PropsRef.current;
             if (typeof onDragFinish === 'function') {
                 onDragFinish(dx, dy, x, y, Event);
             }
             handleMove(dx, dy);
         },
         onDragCancellation: (dx, dy, x, y, Event) => {
+            const { onDragCancellation, onMove } = PropsRef.current;
             if (typeof onDragCancellation === 'function') {
                 onDragCancellation(dx, dy, x, y, Event);
             }
-            handleMove(0, 0);
+            if (typeof onMove === 'function') { // restore original geometry
+                onMove(0, 0, DragInfo.StartX, DragInfo.StartY);
+            }
         },
     }));
     return html `<div class="WAT Mover" style="${style || ''}"
@@ -1735,23 +1979,30 @@ export function WAT_Resizer(PropSet) {
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
     const minWidth = acceptableValue(PropSet.minWidth, ValueIsOrdinal, 0);
     const minHeight = acceptableValue(PropSet.minHeight, ValueIsOrdinal, 0);
+    const PropsRef = useRef(null);
+    PropsRef.current = {
+        Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
+        onResize, GridWidth, GridHeight, minWidth, minHeight
+    };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
     function handleResize(dx, dy) {
+        const { onResize, GridWidth, GridHeight, minWidth, minHeight } = PropsRef.current;
         if (typeof onResize !== 'function') {
             return;
         }
-        let Width = Math.max(minWidth, DragInfo.StartWidth + dx);
-        let Height = Math.max(minHeight, DragInfo.StartHeight + dy);
-        Width = GridWidth * Math.round(Width / GridWidth);
-        Height = GridHeight * Math.round(Height / GridHeight);
+        let Width = GridWidth * Math.round((DragInfo.StartWidth + dx) / GridWidth);
+        let Height = GridHeight * Math.round((DragInfo.StartHeight + dy) / GridHeight);
+        Width = Math.max(minWidth, Width);
+        Height = Math.max(minHeight, Height);
         onResize(Width - DragInfo.StartWidth, Height - DragInfo.StartHeight, Width, Height);
     }
     const RecognizerRef = useRef(null);
     const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
-        onlyFrom: '.WAT.Mover',
+        onlyFrom: '.WAT.Resizer',
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
+            const { Widget, onDragStart } = PropsRef.current;
             DragInfo.StartWidth = (Widget == null ? 0 : Widget.Width);
             DragInfo.StartHeight = (Widget == null ? 0 : Widget.Height);
             if (typeof onDragStart === 'function') {
@@ -1760,22 +2011,27 @@ export function WAT_Resizer(PropSet) {
             handleResize(dx, dy);
         },
         onDragContinuation: (dx, dy, x, y, Event) => {
+            const { onDragContinuation } = PropsRef.current;
             if (typeof onDragContinuation === 'function') {
                 onDragContinuation(dx, dy, x, y, Event);
             }
             handleResize(dx, dy);
         },
         onDragFinish: (dx, dy, x, y, Event) => {
+            const { onDragFinish } = PropsRef.current;
             if (typeof onDragFinish === 'function') {
                 onDragFinish(dx, dy, x, y, Event);
             }
             handleResize(dx, dy);
         },
         onDragCancellation: (dx, dy, x, y, Event) => {
+            const { onDragCancellation, onResize } = PropsRef.current;
             if (typeof onDragCancellation === 'function') {
                 onDragCancellation(dx, dy, x, y, Event);
             }
-            handleResize(0, 0);
+            if (typeof onResize === 'function') { // restore original geometry
+                onResize(0, 0, DragInfo.StartWidth, DragInfo.StartHeight);
+            }
         },
     }));
     return html `<div class="WAT Resizer" style="${style || ''}"
@@ -1788,14 +2044,23 @@ export function WAT_Shaper(PropSet) {
     const { Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onShape } = PropSet;
     const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
+    const PropsRef = useRef(null);
+    PropsRef.current = {
+        Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
+        onShape, GridWidth, GridHeight
+    };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
     /**** Recognizer ****/
     const RecognizerRef = useRef(null);
     const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
-        onlyFrom: '.WAT_ShaperHandle',
+        onlyFrom: '.WAT.ShaperHandle',
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
+            const { Widget, onDragStart } = PropsRef.current;
+            if ((Widget == null) || (Widget.Page == null)) {
+                return;
+            }
             DragInfo.initialGeometry = Widget.Geometry;
             if (typeof onDragStart === 'function') {
                 onDragStart(dx, dy, x, y, Event);
@@ -1803,45 +2068,54 @@ export function WAT_Shaper(PropSet) {
             handleShapeChange(dx, dy);
         },
         onDragContinuation: (dx, dy, x, y, Event) => {
+            const { onDragContinuation } = PropsRef.current;
             if (typeof onDragContinuation === 'function') {
                 onDragContinuation(dx, dy, x, y, Event);
             }
             handleShapeChange(dx, dy);
         },
         onDragFinish: (dx, dy, x, y, Event) => {
+            const { onDragFinish } = PropsRef.current;
             if (typeof onDragFinish === 'function') {
                 onDragFinish(dx, dy, x, y, Event);
             }
             handleShapeChange(dx, dy);
         },
         onDragCancellation: (dx, dy, x, y, Event) => {
+            const { onDragCancellation, onShape } = PropsRef.current;
             if (typeof onDragCancellation === 'function') {
                 onDragCancellation(dx, dy, x, y, Event);
             }
-            handleShapeChange(0, 0);
+            if (typeof onShape === 'function') { // restore original geometry
+                const { initialGeometry } = DragInfo;
+                onShape(initialGeometry.x, initialGeometry.y, initialGeometry.Width, initialGeometry.Height);
+            }
         },
     }));
     /**** handleShapeChange ****/
     function handleShapeChange(dx, dy) {
+        const { onShape, GridWidth, GridHeight } = PropsRef.current;
         if (typeof onShape !== 'function') {
             return;
         }
+        const dxWest = Math.min(dx, DragInfo.initialGeometry.Width);
+        const dyNorth = Math.min(dy, DragInfo.initialGeometry.Height);
         let dX = 0, dY = 0, dW = 0, dH = 0;
         switch (DragInfo.ShapeMode) {
             case 'nw':
-                dX = dx;
-                dW = -dx;
-                dY = dy;
-                dH = -dy;
+                dX = dxWest;
+                dW = -dX;
+                dY = dyNorth;
+                dH = -dY;
                 break;
             case 'n':
-                dY = dy;
-                dH = -dy;
+                dY = dyNorth;
+                dH = -dY;
                 break;
             case 'ne':
                 dW = dx;
-                dY = dy;
-                dH = -dy;
+                dY = dyNorth;
+                dH = -dY;
                 break;
             case 'e':
                 dW = dx;
@@ -1854,17 +2128,14 @@ export function WAT_Shaper(PropSet) {
                 dH = dy;
                 break;
             case 'sw':
-                dX = dx;
-                dW = -dx;
+                dX = dxWest;
+                dW = -dX;
                 dH = dy;
                 break;
             case 'w':
-                dX = dx;
-                dW = -dx;
+                dX = dxWest;
+                dW = -dX;
                 break;
-            case 'c':
-                dX = dx;
-                dY = dy;
         }
         let Width = Math.max(0, DragInfo.initialGeometry.Width + dW);
         let Height = Math.max(0, DragInfo.initialGeometry.Height + dH);
@@ -1904,11 +2175,6 @@ export function WAT_Shaper(PropSet) {
             case 'w':
                 xl = Math.min(xl_, xr);
                 break;
-            case 'c':
-                xl = xl_;
-                xr = xl + Width;
-                yt = yt_;
-                yb = yt + Height;
         }
         onShape(xl, yt, xr - xl, yb - yt);
     }
@@ -1991,11 +2257,20 @@ export function WAT_Dragger(PropSet) {
     const DropMode = acceptableValue(PropSet.DropMode, (Value) => ValueIsOneOf(Value, ['touch', 'enclose']), 'enclose');
     const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
+    const PropsRef = useRef(null);
+    PropsRef.current = {
+        Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
+        onDrag, DropMode, GridWidth, GridHeight
+    };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
     /**** handleDrag ****/
     function handleDrag(dx, dy) {
+        const { Widget, onDrag, DropMode, GridWidth, GridHeight } = PropsRef.current;
         if (typeof onDrag !== 'function') {
+            return;
+        }
+        if ((Widget == null) || (Widget.Page == null)) {
             return;
         }
         let x = GridWidth * Math.round((DragInfo.StartX + dx) / GridWidth);
@@ -2037,17 +2312,20 @@ export function WAT_Dragger(PropSet) {
             catch (Signal) { /* nop - error is already set */ }
         }
         DragInfo.Catcher = Catcher;
-        try {
-            Catcher.on('droppable-entered')(Widget);
+        if (Catcher != null) {
+            try {
+                Catcher.on('droppable-entered')(Widget);
+            }
+            catch (Signal) { /* nop - error is already set */ }
+            try {
+                Widget.on('catcher-entered')(Catcher);
+            }
+            catch (Signal) { /* nop - error is already set */ }
         }
-        catch (Signal) { /* nop - error is already set */ }
-        try {
-            Widget.on('catcher-entered')(Catcher);
-        }
-        catch (Signal) { /* nop - error is already set */ }
     }
     /**** handleDrop ****/
     function handleDrop() {
+        const { Widget } = PropsRef.current;
         if (DragInfo.Catcher != null) {
             try {
                 DragInfo.Catcher.on('drop')(Widget);
@@ -2066,6 +2344,7 @@ export function WAT_Dragger(PropSet) {
         onlyFrom: '.WAT.Dragger',
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
+            const { Widget, onDragStart } = PropsRef.current;
             DragInfo.StartX = (Widget == null ? 0 : Widget.x);
             DragInfo.StartY = (Widget == null ? 0 : Widget.y);
             if (typeof onDragStart === 'function') {
@@ -2074,12 +2353,14 @@ export function WAT_Dragger(PropSet) {
             handleDrag(dx, dy);
         },
         onDragContinuation: (dx, dy, x, y, Event) => {
+            const { onDragContinuation } = PropsRef.current;
             if (typeof onDragContinuation === 'function') {
                 onDragContinuation(dx, dy, x, y, Event);
             }
             handleDrag(dx, dy);
         },
         onDragFinish: (dx, dy, x, y, Event) => {
+            const { onDragFinish } = PropsRef.current;
             if (typeof onDragFinish === 'function') {
                 onDragFinish(dx, dy, x, y, Event);
             }
@@ -2087,10 +2368,24 @@ export function WAT_Dragger(PropSet) {
             handleDrop();
         },
         onDragCancellation: (dx, dy, x, y, Event) => {
+            const { Widget, onDragCancellation, onDrag } = PropsRef.current;
             if (typeof onDragCancellation === 'function') {
                 onDragCancellation(dx, dy, x, y, Event);
             }
-            handleDrag(0, 0);
+            if (DragInfo.Catcher != null) {
+                try {
+                    DragInfo.Catcher.on('droppable-left')(Widget);
+                }
+                catch (Signal) { /* nop - error is already set */ }
+                try {
+                    Widget.on('catcher-left')(DragInfo.Catcher);
+                }
+                catch (Signal) { /* nop - error is already set */ }
+                delete DragInfo.Catcher;
+            }
+            if (typeof onDrag === 'function') { // restore original geometry
+                onDrag(0, 0, DragInfo.StartX, DragInfo.StartY);
+            }
         },
     }));
     return html `<div class="WAT Dragger" style="${style || ''}"
@@ -2286,6 +2581,13 @@ export class WAT_Visual {
             writable: true,
             value: void 0
         });
+        /**** activateScript - even if underlying applet is not (yet) attached ****/
+        Object.defineProperty(this, "_activationToken", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: 0
+        });
         /**** ScriptError (used by Designer) ****/
         Object.defineProperty(this, "_ScriptError", {
             enumerable: true,
@@ -2405,11 +2707,30 @@ export class WAT_Visual {
             this.rerender();
         }
     }
+    /**** configurableProperty ****/
+    configurableProperty(Name) {
+        expectIdentifier('property identifier', Name);
+        const DescriptorIndex = this._configurableProperties.findIndex((Descriptor) => Descriptor.Name === Name);
+        if (DescriptorIndex < 0) {
+            return undefined;
+        }
+        const Descriptor = Object.assign({}, this._configurableProperties[DescriptorIndex]);
+        if (Descriptor.Hashmarks != null) {
+            Descriptor.Hashmarks = Descriptor.Hashmarks.slice();
+        }
+        if (Descriptor.Suggestions != null) {
+            Descriptor.Suggestions = Descriptor.Suggestions.slice();
+        }
+        if (Descriptor.ValueList != null) {
+            Descriptor.ValueList = Descriptor.ValueList.slice();
+        }
+        return Descriptor;
+    }
     /**** configure ****/
     configure(OptionSet) {
         expectPlainObject('options set', OptionSet);
         for (const Key in OptionSet) {
-            if (OptionSet.hasOwnProperty(Key)) {
+            if (Object.prototype.hasOwnProperty.call(OptionSet, Key)) {
                 this[Key] = OptionSet[Key];
             }
         }
@@ -2470,6 +2791,10 @@ export class WAT_Visual {
     }
     set TextDecoration(newTextDecoration) {
         allowTextDecoration('text decoration', newTextDecoration);
+        // @ts-ignore TS2367 "newTextDecoration" may be "none"
+        if (newTextDecoration === 'none') {
+            newTextDecoration = { isActive: false, Line: 'none' };
+        }
         if (ValuesDiffer(this._TextDecoration, newTextDecoration)) {
             if (newTextDecoration == null) {
                 this._TextDecoration = undefined;
@@ -2484,10 +2809,14 @@ export class WAT_Visual {
     get TextShadow() {
         return (this._TextShadow == null
             ? this._Container == null ? undefined : this._Container.TextShadow
-            : this._TextShadow);
+            : Object.assign({}, this._TextShadow));
     }
     set TextShadow(newTextShadow) {
         allowTextShadow('text shadow', newTextShadow);
+        // @ts-ignore TS2367 "newTextShadow" may be "none"
+        if (newTextShadow === 'none') {
+            newTextShadow = { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 0, Color: 'transparent' };
+        }
         if (ValuesDiffer(this._TextShadow, newTextShadow)) {
             if (newTextShadow == null) {
                 this._TextShadow = undefined;
@@ -2557,6 +2886,10 @@ export class WAT_Visual {
     }
     set BackgroundTexture(newTexture) {
         allowBackgroundTexture('background texture', newTexture);
+        // @ts-ignore TS2367 "newTexture" may be "none"
+        if (newTexture === 'none') {
+            newTexture = { isActive: false, ImageURL: 'about:blank', Mode: 'normal', xOffset: 0, yOffset: 0 };
+        }
         if (ValuesDiffer(this._BackgroundTexture, newTexture)) {
             if (newTexture == null) {
                 this._BackgroundTexture = undefined;
@@ -2592,10 +2925,10 @@ export class WAT_Visual {
             : this._Cursor);
     }
     set Cursor(newCursor) {
-        allowOneOf('cursor name', newCursor, WAT_Cursors);
         if ((newCursor || '').trim() === '') {
             newCursor = undefined;
         }
+        allowOneOf('cursor name', newCursor, WAT_Cursors);
         if (this._Cursor !== newCursor) {
             this._Cursor = newCursor;
             this.rerender();
@@ -2644,8 +2977,8 @@ export class WAT_Visual {
             this.rerender();
         }
     }
-    /**** activateScript - even if underlying applet is not (yet) attached ****/
     async activateScript(Mode = 'catch-exception') {
+        const activationToken = ++this._activationToken;
         let activeScript = (this._activeScript || '').trim();
         this._CallbackRegistry = undefined;
         unregisterAllReactiveFunctionsFrom(this);
@@ -2682,12 +3015,21 @@ export class WAT_Visual {
         const onMount = this.on.bind(this, 'mount');
         const onUpdate = this.on.bind(this, 'update');
         const onUnmount = this.on.bind(this, 'unmount');
-        const onValueChange = this.on.bind(this, 'value-change');
+        const onValueChange = this.on.bind(this, 'Value');
         /**** run behavior script first ****/
         this._ErrorReport = undefined;
         const Applet = this.Applet;
-        if (Applet == null)
-            throwError('NotAttached: this visual is not attached');
+        if (Applet == null) {
+            if (Mode === 'rethrow-exception') {
+                throwError('NotAttached: this visual is not attached');
+            }
+            setErrorReport(this, {
+                Type: 'Script Execution Failure',
+                Sufferer: this, Message: 'NotAttached: this visual is not attached',
+                Cause: undefined
+            });
+            return;
+        }
         const Category = this.Category;
         const Behavior = this.Behavior;
         if (Behavior != null) {
@@ -2697,12 +3039,18 @@ export class WAT_Visual {
                 missingBehavior(this);
             }
             else {
+                const BehaviorIsNew = Registration.isNew || false;
+                Registration.isNew = false; // only the first activation run sees it
                 try {
-                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), (Registration === null || Registration === void 0 ? void 0 : Registration.isNew) || false);
-                    Registration.isNew = false;
+                    await Registration.compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForBehavior.bind(this, Applet, Category, Behavior), BehaviorIsNew);
+                    if (activationToken !== this._activationToken) {
+                        return;
+                    }
                 }
                 catch (Signal) {
-                    Registration.isNew = false;
+                    if (activationToken !== this._activationToken) {
+                        return;
+                    }
                     console.warn('Behavior Execution Failure', Signal);
                     setErrorReport(this, {
                         Type: 'Behaviour Execution Failure',
@@ -2741,8 +3089,14 @@ export class WAT_Visual {
         try {
             await compiledScript.call(this, this, this, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheetForVisual.bind(this, this), false // Behavior.isNew
             );
+            if (activationToken !== this._activationToken) {
+                return;
+            }
         }
         catch (Signal) {
+            if (activationToken !== this._activationToken) {
+                return;
+            }
             console.warn('Script Execution Failure', Signal);
             setErrorReport(this, {
                 Type: 'Script Execution Failure',
@@ -2756,12 +3110,18 @@ export class WAT_Visual {
     }
     /**** applyPendingScript - but only if it can be compiled ****/
     async applyPendingScript() {
+        if (this._pendingScript == null) {
+            return;
+        }
         if (!this.isAttached) {
             return;
         } // consider attached applets only
         let activeScript = this._activeScript || '';
         let pendingScript = this._pendingScript || '';
         if (activeScript === pendingScript) {
+            this._pendingScript = undefined;
+            this._ScriptError = undefined;
+            this.rerender();
             return;
         }
         if (pendingScript.trim() !== '') {
@@ -2789,17 +3149,21 @@ export class WAT_Visual {
             await this.activateScript('rethrow-exception');
         }
         catch (Signal) {
-            setScriptError(this, {
-                Type: 'Script Execution Failure',
-                Sufferer: this, Message: '' + Signal, Cause: Signal
-            });
+            if (this._ErrorReport == null) {
+                setScriptError(this, {
+                    Type: 'Script Execution Failure',
+                    Sufferer: this, Message: '' + Signal, Cause: Signal
+                });
+            }
+            else {
+                setScriptError(this, Object.assign({}, this._ErrorReport));
+            }
             this.rerender();
             return;
         }
         this.rerender(); // just to be on the safe side, may be optimized away
-        this._isReady = true;
-        this.on('ready')();
-        if (this.isMounted) {
+        makeVisualReady(this);
+        if (this.isReady && this.isMounted) {
             this.on('mount')();
         }
     } // wasn't invoked before because "isReady" was false
@@ -2823,7 +3187,8 @@ export class WAT_Visual {
         expectTextline('callback name', CallbackName);
         const normalizedCallbackName = CallbackName.toLowerCase();
         if (arguments.length === 1) {
-            return ((_a = this._CallbackRegistry) === null || _a === void 0 ? void 0 : _a[normalizedCallbackName]) || noCallback;
+            const registeredCallback = (_a = this._CallbackRegistry) === null || _a === void 0 ? void 0 : _a[normalizedCallbackName];
+            return registeredCallback || noCallback;
         }
         else {
             allowFunction('callback', newCallback);
@@ -2853,17 +3218,19 @@ export class WAT_Visual {
             let Result = Callback.apply(this, ArgList);
             if (Result instanceof Promise) {
                 console.warn('started  tracking asynchronous callback ' + quoted(CallbackName));
-                Result.catch((Signal) => {
+                return Result.then((Value) => {
+                    console.warn('finished tracking asynchronous callback ' + quoted(CallbackName));
+                    return Value;
+                }, (Signal) => {
                     console.warn(`asynchronous callback ${quoted(CallbackName)} failed`, Signal);
                     setErrorReport(this, {
                         Type: 'Callback Failure',
                         Sufferer: this, Message: '' + Signal, Cause: Signal
                     });
-                }).then(() => console.warn('finished tracking asynchronous callback ' + quoted(CallbackName)));
+                    return undefined;
+                });
             }
-            else {
-                return Result;
-            }
+            return Result;
         }
         catch (Signal) {
             console.warn(`callback ${quoted(CallbackName)} failed`, Signal);
@@ -2874,12 +3241,12 @@ export class WAT_Visual {
         }
     }
     /**** Renderer ****/
-    get Renderer() { return this.on('render'); }
+    get Renderer() {
+        const Renderer = this.on('render');
+        return (Renderer === noCallback ? undefined : Renderer);
+    }
     set Renderer(newRenderer) {
         allowFunction('renderer', newRenderer);
-        if (newRenderer == null) {
-            newRenderer = () => '';
-        }
         this.on('render', newRenderer);
         this.rerender();
     }
@@ -2888,7 +3255,7 @@ export class WAT_Visual {
         let CSSStyleList = [];
         const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, hasBackground, BackgroundColor, BackgroundTexture, Opacity, Cursor, Overflows, } = this;
         if (FontFamily != null) {
-            CSSStyleList.push(`font-family:${FontFamily}`);
+            CSSStyleList.push(`font-family:${FontFamily.replace(/[;{}\r\n]/g, '')}`);
         }
         if (FontSize != null) {
             CSSStyleList.push(`font-size:${FontSize}px`);
@@ -2951,7 +3318,8 @@ export class WAT_Visual {
                 }
                 let BackgroundRepeat = (Mode === 'tile' ? 'repeat' : 'no-repeat');
                 if (isActive) {
-                    CSSStyleList.push(`background-image:url(${ImageURL})`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
+                    const escapedImageURL = ImageURL.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+                    CSSStyleList.push(`background-image:url("${escapedImageURL}")`, `background-position:${Math.round(xOffset)}px ${Math.round(yOffset)}px;` +
                         `background-size:${BackgroundSize}; background-repeat:${BackgroundRepeat}`);
                 }
                 else {
@@ -2966,7 +3334,7 @@ export class WAT_Visual {
             CSSStyleList.push(`cursor:${Cursor}`);
         }
         CSSStyleList.push(`overflow:${Overflows.join(' ')}`);
-        return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';');
+        return CSSStyleList.join(';') + ';';
     }
     set CSSStyle(_) { throwReadOnlyError('CSSStyle'); }
     get View() { return this._View; }
@@ -2977,10 +3345,7 @@ export class WAT_Visual {
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
         if (this._memoized != null) { // test serializability of "memoized" as well
-            try {
-                JSON.stringify(this._memoized);
-            }
-            catch (Signal) {
+            if (!ValueIsSerializableValue(this._memoized)) {
                 throwError('NotSerializable: cannot serialize "memoized" of visual ' +
                     quoted(this.Path));
             }
@@ -2993,10 +3358,12 @@ export class WAT_Visual {
             'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
             'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
             'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
-            'Opacity', 'OverflowVisibility', 'Cursor',
+            'Opacity', 'Overflows', 'Cursor',
             'activeScript', 'pendingScript',
-            'memoized',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+        if (this._memoized != null) {
+            Serialization.memoized = structuredClone(this._memoized);
+        }
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -3018,7 +3385,7 @@ export class WAT_Visual {
             'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
             'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
             'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
-            'Opacity', 'OverflowVisibility', 'Cursor',
+            'Opacity', 'Overflows', 'Cursor',
             /*'activeScript',*/ 'pendingScript',
         ].forEach((Name) => deserializeProperty(Name));
         if (ValueIsPlainObject(Serialization.memoized)) {
@@ -3069,6 +3436,13 @@ export class WAT_Applet extends WAT_Visual {
             writable: true,
             value: -1
         }); // dto.
+        /**** AssetsBase ****/
+        Object.defineProperty(this, "_AssetsBase", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         /**** BehaviorSet ****/
         Object.defineProperty(this, "_BehaviorPool", {
             enumerable: true,
@@ -3171,8 +3545,8 @@ export class WAT_Applet extends WAT_Visual {
             writable: true,
             value: void 0
         });
-        /**** DialogNamed ****/
-        Object.defineProperty(this, "_DialogList", {
+        /**** OverlayNamed ****/
+        Object.defineProperty(this, "_OverlayList", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -3208,6 +3582,28 @@ export class WAT_Applet extends WAT_Visual {
     /**** isAttached ****/
     get isAttached() { return (this._View != null); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    get AssetsBase() {
+        return this._AssetsBase || 'https://rozek.github.io/webapp-tinkerer/';
+    }
+    set AssetsBase(newURL) {
+        allowURL('assets base URL', newURL);
+        if (this._AssetsBase !== newURL) {
+            this._AssetsBase = newURL;
+            this.rerender();
+        }
+    }
+    /**** AssetURL ****/
+    AssetURL(relativeURL) {
+        expectURL('asset URL', (relativeURL == null ? undefined : relativeURL + '/.')); // because AssetURL is incomplete
+        const AssetsBase = this.AssetsBase.replace(/\/*$/, '/');
+        switch (true) {
+            case URLhasSchema(relativeURL):
+                return relativeURL;
+            case relativeURL.startsWith('/'):
+                return AssetsBase + relativeURL.replace(/^\/+/, '');
+            default: return AssetsBase + relativeURL;
+        }
+    }
     get BehaviorSet() {
         const Result = {
             applet: Object.create(null),
@@ -3324,6 +3720,8 @@ export class WAT_Applet extends WAT_Visual {
         expectBehavior('new behavior name', newName);
         const normalizedOldName = oldName.toLowerCase();
         const normalizedNewName = newName.toLowerCase();
+        if (BehaviorIsIntrinsic(normalizedOldName) || BehaviorIsIntrinsic(normalizedNewName))
+            throwError('InvalidArgument: intrinsic behaviors must not be renamed');
         // @ts-ignore TS7053 allow indexing
         if (!(normalizedOldName in this._BehaviorPool[Category]))
             throwError(`InvalidArgument: no ${Category} behaviour ${quoted(oldName)} found`);
@@ -3335,6 +3733,9 @@ export class WAT_Applet extends WAT_Visual {
             this._BehaviorPool[Category][normalizedOldName].Name = newName;
             return;
         }
+        // @ts-ignore TS7053 allow indexing
+        if (normalizedNewName in this._BehaviorPool[Category])
+            throwError(`NameCollision: a ${Category} behaviour ${quoted(newName)} already exists`);
         // @ts-ignore TS7053 allow indexing
         let Registration = this._BehaviorPool[Category][normalizedOldName];
         // @ts-ignore TS7053 allow indexing
@@ -3349,20 +3750,24 @@ export class WAT_Applet extends WAT_Visual {
                 if (this._normalizedBehavior === normalizedOldName) {
                     this._Behavior = newName;
                     this._normalizedBehavior = normalizedNewName;
+                    this.activateScript();
                 }
                 break;
             case 'page':
                 this.PagesWithBehavior(oldName).forEach((Page) => {
                     Page['_Behavior'] = newName;
                     Page['_normalizedBehavior'] = normalizedNewName;
+                    Page.activateScript();
                 });
                 break;
             case 'widget':
                 this.WidgetsWithBehavior(oldName).forEach((Widget) => {
                     Widget['_Behavior'] = newName;
                     Widget['_normalizedBehavior'] = normalizedNewName;
+                    Widget.activateScript();
                 });
         }
+        this.rerender();
     }
     /**** prescriptBehaviorOfCategory ****/
     prescriptBehaviorOfCategory(Category, Behavior, Script) {
@@ -3389,6 +3794,9 @@ export class WAT_Applet extends WAT_Visual {
         if (Registration == null)
             throwError(`InvalidArgument: no ${Category} behaviour ${quoted(Behavior)} found`);
         const { activeScript, pendingScript } = Registration;
+        if (pendingScript == null) {
+            return;
+        }
         if (activeScript === pendingScript) {
             return;
         }
@@ -3404,8 +3812,11 @@ export class WAT_Applet extends WAT_Visual {
             console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`, Signal);
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior].pendingError = Signal;
+            return;
         }
         this.registerBehaviorOfCategory(Category, Behavior, pendingScript);
+        // @ts-ignore TS7053 allow indexing
+        this._BehaviorPool[Category][normalizedBehavior].pendingScript = pendingScript;
         this.rerender();
     }
     /**** groupedBehaviorListOfCategory ****/
@@ -3585,57 +3996,65 @@ export class WAT_Applet extends WAT_Visual {
         expectCategory('behavior category', Category);
         expectBehavior('behavior', Behavior);
         const normalizedBehavior = Behavior.toLowerCase();
+        if (BehaviorIsIntrinsic(normalizedBehavior))
+            throwError('InvalidArgument: intrinsic behaviors must not be serialized');
         // @ts-ignore TS7053 allow indexing
         const Registration = this._BehaviorPool[Category][normalizedBehavior];
         if (Registration == null)
             throwError(`InvalidArgument: no ${Category} behaviour ${quoted(Behavior)} found`);
         const { Name, activeScript } = Registration;
-        return { BehaviorSet: { [Category]: [{
-                        Name, Script: activeScript
-                    }] } };
+        return { BehaviorSet: { [Category]: {
+                    [Name]: activeScript
+                } } };
     }
     /**** SerializationOfBehavior ****/
     SerializationOfBehaviors(groupedBehaviorList) {
         expectPlainObject('grouped behavior list', groupedBehaviorList);
-        const Serialization = {};
+        const BehaviorSet = {};
         let SerializationIsEmpty = true;
         if ('applet' in groupedBehaviorList) {
             let AppletBehaviors = groupedBehaviorList['applet'];
             expectListSatisfying('list of applet behaviors', AppletBehaviors, ValueIsBehavior);
-            AppletBehaviors = AppletBehaviors.filter((Behavior) => Behavior.toLowerCase() in this._BehaviorPool['applet']);
+            AppletBehaviors = AppletBehaviors.filter((Behavior) => ((Behavior.toLowerCase() in this._BehaviorPool['applet']) &&
+                !BehaviorIsIntrinsic(Behavior.toLowerCase())));
             if (AppletBehaviors.length > 0) {
                 SerializationIsEmpty = false;
-                Serialization['applet'] = AppletBehaviors.map((Behavior) => {
+                const AppletBehaviorSet = BehaviorSet['applet'] = {};
+                AppletBehaviors.forEach((Behavior) => {
                     let Registration = this._BehaviorPool['applet'][Behavior.toLowerCase()];
-                    return { Name: Registration.Name, Script: Registration.activeScript };
+                    AppletBehaviorSet[Registration.Name] = Registration.activeScript;
                 });
             }
         }
         if ('page' in groupedBehaviorList) {
             let PageBehaviors = groupedBehaviorList['page'];
             expectListSatisfying('list of page behaviors', PageBehaviors, ValueIsBehavior);
-            PageBehaviors = PageBehaviors.filter((Behavior) => Behavior.toLowerCase() in this._BehaviorPool['page']);
+            PageBehaviors = PageBehaviors.filter((Behavior) => ((Behavior.toLowerCase() in this._BehaviorPool['page']) &&
+                !BehaviorIsIntrinsic(Behavior.toLowerCase())));
             if (PageBehaviors.length > 0) {
                 SerializationIsEmpty = false;
-                Serialization['page'] = PageBehaviors.map((Behavior) => {
+                const PageBehaviorSet = BehaviorSet['page'] = {};
+                PageBehaviors.forEach((Behavior) => {
                     let Registration = this._BehaviorPool['page'][Behavior.toLowerCase()];
-                    return { Name: Registration.Name, Script: Registration.activeScript };
+                    PageBehaviorSet[Registration.Name] = Registration.activeScript;
                 });
             }
         }
         if ('widget' in groupedBehaviorList) {
             let WidgetBehaviors = groupedBehaviorList['widget'];
             expectListSatisfying('list of widget behaviors', WidgetBehaviors, ValueIsBehavior);
-            WidgetBehaviors = WidgetBehaviors.filter((Behavior) => Behavior.toLowerCase() in this._BehaviorPool['widget']);
+            WidgetBehaviors = WidgetBehaviors.filter((Behavior) => ((Behavior.toLowerCase() in this._BehaviorPool['widget']) &&
+                !BehaviorIsIntrinsic(Behavior.toLowerCase())));
             if (WidgetBehaviors.length > 0) {
                 SerializationIsEmpty = false;
-                Serialization['widget'] = WidgetBehaviors.map((Behavior) => {
+                const WidgetBehaviorSet = BehaviorSet['widget'] = {};
+                WidgetBehaviors.forEach((Behavior) => {
                     let Registration = this._BehaviorPool['widget'][Behavior.toLowerCase()];
-                    return { Name: Registration.Name, Script: Registration.activeScript };
+                    WidgetBehaviorSet[Registration.Name] = Registration.activeScript;
                 });
             }
         }
-        return (SerializationIsEmpty ? undefined : Serialization);
+        return (SerializationIsEmpty ? undefined : { BehaviorSet });
     }
     /**** deserializeBehavior[s] ****/
     deserializeBehaviorsFrom(Serialization) {
@@ -3654,10 +4073,7 @@ export class WAT_Applet extends WAT_Visual {
             Candidate = this;
         }
         const visitedPage = this._visitedPage;
-        if (visitedPage != null) {
-            if (visitedPage._View == null) {
-                return undefined;
-            }
+        if ((visitedPage != null) && (visitedPage._View != null)) {
             if (visitedPage._View.contains(DOMElement)) {
                 Candidate = visitedPage;
             }
@@ -3675,7 +4091,7 @@ export class WAT_Applet extends WAT_Visual {
                         return;
                     }
                     /**** scan all widgets shown on this one's overlays ****/
-                    const WidgetsToShow = (SourceWidget.normalizedBehavior === 'plain_controls.outline'
+                    const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
                         ? SourceWidget.bundledWidgets()
                         : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))));
                     WidgetsToShow.forEach((Widget) => {
@@ -3689,18 +4105,18 @@ export class WAT_Applet extends WAT_Visual {
                 });
             });
         }
-        /**** scan all shown widgets on all currently open dialogs ****/
-        this._DialogList.forEach((Dialog) => {
-            if (Dialog._View == null) {
+        /**** scan all shown widgets on all currently open applet overlays ****/
+        this._OverlayList.forEach((Overlay) => {
+            if (Overlay._View == null) {
                 return undefined;
             }
-            const SourceWidget = this.WidgetAtPath(Dialog.SourceWidgetPath);
+            const SourceWidget = this.WidgetAtPath(Overlay.SourceWidgetPath);
             if (SourceWidget == null) {
                 return;
             }
-            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'plain_controls.outline'
+            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
                 ? SourceWidget.bundledWidgets()
-                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))));
+                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Overlay))));
             WidgetsToShow.forEach((Widget) => {
                 if (Widget._View == null) {
                     return;
@@ -3787,9 +4203,21 @@ export class WAT_Applet extends WAT_Visual {
         throwReadOnlyError('maxHeight');
     }
     get toBeCentered() { return this._toBeCentered; }
-    set toBeCentered(_) { throwReadOnlyError('toBeCentered'); }
+    set toBeCentered(newSetting) {
+        expectBoolean('viewport centering setting', newSetting);
+        if (this._toBeCentered !== newSetting) {
+            this._toBeCentered = newSetting;
+            //      this.rerender()
+        }
+    }
     get withMobileFrame() { return this._withMobileFrame; }
-    set withMobileFrame(_) { throwReadOnlyError('withMobileFrame'); }
+    set withMobileFrame(newSetting) {
+        expectBoolean('mobile frame setting', newSetting);
+        if (this._withMobileFrame !== newSetting) {
+            this._withMobileFrame = newSetting;
+            //      this.rerender()
+        }
+    }
     get expectedOrientation() { return this._expectedOrientation; }
     set expectedOrientation(_) { throwReadOnlyError('expectedOrientation'); }
     /**** x/y ****/
@@ -3955,12 +4383,17 @@ export class WAT_Applet extends WAT_Visual {
         const Behavior = acceptableValue(Serialization.Behavior, ValueIsBehavior);
         let newPage = new WAT_Page(Behavior, this); // sets "isReady" to false
         this._PageList.splice(Index, 0, newPage);
-        // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
-        newPage._deserializeConfigurationFrom(Serialization);
-        // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
-        newPage._deserializeWidgetsFrom(Serialization);
-        newPage.on('ready')();
-        this._isReady = true;
+        try {
+            // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
+            newPage._deserializeConfigurationFrom(Serialization);
+            // @ts-ignore TS2446 allow WAT_Applet to access a protected member of WAT_Page
+            newPage._deserializeWidgetsFrom(Serialization);
+        }
+        catch (Signal) {
+            this._PageList.splice(Index, 1);
+            throw Signal;
+        }
+        makeVisualReady(newPage);
         this.rerender();
         return newPage;
     }
@@ -3968,7 +4401,7 @@ export class WAT_Applet extends WAT_Visual {
     DuplicateOfPageAt(Index) {
         expectInteger('page index', Index);
         const Page = this.existingPage(Index); // DRY
-        return this.PageDeserializedAt(Page.Serialization, Index + 1);
+        return this.PageDeserializedAt(Page.Serialization, Page.Index + 1);
     }
     /**** mayShiftPageUp/Down ****/
     mayShiftPageUp(PageOrNameOrIndex) {
@@ -4008,9 +4441,6 @@ export class WAT_Applet extends WAT_Visual {
         if (oldIndex === newIndex) {
             return;
         }
-        if (newIndex > oldIndex) {
-            newIndex -= 1;
-        }
         this._PageList.splice(oldIndex, 1);
         this._PageList.splice(newIndex, 0, Page);
         this.rerender();
@@ -4018,14 +4448,24 @@ export class WAT_Applet extends WAT_Visual {
     /**** shiftPagesTo (for Designer only, less strict argument validations) ****/
     shiftPagesTo(PageList, newIndexList) {
         const IndexSet = [];
-        newIndexList.forEach((Index, i) => IndexSet[Index] = PageList[i]);
-        newIndexList = newIndexList.slice().sort();
+        newIndexList.forEach((Index, i) => {
+            if (this._PageList.indexOf(PageList[i]) >= 0) {
+                IndexSet[Index] = PageList[i];
+            }
+        });
+        newIndexList = newIndexList.slice().sort((a, b) => a - b);
         PageList.forEach((Page) => {
             const Index = this._PageList.indexOf(Page);
-            this._PageList.splice(Index, 1);
+            if (Index >= 0) {
+                this._PageList.splice(Index, 1);
+            }
         });
         newIndexList.forEach((newIndex) => {
-            this._PageList.splice(newIndex, 0, IndexSet[newIndex]);
+            if (IndexSet[newIndex] != null) {
+                this._PageList.splice(newIndex, 0, IndexSet[newIndex]);
+                // @ts-ignore TS2322 allow "undefined" to prevent duplicate insertions
+                IndexSet[newIndex] = undefined;
+            }
         });
         this.rerender();
     }
@@ -4037,6 +4477,15 @@ export class WAT_Applet extends WAT_Visual {
                 throwError('NoSuchPage: the given page could not be found');
             return;
         }
+        // @ts-ignore TS2446 allow accessing protected member
+        Page._WidgetList.forEach((Widget) => {
+            unregisterAllReactiveFunctionsFrom(Widget);
+            uninstallStylesheetForVisual(Widget);
+            // @ts-ignore TS2446 allow accessing protected member
+            Widget._Container = undefined;
+        });
+        unregisterAllReactiveFunctionsFrom(Page);
+        uninstallStylesheetForVisual(Page);
         const oldIndex = this._PageList.indexOf(Page);
         this._PageList.splice(oldIndex, 1);
         // @ts-ignore TS2446 allow accessing protected member
@@ -4048,6 +4497,20 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** clear ****/
     clear() {
+        this.closeAllOverlays();
+        this._PageList.forEach((Page) => {
+            // @ts-ignore TS2446 allow accessing protected member
+            Page._WidgetList.forEach((Widget) => {
+                unregisterAllReactiveFunctionsFrom(Widget);
+                uninstallStylesheetForVisual(Widget);
+                // @ts-ignore TS2446 allow accessing protected member
+                Widget._Container = undefined;
+            });
+            unregisterAllReactiveFunctionsFrom(Page);
+            uninstallStylesheetForVisual(Page);
+            // @ts-ignore TS2446 allow accessing protected member
+            Page._Container = undefined;
+        });
         this._PageList.length = 0;
         this._visitedPage = undefined;
         this.rerender();
@@ -4075,7 +4538,7 @@ export class WAT_Applet extends WAT_Visual {
         const PathItemList = Path.replace(/\/\/+/g, '/').replace(/^\//, '')
             .split('/').map((PathItem) => {
             if (/^#\d+$/.test(PathItem.trim())) {
-                return parseInt(PathItem.slice(1), 10);
+                return parseInt(PathItem.trim().slice(1), 10);
             }
             else {
                 return PathItem;
@@ -4093,208 +4556,131 @@ export class WAT_Applet extends WAT_Visual {
         }
         return Page.Widget(PathItemList[1]);
     }
-    DialogNamed(DialogName) {
-        const DialogIndex = this.IndexOfDialog(DialogName);
-        return this._DialogList[DialogIndex]; // even if DialogIndex = -1
+    OverlayNamed(OverlayName) {
+        const OverlayIndex = this.IndexOfOverlay(OverlayName);
+        return this._OverlayList[OverlayIndex]; // even if OverlayIndex = -1
     }
-    /**** existingDialogNamed ****/
-    existingDialogNamed(DialogName) {
-        const DialogIndex = this.IndexOfDialog(DialogName);
-        if (DialogIndex < 0)
-            throwError(`NotFound: no dialog named ${quoted(DialogName)} found`);
-        return this._DialogList[DialogIndex];
+    /**** existingOverlayNamed ****/
+    existingOverlayNamed(OverlayName) {
+        const OverlayIndex = this.IndexOfOverlay(OverlayName);
+        if (OverlayIndex < 0)
+            throwError(`NotFound: no overlay named ${quoted(OverlayName)} found`);
+        return this._OverlayList[OverlayIndex];
     }
-    /**** IndexOfDialog ****/
-    IndexOfDialog(DialogName) {
-        expectName('dialog name', DialogName);
-        const normalizedName = DialogName.toLowerCase();
-        return this._DialogList.findIndex((Dialog) => Dialog.normalizedName === normalizedName);
+    /**** IndexOfOverlay ****/
+    IndexOfOverlay(OverlayName) {
+        expectName('overlay name', OverlayName);
+        const normalizedName = OverlayName.toLowerCase();
+        return this._OverlayList.findIndex((Overlay) => Overlay.normalizedName === normalizedName);
+    }
+    /**** openOverlay ****/
+    openOverlay(Descriptor) {
+        if (this.OverlayIsOpen(Descriptor.Name))
+            throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
+        const Overlay = new WAT_AppletOverlay(this, Descriptor);
+        this._OverlayList.push(Overlay);
+        this.rerender();
+        if (Overlay.onOpen != null) {
+            Overlay.onOpen(Overlay);
+        }
+    }
+    /**** closeOverlay ****/
+    closeOverlay(OverlayName) {
+        const OverlayIndex = this.IndexOfOverlay(OverlayName);
+        if (OverlayIndex < 0) {
+            return;
+        }
+        const [Overlay] = this._OverlayList.splice(OverlayIndex, 1);
+        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected members here
+        if (Overlay._View != null) {
+            Overlay._View._releaseWidgets();
+        }
+        this.rerender();
+        if (Overlay.onClose != null) {
+            Overlay.onClose(Overlay);
+        }
+    }
+    /**** closeAllOverlays ****/
+    closeAllOverlays() {
+        if (this._OverlayList.length > 0) {
+            this._OverlayList.slice().forEach((Overlay) => this.closeOverlay(Overlay.Name));
+        }
+    }
+    /**** OverlayIsOpen ****/
+    OverlayIsOpen(OverlayName) {
+        return (this.OverlayNamed(OverlayName) != null);
+    }
+    /**** openOverlays ****/
+    openOverlays() {
+        return this._OverlayList.map((Overlay) => Overlay.Name);
+    }
+    /**** GeometryOfOverlay ****/
+    GeometryOfOverlay(OverlayName) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        const { x, y, Width, Height } = Overlay;
+        // @ts-ignore TS2322 "x" and "y2 are no longer undefined here
+        return { x, y, Width, Height };
+    }
+    /**** moveOverlayBy ****/
+    moveOverlayBy(OverlayName, dx, dy) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectNumber('dx', dx);
+        expectNumber('dy', dy);
+        // @ts-ignore TS2322 "x" and "y2 are no longer undefined here
+        this.moveOverlayTo(OverlayName, Overlay.x + dx, Overlay.y + dy); // DRY
+    }
+    /**** moveOverlayTo ****/
+    moveOverlayTo(OverlayName, x, y) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectLocation('x coordinate', x);
+        expectLocation('y coordinate', y);
+        Overlay.x = x;
+        Overlay.y = y;
+        this.rerender();
+    }
+    /**** sizeOverlayBy ****/
+    sizeOverlayBy(OverlayName, dW, dH) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectNumber('dW', dW);
+        expectNumber('dH', dH);
+        this.sizeOverlayTo(OverlayName, Overlay.Width + dW, Overlay.Height + dH); // DRY
+    }
+    /**** sizeOverlayTo ****/
+    sizeOverlayTo(OverlayName, Width, Height) {
+        const Overlay = this.existingOverlayNamed(OverlayName);
+        expectDimension('Width', Width);
+        expectDimension('Height', Height);
+        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, Overlay.maxWidth || Infinity));
+        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, Overlay.maxHeight || Infinity));
+        this.rerender();
+    }
+    /**** bringOverlayToFront ****/
+    bringOverlayToFront(OverlayName) {
+        const Index = this.IndexOfOverlay(OverlayName);
+        if (Index < 0)
+            throwError(`NotFound: no overlay named ${quoted(OverlayName)} found`);
+        const [Overlay] = this._OverlayList.splice(Index, 1);
+        this._OverlayList.push(Overlay);
+        this.rerender();
     }
     /**** openDialog ****/
     openDialog(Descriptor) {
-        expectPlainObject('dialog descriptor', Descriptor);
-        expectName('dialog name', Descriptor.Name);
-        allowBoolean('dialog mode', Descriptor.asAppletOverlay);
-        allowBoolean('right anchor setting', Descriptor.fromRight);
-        allowBoolean('bottom anchor setting', Descriptor.fromBottom);
-        allowTextline('dialog title', Descriptor.Title);
-        allowBoolean('dialog modality', Descriptor.isModal);
-        allowBoolean('dialog closability', Descriptor.isClosable);
-        allowBoolean('dialog draggability', Descriptor.isDraggable);
-        allowBoolean('dialog resizability', Descriptor.isResizable);
-        allowLocation('dialog x coordinate', Descriptor.x);
-        allowLocation('dialog y coordinate', Descriptor.y);
-        allowDimension('dialog width', Descriptor.Width);
-        allowDimension('dialog height', Descriptor.Height);
-        allowDimension('minimal dialog width', Descriptor.minWidth);
-        allowDimension('maximal dialog width', Descriptor.maxWidth);
-        allowDimension('minimal dialog height', Descriptor.minHeight);
-        allowDimension('maximal dialog height', Descriptor.maxHeight);
-        allowFunction('"onOpen" callback', Descriptor.onOpen);
-        allowFunction('"onClose" callback', Descriptor.onClose);
-        let { Name, asAppletOverlay, fromRight, fromBottom, Title, isModal, isClosable, isDraggable, isResizable, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
-        if (this.DialogIsOpen(Descriptor.Name))
-            throwError(`AlreadyOpen: a dialog named ${quoted(Descriptor.Name)} is already open`);
-        if (asAppletOverlay == null) {
-            asAppletOverlay = false;
-        }
-        const asDialog = !asAppletOverlay;
-        if (isModal == null) {
-            isModal = false;
-        }
-        if (isClosable == null) {
-            isClosable = asDialog;
-        }
-        if (isDraggable == null) {
-            isDraggable = asDialog;
-        }
-        if (isResizable == null) {
-            isResizable = false;
-        }
-        if (Title == null) {
-            if (isClosable || isDraggable) {
-                Title = Name;
-            }
-        }
-        if (minWidth == null) {
-            minWidth = 0;
-        }
-        if (minHeight == null) {
-            minHeight = 0;
-        }
-        let SourceWidget, SourceWidgetPath;
-        switch (true) {
-            case null:
-            case undefined:
-                throwError('MissingArgument: no source widget path given');
-            case ValueIsPath(Descriptor.SourceWidget):
-                SourceWidgetPath = Descriptor.SourceWidget;
-                SourceWidget = this.WidgetAtPath(SourceWidgetPath);
-                if (SourceWidget == null)
-                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
-                break;
-            case ValueIsWidget(Descriptor.SourceWidget):
-                SourceWidget = Descriptor.SourceWidget;
-                SourceWidgetPath = SourceWidget.Path;
-            default:
-                throwError('InvalidArgument: the given source widget is neither a widget ' +
-                    'nor a widget path');
-        }
-        if ((Width == null) || (Height == null)) {
-            let SourceGeometry = SourceWidget.Geometry;
-            if (Width == null) {
-                Width = SourceGeometry.Width;
-            }
-            if (Height == null) {
-                Height = SourceGeometry.Height;
-            }
-        }
-        if (isClosable) {
-            minWidth = Math.max(30 + 10, minWidth);
-        }
-        if ((Title != null) || isClosable || isDraggable) {
-            Height += 30;
-            minHeight += 30;
-        }
-        if (isResizable) {
-            Height += 10;
-            minHeight += 10;
-        }
-        Width = Math.max(minWidth || 0, Math.min(Width, maxWidth || Infinity));
-        Height = Math.max(minHeight || 0, Math.min(Height, maxHeight || Infinity));
-        if (x == null) {
-            x = (this.Width - Width) / 2;
-        }
-        if (y == null) {
-            y = (this.Height - Height) / 2;
-        }
-        //    x = Math.max(0, Math.min(x, this.Width-Width))
-        //    y = Math.max(0, Math.min(y,this.Height-Height))
-        const Dialog = {
-            Name, normalizedName: Name.toLowerCase(), SourceWidgetPath,
-            asAppletOverlay, fromRight, fromBottom,
-            Title, isModal, isClosable, isDraggable, isResizable,
-            x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight,
-            onOpen, onClose
-        };
-        this._DialogList.push(Dialog);
+        if (this.OverlayIsOpen(Descriptor.Name))
+            throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
+        const Dialog = new WAT_Dialog(this, Descriptor);
+        this._OverlayList.push(Dialog);
         this.rerender();
         if (Dialog.onOpen != null) {
             Dialog.onOpen(Dialog);
         }
     }
     /**** closeDialog ****/
-    closeDialog(DialogName) {
-        const DialogIndex = this.IndexOfDialog(DialogName);
-        if (DialogIndex < 0) {
-            return;
-        }
-        const [Dialog] = this._DialogList.splice(DialogIndex, 1);
-        this.rerender();
-        if (Dialog.onClose != null) {
-            Dialog.onClose(Dialog);
-        }
-    }
-    /**** closeAllDialogs ****/
-    closeAllDialogs() {
-        if (this._DialogList.length > 0) {
-            this._DialogList.forEach((Dialog) => this.closeDialog(Dialog.Name));
-        }
+    closeDialog(OverlayName) {
+        this.closeOverlay(OverlayName);
     }
     /**** DialogIsOpen ****/
-    DialogIsOpen(DialogName) {
-        return (this.DialogNamed(DialogName) != null);
-    }
-    /**** openDialogs ****/
-    openDialogs() {
-        return this._DialogList.map((Dialog) => Dialog.Name);
-    }
-    /**** GeometryOfDialog ****/
-    GeometryOfDialog(DialogName) {
-        const Dialog = this.existingDialogNamed(DialogName);
-        const { x, y, Width, Height } = Dialog;
-        return { x, y, Width, Height };
-    }
-    /**** moveDialogBy ****/
-    moveDialogBy(DialogName, dx, dy) {
-        const Dialog = this.existingDialogNamed(DialogName);
-        expectNumber('dx', dx);
-        expectNumber('dy', dy);
-        this.moveDialogTo(DialogName, Dialog.x + dx, Dialog.y + dy); // DRY
-    }
-    /**** moveDialogTo ****/
-    moveDialogTo(DialogName, x, y) {
-        const Dialog = this.existingDialogNamed(DialogName);
-        expectLocation('x coordinate', x);
-        expectLocation('y coordinate', y);
-        Dialog.x = x;
-        Dialog.y = y;
-        this.rerender();
-    }
-    /**** sizeDialogBy ****/
-    sizeDialogBy(DialogName, dW, dH) {
-        const Dialog = this.existingDialogNamed(DialogName);
-        expectNumber('dW', dW);
-        expectNumber('dH', dH);
-        this.sizeDialogTo(DialogName, Dialog.Width + dW, Dialog.Height + dH); // DRY
-    }
-    /**** sizeDialogTo ****/
-    sizeDialogTo(DialogName, Width, Height) {
-        const Dialog = this.existingDialogNamed(DialogName);
-        expectDimension('Width', Width);
-        expectDimension('Height', Height);
-        Dialog.Width = Math.max(Dialog.minWidth || 0, Math.min(Width, Dialog.maxWidth || Infinity));
-        Dialog.Height = Math.max(Dialog.minHeight || 0, Math.min(Height, Dialog.maxHeight || Infinity));
-        this.rerender();
-    }
-    /**** bringDialogToFront ****/
-    bringDialogToFront(DialogName) {
-        const Index = this.IndexOfDialog(DialogName);
-        if (Index < 0)
-            throwError(`NotFound: no dialog named ${quoted(DialogName)} found`);
-        const [Dialog] = this._DialogList.splice(Index, 1);
-        this._DialogList.push(Dialog);
-        this.rerender();
+    DialogIsOpen(OverlayName) {
+        return this.OverlayIsOpen(OverlayName);
     }
     /**** Serialization ****/
     get Serialization() {
@@ -4343,7 +4729,12 @@ export class WAT_Applet extends WAT_Visual {
         if (ValueIsPlainObject(AppletBehaviorSet)) {
             Object.entries(AppletBehaviorSet).forEach(([Name, Script]) => {
                 if (ValueIsBehavior(Name) && ValueIsText(Script)) {
-                    this.registerBehaviorOfCategory('applet', Name, Script);
+                    try {
+                        this.registerBehaviorOfCategory('applet', Name, Script);
+                    }
+                    catch (Signal) {
+                        console.warn(`could not register applet behavior ${quoted(Name)}`, Signal);
+                    }
                 }
             });
         }
@@ -4352,7 +4743,12 @@ export class WAT_Applet extends WAT_Visual {
         if (ValueIsPlainObject(PageBehaviorSet)) {
             Object.entries(PageBehaviorSet).forEach(([Name, Script]) => {
                 if (ValueIsBehavior(Name) && ValueIsText(Script)) {
-                    this.registerBehaviorOfCategory('page', Name, Script);
+                    try {
+                        this.registerBehaviorOfCategory('page', Name, Script);
+                    }
+                    catch (Signal) {
+                        console.warn(`could not register page behavior ${quoted(Name)}`, Signal);
+                    }
                 }
             });
         }
@@ -4361,7 +4757,12 @@ export class WAT_Applet extends WAT_Visual {
         if (ValueIsPlainObject(WidgetBehaviorSet)) {
             Object.entries(WidgetBehaviorSet).forEach(([Name, Script]) => {
                 if (ValueIsBehavior(Name) && ValueIsText(Script)) {
-                    this.registerBehaviorOfCategory('widget', Name, Script);
+                    try {
+                        this.registerBehaviorOfCategory('widget', Name, Script);
+                    }
+                    catch (Signal) {
+                        console.warn(`could not register widget behavior ${quoted(Name)}`, Signal);
+                    }
                 }
             });
         }
@@ -4410,9 +4811,12 @@ export class WAT_Applet extends WAT_Visual {
             delete Serialization.activeScript;
         }
         /**** additional properties used by the "WAT Applet Manager" ****/
+        if (this._View != null) { // "Width" and "Height" require an attached applet
+            this._serializePropertyInto('Width', Serialization);
+            this._serializePropertyInto('Height', Serialization);
+        }
         ;
         [
-            'Width', 'Height',
             'minWidth', 'minHeight', 'maxWidth', 'maxHeight',
             'toBeCentered', 'withMobileFrame', 'expectedOrientation',
         ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
@@ -4431,7 +4835,6 @@ export class WAT_Applet extends WAT_Visual {
             }
         };
         [
-            'Name',
             'SnapToGrid', 'GridWidth', 'GridHeight',
             'HeadExtensions',
         ].forEach((Name) => deserializeProperty(Name));
@@ -4483,12 +4886,20 @@ export class WAT_Applet extends WAT_Visual {
         Applet._deserializeBehaviorsFrom(Serialization);
         Applet._deserializeConfigurationFrom(Serialization);
         Applet._deserializePagesFrom(Serialization);
-        Applet._isReady = true;
-        Applet.on('ready')();
+        if (Applet._PageList.length === 0) {
+            Applet._deserializePagesFrom({ PageList: [
+                    { WidgetList: [] }
+                ] });
+        }
+        makeVisualReady(Applet);
         return Applet;
     }
     /**** preserve ****/
     async preserve() {
+        if (this.Name == null) {
+            console.warn('could not preserve applet, reason: applet has no name');
+            return;
+        }
         try {
             await AppletStore.setItem(this.Name, JSON.stringify(this.Serialization));
         }
@@ -4496,22 +4907,54 @@ export class WAT_Applet extends WAT_Visual {
             console.error('could not preserve applet, reason', Signal);
         }
     }
+    /**** removeLocalBackup ****/
+    async removeLocalBackup() {
+        if (this.Name == null) {
+            console.warn('could not remove applet, reason: applet has no name');
+            return;
+        }
+        try {
+            await AppletStore.removeItem(this.Name);
+        }
+        catch (Signal) {
+            console.error('could not remove applet, reason', Signal);
+        }
+    }
     /**** replaceWith ****/
     replaceWith(Serialization) {
+        Serialization = Object.assign({}, Serialization);
         const AppletView = this._View;
         delete this._View;
         const AppletName = this._Name;
         delete Serialization.Name;
-        this.clear();
-        this._deserializeConfigurationFrom(Serialization);
-        this._deserializePagesFrom(Serialization);
-        this._Name = AppletName;
-        this._View = AppletView;
-        this.on('mount')();
-        if (this.visitedPage == null) {
-            this.visitPage(this.PageList[0]);
+        try {
+            this._isReady = false;
+            this.closeAllOverlays();
+            this.clear();
+            this._BehaviorPool = {
+                applet: Object.create(null),
+                page: Object.create(null),
+                widget: Object.create(null),
+            };
+            registerIntrinsicBehaviorsIn(this);
+            this._deserializeBehaviorsFrom(Serialization);
+            this._deserializeConfigurationFrom(Serialization);
+            this._deserializePagesFrom(Serialization);
+            if (this._PageList.length === 0) {
+                this._deserializePagesFrom({ PageList: [
+                        { WidgetList: [] }
+                    ] });
+            }
+            if (this.visitedPage == null) {
+                this.visitPage(this.PageList[0]);
+            }
         }
-        this.rerender();
+        finally {
+            this._Name = AppletName; // just to be safe, should not be necessary
+            this._View = AppletView;
+            makeVisualReady(this);
+            this.rerender();
+        }
     }
 }
 //------------------------------------------------------------------------------
@@ -4541,13 +4984,14 @@ export class WAT_Page extends WAT_Visual {
     /**** Behavior ****/
     get Behavior() { return this._Behavior; }
     set Behavior(newBehavior) {
-        var _a;
-        allowBehavior('applet behavior', newBehavior);
+        var _a, _b;
+        allowBehavior('page behavior', newBehavior);
         const normalizedBehavior = (newBehavior == null ? undefined : newBehavior.toLowerCase());
         if (this._normalizedBehavior !== normalizedBehavior) {
             this._normalizedBehavior = normalizedBehavior;
-            // @ts-ignore TS7053 allow indexing
-            this._Behavior = ((_a = this._BehaviorPool['applet'][normalizedBehavior]) === null || _a === void 0 ? void 0 : _a.Name) || newBehavior;
+            // @ts-ignore TS2446,TS7053 allow accessing a protected member and indexing
+            this._Behavior = ((_b = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a._BehaviorPool['page'][normalizedBehavior]) === null || _b === void 0 ? void 0 : _b.Name) || newBehavior;
+            this.activateScript();
             this.rerender();
         }
     }
@@ -4649,7 +5093,7 @@ export class WAT_Page extends WAT_Visual {
     }
     set Geometry(_) { throwReadOnlyError('Geometry'); }
     get Overflows() {
-        return acceptableValue(this._Overflows, (Value) => ValueIsListOf(Value, ['hidden', 'scroll', 'auto']), ['hidden', 'hidden']);
+        return acceptableValue((this._Overflows == null ? undefined : this._Overflows.slice()), (Value) => ValueIsListOf(Value, ['hidden', 'scroll', 'auto']), ['hidden', 'hidden']);
     }
     set Overflows(newValue) {
         allowListOf('overflow settings', newValue, ['hidden', 'scroll', 'auto']);
@@ -4725,7 +5169,10 @@ export class WAT_Page extends WAT_Visual {
                 const Widget = WidgetOrNameOrIndex;
                 return (Widget.Page === this ? Widget : undefined);
             case ValueIsInteger(WidgetOrNameOrIndex):
-                const Index = WidgetOrNameOrIndex;
+                let Index = WidgetOrNameOrIndex;
+                if (Index < 0) {
+                    Index += this._WidgetList.length;
+                }
                 return this._WidgetList[Index];
             case ValueIsName(WidgetOrNameOrIndex):
                 return this.WidgetNamed(WidgetOrNameOrIndex);
@@ -4786,8 +5233,7 @@ export class WAT_Page extends WAT_Visual {
         this._WidgetList.splice(Index, 0, newWidget);
         // @ts-ignore TS2446 allow WAT_Page to access a protected member of WAT_Widget
         newWidget._deserializeConfigurationFrom(Serialization);
-        newWidget.on('ready')();
-        this._isReady = true;
+        makeVisualReady(newWidget);
         this.rerender();
         return newWidget;
     }
@@ -4835,9 +5281,6 @@ export class WAT_Page extends WAT_Visual {
         if (oldIndex === newIndex) {
             return;
         }
-        if (newIndex > oldIndex) {
-            newIndex -= 1;
-        }
         this._WidgetList.splice(oldIndex, 1);
         this._WidgetList.splice(newIndex, 0, Widget);
         this.rerender();
@@ -4845,14 +5288,24 @@ export class WAT_Page extends WAT_Visual {
     /**** shiftWidgetsTo (for Designer only, less strict argument validations) ****/
     shiftWidgetsTo(WidgetList, newIndexList) {
         const IndexSet = [];
-        newIndexList.forEach((Index, i) => IndexSet[Index] = WidgetList[i]);
-        newIndexList = newIndexList.slice().sort();
+        newIndexList.forEach((Index, i) => {
+            if (this._WidgetList.indexOf(WidgetList[i]) >= 0) {
+                IndexSet[Index] = WidgetList[i];
+            }
+        });
+        newIndexList = newIndexList.slice().sort((a, b) => a - b);
         WidgetList.forEach((Widget) => {
             const Index = this._WidgetList.indexOf(Widget);
-            this._WidgetList.splice(Index, 1);
+            if (Index >= 0) {
+                this._WidgetList.splice(Index, 1);
+            }
         });
         newIndexList.forEach((newIndex) => {
-            this._WidgetList.splice(newIndex, 0, IndexSet[newIndex]);
+            if (IndexSet[newIndex] != null) {
+                this._WidgetList.splice(newIndex, 0, IndexSet[newIndex]);
+                // @ts-ignore TS2322 explicitly clear this entry to avoid duplicate insertions
+                IndexSet[newIndex] = undefined;
+            }
         });
         this.rerender();
     }
@@ -4864,6 +5317,8 @@ export class WAT_Page extends WAT_Visual {
                 throwError('NoSuchWidget: the given widget could not be found');
             return;
         }
+        unregisterAllReactiveFunctionsFrom(Widget);
+        uninstallStylesheetForVisual(Widget);
         const oldIndex = this._WidgetList.indexOf(Widget);
         this._WidgetList.splice(oldIndex, 1);
         // @ts-ignore TS2446 allow accessing protected member
@@ -4872,6 +5327,12 @@ export class WAT_Page extends WAT_Visual {
     }
     /**** clear ****/
     clear() {
+        this._WidgetList.forEach((Widget) => {
+            unregisterAllReactiveFunctionsFrom(Widget);
+            uninstallStylesheetForVisual(Widget);
+            // @ts-ignore TS2446 allow accessing protected member
+            Widget._Container = undefined;
+        });
         this._WidgetList.length = 0;
         this.rerender();
     }
@@ -5026,7 +5487,7 @@ export class WAT_Widget extends WAT_Visual {
             enumerable: true,
             configurable: true,
             writable: true,
-            value: [0, 20, 0, 20]
+            value: [10, 30, 10, 30]
         });
         /**** Overflows ****/
         Object.defineProperty(this, "_Overflows", {
@@ -5069,6 +5530,49 @@ export class WAT_Widget extends WAT_Visual {
     // @ts-ignore TS2446 allow WAT_Widget to access a protected member of WAT_Page
     get isAttached() { var _a, _b; return (((_b = (_a = this._Container) === null || _a === void 0 ? void 0 : _a._Container) === null || _b === void 0 ? void 0 : _b.isAttached) == true); }
     set isAttached(_) { throwReadOnlyError('isAttached'); }
+    /**** closestOutline ****/
+    get closestOutline() {
+        const { x, y, Width, Height } = this.Geometry;
+        const Outlines = this.Page.WidgetList.slice(this.Index + 1)
+            .filter((Widget) => {
+            if (Widget.normalizedBehavior !== 'basic_controls.outline') {
+                return false;
+            }
+            const { x: WidgetX, y: WidgetY, Width: WidgetW, Height: WidgetH } = Widget.Geometry;
+            return ((WidgetX <= x) && (WidgetX + WidgetW >= x + Width) &&
+                (WidgetY <= y) && (WidgetY + WidgetH >= y + Height));
+        });
+        if (Outlines.length <= 1) {
+            return Outlines[0];
+        }
+        const ScoreFor = new Map();
+        Outlines.forEach((Widget) => {
+            const { x: WidgetX, y: WidgetY, Width: WidgetW, Height: WidgetH } = Widget.Geometry;
+            ScoreFor.set(Widget, ((x - WidgetX) * WidgetH + (WidgetX + WidgetW - x - Width) * WidgetH +
+                (y - WidgetY) * WidgetW + (WidgetY + WidgetH - y - Height) * WidgetW));
+        });
+        // @ts-ignore TS6057 no, the ScoreFor entries are not undefined
+        Outlines.sort((a, b) => ScoreFor.get(a) - ScoreFor.get(b));
+        return Outlines[0];
+    }
+    set closestOutline(_) { throwReadOnlyError('closestOutline'); }
+    /**** Outline ****/
+    Outline(Name) {
+        expectName('outline name', Name);
+        const normalizedName = Name.toLowerCase();
+        const { x, y, Width, Height } = this.Geometry;
+        const Outlines = this.Page.WidgetList.slice(this.Index + 1)
+            .filter((Widget) => {
+            if ((Widget.normalizedBehavior !== 'basic_controls.outline') ||
+                (Widget.normalizedName !== normalizedName)) {
+                return false;
+            }
+            const { x: WidgetX, y: WidgetY, Width: WidgetW, Height: WidgetH } = Widget.Geometry;
+            return ((WidgetX <= x) && (WidgetX + WidgetW >= x + Width) &&
+                (WidgetY <= y) && (WidgetY + WidgetH >= y + Height));
+        });
+        return Outlines[0];
+    }
     get Lock() { return this._Lock; }
     set Lock(newLock) {
         expectBoolean('widget layout lock', newLock);
@@ -5129,7 +5633,7 @@ export class WAT_Widget extends WAT_Visual {
             case ValueIsOneOf(newBorderStyles, WAT_BorderStyles):
                 newSettings = new Array(4).fill(newBorderStyles); // satisfies TS
                 break;
-            case ValueIsListSatisfying(newBorderStyles, (Value) => (Value == null) || ValueIsOneOf(Value, WAT_BorderStyles)):
+            case ValueIsListSatisfying(newBorderStyles, (Value) => ValueIsOneOf(Value, WAT_BorderStyles)):
                 switch (newBorderStyles.length) { // "as any" satisfies TS
                     case 0: break;
                     case 1:
@@ -5215,7 +5719,7 @@ export class WAT_Widget extends WAT_Visual {
             case ValueIsColor(newBorderColors):
                 newSettings = new Array(4).fill(newBorderColors); // satisfies TS
                 break;
-            case ValueIsListSatisfying(newBorderColors, (Value) => (Value == null) || ValueIsColor(Value)):
+            case ValueIsListSatisfying(newBorderColors, ValueIsColor):
                 switch (newBorderColors.length) { // "as any" satisfies TS
                     case 0: break;
                     case 1:
@@ -5295,6 +5799,10 @@ export class WAT_Widget extends WAT_Visual {
     }
     set BoxShadow(newBoxShadow) {
         allowBoxShadow('widget box shadow', newBoxShadow);
+        // @ts-ignore TS2367 "newBoxShadow" may be "none"
+        if (newBoxShadow === 'none') {
+            newBoxShadow = { isActive: false, xOffset: 0, yOffset: 0, BlurRadius: 0, SpreadRadius: 0, Color: 'transparent' };
+        }
         if (ValuesDiffer(this._BoxShadow, newBoxShadow)) {
             if (newBoxShadow == null) {
                 this._BoxShadow = undefined;
@@ -5675,11 +6183,11 @@ export class WAT_Widget extends WAT_Visual {
         expectOneOf('horizontal widget anchors', newAnchors[0], WAT_horizontalAnchorses);
         expectOneOf('vertical widget anchors', newAnchors[1], WAT_verticalAnchorses);
         const curAnchors = this.Anchors;
-        const curGeometry = this.Geometry; // already within constraints
         /**** consider real changes only ****/
         if ((newAnchors[0] === curAnchors[0]) && (newAnchors[1] === curAnchors[1])) {
             return;
         }
+        const curGeometry = this.Geometry; // already within constraints
         /**** if need be, calculate container dimensions ****/
         let outerWidth = 0, outerHeight = 0;
         if ((newAnchors[0] !== curAnchors[0]) && (newAnchors[0] !== 'left-width') ||
@@ -5726,7 +6234,7 @@ export class WAT_Widget extends WAT_Visual {
         return this._Offsets.slice();
     }
     set Offsets(newOffsets) {
-        expectListSatisfying('patch offsets', newOffsets, ValueIsFiniteNumber);
+        expectListSatisfying('widget offsets', newOffsets, (Value) => (Value == null) || ValueIsFiniteNumber(Value), 4, 4);
         // more specific validations will follow below
         const curAnchors = this.Anchors;
         const curOffsets = this.Offsets;
@@ -5742,10 +6250,10 @@ export class WAT_Widget extends WAT_Visual {
             switch (curAnchors[0]) {
                 case 'left-width':
                     allowLocation('x coordinate', newOffsets[0]);
-                    allowDimension('patch width', newOffsets[1]);
+                    allowDimension('widget width', newOffsets[1]);
                     break;
                 case 'width-right':
-                    allowDimension('patch width', newOffsets[0]);
+                    allowDimension('widget width', newOffsets[0]);
                     allowLocation('right offset', newOffsets[1]);
                     break;
                 case 'left-right':
@@ -5763,10 +6271,10 @@ export class WAT_Widget extends WAT_Visual {
             switch (curAnchors[1]) {
                 case 'top-height':
                     allowLocation('y coordinate', newOffsets[2]);
-                    allowDimension('patch height', newOffsets[3]);
+                    allowDimension('widget height', newOffsets[3]);
                     break;
                 case 'height-bottom':
-                    allowDimension('patch height', newOffsets[2]);
+                    allowDimension('widget height', newOffsets[2]);
                     allowLocation('bottom offset', newOffsets[3]);
                     break;
                 case 'top-bottom':
@@ -5783,7 +6291,7 @@ export class WAT_Widget extends WAT_Visual {
         this.rerender();
     }
     get Overflows() {
-        return acceptableValue(this._Overflows, (Value) => ValueIsListOf(Value, WAT_Overflows), ['visible', 'visible']);
+        return acceptableValue((this._Overflows == null ? undefined : this._Overflows.slice()), (Value) => ValueIsListOf(Value, WAT_Overflows), ['visible', 'visible']);
     }
     set Overflows(newValue) {
         allowListOf('overflow settings', newValue, WAT_Overflows);
@@ -5792,6 +6300,58 @@ export class WAT_Widget extends WAT_Visual {
             this.rerender();
         }
     }
+    /**** Overlay - which Overlay contains this widget? ****/
+    get Overlay() {
+        const View = this.View;
+        if (View == null) {
+            return undefined;
+        }
+        const OverlayElement = View.closest('.WAT.AppletOverlay,.WAT.Dialog,.WAT.WidgetOverlay');
+        if (OverlayElement == null) {
+            return undefined;
+        }
+        return OverlayElement['_Overlay'];
+    }
+    set Overlay(_) { throwReadOnlyError('Overlay'); }
+    /**** AppletOverlay - which AppletOverlay contains this widget? ****/
+    get AppletOverlay() {
+        const View = this.View;
+        if (View == null) {
+            return undefined;
+        }
+        const OverlayElement = View.closest('.WAT.AppletOverlay,.WAT.Dialog');
+        if (OverlayElement == null) {
+            return undefined;
+        }
+        return OverlayElement['_Overlay'];
+    }
+    set AppletOverlay(_) { throwReadOnlyError('AppletOverlay'); }
+    /**** Dialog - which AppletOverlay contains this widget? ****/
+    get Dialog() {
+        const View = this.View;
+        if (View == null) {
+            return undefined;
+        }
+        const OverlayElement = View.closest('.WAT.Dialog');
+        if (OverlayElement == null) {
+            return undefined;
+        }
+        return OverlayElement['_Overlay'];
+    }
+    set Dialog(_) { throwReadOnlyError('Dialog'); }
+    /**** WidgetOverlay - which WidgetOverlay contains this widget? ****/
+    get WidgetOverlay() {
+        const View = this.View;
+        if (View == null) {
+            return undefined;
+        }
+        const OverlayElement = View.closest('.WAT.WidgetOverlay');
+        if (OverlayElement == null) {
+            return undefined;
+        }
+        return OverlayElement['_Overlay'];
+    }
+    set WidgetOverlay(_) { throwReadOnlyError('WidgetOverlay'); }
     OverlayNamed(OverlayName) {
         const OverlayIndex = this.IndexOfOverlay(OverlayName);
         return this._OverlayList[OverlayIndex]; // even if OverlayIndex = -1
@@ -5811,73 +6371,9 @@ export class WAT_Widget extends WAT_Visual {
     }
     /**** openOverlay ****/
     openOverlay(Descriptor) {
-        var _a;
-        expectPlainObject('overlay descriptor', Descriptor);
-        expectName('overlay name', Descriptor.Name);
-        allowBoolean('overlay modality', Descriptor.isModal);
-        allowLocation('overlay x coordinate', Descriptor.x);
-        allowLocation('overlay y coordinate', Descriptor.y);
-        allowDimension('overlay width', Descriptor.Width);
-        allowDimension('overlay height', Descriptor.Height);
-        allowDimension('minimal overlay width', Descriptor.minWidth);
-        allowDimension('maximal overlay width', Descriptor.maxWidth);
-        allowDimension('minimal overlay height', Descriptor.minHeight);
-        allowDimension('maximal overlay height', Descriptor.maxHeight);
-        allowFunction('"onOpen" callback', Descriptor.onOpen);
-        allowFunction('"onClose" callback', Descriptor.onClose);
-        let { Name, Title, isModal, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
-        if (isModal == null) {
-            isModal = false;
-        }
-        if (x == null) {
-            x = 0;
-        }
-        if (y == null) {
-            y = 0;
-        }
-        if (minWidth == null) {
-            minWidth = 0;
-        }
-        if (minHeight == null) {
-            minHeight = 0;
-        }
-        let SourceWidget, SourceWidgetPath;
-        switch (true) {
-            case null:
-            case undefined:
-                throwError('MissingArgument: no source widget path given');
-            case ValueIsPath(Descriptor.SourceWidget):
-                SourceWidgetPath = Descriptor.SourceWidget;
-                SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(SourceWidgetPath);
-                if (SourceWidget == null)
-                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
-                break;
-            case ValueIsWidget(Descriptor.SourceWidget):
-                SourceWidget = Descriptor.SourceWidget;
-                SourceWidgetPath = SourceWidget.Path;
-            default:
-                throwError('InvalidArgument: the given source widget is neither a widget ' +
-                    'nor a widget path');
-        }
-        if ((Width == null) || (Height == null)) {
-            let SourceGeometry = SourceWidget.Geometry;
-            if (Width == null) {
-                Width = SourceGeometry.Width;
-            }
-            if (Height == null) {
-                Height = SourceGeometry.Height;
-            }
-        }
-        Width = Math.max(minWidth || 0, Math.min(Width, maxWidth || Infinity));
-        Height = Math.max(minHeight || 0, Math.min(Height, maxHeight || Infinity));
-        const Overlay = {
-            Name, normalizedName: Name.toLowerCase(), SourceWidgetPath,
-            isModal,
-            x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight,
-            onOpen, onClose
-        };
+        const Overlay = new WAT_WidgetOverlay(this, Descriptor);
         this._OverlayList.push(Overlay);
         this.rerender();
         if (Overlay.onOpen != null) {
@@ -5891,6 +6387,10 @@ export class WAT_Widget extends WAT_Visual {
             return;
         }
         const [Overlay] = this._OverlayList.splice(OverlayIndex, 1);
+        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected members here
+        if (Overlay._View != null) {
+            Overlay._View._releaseWidgets();
+        }
         this.rerender();
         if (Overlay.onClose != null) {
             Overlay.onClose(Overlay);
@@ -5899,7 +6399,7 @@ export class WAT_Widget extends WAT_Visual {
     /**** closeAllOverlays ****/
     closeAllOverlays() {
         if (this._OverlayList.length > 0) {
-            this._OverlayList.forEach((Overlay) => this.closeOverlay(Overlay.Name));
+            this._OverlayList.slice().forEach((Overlay) => this.closeOverlay(Overlay.Name));
         }
     }
     /**** OverlayIsOpen ****/
@@ -5971,6 +6471,9 @@ export class WAT_Widget extends WAT_Visual {
             Serialization.Anchors = this.Anchors;
         }
         Serialization.Offsets = this.Offsets;
+        [
+            'minWidth', 'maxWidth', 'minHeight', 'maxHeight',
+        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
     }
     /**** _deserializeConfigurationFrom ****/
     _deserializeConfigurationFrom(Serialization) {
@@ -5995,7 +6498,7 @@ export class WAT_Widget extends WAT_Visual {
         }
         let Anchors = this.Anchors;
         let newOffsets = Serialization.Offsets;
-        if (ValueIsListSatisfying(newOffsets, ValueIsInteger, 4, 4)) {
+        if (ValueIsListSatisfying(newOffsets, ValueIsFiniteNumber, 4, 4)) {
             if (((Anchors[0] === 'left-width') && ValueIsDimension(newOffsets[1]) ||
                 (Anchors[0] === 'left-right') ||
                 (Anchors[0] === 'width-right') && ValueIsDimension(newOffsets[0])) && ((Anchors[1] === 'top-height') && ValueIsDimension(newOffsets[3]) ||
@@ -6003,14 +6506,636 @@ export class WAT_Widget extends WAT_Visual {
                 (Anchors[1] === 'height-bottom') && ValueIsDimension(newOffsets[2]))) {
                 this._Offsets = newOffsets.slice();
             }
+            else {
+                console.warn('DeserializationError: invalid value for property ' +
+                    quoted('Offsets') + ' in visual ' + quoted(this.Path));
+            }
+        }
+        else if (newOffsets != null) {
+            console.warn('DeserializationError: invalid value for property ' +
+                quoted('Offsets') + ' in visual ' + quoted(this.Path));
         }
         /**** the remaining properties are simpler ****/
         ;
         [
-            'Lock', 'Visibility', 'Enabling'
+            'Lock', 'Visibility', 'Enabling',
+            'minWidth', 'maxWidth', 'minHeight', 'maxHeight',
         ].forEach((Name) => deserializeProperty(Name));
         /**** common properties including "activeScript" ****/
         super._deserializeConfigurationFrom(Serialization);
+    }
+}
+//------------------------------------------------------------------------------
+//--                            WAT_AppletOverlay                             --
+//------------------------------------------------------------------------------
+class WAT_AppletOverlay {
+    constructor(Applet, Descriptor) {
+        Object.defineProperty(this, "_Applet", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_View", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Name", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_normalizedName", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_isModal", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Anchoring", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_x", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Width", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_y", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Height", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_minWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_maxWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_minHeight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_maxHeight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_SourceWidgetPath", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_onOpen", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_onClose", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        expectApplet('overlay applet', Applet);
+        this._Applet = Applet;
+        expectPlainObject('overlay descriptor', Descriptor);
+        expectName('overlay name', Descriptor.Name);
+        allowBoolean('overlay modality', Descriptor.isModal);
+        allowList('anchoring', Descriptor.Anchoring);
+        allowLocation('overlay x coordinate', Descriptor.x);
+        allowLocation('overlay y coordinate', Descriptor.y);
+        allowDimension('overlay width', Descriptor.Width);
+        allowDimension('overlay height', Descriptor.Height);
+        allowDimension('minimal overlay width', Descriptor.minWidth);
+        allowDimension('maximal overlay width', Descriptor.maxWidth);
+        allowDimension('minimal overlay height', Descriptor.minHeight);
+        allowDimension('maximal overlay height', Descriptor.maxHeight);
+        allowFunction('"onOpen" callback', Descriptor.onOpen);
+        allowFunction('"onClose" callback', Descriptor.onClose);
+        let { Name, isModal, Anchoring, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
+        if (Anchoring != null) {
+            expectOneOf('horizontal anchoring', Anchoring[0], ['left', 'right']);
+            expectOneOf('vertical anchoring', Anchoring[1], ['top', 'bottom']);
+        }
+        this._Name = Name;
+        this._normalizedName = Name.toLowerCase();
+        this._isModal = (isModal || false);
+        this._Anchoring = (Anchoring == null ? ['left', 'top'] : Anchoring.slice(0, 2));
+        this._minWidth = Math.max(0, minWidth || 0);
+        this._maxWidth = maxWidth;
+        this._minHeight = Math.max(0, minHeight || 0);
+        this._maxHeight = maxHeight;
+        this._x = x;
+        this._onOpen = onOpen;
+        this._y = y;
+        this._onClose = onClose;
+        let SourceWidget, SourceWidgetPath;
+        switch (true) {
+            case Descriptor.SourceWidget == null:
+                throwError('MissingArgument: no source widget path given');
+            case ValueIsPath(Descriptor.SourceWidget):
+                SourceWidgetPath = Descriptor.SourceWidget;
+                SourceWidget = Applet.WidgetAtPath(SourceWidgetPath);
+                if (SourceWidget == null)
+                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
+                break;
+            case ValueIsWidget(Descriptor.SourceWidget):
+                SourceWidget = Descriptor.SourceWidget;
+                SourceWidgetPath = SourceWidget.Path;
+                break;
+            default:
+                throwError('InvalidArgument: the given source widget is neither a widget ' +
+                    'nor a widget path');
+        }
+        this._SourceWidgetPath = SourceWidgetPath;
+        if ((Width == null) || (Height == null)) {
+            let SourceGeometry = SourceWidget.Geometry;
+            if (Width == null) {
+                Width = SourceGeometry.Width;
+            }
+            if (Height == null) {
+                Height = SourceGeometry.Height;
+            }
+        }
+        this._Width = Math.max(this._minWidth, Math.min(Width, maxWidth || Infinity));
+        this._Height = Math.max(this._minHeight, Math.min(Height, maxHeight || Infinity));
+    }
+    /**** Applet ****/
+    get Applet() { return this._Applet; }
+    set Applet(_) { throwReadOnlyError('Applet'); }
+    /**** Name ****/
+    get Name() { return this._Name; }
+    set Name(_) { throwReadOnlyError('Name'); }
+    /**** normalizedName ****/
+    get normalizedName() { return this._normalizedName; }
+    set normalizedName(_) { throwReadOnlyError('normalizedName'); }
+    /**** isModal ****/
+    get isModal() { return this._isModal; }
+    set isModal(_) { throwReadOnlyError('isModal'); }
+    /**** Anchoring ****/
+    get Anchoring() { return this._Anchoring.slice(); }
+    set Anchoring(_) { throwReadOnlyError('Anchoring'); }
+    /**** SourceWidgetPath ****/
+    get SourceWidgetPath() { return this._SourceWidgetPath; }
+    set SourceWidgetPath(_) { throwReadOnlyError('SourceWidgetPath'); }
+    /**** onOpen ****/
+    get onOpen() { return this._onOpen; }
+    set onOpen(_) { throwReadOnlyError('onOpen'); }
+    /**** onClose ****/
+    get onClose() { return this._onClose; }
+    set onClose(_) { throwReadOnlyError('onClose'); }
+    /**** x ****/
+    get x() { return this._x; }
+    set x(newX) {
+        allowLocation('overlay x position', newX);
+        if (this._x !== newX) {
+            this._x = newX;
+            this._Applet.rerender();
+        }
+    }
+    /**** y ****/
+    get y() { return this._y; }
+    set y(newY) {
+        allowLocation('overlay y position', newY);
+        if (this._y !== newY) {
+            this._y = newY;
+            this._Applet.rerender();
+        }
+    }
+    /**** Width ****/
+    get Width() { return this._Width; }
+    set Width(newWidth) {
+        expectDimension('overlay width', newWidth);
+        if (this._Width !== newWidth) {
+            this._Width = newWidth;
+            this._Applet.rerender();
+        }
+    }
+    /**** Height ****/
+    get Height() { return this._Height; }
+    set Height(newHeight) {
+        expectDimension('overlay height', newHeight);
+        if (this._Height !== newHeight) {
+            this._Height = newHeight;
+            this._Applet.rerender();
+        }
+    }
+    /**** minWidth ****/
+    get minWidth() { return this._minWidth; }
+    set minWidth(newValue) {
+        expectDimension('minimal overlay width', newValue);
+        if (this._minWidth !== newValue) {
+            this._minWidth = newValue;
+            this._Applet.rerender();
+        }
+    }
+    /**** maxWidth ****/
+    get maxWidth() { return this._maxWidth; }
+    set maxWidth(newValue) {
+        allowDimension('maximal overlay width', newValue);
+        if (this._maxWidth !== newValue) {
+            this._maxWidth = newValue;
+            this._Applet.rerender();
+        }
+    }
+    /**** minHeight ****/
+    get minHeight() { return this._minHeight; }
+    set minHeight(newValue) {
+        expectDimension('minimal overlay height', newValue);
+        if (this._minHeight !== newValue) {
+            this._minHeight = newValue;
+            this._Applet.rerender();
+        }
+    }
+    /**** maxHeight ****/
+    get maxHeight() { return this._maxHeight; }
+    set maxHeight(newValue) {
+        allowDimension('maximal overlay height', newValue);
+        if (this._maxHeight !== newValue) {
+            this._maxHeight = newValue;
+            this._Applet.rerender();
+        }
+    }
+    /**** close ****/
+    close() {
+        this._Applet.closeOverlay(this._Name);
+    }
+}
+//------------------------------------------------------------------------------
+//--                                WAT_Dialog                                --
+//------------------------------------------------------------------------------
+class WAT_Dialog extends WAT_AppletOverlay {
+    constructor(Applet, Descriptor) {
+        super(Applet, Descriptor);
+        Object.defineProperty(this, "_Title", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_isClosable", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_isDraggable", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_isResizable", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        allowTextline('dialog title', Descriptor.Title);
+        allowBoolean('dialog closability', Descriptor.isClosable);
+        allowBoolean('dialog draggability', Descriptor.isDraggable);
+        allowBoolean('dialog resizability', Descriptor.isResizable);
+        let { Title, isClosable, isDraggable, isResizable } = Descriptor;
+        this._isClosable = (isClosable || false);
+        this._isDraggable = (isDraggable || false);
+        this._isResizable = (isResizable || false);
+        if (Title == null) {
+            if (isClosable || isDraggable) {
+                Title = this._Name;
+            }
+        }
+        this._Title = Title;
+        /**** allow room for dialog decoration ****/
+        if (isClosable) {
+            this._minWidth = Math.max(30 + 10, this._minWidth);
+        }
+        if (this._maxWidth != null) {
+            this._maxWidth = Math.max(this._maxWidth, this._minWidth);
+        }
+        if ((Title != null) || isClosable || isDraggable) {
+            this._Height += 30;
+            this._minHeight += 30;
+        }
+        if (isResizable) {
+            this._Height += 10;
+            this._minHeight += 10;
+        }
+        if (this._maxHeight != null) {
+            if ((Title != null) || isClosable || isDraggable) {
+                this._maxHeight += 30;
+            }
+            if (isResizable) {
+                this._maxHeight += 10;
+            }
+        }
+        this._Width = Math.max(this._minWidth, Math.min(this._Width, this._maxWidth || Infinity));
+        this._Height = Math.max(this._minHeight, Math.min(this._Height, this._maxHeight || Infinity));
+    }
+    /**** Title ****/
+    get Title() { return this._Title; }
+    set Title(_) { throwReadOnlyError('Title'); }
+    /**** isClosable ****/
+    get isClosable() { return this._isClosable; }
+    set isClosable(_) { throwReadOnlyError('isClosable'); }
+    /**** isDraggable ****/
+    get isDraggable() { return this._isDraggable; }
+    set isDraggable(_) { throwReadOnlyError('isDraggable'); }
+    /**** isResizable ****/
+    get isResizable() { return this._isResizable; }
+    set isResizable(_) { throwReadOnlyError('isResizable'); }
+}
+//------------------------------------------------------------------------------
+//--                            WAT_WidgetOverlay                             --
+//------------------------------------------------------------------------------
+class WAT_WidgetOverlay {
+    constructor(Widget, Descriptor) {
+        var _a;
+        Object.defineProperty(this, "_Widget", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_View", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Name", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_normalizedName", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_isModal", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_x", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Width", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_y", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Height", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_minWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_maxWidth", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_minHeight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_maxHeight", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_SourceWidgetPath", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_onOpen", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_onClose", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        expectWidget('overlay widget', Widget);
+        this._Widget = Widget;
+        expectPlainObject('overlay descriptor', Descriptor);
+        expectName('overlay name', Descriptor.Name);
+        allowBoolean('overlay modality', Descriptor.isModal);
+        allowLocation('overlay x coordinate', Descriptor.x);
+        allowLocation('overlay y coordinate', Descriptor.y);
+        allowDimension('overlay width', Descriptor.Width);
+        allowDimension('overlay height', Descriptor.Height);
+        allowDimension('minimal overlay width', Descriptor.minWidth);
+        allowDimension('maximal overlay width', Descriptor.maxWidth);
+        allowDimension('minimal overlay height', Descriptor.minHeight);
+        allowDimension('maximal overlay height', Descriptor.maxHeight);
+        allowFunction('"onOpen" callback', Descriptor.onOpen);
+        allowFunction('"onClose" callback', Descriptor.onClose);
+        let { Name, isModal, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
+        this._Name = Name;
+        this._normalizedName = Name.toLowerCase();
+        this._isModal = (isModal || false);
+        this._minWidth = Math.max(0, minWidth || 0);
+        this._maxWidth = maxWidth;
+        this._minHeight = Math.max(0, minHeight || 0);
+        this._maxHeight = maxHeight;
+        this._x = (x || 0);
+        this._onOpen = onOpen;
+        this._y = (y || 0);
+        this._onClose = onClose;
+        let SourceWidget, SourceWidgetPath;
+        switch (true) {
+            case Descriptor.SourceWidget == null:
+                throwError('MissingArgument: no source widget path given');
+            case ValueIsPath(Descriptor.SourceWidget):
+                SourceWidgetPath = Descriptor.SourceWidget;
+                SourceWidget = (_a = Widget.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(SourceWidgetPath);
+                if (SourceWidget == null)
+                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
+                break;
+            case ValueIsWidget(Descriptor.SourceWidget):
+                SourceWidget = Descriptor.SourceWidget;
+                SourceWidgetPath = SourceWidget.Path;
+                break;
+            default:
+                throwError('InvalidArgument: the given source widget is neither a widget ' +
+                    'nor a widget path');
+        }
+        this._SourceWidgetPath = SourceWidgetPath;
+        if ((Width == null) || (Height == null)) {
+            let SourceGeometry = SourceWidget.Geometry;
+            if (Width == null) {
+                Width = SourceGeometry.Width;
+            }
+            if (Height == null) {
+                Height = SourceGeometry.Height;
+            }
+        }
+        this._Width = Math.max(this._minWidth, Math.min(Width, maxWidth || Infinity));
+        this._Height = Math.max(this._minHeight, Math.min(Height, maxHeight || Infinity));
+    }
+    /**** Widget ****/
+    get Widget() { return this._Widget; }
+    set Widget(_) { throwReadOnlyError('Widget'); }
+    /**** Name ****/
+    get Name() { return this._Name; }
+    set Name(_) { throwReadOnlyError('Name'); }
+    /**** normalizedName ****/
+    get normalizedName() { return this._normalizedName; }
+    set normalizedName(_) { throwReadOnlyError('normalizedName'); }
+    /**** isModal ****/
+    get isModal() { return this._isModal; }
+    set isModal(_) { throwReadOnlyError('isModal'); }
+    /**** SourceWidgetPath ****/
+    get SourceWidgetPath() { return this._SourceWidgetPath; }
+    set SourceWidgetPath(_) { throwReadOnlyError('SourceWidgetPath'); }
+    /**** onOpen ****/
+    get onOpen() { return this._onOpen; }
+    set onOpen(_) { throwReadOnlyError('onOpen'); }
+    /**** onClose ****/
+    get onClose() { return this._onClose; }
+    set onClose(_) { throwReadOnlyError('onClose'); }
+    /**** x ****/
+    get x() { return this._x; }
+    set x(newX) {
+        expectLocation('overlay x position', newX);
+        if (this._x !== newX) {
+            this._x = newX;
+            this._Widget.rerender();
+        }
+    }
+    /**** y ****/
+    get y() { return this._y; }
+    set y(newY) {
+        expectLocation('overlay y position', newY);
+        if (this._y !== newY) {
+            this._y = newY;
+            this._Widget.rerender();
+        }
+    }
+    /**** Width ****/
+    get Width() { return this._Width; }
+    set Width(newWidth) {
+        expectDimension('overlay width', newWidth);
+        if (this._Width !== newWidth) {
+            this._Width = newWidth;
+            this._Widget.rerender();
+        }
+    }
+    /**** Height ****/
+    get Height() { return this._Height; }
+    set Height(newHeight) {
+        expectDimension('overlay height', newHeight);
+        if (this._Height !== newHeight) {
+            this._Height = newHeight;
+            this._Widget.rerender();
+        }
+    }
+    /**** minWidth ****/
+    get minWidth() { return this._minWidth; }
+    set minWidth(newValue) {
+        expectDimension('minimal overlay width', newValue);
+        if (this._minWidth !== newValue) {
+            this._minWidth = newValue;
+            this._Widget.rerender();
+        }
+    }
+    /**** maxWidth ****/
+    get maxWidth() { return this._maxWidth; }
+    set maxWidth(newValue) {
+        allowDimension('maximal overlay width', newValue);
+        if (this._maxWidth !== newValue) {
+            this._maxWidth = newValue;
+            this._Widget.rerender();
+        }
+    }
+    /**** minHeight ****/
+    get minHeight() { return this._minHeight; }
+    set minHeight(newValue) {
+        expectDimension('minimal overlay height', newValue);
+        if (this._minHeight !== newValue) {
+            this._minHeight = newValue;
+            this._Widget.rerender();
+        }
+    }
+    /**** maxHeight ****/
+    get maxHeight() { return this._maxHeight; }
+    set maxHeight(newValue) {
+        allowDimension('maximal overlay height', newValue);
+        if (this._maxHeight !== newValue) {
+            this._maxHeight = newValue;
+            this._Widget.rerender();
+        }
+    }
+    /**** close ****/
+    close() {
+        this._Widget.closeOverlay(this._Name);
     }
 }
 //------------------------------------------------------------------------------
@@ -6023,53 +7148,56 @@ export const WAT_ImageAlignments = [
     'right center', 'left bottom', 'center bottom', 'right bottom'
 ];
 /**** for WebView ****/
+// *C* SECURITY: do not add "allow-same-origin" together with "allow-scripts" - it defeats the sandbox
 export const WAT_DefaultSandboxPermissions = ('allow-downloads allow-forms allow-modals allow-orientation-lock ' +
-    'allow-pointer-lock allow-popups allow-same-origin allow-scripts');
+    'allow-pointer-lock allow-popups allow-scripts');
 export const WAT_ReferrerPolicies = [
     'no-referrer', 'no-referrer-when-downgrade', 'origin', 'origin-when-cross-origin',
-    'same-origin', 'strict-origin', 'strict-origin', 'strict-origin-when-cross-origin',
+    'same-origin', 'strict-origin', 'strict-origin-when-cross-origin',
     'unsafe-url'
 ];
 /**** for Slider ****/
-const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d*[.](?:\d*))(?:\s*:\s*([^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]+))?$/;
+const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d+[.]\d*)(?:\s*:\s*([^\x00-\x1F\x7F-\x9F  ￹-￻]+))?$/;
 function HashmarkMatcher(Value) {
     return ValueIsStringMatching(Value, HashmarkPattern) || ValueIsNumber(Value);
 }
 /**** for TimeInput ****/
-export const WAT_TimePattern = '\\d{2}:\\d{2}';
-export const WAT_TimeRegExp = /\d{2}:\d{2}/;
+export const WAT_TimePattern = '\\d{2}:\\d{2}(?::\\d{2})?';
+export const WAT_TimeRegExp = /^\d{2}:\d{2}(?::\d{2})?$/;
 export function WAT_TimeMatcher(Value) {
     return ValueIsStringMatching(Value, WAT_TimeRegExp);
 }
 /**** for DateTimeInput ****/
-export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}';
-export const WAT_DateTimeRegExp = /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/;
+export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2})?';
+export const WAT_DateTimeRegExp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/;
 export function WAT_DateTimeMatcher(Value) {
     return ValueIsStringMatching(Value, WAT_DateTimeRegExp);
 }
 /**** for DateInput ****/
 export const WAT_DatePattern = '\\d{4}-\\d{2}-\\d{2}';
-export const WAT_DateRegExp = /\d{4}-\d{2}-\d{2}/;
+export const WAT_DateRegExp = /^\d{4}-\d{2}-\d{2}$/;
 export function WAT_DateMatcher(Value) {
     return ValueIsStringMatching(Value, WAT_DateRegExp);
 }
 /**** for WeekInput ****/
 export const WAT_WeekPattern = '\\d{4}-W\\d{2}';
-export const WAT_WeekRegExp = /\d{4}-W\d{2}/;
+export const WAT_WeekRegExp = /^\d{4}-W\d{2}$/;
 export function WAT_WeekMatcher(Value) {
     return ValueIsStringMatching(Value, WAT_WeekRegExp);
 }
 /**** for MonthInput ****/
 export const WAT_MonthPattern = '\\d{4}-\\d{2}';
-export const WAT_MonthRegExp = /\d{4}-\d{2}/;
+export const WAT_MonthRegExp = /^\d{4}-\d{2}$/;
 export function WAT_MonthMatcher(Value) {
     return ValueIsStringMatching(Value, WAT_MonthRegExp);
 }
 /**** for MarkdownView ****/
 import { Marked } from 'marked';
+import markedKatex from 'marked-katex-extension';
+import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js/lib/core';
 import { default as _css } from 'highlight.js/lib/languages/css';
-hljs.registerLanguage('html', _css);
+hljs.registerLanguage('css', _css);
 import { default as _javascript } from 'highlight.js/lib/languages/javascript';
 hljs.registerLanguage('javascript', _javascript);
 import { default as _java } from 'highlight.js/lib/languages/java';
@@ -6103,6 +7231,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
       }
     `);
         /**** custom Properties ****/
+        my.configurableProperties = [
+            // *C* "initialMaxWidth"/"initialMaxHeight" are not used by the runtime itself
+            { Name: 'initialMaxWidth', Label: 'initial max. Width', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'initialMaxHeight', Label: 'initial max. Height', minValue: 0, Stepping: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized' },
+        ];
         Object_assign(me, {
             /**** bundledWidgets ****/
             bundledWidgets: function () {
@@ -6135,7 +7270,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', EditorType: 'textline-input', Placeholder: '(enter content path)' }
+            { Name: 'Value',
+                EditorType: 'textline-input', Placeholder: '(enter content path)' },
+            { Name: 'visiblePattern', Label: 'visible Pattern', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
         Object_assign(me, {
             /**** Value ****/
@@ -6160,19 +7298,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         SourcePath = newValue;
                     }
                 }
-                if (SourceWidget == null) {
-                    if (this.memoized.Value != null) {
-                        this.memoized.Value = undefined;
-                        this.on('Value')();
-                        this.rerender();
-                    }
-                    return;
+                if (SourceWidget != null) {
+                    if (SourceWidget === this)
+                        throwError('InvalidArgument: a WidgetPane can not show itself');
+                    if (SourceWidget.Page === this.Page)
+                        throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
                 }
-                if (SourceWidget === this)
-                    throwError('InvalidArgument: a WidgetPane can not show itself');
-                if (SourceWidget.Page === this.Page)
-                    throwError('InvalidArgument: a WidgetPane can not show other widgets from the same page');
-                if (this._Value !== SourcePath) {
+                if (this.memoized.Value !== SourcePath) {
                     this.memoized.Value = SourcePath;
                     this.on('Value')();
                     this.rerender();
@@ -6181,8 +7313,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** _releaseWidgets - releases all widgets shown by this pane ****/
             _shownWidgets: [],
             _releaseWidgets: function () {
-                console.log('releasing all WidgetPane widgets', this._shownWidgets);
-                this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+                this._shownWidgets.forEach((Widget) => {
+                    if (Widget._Pane === this) {
+                        Widget._Pane = undefined;
+                    }
+                });
+                this._shownWidgets = [];
             },
             componentWillUnmount: function () {
                 this._releaseWidgets();
@@ -6230,21 +7366,25 @@ function registerIntrinsicBehaviorsIn(Applet) {
             var _a;
             this._releaseWidgets();
             const Value = this.Value;
-            if (Value == null) {
-                return '';
+            const SourceWidget = ((Value == null) || (Value.trim() === '')
+                ? undefined
+                : (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(Value));
+            const noSourceWidget = (SourceWidget == null) || (SourceWidget === this);
+            const withPattern = (noSourceWidget && (my.visiblePattern === true));
+            let WidgetsToShow;
+            if (noSourceWidget) {
+                WidgetsToShow = [];
             }
-            const SourceWidget = (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(Value);
-            if ((SourceWidget == null) || (SourceWidget === this)) {
-                return '';
+            else {
+                WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
+                    ? SourceWidget.bundledWidgets()
+                    : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
+                WidgetsToShow.forEach((Widget) => Widget._Pane = this);
             }
-            const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
-                ? SourceWidget.bundledWidgets()
-                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === this))));
-            WidgetsToShow.forEach((Widget) => Widget._Pane = this);
             this._shownWidgets = WidgetsToShow;
             const PaneGeometry = this.Geometry;
-            const BaseGeometry = SourceWidget.Geometry;
-            return html `<div class="WAT Content WidgetPane">
+            const BaseGeometry = noSourceWidget ? PaneGeometry : SourceWidget.Geometry;
+            return html `<div class="WAT Content WidgetPane ${withPattern ? 'Placeholder' : ''}">
         ${WidgetsToShow.toReversed().map((Widget) => {
                 let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
                 return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
@@ -6267,7 +7407,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedTextFormats,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsTextFormat },
+                EditorType: 'linelist-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsTextFormat) },
         ];
         /**** Renderer ****/
         onRender(function () {
@@ -6322,7 +7463,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             /**** actual rendering ****/
             return html `<div class="WAT Content TextView"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        onDragOver=${allowsDropping ? _onDragOver : undefined}
+        onDrop=${allowsDropping ? _onDrop : undefined}
       >${this.Value}</>`;
         });
     };
@@ -6336,7 +7478,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedHTMLFormats,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsHTMLFormat },
+                EditorType: 'linelist-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsHTMLFormat) },
         ];
         /**** Renderer ****/
         onRender(function () {
@@ -6368,6 +7511,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (_acceptableDataIn(Event)) {
                     Event.preventDefault();
                     if (Event.dataTransfer.types.includes('text/plain')) {
+                        // *C* SECURITY: dropped text is taken over verbatim and will be rendered as HTML
                         const Value = Event.dataTransfer.getData('text');
                         this.Value = Value;
                         this.on('input')(Event);
@@ -6384,14 +7528,16 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         }
                         catch (Signal) {
                             console.warn('file drop error', Signal);
-                            this.on('drop-error')(Event);
+                            this.on('drop-error')(Signal);
                         }
                     }
                 }
             };
             /**** actual rendering ****/
+            // *C* SECURITY: content is rendered as raw HTML without sanitization (XSS risk!)
             return html `<div class="WAT Content HTMLView"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        onDragOver=${allowsDropping ? _onDragOver : undefined}
+        onDrop=${allowsDropping ? _onDrop : undefined}
         dangerouslySetInnerHTML=${{ __html: this.Value || '' }}
       />`;
         });
@@ -6401,9 +7547,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     const WAT_MarkdownView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         my._Marked = new Marked();
         my._Marked.setOptions({
-            gfm: true, breaks: true,
+            gfm: true, breaks: true, pedantic: false, smartypants: false
         });
-        //    my._Marked.use(markedKatex({ nonStandard:true }))
+        my._Marked.use(markedKatex({
+            throwOnError: false, /*nonStandard:true,*/
+        }));
+        my._Marked.use(markedHighlight({
+            emptyLangClass: 'hljs',
+            langPrefix: 'hljs language-', // CSS class prefix
+            highlight(Code, Language, Info) {
+                Language = hljs.getLanguage(Language) ? Language : 'plaintext';
+                return hljs.highlight(Code, { language: Language }).value;
+            }
+        }));
         //  my._HTMLContent = my._Marked.parse(my.Value)           // will be done later
         /**** custom Properties ****/
         my.configurableProperties = [
@@ -6412,7 +7568,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedMarkdownFormats,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsMarkdownFormat },
+                EditorType: 'linelist-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsMarkdownFormat) },
         ];
         Object_assign(me, {
             /**** Value ****/
@@ -6463,6 +7620,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (_acceptableDataIn(Event)) {
                     Event.preventDefault();
                     if (Event.dataTransfer.types.includes('text/plain')) {
+                        // *C* SECURITY: dropped text is taken over verbatim and will be rendered as HTML
                         const Value = Event.dataTransfer.getData('text');
                         this.Value = Value;
                         this.on('input')(Event);
@@ -6479,15 +7637,16 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         }
                         catch (Signal) {
                             console.warn('file drop error', Signal);
-                            this.on('drop-error')(Event);
+                            this.on('drop-error')(Signal);
                         }
                     }
                 }
             };
             /**** actual rendering ****/
-            console.log('#### this._HTMLContent', this._HTMLContent);
+            // *C* SECURITY: content is rendered as raw HTML without sanitization (XSS risk!)
             return html `<div class="WAT Content MarkdownView"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        onDragOver=${allowsDropping ? _onDragOver : undefined}
+        onDrop=${allowsDropping ? _onDrop : undefined}
         dangerouslySetInnerHTML=${{ __html: this._HTMLContent || '' }}
       />`;
         });
@@ -6504,14 +7663,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter image URL)',
                 EditorType: 'url-input' },
-            { Name: 'readonly',
+            { Name: 'readonly', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'ImageScaling', Label: 'Image Scaling', Default: 'contain',
                 EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageScalings },
             { Name: 'ImageAlignment', Label: 'Image Alignment', Default: 'center center',
                 EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_ImageAlignments },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: WAT_supportedImageFormats,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsImageFormat },
+                EditorType: 'linelist-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsImageFormat) },
         ];
         Object_assign(me, {
             /**** Value ****/
@@ -6532,6 +7692,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
         /**** Renderer ****/
         onRender(function () {
+            const ImageURL = (this.Value == null ? '' : this.Applet.AssetURL(this.Value));
             const { ImageScaling, ImageAlignment, Enabling, readonly } = this;
             let acceptableFileTypes = this.acceptableFileTypes;
             if (acceptableFileTypes.length === 0) {
@@ -6540,8 +7701,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** prepare file dropping ****/
             const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
             function _acceptableDataIn(Event) {
-                if (Event.dataTransfer.types.some((Type) => ((Type === 'text/html') &&
-                    Event.dataTransfer.getData('text/html').includes('<img')))) {
+                if (Event.dataTransfer.types.includes('text/html')) {
                     return true;
                 }
                 for (let Item of Event.dataTransfer.items) {
@@ -6561,12 +7721,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 var _a;
                 if (_acceptableDataIn(Event)) {
                     Event.preventDefault();
+                    let ImageSource;
                     if (Event.dataTransfer.types.some((Type) => ((Type === 'text/html') &&
                         Event.dataTransfer.getData('text/html').includes('<img')))) {
                         const HTML = Event.dataTransfer.getData('text/html');
                         const Parser = new DOMParser();
                         const Doc = Parser.parseFromString(HTML, 'text/html');
-                        const ImageSource = (_a = Doc.querySelector('img')) === null || _a === void 0 ? void 0 : _a.src;
+                        ImageSource = (_a = Doc.querySelector('img')) === null || _a === void 0 ? void 0 : _a.src;
+                    }
+                    if ((ImageSource != null) && (ImageSource !== '')) {
                         this.Value = ImageSource;
                         this.on('input')(Event);
                     }
@@ -6582,16 +7745,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         }
                         catch (Signal) {
                             console.warn('file drop error', Signal);
-                            this.on('drop-error')(Event);
+                            this.on('drop-error')(Signal);
                         }
                     }
                 }
             };
+            function _onClick(Event) { my.on('click')(Event); }
             /**** actual rendering ****/
             return html `<img class="WAT Content ImageView"
-        src=${this.Value || ''}
+        src=${ImageURL || ''}
         style="object-fit:${ImageScaling}; object-position:${ImageAlignment}"
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        onDragOver=${allowsDropping ? _onDragOver : undefined}
+        onDrop=${allowsDropping ? _onDrop : undefined}
+        onClick=${_onClick}
       />`;
         });
     };
@@ -6614,7 +7780,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const DataURL = 'data:image/svg+xml;base64,' + btoa(this.memoized.Value || '');
+            const DataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(this.Value || '');
             const { ImageScaling, ImageAlignment } = this;
             return html `<img class="WAT Content SVGView"
         src=${DataURL}
@@ -6657,9 +7823,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
         /**** Renderer ****/
         onRender(function () {
-            const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this.memoized;
+            const WebURL = (this.Value == null ? '' : this.Applet.AssetURL(this.Value));
+            const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this;
             return html `<iframe class="WAT Content WebView"
-        src=${this.Value || ''}
+        src=${WebURL || ''}
         allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
         sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
       />`;
@@ -6714,8 +7881,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'Value', Placeholder: '(enter label)',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
         ];
+        function _onClick(Event) { my.on('click')(Event); }
         onRender(function () {
-            return html `<div class="WAT Content LabelView">${my.Value}</>`;
+            return html `<div class="WAT Content LabelView"
+        onClick=${_onClick}
+      >${my.Value}</>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.LabelView', WAT_LabelView);
@@ -6751,7 +7921,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Icon', Default: 'icons/menu.png',
+            { Name: 'Icon', Default: 'icons/circle-information.png',
                 EditorType: 'url-input', },
         ];
         Object_assign(me, {
@@ -6773,6 +7943,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, Icon, Color } = this;
+            const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/circle-information.png' : this.Icon);
             const disabled = (Enabling == false);
             const _onClick = (Event) => {
                 if (Enabling === false) {
@@ -6783,7 +7954,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             /**** actual rendering ****/
             return html `<div class="WAT Content Icon ${disabled ? 'disabled' : ''}">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
           background-color:${Color || 'black'};
         " onClick=${_onClick}/>
       </>`;
@@ -6813,7 +7984,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 this.on('click')(Event);
             };
-            const Label = this.memoized.Label;
+            const Label = this.Label;
             return html `<button class="WAT Content Button" style="
         line-height:${this.LineHeight || this.Height}px;
       " disabled=${this.Enabling == false} onClick=${onClick}
@@ -6841,6 +8012,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return consumingEvent(Event);
                 }
                 this.Value = Event.target.checked;
+                this.on('click')(Event);
+                this.on('input')(Event);
             };
             const Value = this.Value;
             const checked = (Value == true);
@@ -6867,11 +8040,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
+            // *C* radiobuttons lack a grouping mechanism ("name" attribute) - group behavior must be scripted manually
             const onClick = (Event) => {
                 if (this.Enabling == false) {
                     return consumingEvent(Event);
                 }
                 this.Value = Event.target.checked;
+                this.on('click')(Event);
+                this.on('input')(Event);
             };
             return html `<input type="radio" class="WAT Radiobutton"
         checked=${this.Value == true}
@@ -6920,7 +8096,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
       }
       .WAT.Widget > .WAT.Progressbar::-webkit-progress-value,
       .WAT.Widget > .WAT.Progressbar::-moz-progress-bar {
-        background-color:dodgerblue;
+        background-color:var(--WAT-ProgressColor,dodgerblue);
         border:none; border-radius:2px;
       }
     `);
@@ -6935,7 +8111,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             const { Value, Maximum } = this;
             return html `<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
-      style="accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`;
+      style="--WAT-ProgressColor:${this.ForegroundColor || 'dodgerblue'}; accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar);
@@ -6959,20 +8135,20 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             const { Value, Enabling } = this;
             /**** handle external changes ****/
-            const shownValue = useRef('');
-            const InputElement = useRef(null);
             let ValueToShow = Value;
-            if (document.activeElement === InputElement.current) {
-                ValueToShow = shownValue.current;
+            if ((this._InputElement.current != null) &&
+                (document.activeElement === this._InputElement.current)) {
+                ValueToShow = this._shownValue;
             }
             else {
-                shownValue.current = ValueToShow;
+                this._shownValue = ValueToShow;
             }
             const _onInput = (Event) => {
                 if (Enabling === false) {
                     return consumingEvent(Event);
                 }
-                shownValue.current = this.Value = parseFloat(Event.target.value);
+                const newValue = parseFloat(Event.target.value);
+                this._shownValue = this.Value = (isNaN(newValue) ? undefined : newValue);
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
@@ -6988,7 +8164,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
           ${Hashmarks.map((Item) => {
                     Item = '' + Item;
                     const Value = Item.replace(/:.*$/, '').trim();
-                    const Label = Item.replace(/^[^:]+:/, '').trim();
+                    const Label = (Item.includes(':') ? Item.replace(/^[^:]*:/, '').trim() : '');
                     return html `<option value=${Value}>${Label}</option>`;
                 })}
         </datalist>`;
@@ -7195,7 +8371,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (Enabling === false) {
                     return consumingEvent(Event);
                 }
-                this._shownValue = this.Value = parseFloat(Event.target.value);
+                const newValue = parseFloat(Event.target.value);
+                this._shownValue = this.Value = (isNaN(newValue) ? undefined : newValue);
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
@@ -7251,6 +8428,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'Pattern',
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SpellChecking',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
@@ -7325,6 +8504,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
             { Name: 'maxLength', minValue: 0, Stepping: 1,
                 EditorType: 'integer-input', AccessorsFor: 'memoized' },
+            { Name: 'Pattern',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SpellChecking',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Suggestions',
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
@@ -7469,8 +8652,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'time-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'withSeconds', Label: 'with Seconds',
@@ -7545,8 +8726,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'date-time-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'withSeconds', Label: 'with Seconds',
@@ -7621,8 +8800,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'date-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Minimum', Stepping: 1,
@@ -7656,7 +8833,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
-            const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
+            const { readonly, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
                 SuggestionId = IdOfVisual(this) + '-Suggestions';
@@ -7665,7 +8842,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         </datalist>`;
             }
             /**** actual rendering ****/
-            return html `<input type="datetime-local" class="WAT Content DateInput" ref=${this._InputElement}
+            return html `<input type="date" class="WAT Content DateInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WAT_DatePattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -7694,8 +8871,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'week-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Minimum', Stepping: 1,
@@ -7729,7 +8904,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
-            const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
+            const { readonly, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
                 SuggestionId = IdOfVisual(this) + '-Suggestions';
@@ -7738,7 +8913,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         </datalist>`;
             }
             /**** actual rendering ****/
-            return html `<input type="datetime-local" class="WAT Content WeekInput" ref=${this._InputElement}
+            return html `<input type="week" class="WAT Content WeekInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WAT_WeekPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -7767,8 +8942,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'month-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'readonly',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'Minimum', Stepping: 1,
@@ -7802,7 +8975,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('blur')(Event);
             };
             /**** process any other parameters ****/
-            const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
+            const { readonly, Minimum, Maximum, Suggestions } = this;
             let SuggestionList = '', SuggestionId;
             if ((Suggestions != null) && (Suggestions.length > 0)) {
                 SuggestionId = IdOfVisual(this) + '-Suggestions';
@@ -7811,7 +8984,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         </datalist>`;
             }
             /**** actual rendering ****/
-            return html `<input type="datetime-local" class="WAT Content MonthInput" ref=${this._InputElement}
+            return html `<input type="month" class="WAT Content MonthInput" ref=${this._InputElement}
         value=${ValueToShow} min=${Minimum} max=${Maximum}
         readOnly=${readonly} pattern=${WAT_MonthPattern}
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
@@ -7850,29 +9023,54 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
-            const _onInput = (Event) => {
+            const acceptedFilesIn = (FileList) => {
+                let acceptedFiles = Array.from(FileList);
+                if ((acceptableFileTypes != null) && (acceptableFileTypes.length > 0)) {
+                    acceptedFiles = acceptedFiles.filter((acceptedFile) => (acceptableFileTypes.some((FileType) => {
+                        FileType = FileType.trim().toLowerCase();
+                        return (FileType.startsWith('.') ? acceptedFile.name.toLowerCase().endsWith(FileType) :
+                            FileType.endsWith('/*') ? acceptedFile.type.toLowerCase().startsWith(FileType.slice(0, -1)) :
+                                (acceptedFile.type.toLowerCase() === FileType));
+                    })));
+                }
+                if ((allowMultiple != true) && (acceptedFiles.length > 1)) {
+                    acceptedFiles = acceptedFiles.slice(0, 1);
+                }
+                return acceptedFiles;
+            }; // the file dialog does not enforce "accept" settings
+            const _onInput = async (Event) => {
                 if (this.Enabling === false) {
                     return consumingEvent(Event);
                 }
-                this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
-                this.on('input')(Event);
+                const acceptedFiles = acceptedFilesIn(Event.target.files);
+                if (acceptedFiles.length === 0) {
+                    Event.target.value = '';
+                    return;
+                }
+                this.Value = acceptedFiles.map((File) => File.name).join('\n');
+                await this.on('input')(Event, acceptedFiles);
+                Event.target.value = '';
             };
             const _onDragEnter = (Event) => { return consumingEvent(Event); };
             const _onDragOver = (Event) => { return consumingEvent(Event); };
-            const _onDrop = (Event) => {
+            const _onDrop = async (Event) => {
                 consumeEvent(Event);
                 if (this.Enabling === false) {
                     return;
                 }
-                this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
-                this.on('drop')(Event, Event.dataTransfer.files);
+                const droppedFiles = acceptedFilesIn(Event.dataTransfer.files);
+                if (droppedFiles.length === 0) {
+                    return;
+                }
+                this.Value = droppedFiles.map((File) => File.name).join('\n');
+                await this.on('drop')(Event, droppedFiles);
             }; // nota bene: "files" is now in "Event.dataTransfer.files"
             /**** actual rendering ****/
             return html `<label class="WAT Content FileInput"
         onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}
       >
-        ${Value === ''
-                ? Placeholder === '' ? '' : html `<span style="
+        ${(Value || '') === ''
+                ? (Placeholder || '') === '' ? '' : html `<span style="
               font-size:${Math.round((this.FontSize || 14) * 0.95)}px; line-height:${this.Height}px
             ">${Placeholder}</span>`
                 : html `<span style="line-height:${this.Height}px">${Value}</span>`}
@@ -7928,17 +9126,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, Icon, Color, allowMultiple, acceptableFileTypes } = this;
-            const _onInput = (Event) => {
+            const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/arrow-up-from-bracket.png' : this.Icon);
+            const acceptedFilesIn = (FileList) => {
+                let acceptedFiles = Array.from(FileList);
+                if ((acceptableFileTypes != null) && (acceptableFileTypes.length > 0)) {
+                    acceptedFiles = acceptedFiles.filter((acceptedFile) => (acceptableFileTypes.some((FileType) => {
+                        FileType = FileType.trim().toLowerCase();
+                        return (FileType.startsWith('.') ? acceptedFile.name.toLowerCase().endsWith(FileType) :
+                            FileType.endsWith('/*') ? acceptedFile.type.toLowerCase().startsWith(FileType.slice(0, -1)) :
+                                (acceptedFile.type.toLowerCase() === FileType));
+                    })));
+                }
+                if ((allowMultiple != true) && (acceptedFiles.length > 1)) {
+                    acceptedFiles = acceptedFiles.slice(0, 1);
+                }
+                return acceptedFiles;
+            }; // the file dialog does not enforce "accept" settings
+            const _onInput = async (Event) => {
                 if (this.Enabling == false) {
                     return consumingEvent(Event);
                 }
-                this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
-                this.on('input')(Event);
+                const acceptedFiles = acceptedFilesIn(Event.target.files);
+                if (acceptedFiles.length === 0) {
+                    Event.target.value = '';
+                    return;
+                }
+                this.Value = acceptedFiles.map((File) => File.name).join('\n');
+                await this.on('input')(Event, acceptedFiles);
+                Event.target.value = '';
             };
             /**** actual rendering ****/
             return html `<label class="WAT Content PseudoFileInput">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
+          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
           background-color:${Color || 'black'};
         "></div>
         <input type="file" style="display:none"
@@ -7981,22 +9201,47 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
-            const _onInput = (Event) => {
+            const acceptedFilesIn = (FileList) => {
+                let acceptedFiles = Array.from(FileList);
+                if ((acceptableFileTypes != null) && (acceptableFileTypes.length > 0)) {
+                    acceptedFiles = acceptedFiles.filter((acceptedFile) => (acceptableFileTypes.some((FileType) => {
+                        FileType = FileType.trim().toLowerCase();
+                        return (FileType.startsWith('.') ? acceptedFile.name.toLowerCase().endsWith(FileType) :
+                            FileType.endsWith('/*') ? acceptedFile.type.toLowerCase().startsWith(FileType.slice(0, -1)) :
+                                (acceptedFile.type.toLowerCase() === FileType));
+                    })));
+                }
+                if ((allowMultiple != true) && (acceptedFiles.length > 1)) {
+                    acceptedFiles = acceptedFiles.slice(0, 1);
+                }
+                return acceptedFiles;
+            }; // the file dialog does not enforce "accept" settings
+            const _onInput = async (Event) => {
                 if (this.Enabling === false) {
                     return consumingEvent(Event);
                 }
-                this.Value = Array.from(Event.target.files).map((File) => File.name).join('\n');
-                this.on('input')(Event);
+                const acceptedFiles = acceptedFilesIn(Event.target.files);
+                if (acceptedFiles.length === 0) {
+                    Event.target.value = '';
+                    return;
+                }
+                this.Value = acceptedFiles.map((File) => File.name).join('\n');
+                await this.on('input')(Event, acceptedFiles);
+                Event.target.value = '';
             };
             const _onDragEnter = (Event) => { return consumingEvent(Event); };
             const _onDragOver = (Event) => { return consumingEvent(Event); };
-            const _onDrop = (Event) => {
+            const _onDrop = async (Event) => {
                 consumeEvent(Event);
                 if (this.Enabling === false) {
                     return;
                 }
-                this.Value = Array.from(Event.dataTransfer.files).map((File) => File.name).join('\n');
-                this.on('drop')(Event, Event.dataTransfer.files);
+                const droppedFiles = acceptedFilesIn(Event.dataTransfer.files);
+                if (droppedFiles.length === 0) {
+                    return;
+                }
+                this.Value = droppedFiles.map((File) => File.name).join('\n');
+                await this.on('drop')(Event, droppedFiles);
             }; // nota bene: "files" is now in "Event.dataTransfer.files"
             /**** actual rendering ****/
             return html `<label class="WAT Content FileDropArea"
@@ -8112,12 +9357,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             set Value(newValue) {
                 allowColor('value', newValue);
-                if (newValue == null) {
-                    newValue = '#000000';
-                }
+                newValue = (newValue == null ? undefined : HexColor(newValue));
                 if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = HexColor(newValue);
-                    this.on('Value')();
+                    this.memoized.Value = newValue;
+                    this.on('Value')(newValue);
                     this.rerender();
                 }
             },
@@ -8154,7 +9397,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             }
             /**** actual rendering ****/
             return html `<input type="color" class="WAT Content ColorInput"
-        value=${Value === '' ? null : Value}
+        value=${Value}
         disabled=${Enabling == false} onInput=${_onInput}
         list=${SuggestionId}
       />${SuggestionList}`;
@@ -8189,16 +9432,33 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             /**** actual rendering ****/
+            const hasMatch = Options.some((Option) => {
+                let OptionValue = Option.replace(/:.*$/, '').trim();
+                const OptionLabel = Option.replace(/^[^:]*:/, '').trim();
+                if (/^[-]+$/.test(OptionLabel)) {
+                    return false;
+                }
+                if (OptionValue === Option) {
+                    OptionValue = OptionValue.replace(/^-/, '');
+                }
+                return (OptionValue === Value);
+            }); // dto. for a missing or unmatched "Value" setting
             return html `<select class="WAT Content DropDown"
         disabled=${Enabling == false} onInput=${_onInput}
-      >${Options.map((Option) => {
-                const OptionValue = Option.replace(/:.*$/, '').trim();
-                let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
+      >${hasMatch ? '' : html `<option hidden selected value=""></option>`}${Options.map((Option) => {
+                let OptionValue = Option.replace(/:.*$/, '').trim();
+                let OptionLabel = Option.replace(/^[^:]*:/, '').trim(); // allows for empty values
                 const disabled = (OptionLabel[0] === '-');
-                if (/^-[^-]+$/.test(OptionLabel)) {
-                    return '<hr/>';
+                if (/^[-]+$/.test(OptionLabel)) {
+                    return html `<hr/>`;
                 }
                 else {
+                    if (OptionValue === Option) {
+                        OptionValue = OptionValue.replace(/^-/, '');
+                    }
+                    if (disabled) {
+                        OptionLabel = OptionLabel.replace(/^-/, '');
+                    }
                     return html `<option value=${OptionValue}
               selected=${OptionValue === Value} disabled=${disabled}
             >${OptionLabel}</option>`;
@@ -8231,7 +9491,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Icon', Default: 'icons/menu.png',
+            { Name: 'Icon', Default: 'icons/drop-down.png',
                 EditorType: 'url-input' },
             { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
@@ -8255,6 +9515,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Icon, Color, Options } = this;
+            const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/drop-down.png' : this.Icon);
             const _onInput = (Event) => {
                 if (Enabling === false) {
                     return consumingEvent(Event);
@@ -8263,20 +9524,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('input')(Event);
             };
             /**** actual rendering ****/
+            const hasMatch = Options.some((Option) => {
+                let OptionValue = Option.replace(/:.*$/, '').trim();
+                const OptionLabel = Option.replace(/^[^:]*:/, '').trim();
+                if (/^[-]+$/.test(OptionLabel)) {
+                    return false;
+                }
+                if (OptionValue === Option) {
+                    OptionValue = OptionValue.replace(/^-/, '');
+                }
+                return (OptionValue === Value);
+            }); // dto. for a missing or unmatched "Value" setting
             return html `<div class="WAT Content PseudoDropDown">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
+          background-color:${Color || 'black'};
         "></div>
         <select disabled=${Enabling == false} onInput=${_onInput}>
+          ${hasMatch ? '' : html `<option hidden selected value=""></option>`}
           ${Options.map((Option) => {
-                const OptionValue = Option.replace(/:.*\$/, '').trim();
-                let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
+                let OptionValue = Option.replace(/:.*$/, '').trim();
+                let OptionLabel = Option.replace(/^[^:]*:/, '').trim(); // allows for empty values
                 const disabled = (OptionLabel[0] === '-');
-                if (/^-[^-]+$/.test(OptionLabel)) {
-                    return '<hr/>';
+                if (/^[-]+$/.test(OptionLabel)) {
+                    return html `<hr/>`;
                 }
                 else {
+                    if (OptionValue === Option) {
+                        OptionValue = OptionValue.replace(/^-/, '');
+                    }
+                    if (disabled) {
+                        OptionLabel = OptionLabel.replace(/^-/, '');
+                    }
                     return html `<option value=${OptionValue}
                 selected=${OptionValue === Value} disabled=${disabled}
               >${OptionLabel}</option>`;
@@ -8320,7 +9599,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             { Name: 'SpellChecking',
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
             { Name: 'acceptableFileTypes', Label: 'File Types', Default: [],
-                EditorType: 'linelist-input', AccessorsFor: 'memoized', Validator: ValueIsTextFormat },
+                EditorType: 'linelist-input', AccessorsFor: 'memoized',
+                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsTextFormat) },
         ];
         /**** Renderer ****/
         onRender(function () {
@@ -8371,14 +9651,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     Event.preventDefault();
                     if (Event.dataTransfer.types.includes('text/plain')) {
                         const Value = Event.dataTransfer.getData('text');
-                        this.Value = Value;
+                        this._shownValue = this.Value = Value;
                         this.on('input')(Event);
                     }
                     else {
                         try {
                             for (let Item of Event.dataTransfer.items) {
                                 if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                    this.Value = await FileReadAsText(Item.getAsFile(), Item.type);
+                                    this._shownValue = this.Value = await FileReadAsText(Item.getAsFile(), Item.type);
                                     this.on('input')(Event);
                                     break;
                                 }
@@ -8392,14 +9672,15 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
             };
             /**** actual rendering ****/
-            return html `<textarea class="WAT Content TextInput"
+            return html `<textarea class="WAT Content TextInput" ref=${this._InputElement}
         value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
         readOnly=${readonly} placeholder=${Placeholder}
         spellcheck=${SpellChecking} style="resize:none; ${LineWrapping == true
                 ? 'overflow-wrap:break-word; hyphens:auto'
                 : 'white-space:pre'}"
         disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        onDragOver=${allowsDropping && _onDragOver} onDrop=${allowsDropping && _onDrop}
+        onDragOver=${allowsDropping ? _onDragOver : undefined}
+        onDrop=${allowsDropping ? _onDrop : undefined}
       />`;
         });
     };
@@ -8457,11 +9738,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** List ****/
             get List() {
-                return acceptableValue(this._List, ValueIsList, []);
+                const Candidate = acceptableValue(this._List, ValueIsList, []);
+                return (Candidate == null ? [] : Candidate.slice());
             },
             set List(newList) {
                 expectList('list', newList);
-                if (ValuesDiffer(this.memoized.List, newList)) {
+                if (ValuesDiffer(this._List, newList)) {
                     this._List = (newList == null ? undefined : newList.slice());
                     this.rerender();
                 }
@@ -8475,7 +9757,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (ValuesDiffer(this._selectedIndices, newList)) {
                     const selectedIndexSet = Object.create(null);
                     this._selectedIndices = newList.filter((selectedIndex) => {
-                        if ((selectedIndex < this._List.length) &&
+                        if ((selectedIndex < this.List.length) &&
                             !(selectedIndex in selectedIndexSet)) {
                             selectedIndexSet[selectedIndex] = true;
                             return true;
@@ -8492,6 +9774,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             let { List, Placeholder, SelectionLimit, selectedIndices } = this;
             /**** validate selection ****/
+            const oldSelectedIndices = (this._selectedIndices || []).slice();
             const selectedIndexSet = Object.create(null);
             selectedIndices = selectedIndices.filter((selectedIndex) => {
                 if ((selectedIndex < List.length) &&
@@ -8503,26 +9786,34 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return false;
                 }
             });
+            let deselectedIndices = [];
             if (selectedIndices.length > SelectionLimit) {
-                const deselectedIndices = selectedIndices.slice(SelectionLimit);
+                deselectedIndices = selectedIndices.slice(SelectionLimit);
                 selectedIndices.length = SelectionLimit;
-                this.on('selection-change')(selectedIndices);
-                if (this._onItemDeselected != null) {
+                deselectedIndices.forEach((deselectedIndex) => {
+                    delete selectedIndexSet[deselectedIndex];
+                });
+            }
+            this._selectedIndices = selectedIndices;
+            if (ValuesDiffer(oldSelectedIndices, selectedIndices)) {
+                setTimeout(() => {
+                    this.on('selection-change')(selectedIndices);
                     deselectedIndices.forEach((deselectedIndex) => {
                         this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
                     });
-                }
+                }, 0);
             }
             /**** _onClick ****/
             const _onClick = (Event, Index) => {
                 Event.stopImmediatePropagation();
                 Event.preventDefault();
                 if (SelectionLimit === 0) {
+                    this.on('click')(Event, Index);
                     return;
                 }
                 let SelectionChanged = false;
                 let IndicesToSelect, IndicesToDeselect;
-                if (Event.shiftKey || Event.metaKey) {
+                if (Event.shiftKey || Event.metaKey || Event.ctrlKey) {
                     SelectionChanged = true;
                     if (ItemIsSelected(Index)) {
                         IndicesToDeselect = [Index];
@@ -8537,11 +9828,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     }
                 }
                 else {
+                    const ItemWasSelected = ItemIsSelected(Index);
                     IndicesToDeselect = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
-                    SelectionChanged = !ItemIsSelected(Index);
-                    IndicesToSelect = (SelectionChanged ? [Index] : []);
+                    SelectionChanged = !ItemWasSelected || (IndicesToDeselect.length > 0);
+                    IndicesToSelect = (ItemWasSelected ? [] : [Index]);
                     selectedIndices = [Index];
                 }
+                this._selectedIndices = selectedIndices;
                 if (SelectionChanged) {
                     this.on('selection-change')(selectedIndices);
                 }
@@ -8557,6 +9850,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         this.on('item-selected')(List[selectedIndex], selectedIndex);
                     });
                 }
+                this.rerender();
                 this.on('click')(Event, Index);
             };
             /**** _onDblClick ****/
@@ -8568,12 +9862,16 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return (Index in selectedIndexSet);
             }
             /**** actual rendering ****/
-            const ItemRenderer = this.on('render-item') || ((Item) => html `${Item + ''}`);
+            const registeredRenderer = this.on('render-item');
+            const ItemRenderer = (registeredRenderer === noCallback
+                ? ((Item) => Item + '')
+                : registeredRenderer);
+            // *C* SECURITY: list items are rendered as raw HTML without sanitization (XSS risk!)
             return html `<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView">
         ${List.length === 0
                 ? html `<div class="Placeholder"><div>${Placeholder}</></>`
                 : List.map((Item, Index) => html `<div
-              class="ListItem ${ItemIsSelected(Index) ? 'selected' : undefined}"
+              class="ListItem ${ItemIsSelected(Index) ? 'selected' : ''}"
               dangerouslySetInnerHTML=${{
                     __html: ItemRenderer(Item, Index, ItemIsSelected(Index))
                 }}
@@ -8607,7 +9905,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Label, Enabling, isActive } = this.memoized;
+            const { Label, isActive } = this.memoized;
+            const { Enabling } = this;
             const disabled = (Enabling == false);
             const onClick = (Event) => {
                 if (disabled) {
@@ -8665,6 +9964,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, isActive, Icon, Color } = this;
+            const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/circle-information.png' : this.Icon);
             const disabled = (Enabling == false);
             const onClick = (Event) => {
                 if (disabled) {
@@ -8674,8 +9974,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             return html `<div class="WAT Content IconTab ${isActive ? 'active' : ''}">
         <div style="
-          -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-          background-color:${Color};
+          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
+          background-color:${Color || 'black'};
         " disabled=${disabled} onClick=${onClick}/>
       </>`;
         });
@@ -8812,15 +10112,21 @@ export async function MarkdownAsText(Markdown) {
     try {
         const { default: PlainTextRenderer } = await import('https://cdn.jsdelivr.net/npm/marked-plaintext/+esm');
         const marked = new Marked();
+        const TextOf = (Value) => {
+            var _a;
+            return ( // "marked" >= v13 passes tokens...
+            typeof Value === 'string' ? Value : ((_a = Value === null || Value === void 0 ? void 0 : Value.text) !== null && _a !== void 0 ? _a : '') // ...not strings
+            );
+        };
         const Renderer = new PlainTextRenderer();
-        Renderer.heading = (Text) => `\n${Text}\n\n`;
-        Renderer.paragraph = (Text) => `${Text}\n\n`;
-        Renderer.list = (Text) => `${Text}\n`;
-        Renderer.listitem = (Text) => `- ${Text}\n`;
-        Renderer.link = (HRef, Title, Text) => `${Text}`;
-        Renderer.image = (HRef, Title, Text) => `[${Text}]`;
-        Renderer.code = (Code) => `${Code}\n\n`;
-        Renderer.blockquote = (Quote) => `${Quote}\n\n`;
+        Renderer.heading = (Text) => `\n${TextOf(Text)}\n\n`;
+        Renderer.paragraph = (Text) => `${TextOf(Text)}\n\n`;
+        Renderer.list = (Text) => `${TextOf(Text)}\n`;
+        Renderer.listitem = (Text) => `- ${TextOf(Text)}\n`;
+        Renderer.link = (HRef, Title, Text) => `${typeof HRef === 'string' ? Text : TextOf(HRef)}`;
+        Renderer.image = (HRef, Title, Text) => `[${typeof HRef === 'string' ? Text : TextOf(HRef)}]`;
+        Renderer.code = (Code) => `${TextOf(Code)}\n\n`;
+        Renderer.blockquote = (Quote) => `${TextOf(Quote)}\n\n`;
         Renderer.br = () => `\n`;
         marked.setOptions({
             renderer: Renderer,
@@ -8886,22 +10192,28 @@ async function DOCXFileReadAsMarkdown(File) {
     }
 }
 /**** PDFFileReadAsText ****/
+// @ts-ignore TS2366 "throwError" never returns
 async function PDFFileReadAsText(File) {
     const Buffer = await readBinaryFile(File);
+    let PDF = undefined;
     try {
         const { getDocument, GlobalWorkerOptions } = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.min.mjs');
         GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.worker.min.mjs';
-        const PDF = await getDocument(Buffer).promise;
+        PDF = await getDocument(Buffer).promise;
         let Text = '';
         for (let i = 1; i <= PDF.numPages; i++) {
             const Page = await PDF.getPage(i);
             const Content = await Page.getTextContent();
-            Text += Content.items.map((Item) => Item.str).join('') + '\n';
+            Text += Content.items.map((Item) => Item.str).join(' ') + '\n';
+            Page.cleanup();
         }
         return Text;
     }
     catch (Signal) {
         throwError('ConversionError: could not convert the given PDF file into plain text, reason: ' + Signal);
+    }
+    finally {
+        PDF === null || PDF === void 0 ? void 0 : PDF.destroy();
     }
 }
 //------------------------------------------------------------------------------
@@ -8928,10 +10240,11 @@ class WAT_combinedView extends Component {
     /**** render ****/
     render(PropSet) {
         const Applet = PropSet.Applet;
-        console.log('rendering WAT_combinedView');
         let AppletRendering;
         try {
-            AppletRendering = html `<${WAT_AppletView} Applet=${Applet}/>`;
+            AppletRendering = (Applet.isReady
+                ? html `<${WAT_AppletView} Applet=${Applet}/>`
+                : html `<div class="WAT centered" style="width:100%; height:100%"><div>(loading)</div></div>`);
         }
         catch (Signal) {
             console.warn('uncaught Error in Applet Rendering', Signal);
@@ -8939,7 +10252,7 @@ class WAT_combinedView extends Component {
         let DesignerRendering;
         try {
             DesignerRendering = (Applet.isAttached && (DesignerLayer != null)
-                ? html `<${DesignerLayer} Applet=${Applet}/>`
+                ? html `<${DesignerLayer} Applet=${Applet} AssetsBase=${DesignerAssetsBase}/>`
                 : '');
         }
         catch (Signal) {
@@ -8965,11 +10278,19 @@ class WAT_AppletView extends Component {
             writable: true,
             value: void 0
         });
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
     }
     /**** componentDidMount ****/
     componentDidMount() {
         const Applet = this._Applet;
-        Applet['_View'] = this.base;
+        const Base = this._Ref.current;
+        Base['_Applet'] = Applet;
+        Applet['_View'] = Base;
         Applet.on('mount')();
     }
     /**** componentDidUpdate ****/
@@ -8986,16 +10307,25 @@ class WAT_AppletView extends Component {
     /**** render ****/
     // rendering sequence
     // - Applet -> visitedPage -> Widgets [-> Widgets in case of WidgetPanes]
-    // - openDialogs -> SourceWidget [-> Widgets in case of WidgetPanes]
+    // - openOverlays -> SourceWidget [-> Widgets in case of WidgetPanes]
     render(PropSet) {
         const Applet = this._Applet = PropSet.Applet;
         const visitedPage = Applet.visitedPage;
-        const openDialogs = Applet._DialogList;
-        const lastDialogIndex = openDialogs.length - 1;
-        const needsModalLayer = (openDialogs.length > 0) &&
-            openDialogs[lastDialogIndex].isModal;
+        const openOverlays = Applet._OverlayList;
+        const lastOverlayIndex = openOverlays.length - 1;
+        let needsModalLayer = (openOverlays.length > 0) &&
+            openOverlays[lastOverlayIndex].isModal;
+        if (needsModalLayer) { // but not if the topmost modal overlay is hidden
+            const SourceWidget = Applet.WidgetAtPath(openOverlays[lastOverlayIndex].SourceWidgetPath);
+            const Visibility = (SourceWidget == null
+                ? true
+                : SourceWidget.on('visibility-request')()); // "WAT_AppletOverlayView" renders '' if Visibility === false
+            if (Visibility === false) {
+                needsModalLayer = false;
+            }
+        }
         const broken = (Applet.isBroken ? 'broken' : '');
-        return html `<div class="WAT ${broken} Applet" style="
+        return html `<div ref=${this._Ref} class="WAT ${broken} Applet" style="
         ${Applet.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px;
       ">
@@ -9006,15 +10336,40 @@ class WAT_AppletView extends Component {
             : html `<${WAT_PageView} Page=${visitedPage}/>`}
         ` : ''}
       </div>
-      ${Applet.isAttached && (openDialogs.length > 0) ? html `<div class="WAT DialogLayer">
-        ${openDialogs.map((Dialog, Index) => html `
-          ${(Index === lastDialogIndex) && needsModalLayer ? html `<${WAT_ModalLayer}/>` : ''}
-          <${WAT_DialogView} Applet=${Applet} Dialog=${Dialog}/>
+      ${Applet.isAttached && (openOverlays.length > 0) ? html `<div class="WAT AppletOverlayLayer" style="
+        ${OverlayCSSfromApplet(Applet)}
+      ">
+        ${openOverlays.map((Overlay, Index) => html `
+          ${(Index === lastOverlayIndex) && needsModalLayer ? html `<${WAT_ModalLayer}/>` : ''}
+          <${WAT_AppletOverlayView} key=${Overlay.Name} Applet=${Applet} Overlay=${Overlay}/>
         `)}
       </div>` : ''}`;
     }
 }
-//------------------------------------------------------------------------------
+/**** OverlayCSSfromApplet ****/
+function OverlayCSSfromApplet(Applet) {
+    let CSSStyleList = [];
+    const { FontFamily, FontSize, FontWeight, FontStyle, LineHeight, ForegroundColor, } = Applet;
+    if (FontFamily != null) {
+        CSSStyleList.push(`font-family:${FontFamily}`);
+    }
+    if (FontSize != null) {
+        CSSStyleList.push(`font-size:${FontSize}px`);
+    }
+    if (FontWeight != null) {
+        CSSStyleList.push(`font-weight:${FontWeight}`);
+    }
+    if (FontStyle != null) {
+        CSSStyleList.push(`font-style:${FontStyle}`);
+    }
+    if (LineHeight != null) {
+        CSSStyleList.push(`line-height:${LineHeight}px`);
+    }
+    if (ForegroundColor != null) {
+        CSSStyleList.push(`color:${ForegroundColor}`);
+    }
+    return (CSSStyleList.length === 0 ? '' : CSSStyleList.join(';') + ';');
+} //------------------------------------------------------------------------------
 //--                               WAT_PageView                               --
 //------------------------------------------------------------------------------
 class WAT_PageView extends Component {
@@ -9032,11 +10387,19 @@ class WAT_PageView extends Component {
             writable: true,
             value: []
         });
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
     }
     /**** componentDidMount ****/
     componentDidMount() {
         const Page = this._Page;
-        Page['_View'] = this.base;
+        const Base = this._Ref.current;
+        Base['_Page'] = Page;
+        Page['_View'] = Base;
         Page.on('mount')();
     }
     /**** componentDidUpdate ****/
@@ -9056,11 +10419,14 @@ class WAT_PageView extends Component {
         if (this._Page == null) {
             return;
         }
-        console.log('releasing all Page widgets', this._Page.WidgetList);
         this._Page.WidgetList.forEach((Widget) => {
-            Widget._Pane = undefined;
+            if (Widget._Pane === this._Page) {
+                Widget._Pane = undefined;
+            }
             if (Widget.normalizedBehavior === 'basic_controls.widgetpane') {
-                Widget._releaseWidgets();
+                if (typeof Widget._releaseWidgets === 'function') {
+                    Widget._releaseWidgets();
+                }
             }
         });
     }
@@ -9075,13 +10441,12 @@ class WAT_PageView extends Component {
         else {
             this._Page = Page;
         }
-        console.log('rendering page', Page.Name, Page);
         this._releaseWidgets();
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
         this._shownWidgets = WidgetsToShow;
         const broken = (Page.isBroken ? 'broken' : '');
-        return html `<div class="WAT ${broken} Page" style="
+        return html `<div ref=${this._Ref} class="WAT ${broken} Page" style="
         ${Page.CSSStyle}
         left:0px; top:0px; right:0px; bottom:0px
       ">
@@ -9104,11 +10469,19 @@ class WAT_WidgetView extends Component {
             writable: true,
             value: void 0
         });
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
     }
     /**** componentDidMount ****/
     componentDidMount() {
         const Widget = this._Widget;
-        Widget['_View'] = this.base;
+        const Base = this._Ref.current;
+        Base['_Widget'] = Widget;
+        Widget['_View'] = Base;
         Widget.on('mount')();
     }
     /**** componentDidUpdate ****/
@@ -9120,6 +10493,9 @@ class WAT_WidgetView extends Component {
     componentWillUnmount() {
         const Widget = this._Widget;
         Widget['_View'] = undefined;
+        if (typeof Widget.componentWillUnmount === 'function') {
+            Widget.componentWillUnmount();
+        }
         Widget.on('unmount')();
     }
     /**** render ****/
@@ -9140,19 +10516,20 @@ class WAT_WidgetView extends Component {
         const openOverlays = Widget._OverlayList;
         const lastOverlayIndex = openOverlays.length - 1;
         const broken = (Widget.isBroken ? 'broken' : '');
-        return html `<div class="WAT ${broken} Widget" style="
+        return html `<div ref=${this._Ref} class="WAT ${broken} Widget" style="
         ${Widget.CSSStyle} ${CSSGeometry}
       ">
         ${broken === '' ? Widget.on('render')() : ErrorRenderingFor(Widget)}
       </div>
-      ${(broken === '') && (openOverlays.length > 0) ? html `<div class="WAT OverlayLayer"
+      ${(broken === '') && (openOverlays.length > 0) ? html `<div class="WAT WidgetOverlayLayer"
         style="${CSSGeometry}"
       >
         ${openOverlays.map((Overlay, Index) => html `
           ${(Index === lastOverlayIndex)
-            ? html `<${WAT_Underlay} Widget=${Widget} Overlay=${Overlay}/>`
-            : ''}
-          <${WAT_OverlayView} Widget=${Widget} Overlay=${Overlay}/>
+            ? html `<${WAT_WidgetUnderlay} key=${Overlay.Name} Widget=${Widget} Overlay=${Overlay}>
+              <${WAT_WidgetOverlayView} key=${Overlay.Name} Widget=${Widget} Overlay=${Overlay}/>
+            </>`
+            : html `<${WAT_WidgetOverlayView} key=${Overlay.Name} Widget=${Widget} Overlay=${Overlay}/>`}
         `)}
       </div>` : ''}`;
     }
@@ -9171,24 +10548,50 @@ const WAT_ModalLayer_EventTypes = [
     'wheel', 'contextmenu', 'focus', 'blur'
 ];
 class WAT_ModalLayer extends Component {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
+        Object.defineProperty(this, "_KeyEventConsumer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: (Event) => {
+                var _a;
+                const topmostOverlayView = (_a = this._Ref.current) === null || _a === void 0 ? void 0 : _a.nextElementSibling;
+                if ((topmostOverlayView == null) ||
+                    !topmostOverlayView.contains(Event.target)) {
+                    consumeEvent(Event);
+                }
+            }
+        }); // keyboard events go to the focused element, not this modal layer
+    }
     componentDidMount() {
         WAT_ModalLayer_EventTypes.forEach((EventType) => {
-            this.base.addEventListener(EventType, consumeEvent);
+            this._Ref.current.addEventListener(EventType, consumeEvent);
         });
+        document.addEventListener('keydown', this._KeyEventConsumer, true);
+        document.addEventListener('keyup', this._KeyEventConsumer, true);
     }
     componentWillUnmount() {
         WAT_ModalLayer_EventTypes.forEach((EventType) => {
-            this.base.removeEventListener(EventType, consumeEvent);
+            this._Ref.current.removeEventListener(EventType, consumeEvent);
         });
+        document.removeEventListener('keydown', this._KeyEventConsumer, true);
+        document.removeEventListener('keyup', this._KeyEventConsumer, true);
     }
     render(PropSet) {
-        return html `<div class="WAT ModalLayer"/>`;
+        return html `<div ref=${this._Ref} class="WAT ModalLayer"/>`;
     }
 }
 //------------------------------------------------------------------------------
-//--                              WAT_DialogView                              --
+//--                          WAT_AppletOverlayView                           --
 //------------------------------------------------------------------------------
-class WAT_DialogView extends Component {
+class WAT_AppletOverlayView extends Component {
     constructor() {
         super(...arguments);
         // @ts-ignore TS2564 will be initialized in renderer
@@ -9199,7 +10602,7 @@ class WAT_DialogView extends Component {
             value: void 0
         });
         // @ts-ignore TS2564 will be initialized in renderer
-        Object.defineProperty(this, "_Dialog", {
+        Object.defineProperty(this, "_Overlay", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -9220,6 +10623,12 @@ class WAT_DialogView extends Component {
             writable: true,
             value: []
         });
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
         /**** generic GestureRecognizer ****/
         Object.defineProperty(this, "_Recognizer", {
             enumerable: true,
@@ -9230,17 +10639,26 @@ class WAT_DialogView extends Component {
     }
     /**** _releaseWidgets ****/
     _releaseWidgets() {
-        console.log('releasing all shown Dialog widgets', this._shownWidgets);
         this._shownWidgets.forEach((Widget) => {
-            if (Widget._Pane === this) {
+            if (Widget._Pane === this._Overlay) {
                 Widget._Pane = undefined;
             }
         });
         this._shownWidgets = [];
     }
+    /**** componentDidMount ****/
+    componentDidMount() {
+        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected member here
+        this._Overlay._View = this;
+        const Base = this._Ref.current;
+        Base['_Applet'] = this._Applet;
+        Base['_Overlay'] = this._Overlay;
+    }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
-        this._releaseWidgets();
+        //    this._releaseWidgets()  // may be too late, is therefore done when closing
+        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected member here
+        delete this._Overlay._View;
     }
     /**** _GeometryRelativeTo  ****/
     _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
@@ -9287,15 +10705,15 @@ class WAT_DialogView extends Component {
         else {
             this._resizeDialog(dx, dy);
         }
-        this._Applet.bringDialogToFront(this._Dialog.Name);
+        this._Applet.bringOverlayToFront(this._Overlay.Name);
         rerender();
     }
     _moveDialog(dx, dy) {
-        this._Dialog.x = this._DragInfo.initialGeometry.x + dx;
-        this._Dialog.y = this._DragInfo.initialGeometry.y + dy;
+        this._Overlay.x = this._DragInfo.initialGeometry.x + dx;
+        this._Overlay.y = this._DragInfo.initialGeometry.y + dy;
     }
     _resizeDialog(dx, dy) {
-        const Dialog = this._Dialog;
+        const Dialog = this._Overlay;
         const DragInfo = this._DragInfo;
         const { minWidth, maxWidth, minHeight, maxHeight } = Dialog;
         let newWidth = DragInfo.initialGeometry.Width;
@@ -9332,7 +10750,7 @@ class WAT_DialogView extends Component {
                         break;
                     default: this._DragInfo.Mode = 'drag';
                 }
-                const { x, y, Width, Height } = this._Dialog;
+                const { x, y, Width, Height } = this._Overlay;
                 this._DragInfo.initialGeometry = { x, y, Width, Height };
                 this._handleDrag(dx, dy);
             },
@@ -9344,30 +10762,50 @@ class WAT_DialogView extends Component {
     /**** render ****/
     render(PropSet) {
         this._releaseWidgets();
-        const { Applet, Dialog } = PropSet;
-        this._Applet = Applet;
-        this._Dialog = Dialog;
-        const { SourceWidgetPath, asAppletOverlay, fromRight, fromBottom, Title, isClosable, isDraggable, isResizable, x, y, Width, Height, } = Dialog;
-        /**** leave here if dialog should not be shown... ****/
+        const { Applet, Overlay } = PropSet;
+        if ((this._Overlay != null) && (this._Overlay !== Overlay)) {
+            this.componentWillUnmount(); // because preact reuses components
+            this._Applet = Applet;
+            this._Overlay = Overlay;
+            this.componentDidMount();
+        }
+        else {
+            this._Applet = Applet;
+            this._Overlay = Overlay;
+        }
+        let { SourceWidgetPath, Title, isClosable, isDraggable, isResizable, x, y, Width, Height, Anchoring } = Overlay;
+        const asDialog = (Overlay instanceof WAT_Dialog);
+        const fromRight = (Anchoring[0] === 'right');
+        const fromBottom = (Anchoring[1] === 'bottom');
+        /**** leave here if overlay should not be shown... ****/
         const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath);
         const Visibility = (SourceWidget == null
             ? true
-            : SourceWidget.on('visibility-request')());
+            : SourceWidget.on('visibility-request')()); // an invisible SourceWidget is shown if visibility-request returns true
         if (Visibility === false) {
             return '';
         }
         /**** ...otherwise continue as usual ****/
-        const asDialog = !asAppletOverlay;
+        if (x == null) {
+            x = Overlay.x = (Applet.Width - Width) / 2;
+        }
+        if (y == null) {
+            y = Overlay.y = (Applet.Height - Height) / 2;
+        }
         const hasTitlebar = asDialog && ((Title != null) || isDraggable || isClosable);
         const resizable = (asDialog && isResizable ? 'resizable' : '');
         const withTitlebar = (asDialog && hasTitlebar ? 'withTitlebar' : '');
         /**** repositioning on viewport ****/
         const { x: AppletX, y: AppletY, Width: AppletWidth, Height: AppletHeight } = Applet.Geometry;
-        let { left, top } = fromDocumentTo('viewport', {
-            left: x + (fromRight ? AppletWidth : AppletX),
-            top: y + (fromBottom ? AppletHeight : AppletY)
-        });
+        let { left, top } = {
+            left: x + (fromRight ? AppletWidth : 0),
+            top: y + (fromBottom ? AppletHeight : 0)
+        };
         if (asDialog) {
+            ;
+            ({ left, top } = fromDocumentTo('viewport', {
+                left: left + AppletX, top: top + AppletY
+            }));
             left = Math.max(0, Math.min(left, document.documentElement.clientWidth - 30));
             top = Math.max(0, Math.min(top, document.documentElement.clientHeight - 30));
         }
@@ -9379,10 +10817,9 @@ class WAT_DialogView extends Component {
         this._installGestureRecognizer();
         let Recognizer = this._Recognizer;
         const onClose = () => {
-            Applet.closeDialog(Dialog.Name);
+            Applet.closeOverlay(Overlay.Name);
         };
         /**** ContentPane Rendering ****/
-        console.log('rendering dialog', Dialog, 'on page', Applet.visitedPage);
         //    const SourceWidget = Applet.WidgetAtPath(SourceWidgetPath as WAT_Path)
         if (SourceWidget == null) {
             this._shownWidgets = [];
@@ -9390,28 +10827,35 @@ class WAT_DialogView extends Component {
         else {
             const WidgetsToShow = (SourceWidget.normalizedBehavior === 'basic_controls.outline'
                 ? SourceWidget.bundledWidgets()
-                : [SourceWidget]).filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Dialog))));
-            WidgetsToShow.forEach((Widget) => Widget._Pane = Dialog);
+                : [SourceWidget]).filter((Widget) => ((Widget.isVisible || (Widget === SourceWidget)) && // see above
+                ((Widget._Pane == null) || (Widget._Pane === Overlay))));
+            WidgetsToShow.forEach((Widget) => Widget._Pane = Overlay);
             this._shownWidgets = WidgetsToShow;
         }
-        const PaneGeometry = { x, y, Width, Height };
+        const PaneGeometry = { x, y, Width, Height }; // some browsers need Width+2,Height+2
         if (hasTitlebar) {
             PaneGeometry.Height -= 30;
         }
-        if (isResizable) {
+        if (asDialog && isResizable) {
             PaneGeometry.Height -= 10;
         }
         PaneGeometry.Height = Math.max(0, PaneGeometry.Height);
         const BaseGeometry = (SourceWidget == null
             ? { x: 0, y: 0, Width: 0, Height: 0 } // just a dummy
             : SourceWidget.Geometry);
+        let ContentPaneIsTooSmall = false; // browsers are not precise enough
         let ContentPane = this._shownWidgets.toReversed().map((Widget) => {
             let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
+            const { x, y, Width, Height } = Geometry;
+            if ((x < 0) || (x + Width > PaneGeometry.Width) ||
+                (y < 0) || (y + Height > PaneGeometry.Height)) {
+                ContentPaneIsTooSmall = true;
+            }
             return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
         });
-        /**** actual dialog rendering ****/
+        /**** actual overlay rendering ****/
         if (asDialog) {
-            return html `<div class="WAT ${resizable} Dialog ${withTitlebar}" style="
+            return html `<div ref=${this._Ref} class="WAT ${resizable} Dialog ${withTitlebar}" style="
           left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
         ">
           ${hasTitlebar && html `<div class="Titlebar"
@@ -9421,11 +10865,13 @@ class WAT_DialogView extends Component {
             <div class="Title">${Title}</div>
 
             ${(isClosable) && html `
-              <img class="CloseButton" src="${IconFolder}/xmark.png" onClick=${onClose}/>
+              <img class="CloseButton" src="${Applet.AssetURL('/icons/xmark.png')}" onClick=${onClose}/>
             `}
           </div>`}
 
-          <div class="ContentPane">${ContentPane}</div>
+          <div class="ContentPane" style="
+            overflow:${ContentPaneIsTooSmall ? 'auto' : 'hidden'}"
+          >${ContentPane}</div>
 
           ${isResizable && html `
             <div class="leftResizer"
@@ -9444,7 +10890,7 @@ class WAT_DialogView extends Component {
         </div>`;
         }
         else {
-            return html `<div class="WAT AppletOverlay" style="
+            return html `<div ref=${this._Ref} class="WAT AppletOverlay" style="
           left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
         ">
           <div class="ContentPane">${ContentPane}</div>
@@ -9453,9 +10899,9 @@ class WAT_DialogView extends Component {
     }
 }
 //------------------------------------------------------------------------------
-//--                               WAT_Underlay                               --
+//--                            WAT_WidgetUnderlay                            --
 //------------------------------------------------------------------------------
-const WAT_Underlay_EventTypes = [
+const WAT_WidgetUnderlay_EventTypes = [
     'click', 'dblclick',
     /*'mousedown',*/ 'mouseup', 'mousemove', 'mouseover', 'mouseout',
     'mouseenter', 'mouseleave',
@@ -9465,52 +10911,118 @@ const WAT_Underlay_EventTypes = [
     'keydown', 'keyup', 'keypress',
     'wheel', 'contextmenu', 'focus', 'blur'
 ];
-class WAT_Underlay extends Component {
+class WAT_WidgetUnderlay extends Component {
+    constructor() {
+        super(...arguments);
+        Object.defineProperty(this, "_Widget", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
+        Object.defineProperty(this, "_EventConsumer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: (Event) => {
+                if (Event.target !== Event.currentTarget) {
+                    return;
+                } // don't block overlay
+                consumeEvent(Event);
+            }
+        });
+    }
     componentDidMount() {
-        WAT_Underlay_EventTypes.forEach((EventType) => {
-            this.base.addEventListener(EventType, consumeEvent);
+        const Base = this._Ref.current;
+        Base['_Widget'] = this._Widget;
+        WAT_WidgetUnderlay_EventTypes.forEach((EventType) => {
+            this._Ref.current.addEventListener(EventType, this._EventConsumer);
         });
     }
     componentWillUnmount() {
-        WAT_Underlay_EventTypes.forEach((EventType) => {
-            this.base.removeEventListener(EventType, consumeEvent);
+        WAT_WidgetUnderlay_EventTypes.forEach((EventType) => {
+            this._Ref.current.removeEventListener(EventType, this._EventConsumer);
         });
     }
     render(PropSet) {
         const { Widget, Overlay } = PropSet;
+        this._Widget = Widget;
         const handleEvent = (Event) => {
+            if (Event.target !== Event.currentTarget) {
+                return;
+            }
             consumeEvent(Event);
             if (!Overlay.isModal) {
                 Widget.closeOverlay(Overlay.Name);
             }
         };
         const modal = (Overlay.isModal ? 'modal' : '');
-        return html `<div class="WAT ${modal} Underlay"
+        return html `<div ref=${this._Ref} class="WAT ${modal} WidgetUnderlay"
         onMouseDown=${handleEvent} onPointerDown=${handleEvent}
         onTouchStart=${handleEvent}
-      />`;
+      >${PropSet.children}</>`;
     }
 }
 //------------------------------------------------------------------------------
-//--                             WAT_OverlayView                              --
+//--                          WAT_WidgetOverlayView                           --
 //------------------------------------------------------------------------------
-class WAT_OverlayView extends Component {
+class WAT_WidgetOverlayView extends Component {
     constructor() {
         super(...arguments);
+        Object.defineProperty(this, "_Widget", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        // @ts-ignore TS2564 will be initialized in renderer
+        Object.defineProperty(this, "_Overlay", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
         Object.defineProperty(this, "_shownWidgets", {
             enumerable: true,
             configurable: true,
             writable: true,
             value: []
         });
+        Object.defineProperty(this, "_Ref", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: createRef()
+        });
     }
     /**** _releaseWidgets ****/
     _releaseWidgets() {
-        this._shownWidgets.forEach((Widget) => Widget._Pane = undefined);
+        this._shownWidgets.forEach((Widget) => {
+            if (Widget._Pane === this._Overlay) {
+                Widget._Pane = undefined;
+            }
+        });
+        this._shownWidgets = [];
+    }
+    /**** componentDidMount ****/
+    componentDidMount() {
+        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected member here
+        this._Overlay._View = this;
+        const Base = this._Ref.current;
+        Base['_Widget'] = this._Widget;
+        Base['_Overlay'] = this._Overlay;
     }
     /**** componentWillUnmount ****/
     componentWillUnmount() {
-        this._releaseWidgets();
+        //    this._releaseWidgets()  // may be too late, is therefore done when closing
+        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected member here
+        delete this._Overlay._View;
     }
     /**** _GeometryRelativeTo  ****/
     _GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry) {
@@ -9553,6 +11065,16 @@ class WAT_OverlayView extends Component {
     render(PropSet) {
         this._releaseWidgets();
         const { Widget, Overlay } = PropSet;
+        if ((this._Overlay != null) && (this._Overlay !== Overlay)) {
+            this.componentWillUnmount(); // because preact reuses components
+            this._Widget = Widget;
+            this._Overlay = Overlay;
+            this.componentDidMount();
+        }
+        else {
+            this._Widget = Widget;
+            this._Overlay = Overlay;
+        }
         const { SourceWidgetPath, x, y, Width, Height } = Overlay;
         /**** repositioning on viewport ****/
         const { x: AppletX, y: AppletY } = Widget.Applet.Geometry;
@@ -9579,13 +11101,15 @@ class WAT_OverlayView extends Component {
             this._shownWidgets = WidgetsToShow;
         }
         const PaneGeometry = { x, y, Width, Height };
-        const BaseGeometry = SourceWidget.Geometry;
+        const BaseGeometry = (SourceWidget == null
+            ? { x: 0, y: 0, Width: 0, Height: 0 } // just a dummy
+            : SourceWidget.Geometry);
         let ContentPane = this._shownWidgets.toReversed().map((Widget) => {
             let Geometry = this._GeometryOfWidgetRelativeTo(Widget, BaseGeometry, PaneGeometry);
             return html `<${WAT_WidgetView} Widget=${Widget} Geometry=${Geometry}/>`;
         });
         /**** actual overlay rendering ****/
-        return html `<div class="WAT Overlay" style="
+        return html `<div ref=${this._Ref} class="WAT WidgetOverlay" style="
         left:${left}px; top:${top}px; width:${Width}px; height:${Height}px;
       ">
         ${ContentPane}
@@ -9602,12 +11126,10 @@ const consumingEvent = consumeEvent;
 let combinedView = undefined;
 let RenderRequest;
 export function rerender() {
-    var _a;
     if (RenderRequest != null) {
         return;
     }
     if (combinedView != null) {
-        console.log('>>>> new rendering request', (_a = new Error().stack) === null || _a === void 0 ? void 0 : _a.replace(/^[^\n]+/, ''));
         RenderRequest = setTimeout(() => {
             RenderRequest = undefined;
             if (combinedView != null) {
@@ -9621,6 +11143,76 @@ export function rerender() {
         }, 0);
     }
 }
+function mapTouchToMouseIn(Target) {
+    function TouchEventMapper(originalEvent) {
+        let simulatedEventType;
+        switch (originalEvent.type) {
+            case 'touchstart':
+                simulatedEventType = 'mousedown';
+                break;
+            case 'touchmove':
+                simulatedEventType = 'mousemove';
+                break;
+            case 'touchend':
+                simulatedEventType = 'mouseup';
+                break;
+            case 'touchcancel':
+                simulatedEventType = 'mouseup';
+                break;
+            default: return;
+        }
+        let firstTouch = originalEvent.changedTouches[0];
+        let clientX = firstTouch.clientX, pageX = firstTouch.pageX, PageXOffset = window.pageXOffset;
+        let clientY = firstTouch.clientY, pageY = firstTouch.pageY, PageYOffset = window.pageYOffset;
+        if ((pageX === 0) && (Math.floor(clientX) > Math.floor(pageX)) ||
+            (pageY === 0) && (Math.floor(clientY) > Math.floor(pageY))) {
+            clientX -= PageXOffset;
+            clientY -= PageYOffset;
+        }
+        else if ((clientX < pageX - PageXOffset) || (clientY < pageY - PageYOffset)) {
+            clientX = pageX - PageXOffset;
+            clientY = pageY - PageYOffset;
+        }
+        let simulatedEvent = new MouseEvent(simulatedEventType, {
+            bubbles: true, cancelable: true,
+            screenX: firstTouch.screenX, screenY: firstTouch.screenY,
+            // @ts-ignore we definitely want "pageX" and "pageY"
+            clientX, clientY, pageX, pageY, buttons: 1, button: 0,
+            ctrlKey: originalEvent.ctrlKey, shiftKey: originalEvent.shiftKey,
+            altKey: originalEvent.altKey, metaKey: originalEvent.metaKey
+        });
+        firstTouch.target.dispatchEvent(simulatedEvent);
+        //    originalEvent.preventDefault()
+    }
+    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
+    Target.addEventListener('touchstart', TouchEventMapper, true);
+    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
+    Target.addEventListener('touchmove', TouchEventMapper, true);
+    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
+    Target.addEventListener('touchend', TouchEventMapper, true);
+    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
+    Target.addEventListener('touchcancel', TouchEventMapper, true);
+}
+//mapTouchToMouseIn(document)
+//----------------------------------------------------------------------------//
+//                           Confirmation Handling                            //
+//----------------------------------------------------------------------------//
+export function OperationWasConfirmed(Message) {
+    let ConfirmationCode = Math.round(Math.random() * 10000).toString();
+    ConfirmationCode += '0000'.slice(ConfirmationCode.length);
+    Message = (Message || 'This operation can not be undone.') + '\n\n' +
+        'Please, enter the following number if you want to proceed:\n\n' +
+        '   ' + ConfirmationCode + '\n\n' +
+        'Otherwise, the operation will be cancelled';
+    let UserInput = window.prompt(Message, '');
+    if (UserInput === ConfirmationCode) {
+        return true;
+    }
+    else {
+        window.alert('Operation will be cancelled');
+        return false;
+    }
+}
 /**** useDesigner ****/
 let DesignerLayer = undefined;
 export function useDesigner(newDesigner) {
@@ -9629,7 +11221,85 @@ export function useDesigner(newDesigner) {
     DesignerLayer = newDesigner;
     rerender();
 }
-//------------------------------------------------------------------------------
+/**** AppletFor ****/
+export function AppletFor(Value) {
+    switch (true) {
+        case ValueIsApplet(Value): return Value;
+        case ValueIsPage(Value): return Value.Applet;
+        case ValueIsWidget(Value): return Value.Applet;
+        case (Value instanceof Event):
+            if (Value.target != null) {
+                Value = Value.target.closest('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
+                    '.WAT.AppletOverlay,.WAT.Dialog,' +
+                    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
+                if (Value == null) {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        case (Value instanceof Element):
+            switch (true) {
+                case (Value === null || Value === void 0 ? void 0 : Value._Applet) != null: return Value._Applet;
+                case (Value === null || Value === void 0 ? void 0 : Value._Page) != null: return Value._Page.Applet;
+                case (Value === null || Value === void 0 ? void 0 : Value._Widget) != null: return Value._Widget.Applet;
+            }
+    }
+    window.alert('could not find any visual for this DOM element');
+    return undefined;
+}
+/**** PageFor ****/
+export function PageFor(Value) {
+    switch (true) {
+        case ValueIsApplet(Value): return Value.visitedPage;
+        case ValueIsPage(Value): return Value;
+        case ValueIsWidget(Value): return Value.Page;
+        case (Value instanceof Event):
+            if (Value.target != null) {
+                Value = Value.target.closest('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
+                    '.WAT.AppletOverlay,.WAT.Dialog,' +
+                    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
+                if (Value == null) {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        case (Value instanceof Element):
+            switch (true) {
+                case (Value === null || Value === void 0 ? void 0 : Value._Applet) != null: return Value._Applet.visitedPage;
+                case (Value === null || Value === void 0 ? void 0 : Value._Page) != null: return Value._Page;
+                case (Value === null || Value === void 0 ? void 0 : Value._Widget) != null: return Value._Widget.Page;
+            }
+    }
+    window.alert('could not find any visual for this DOM element');
+    return undefined;
+}
+/**** WidgetFor ****/
+export function WidgetFor(Value) {
+    switch (true) {
+        case ValueIsWidget(Value): return Value;
+        case (Value instanceof Event):
+            if (Value.target != null) {
+                Value = Value.target.closest('.WAT.Widget,' +
+                    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
+                if (Value == null) {
+                    break;
+                }
+            }
+            else {
+                break;
+            }
+        case (Value instanceof Element):
+            if ((Value === null || Value === void 0 ? void 0 : Value._Widget) != null) {
+                return Value._Widget;
+            }
+    }
+    window.alert('could not find any widget for this DOM element');
+    return undefined;
+} //------------------------------------------------------------------------------
 //--                               WAT Startup                                --
 //------------------------------------------------------------------------------
 let AppletStore;
@@ -9660,12 +11330,27 @@ async function startWAT() {
         document.body.appendChild(AppletElement);
     }
     let AppletName = acceptableValue(AppletElement.getAttribute('name'), ValueIsName, 'WAT-Applet');
+    let AssetsBase = acceptableValue(AppletElement.getAttribute('assets-base'), ValueIsURL, '');
+    if (AssetsBase.trim() === '') {
+        AssetsBase = 'https://rozek.github.io/webapp-tinkerer/';
+    }
+    DesignerAssetsBase = acceptableValue(AppletElement.getAttribute('designer-assets-base'), ValueIsURL, '');
+    if (DesignerAssetsBase.trim() === '') {
+        DesignerAssetsBase = 'https://rozek.github.io/webapp-tinkerer/';
+    }
     /**** read applet script - if stored separately ****/
     let ScriptElement = document.querySelector('script[type="wat/applet-script"]');
     /**** deserialize applet ****/
     let SerializationElement = document.querySelector('script[type="wat/applet"]');
     let Applet = undefined;
-    let Serialization = await AppletStore.getItem(AppletName);
+    let Serialization = undefined;
+    try {
+        Serialization = await AppletStore.getItem(AppletName);
+    }
+    catch (Signal) {
+        console.warn(`could not read backup of applet ${quoted(AppletName)}`, Signal);
+        Serialization = null;
+    }
     if (Serialization != null) {
         try {
             Applet = WAT_Applet.deserializedFrom(Serialization);
@@ -9676,20 +11361,37 @@ async function startWAT() {
     }
     if ((Applet == null) && (SerializationElement != null)) {
         Serialization = SerializationElement.textContent || '';
-        if (ScriptElement != null) {
-            Serialization.activeScript = ScriptElement.textContent || '';
-        }
         try {
-            Applet = WAT_Applet.deserializedFrom(Serialization);
+            const ParsedSerialization = JSON.parse(Serialization);
+            if (ScriptElement != null) {
+                ParsedSerialization.activeScript = ScriptElement.textContent || '';
+            }
+            Applet = WAT_Applet.deserializedFrom(JSON.stringify(ParsedSerialization));
         }
         catch (Signal) {
             console.error(`could not deserialize applet ${quoted(AppletName)}`, Signal);
         }
     }
-    if (Applet == null) {
+    if ((Applet == null) && (SerializationElement == null) && (ScriptElement != null)) { // an applet script without serialization runs in an empty applet
+        try {
+            Applet = WAT_Applet.deserializedFrom(JSON.stringify({
+                PageList: [{ WidgetList: [] }],
+                activeScript: ScriptElement.textContent || ''
+            }));
+        }
+        catch (Signal) {
+            console.error(`could not deserialize applet ${quoted(AppletName)}`, Signal);
+        }
+    }
+    if (Applet == null) { // in case of an error, create an empty applet
         Applet = WAT_Applet.deserializedFrom('{"PageList":[{ "WidgetList":[] }]}');
     }
+    ;
     Applet._Name = AppletName;
+    if (Applet._AssetsBase == null) {
+        ;
+        Applet._AssetsBase = AssetsBase;
+    }
     if (Applet.visitedPage == null) {
         Applet.visitPage(Applet.PageList[0]);
     }
@@ -9751,7 +11453,11 @@ Object.assign(WAT, {
     Mover: WAT_Mover, Resizer: WAT_Resizer, Shaper: WAT_Shaper, Dragger: WAT_Dragger,
     Component, createRef, useRef, useEffect, useCallback,
     fromLocalTo, fromViewportTo, fromDocumentTo,
+    OperationWasConfirmed,
 });
+global.AppletFor = AppletFor;
+global.PageFor = PageFor;
+global.WidgetFor = WidgetFor;
 /**** start WAT up ****/
 localforage.config({
     driver: [localforage.INDEXEDDB, localforage.WEBSQL]
