@@ -1006,9 +1006,12 @@ function uninstallStylesheetForVisual(Visual) {
 //--                             Behavior Support                             --
 //------------------------------------------------------------------------------
 /**** BehaviorIsIntrinsic ****/
+const IntrinsicBehaviors = new Set();
+// filled by "registerIntrinsicBehavior" - i.e., this set always reflects
+// the actually integrated behaviors rather than a fixed name pattern
 export function BehaviorIsIntrinsic(Behavior) {
     expectBehavior('behavior', Behavior);
-    return /^(basic|native|traditional|mobile|wearable)_controls\./.test(Behavior.toLowerCase());
+    return IntrinsicBehaviors.has(Behavior.toLowerCase());
 }
 /**** registerIntrinsicBehavior ****/
 function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
@@ -1027,6 +1030,7 @@ function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
     Applet._BehaviorPool[Category][normalizedName] = {
         Category, Name, activeScript, compiledScript, isNew: true
     };
+    IntrinsicBehaviors.add(normalizedName);
 }
 /**** brokenBehavior ****/
 async function brokenBehavior(Visual) {
@@ -10265,7 +10269,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
       </>`;
         });
     };
-    registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.FlatListView', WAT_FlatListView);
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.FlatListView', WAT_FlatListView);
     /**** TextlineTab ****/
     const WAT_TextlineTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -10303,7 +10307,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
       >${Label}</>`;
         });
     };
-    registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.TextlineTab', WAT_TextlineTab);
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.TextlineTab', WAT_TextlineTab);
     /**** IconTab ****/
     const WAT_IconTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -10363,7 +10367,55 @@ function registerIntrinsicBehaviorsIn(Applet) {
       </>`;
         });
     };
-    registerIntrinsicBehavior(Applet, 'widget', 'traditional_controls.IconTab', WAT_IconTab);
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.IconTab', WAT_IconTab);
+    /**** QRCodeView ****/
+    // a thin WAT wrapper around the "legacy.QRCodeView" component from the
+    // "javascript-code-library" (JCL) - n.b.: JCL and WAT must share the same
+    // preact instance (which they do, as both resolve "preact" through the
+    // import map of the hosting page)
+    const WAT_QRCodeECCLevels = ['L', 'M', 'Q', 'H'];
+    const WAT_QRCodeView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        const JCL = await import('javascript-code-library');
+        // JCL is lazily loaded on first use - it then loads "uqr" by itself
+        const legacyQRCodeView = JCL.ui.legacy.QRCodeView;
+        installStylesheet(`
+      .WAT.Widget > .WAT.QRCodeView {
+        display:block; position:absolute;
+        width:100%; height:100%;
+      }
+    `); // n.b.: specific enough to beat JCL's own 160x160px component rule
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(enter text to encode)',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'ECCLevel', Label: 'ECC Level', Default: 'M',
+                EditorType: 'drop-down', AccessorsFor: 'memoized', ValueList: WAT_QRCodeECCLevels },
+            { Name: 'BorderWidth', Label: 'Border Width', Default: 1,
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0 },
+            { Name: 'minVersion', Label: 'min. Version', Default: 1,
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 1, maxValue: 40 },
+            { Name: 'maxVersion', Label: 'max. Version', Default: 40,
+                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 1, maxValue: 40 },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            var _a, _b, _c;
+            const Value = this.Value || '';
+            if (Value === '') { // "legacyQRCodeView" insists on a "Value"
+                return html `<div class="WAT Content QRCodeView"/>`;
+            }
+            const minVersion = (_a = this.minVersion) !== null && _a !== void 0 ? _a : 1;
+            const maxVersion = Math.max((_b = this.maxVersion) !== null && _b !== void 0 ? _b : 40, minVersion);
+            return html `<${legacyQRCodeView} Class="WAT Content QRCodeView"
+        Value=${Value} ECCLevel=${this.ECCLevel || 'M'}
+        BorderWidth=${(_c = this.BorderWidth) !== null && _c !== void 0 ? _c : 1}
+        minVersion=${minVersion} maxVersion=${maxVersion}
+        ForegroundColor=${this.ForegroundColor || 'black'}
+        BackgroundColor=${this.BackgroundColor || 'transparent'}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.QRCodeView', WAT_QRCodeView);
 }
 /**** ValueIsTextFormat ****/
 export const WAT_supportedTextFormats = [
