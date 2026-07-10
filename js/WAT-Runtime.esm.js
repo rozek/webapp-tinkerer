@@ -3441,7 +3441,8 @@ export class WAT_Visual {
             ('OverflowVisibility' in Serialization)) {
             try {
                 this.Overflows = (Serialization.OverflowVisibility
-                    ? ['visible', 'visible']
+                    ? (this.Category === 'page' // pages do not support "visible"
+                        ? ['auto', 'auto'] : ['visible', 'visible'])
                     : ['hidden', 'hidden']);
             }
             catch (Signal) { /* nop - e.g., applets do not support "Overflows" */ }
@@ -5076,6 +5077,9 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** _resetConfiguration - reset all optional state to its default ****/
     _resetConfiguration() {
+        this.configurableProperties = []; // also removes any installed accessors
+        // @ts-ignore TS2322 clear "_observed" - the next access initializes it freshly
+        this._observed = undefined;
         this._activeScript = undefined;
         this._pendingScript = undefined;
         this._ScriptError = undefined;
@@ -10174,8 +10178,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 setTimeout(() => {
                     this.on('selection-change')(selectedIndices);
                     IndicesToDeselect.forEach((deselectedIndex) => {
-                        this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
+                        // *C* "List" may have shrunk - pass "undefined" for items gone by now
+                        this.on('item-deselected')((deselectedIndex < List.length ? List[deselectedIndex] : undefined), deselectedIndex);
                     });
+                    // *C* currently unreachable - render validation can only remove indices
                     IndicesToSelect.forEach((selectedIndex) => {
                         this.on('item-selected')(List[selectedIndex], selectedIndex);
                     });
