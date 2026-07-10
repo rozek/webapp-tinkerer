@@ -58,7 +58,7 @@
       "WAT-Designer":"https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js",
 
       "marked":                "https://cdn.jsdelivr.net/npm/marked/lib/marked.esm.js",
-      "marked-katex-extension":"https://cdn.jsdelivr.net/npm/marked-katex-extension/+esm",
+      "marked-katex-extension":"https://rozek.github.io/marked-katex-extension/dist/marked-katex-extension.esm.js",
       "marked-highlight":      "https://cdn.jsdelivr.net/npm/marked-highlight/+esm",
 
       "highlight.js/lib/core":                "https://cdn.jsdelivr.net/gh/highlightjs/cdn-release/build/es/highlight.min.js",
@@ -78,6 +78,10 @@
   <script src="https://rozek.github.io/localForage/dist/localforage.min.js"></script>
   <script src="https://rozek.github.io/download/download.min.js"></script>
 
+  <script type="module" src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js"></script>
+  <script type="module" src="https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js"></script>
+ </head>
+ <body>
   <script>
 "use strict";
 /*******************************************************************************
@@ -85,30 +89,35 @@
 *                                WAT Developer                                 *
 *                                                                              *
 *******************************************************************************/
-/**** ValueIsBoolean ****/
-function ValueIsBoolean(Value) {
-    return (typeof Value === 'boolean');
-}
+var _a, _b;
 /**** acceptableBoolean ****/
 function acceptableBoolean(Value, Default) {
     switch (Value) {
-        case 'false': return false;
+        case '': return true; // bare URL parameters are considered true
         case 'true': return true;
+        case 'false': return false;
         default: return Default;
     }
 }
 /**** ValueIsOrdinal ****/
 function ValueIsOrdinal(Value) {
-    return ((typeof Value === 'number') &&
-        (Math.floor(Value) === Value) &&
-        (Value >= 0));
-}
+    return Number.isInteger(Value) && (Value >= 0);
+} // "Number.isInteger" excludes NaN and Infinity
 /**** acceptableOrdinal ****/
+const WAT_OrdinalPattern = /^\s*\d+\s*$/; // plain decimal integers only
 function acceptableOrdinal(Value, Default, ErrorMessage) {
-    if ((Value == null) || (Value.trim() === '')) {
+    if (Value == null) {
         return Default;
     }
-    const Candidate = parseFloat(Value);
+    if (typeof Value === 'string') {
+        if (Value.trim() === '') {
+            return Default;
+        }
+        if (!WAT_OrdinalPattern.test(Value)) {
+            exitWith(ErrorMessage);
+        }
+    }
+    const Candidate = Number(Value);
     if (ValueIsOrdinal(Candidate)) {
         return Candidate;
     }
@@ -118,10 +127,18 @@ function acceptableOrdinal(Value, Default, ErrorMessage) {
 }
 /**** acceptableOptionalOrdinal ****/
 function acceptableOptionalOrdinal(Value, ErrorMessage) {
-    if ((Value == null) || (Value.trim() === '')) {
+    if (Value == null) {
         return undefined;
     }
-    const Candidate = parseFloat(Value);
+    if (typeof Value === 'string') {
+        if (Value.trim() === '') {
+            return undefined;
+        }
+        if (!WAT_OrdinalPattern.test(Value)) {
+            exitWith(ErrorMessage);
+        }
+    }
+    const Candidate = Number(Value);
     if (ValueIsOrdinal(Candidate)) {
         return Candidate;
     }
@@ -138,8 +155,8 @@ function acceptableOneOf(Value, allowedItems, Default) {
     return (ValueIsOneOf(Value, allowedItems) ? Value : Default);
 }
 /**** ValueIsName ****/
-const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
-// no ctrl.char.s, no "/", no leading " " or "#"
+const WAT_NamePattern = /^[^\x00-\x1F\x7F "<>/#][^\x00-\x1F\x7F"<>/]*$/;
+// no ctrl.char.s, no '"', "<", ">" or "/", no leading " " or "#"
 function ValueIsName(Value) {
     return ((typeof Value === 'string') && WAT_NamePattern.test(Value) &&
         (Value.trim() === Value) &&
@@ -148,7 +165,7 @@ function ValueIsName(Value) {
 /**** exitWith ****/
 function exitWith(Message) {
     window.alert(Message);
-    throw new Error();
+    throw new Error(Message);
 }
 const URLParameters = new URLSearchParams(window.location.search);
 const Name = URLParameters.get('name');
@@ -165,28 +182,39 @@ let minWidth = acceptableOrdinal(URLParameters.get('min-width'), 0, 'Invalid min
 let maxWidth = acceptableOptionalOrdinal(URLParameters.get('max-width'), 'Invalid maximal applet width given');
 let minHeight = acceptableOrdinal(URLParameters.get('min-height'), 0, 'Invalid minimal applet height given');
 let maxHeight = acceptableOptionalOrdinal(URLParameters.get('max-height'), 'Invalid maximal applet height given');
+if ((maxWidth != null) && (maxWidth < minWidth))
+    exitWith('Invalid applet width range given');
+if ((maxHeight != null) && (maxHeight < minHeight))
+    exitWith('Invalid applet height range given');
+let initialMaxWidth = acceptableOptionalOrdinal(URLParameters.get('initial-max-width'), 'Invalid initial maximal applet width given');
+let initialMaxHeight = acceptableOptionalOrdinal(URLParameters.get('initial-max-height'), 'Invalid initial maximal applet height given');
 const toBeCentered = acceptableBoolean(URLParameters.get('center'), false);
 const toBeOffset = acceptableBoolean(URLParameters.get('offset'), false);
-const expectedOrientation = acceptableOneOf('expected-orientation', ['any', 'portrait', 'landscape'], 'any');
-Width = Math.max(minWidth, Math.min(Width, ViewportWidth, maxWidth == null ? Infinity : maxWidth));
-Height = Math.max(minHeight, Math.min(Height, ViewportHeight, maxHeight == null ? Infinity : maxHeight));
+const expectedOrientation = acceptableOneOf(URLParameters.get('expected-orientation'), ['any', 'portrait', 'landscape'], 'any'); // not yet evaluated, however
+Width = Math.max(minWidth, Math.min(Width, ViewportWidth, (_a = initialMaxWidth !== null && initialMaxWidth !== void 0 ? initialMaxWidth : maxWidth) !== null && _a !== void 0 ? _a : Infinity));
+Height = Math.max(minHeight, Math.min(Height, ViewportHeight, (_b = initialMaxHeight !== null && initialMaxHeight !== void 0 ? initialMaxHeight : maxHeight) !== null && _b !== void 0 ? _b : Infinity));
 // tries to use designer size
-if ((Width >= ViewportWidth) || (Height >= ViewportHeight)) {
+if ((Width + 10 > ViewportWidth) || (Height + 10 > ViewportHeight)) {
     withMobileFrame = false;
+} // the frame needs an additional 10px in each direction
+let OffsetX = 0;
+let OffsetY = 0;
+switch (true) {
+    case toBeCentered: // "center" precedes "offset"
+        OffsetX = Math.max(0, Math.round((ViewportWidth - Width) / 2));
+        OffsetY = Math.max(0, Math.round((ViewportHeight - Height) / 2));
+        break;
+    case toBeOffset:
+        OffsetX = (Width < ViewportWidth ? 20 : 0);
+        OffsetY = (Height < ViewportHeight ? 20 : 0);
 }
-let OffsetX = ((Width < ViewportWidth) && toBeOffset ? 20 : 0);
-let OffsetY = ((Height < ViewportHeight) && toBeOffset ? 20 : 0);
 if (withMobileFrame) {
     Width += 10;
     OffsetX -= 5;
     Height += 10;
     OffsetY -= 5;
-    if (minWidth != null) {
-        minWidth += 10;
-    }
-    if (minHeight != null) {
-        minHeight += 10;
-    }
+    minWidth += 10;
+    minHeight += 10;
     if (maxWidth != null) {
         maxWidth += 10;
     }
@@ -194,21 +222,31 @@ if (withMobileFrame) {
         maxHeight += 10;
     }
 }
-document.write(`
-  <div type="wat/applet" name="${Name}" class=${withMobileFrame ? "withMobileFrame" : ''} style="
-    display:block; position:absolute;
-    left:${OffsetX}px; top:${OffsetY}px; width:${Width}px; height:${Height}px;
-    min-width:${minWidth}px;   ${maxWidth == null ? '' : `max-width:${maxWidth}px; `}
-    min-height:${minHeight}px; ${maxHeight == null ? '' : `max-height:${maxHeight}px; `}
-    box-shadow:0px 0px 10px 0px black;
-  "></div>
-  `);
+OffsetX = Math.max(0, OffsetX); // keeps the applet within the viewport
+OffsetY = Math.max(0, OffsetY);
+const Applet = document.createElement('div');
+Applet.setAttribute('type', 'wat/applet');
+Applet.setAttribute('name', Name); // "setAttribute" prevents injection
+if (withMobileFrame) {
+    Applet.classList.add('withMobileFrame');
+}
+Applet.style.cssText = ('display:block; position:absolute; ' +
+    `left:${OffsetX}px; top:${OffsetY}px; ` +
+    `width:${Width}px; height:${Height}px; ` +
+    `min-width:${minWidth}px; ` +
+    (maxWidth == null ? '' : `max-width:${maxWidth}px; `) +
+    `min-height:${minHeight}px; ` +
+    (maxHeight == null ? '' : `max-height:${maxHeight}px; `) +
+    'box-shadow:0px 0px 10px 0px black;');
+if (document.body == null) { // i.e., script runs within the header
+    window.addEventListener('DOMContentLoaded', () => {
+        document.body.appendChild(Applet);
+    });
+}
+else {
+    document.body.appendChild(Applet);
+}
 
   </script>
-
-  <script type="module" src="https://rozek.github.io/webapp-tinkerer/js/WAT-Runtime.esm.js"></script>
-  <script type="module" src="https://rozek.github.io/webapp-tinkerer/js/WAT-Designer.esm.js"></script>
- </head>
- <body>
  </body>
 </html>
