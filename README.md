@@ -4,6 +4,8 @@
 
 > 🚧 **Status:** WAT is under active, continuous development. Core concepts (Applets, Pages, Widgets, Behaviors, Scripts) are stable, but individual widget properties and API details may still change.
 
+![WAT Pitch Screenshot](./Pitch-Screenshot.png)
+
 [Live Demo](https://rozek.github.io/webapp-tinkerer/tools/WAT-AppletManager.html)
 
 ## Table of contents
