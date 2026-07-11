@@ -1,7 +1,9 @@
 import { cloneElement } from 'preact';
+import { Component } from 'preact';
 import { Context } from 'preact';
 import { createContext } from 'preact';
 import { createPortal } from 'preact/compat';
+import { createRef } from 'preact';
 import { supportsPassiveEvents as DeviceSupportsPassiveEvents } from 'detect-it';
 import { supportsPointerEvents as DeviceSupportsPointerEvents } from 'detect-it';
 import { supportsTouchEvents as DeviceSupportsTouchEvents } from 'detect-it';
@@ -2385,6 +2387,8 @@ export declare function ToastBase(PropSet: Indexable): any;
 export declare const ui: {
     render: typeof render;
     html: (strings: TemplateStringsArray, ...values: any[]) => VNode;
+    Component: typeof Component;
+    createRef: typeof createRef;
     createContext: typeof createContext;
     toChildArray: typeof toChildArray;
     cloneElement: typeof cloneElement;

@@ -39,16 +39,20 @@ function ValuesDiffer(a, b, Mode) {
     ;
     return true;
 }
-import { render, html, Component, createRef, useRef, useEffect, useCallback } from 'htm/preact';
 /**** most built-in behaviors are now thin wrappers around JCL components ****/
-// n.b.: JCL and WAT must share the same preact instance (which they do, as
-// both resolve "preact", "preact/hooks" etc. through the import map of the
-// hosting page)
+// n.b.: render/html/Component/createRef/useRef/useEffect/useCallback are
+// taken from JCL_ui, NOT from a separately import-mapped "preact"/"htm/preact":
+// JCL bundles its own copy of preact+htm at build time, so any independently
+// loaded preact instance would be a *different* instance - mixing the two in
+// the same render tree causes "Cannot read properties of undefined (reading
+// '__H')" crashes once a JCL component's hooks run under the "wrong"
+// instance's render loop.
 // @ts-ignore TS2307 allow importing from "javascript-code-library"
 import { ui as JCL_ui, ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier, ValueIsPhoneNumber, // implements the former WAT stub
 ValueIsDimension, allowDimension, allowedDimension, expectDimension, expectedDimension, ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition, ValueIsSize, allowSize, allowedSize, expectSize, expectedSize, ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry, ValueIsTextFormat, ValueIsHTMLFormat, ValueIsMarkdownFormat, ValueIsImageFormat, JCL_supportedTextFormats, JCL_supportedHTMLFormats, JCL_supportedMarkdownFormats, JCL_supportedImageFormats, } from 'javascript-code-library';
 const JCL_native = JCL_ui.native;
 const JCL_legacy = JCL_ui.legacy;
+const { render, html, Component, createRef, useRef, useEffect, useCallback } = JCL_ui;
 /**** validators adopted from JCL remain part of WAT's public API ****/
 // n.b.: JCL's ValueIsPosition/Size/Geometry use "ValueIsPlainObject" where
 // WAT formerly used "ValueIsObject" - i.e., class instances which happen to

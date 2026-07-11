@@ -29,15 +29,19 @@ function ValuesAreEqual(a, b, Mode) {
 }
 import Conversion from 'svelte-coordinate-conversion';
 const { fromViewportTo } = Conversion;
-import { html, useState, useRef, useEffect, useMemo, useCallback, } from 'htm/preact';
 /**** most WAD-specific controls are now thin wrappers around JCL components ****/
-// n.b.: JCL and WAT must share the same preact instance (which they do, as
-// both resolve "preact", "preact/hooks" etc. through the import map of the
-// hosting page)
+// n.b.: render/html/Component/useState/useRef/useEffect/useMemo/useCallback
+// are taken from JCL_ui, NOT from a separately import-mapped "preact"/
+// "htm/preact": JCL bundles its own copy of preact+htm at build time, so any
+// independently loaded preact instance would be a *different* instance -
+// mixing the two in the same render tree causes "Cannot read properties of
+// undefined (reading '__H')" crashes once a JCL component's hooks run under
+// the "wrong" instance's render loop.
 // @ts-ignore TS2307 allow importing from "javascript-code-library"
 import { ui as JCL_ui, JCL_noSelection, JCL_mixedValues } from 'javascript-code-library';
 const JCL_native = JCL_ui.native;
 const JCL_legacy = JCL_ui.legacy;
+const { render, html, Component, useState, useRef, useEffect, useMemo, useCallback, } = JCL_ui;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
