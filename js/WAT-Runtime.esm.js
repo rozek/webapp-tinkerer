@@ -17,7 +17,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 const WAT_Version = '0.1';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, /*ValueIsPhoneNumber,*/ ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, HexColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, HexColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 function ValuesAreEqual(a, b, Mode) {
     try {
@@ -39,8 +39,27 @@ function ValuesDiffer(a, b, Mode) {
     ;
     return true;
 }
-const ValueIsPhoneNumber = ValueIsTextline; // *C* should be implemented
 import { render, html, Component, createRef, useRef, useEffect, useCallback } from 'htm/preact';
+/**** most built-in behaviors are now thin wrappers around JCL components ****/
+// n.b.: JCL and WAT must share the same preact instance (which they do, as
+// both resolve "preact", "preact/hooks" etc. through the import map of the
+// hosting page)
+// @ts-ignore TS2307 allow importing from "javascript-code-library"
+import { ui as JCL_ui, ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier, ValueIsPhoneNumber, // implements the former WAT stub
+ValueIsDimension, allowDimension, allowedDimension, expectDimension, expectedDimension, ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition, ValueIsSize, allowSize, allowedSize, expectSize, expectedSize, ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry, ValueIsTextFormat, ValueIsHTMLFormat, ValueIsMarkdownFormat, ValueIsImageFormat, JCL_supportedTextFormats, JCL_supportedHTMLFormats, JCL_supportedMarkdownFormats, JCL_supportedImageFormats, } from 'javascript-code-library';
+const JCL_native = JCL_ui.native;
+const JCL_legacy = JCL_ui.legacy;
+/**** validators adopted from JCL remain part of WAT's public API ****/
+// n.b.: JCL's ValueIsPosition/Size/Geometry use "ValueIsPlainObject" where
+// WAT formerly used "ValueIsObject" - i.e., class instances which happen to
+// carry x/y/Width/Height are no longer accepted (plain objects and proxies
+// over plain objects still are)
+export { ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier, ValueIsPhoneNumber, ValueIsDimension, allowDimension, allowedDimension, expectDimension, expectedDimension, ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition, ValueIsSize, allowSize, allowedSize, expectSize, expectedSize, ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry, ValueIsTextFormat, ValueIsHTMLFormat, ValueIsMarkdownFormat, ValueIsImageFormat, };
+/**** supported MIME format lists (now shared with JCL) ****/
+export const WAT_supportedTextFormats = JCL_supportedTextFormats;
+export const WAT_supportedHTMLFormats = JCL_supportedHTMLFormats;
+export const WAT_supportedMarkdownFormats = JCL_supportedMarkdownFormats;
+export const WAT_supportedImageFormats = JCL_supportedImageFormats;
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
@@ -140,14 +159,6 @@ export function expectValue(Description, Value, Validator) {
         throwError(`InvalidArgument: the given ${Description} is invalid`);
     }
 }
-/**** ValueIsIdentifier ****/
-const WAT_IdentifierPattern = /^[a-z$_][a-z$_0-9]*$/i;
-export function ValueIsIdentifier(Value) {
-    return ValueIsStringMatching(Value, WAT_IdentifierPattern);
-}
-/**** allow/expect[ed]Identifier ****/
-export const allowIdentifier = ValidatorForClassifier(ValueIsIdentifier, acceptNil, 'WAT identifier'), allowedIdentifier = allowIdentifier;
-export const expectIdentifier = ValidatorForClassifier(ValueIsIdentifier, rejectNil, 'WAT identifier'), expectedIdentifier = expectIdentifier;
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
 // no ctrl.char.s, no "/", no leading " " or "#"
@@ -222,40 +233,6 @@ export function ValueIsLocation(Value) {
 /**** allow/expect[ed]Location ****/
 export const allowLocation = ValidatorForClassifier(ValueIsLocation, acceptNil, 'WAT coordinate'), allowedLocation = allowLocation;
 export const expectLocation = ValidatorForClassifier(ValueIsLocation, rejectNil, 'WAT coordinate'), expectedLocation = expectLocation;
-/**** ValueIsDimension ****/
-export function ValueIsDimension(Value) {
-    return ValueIsFiniteNumber(Value) && (Value >= 0);
-}
-/**** allow/expect[ed]Dimension ****/
-export const allowDimension = ValidatorForClassifier(ValueIsDimension, acceptNil, 'WAT dimension'), allowedDimension = allowDimension;
-export const expectDimension = ValidatorForClassifier(ValueIsDimension, rejectNil, 'WAT dimension'), expectedDimension = expectDimension;
-/**** ValueIsPosition ****/
-export function ValueIsPosition(Value) {
-    return (ValueIsObject(Value) &&
-        ValueIsLocation(Value.x) &&
-        ValueIsLocation(Value.y));
-}
-/**** allow/expect[ed]Position ****/
-export const allowPosition = ValidatorForClassifier(ValueIsPosition, acceptNil, 'WAT position'), allowedPosition = allowPosition;
-export const expectPosition = ValidatorForClassifier(ValueIsPosition, rejectNil, 'WAT position'), expectedPosition = expectPosition;
-/**** ValueIsSize ****/
-export function ValueIsSize(Value) {
-    return (ValueIsObject(Value) &&
-        ValueIsDimension(Value.Width) &&
-        ValueIsDimension(Value.Height));
-}
-/**** allow/expect[ed]Size ****/
-export const allowSize = ValidatorForClassifier(ValueIsSize, acceptNil, 'WAT size'), allowedSize = allowSize;
-export const expectSize = ValidatorForClassifier(ValueIsSize, rejectNil, 'WAT size'), expectedSize = expectSize;
-/**** ValueIsGeometry ****/
-export function ValueIsGeometry(Value) {
-    return (ValueIsObject(Value) &&
-        ValueIsLocation(Value.x) && ValueIsDimension(Value.Width) &&
-        ValueIsLocation(Value.y) && ValueIsDimension(Value.Height));
-}
-/**** allow/expect[ed]Geometry ****/
-export const allowGeometry = ValidatorForClassifier(ValueIsGeometry, acceptNil, 'WAT geometry'), allowedGeometry = allowGeometry;
-export const expectGeometry = ValidatorForClassifier(ValueIsGeometry, rejectNil, 'WAT geometry'), expectedGeometry = expectGeometry;
 /**** ValueIsIncompleteGeometry ****/
 function ValueIsIncompleteGeometry(Value) {
     if (!ValueIsPlainObject(Value)) {
@@ -7361,8 +7338,6 @@ export function WAT_MonthMatcher(Value) {
 }
 /**** for MarkdownView ****/
 import { Marked } from 'marked';
-import markedKatex from 'marked-katex-extension';
-import { markedHighlight } from 'marked-highlight';
 import hljs from 'highlight.js/lib/core';
 import { default as _css } from 'highlight.js/lib/languages/css';
 hljs.registerLanguage('css', _css);
@@ -7565,12 +7540,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WidgetPane', WAT_WidgetPane);
     /**** TextView ****/
+    // a thin WAT wrapper around the "ui.TextView" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from
+    // JCL, this behavior only contributes widget geometry, file dropping and
+    // the WAT property interface
     const WAT_TextView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.TextView {
-        white-space:pre-wrap;
+        left:0px; top:0px; width:100%; height:100%;
+        white-space:pre-wrap; overflow:visible;
+        font:inherit;
       }
-    `);
+    `); // geometry as before the JCL migration - and, most importantly,
+        // typography and overflow are RESET to the applet's own settings
+        // (JCL's TextView would impose 14px/21px and overflow:auto which
+        //  would reflow existing applets)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter text)',
@@ -7583,7 +7567,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Enabling, readonly } = this;
+            const { Value, Enabling, readonly } = this;
             let acceptableFileTypes = this.acceptableFileTypes;
             if (acceptableFileTypes.length === 0) {
                 acceptableFileTypes = WAT_supportedTextFormats.slice();
@@ -7633,15 +7617,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
             };
             /**** actual rendering ****/
-            return html `<div class="WAT Content TextView"
+            return html `<${JCL_ui.TextView} Class="WAT Content TextView"
+        Value=${Value == null ? '' : '' + Value}
         onDragOver=${allowsDropping ? _onDragOver : undefined}
         onDrop=${allowsDropping ? _onDrop : undefined}
-      >${this.Value}</>`;
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TextView', WAT_TextView);
     /**** HTMLView ****/
+    // a thin WAT wrapper around the "ui.HTMLView" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from
+    // JCL, this behavior only contributes widget geometry, file dropping and
+    // the WAT property interface
+    // (JCL_ui.HTMLView renders raw HTML without sanitization - just like this
+    //  behavior did before, i.e., the security level remains unchanged)
     const WAT_HTMLView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.HTMLView {
+        left:0px; top:0px; width:100%; height:100%;
+        overflow:visible;
+        font:inherit;
+      }
+    `); // geometry as before the JCL migration - and, most importantly,
+        // typography and overflow are RESET to the applet's own settings
+        // (JCL's HTMLView would impose 14px/21px and overflow:auto which
+        //  would reflow existing applets)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter HTML)',
@@ -7706,32 +7707,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             /**** actual rendering ****/
             // *C* SECURITY: content is rendered as raw HTML without sanitization (XSS risk!)
-            return html `<div class="WAT Content HTMLView"
+            return html `<${JCL_ui.HTMLView} Class="WAT Content HTMLView"
+        Value=${this.Value || ''}
         onDragOver=${allowsDropping ? _onDragOver : undefined}
         onDrop=${allowsDropping ? _onDrop : undefined}
-        dangerouslySetInnerHTML=${{ __html: this.Value || '' }}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.HTMLView', WAT_HTMLView);
     /**** MarkdownView ****/
+    // a thin WAT wrapper around the "ui.MarkdownView" component from the
+    // "javascript-code-library" (JCL) - Markdown parsing (incl. KaTeX and
+    // syntax highlighting) now comes from JCL which lazily loads "marked",
+    // "marked-katex-extension", "marked-highlight" and "highlight.js" on
+    // first use ("loadMarkdownLibraries"). This behavior only contributes
+    // widget geometry, file dropping and the WAT property interface
     const WAT_MarkdownView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._Marked = new Marked();
-        my._Marked.setOptions({
-            gfm: true, breaks: true, pedantic: false, smartypants: false
-        });
-        my._Marked.use(markedKatex({
-            throwOnError: false, /*nonStandard:true,*/
-        }));
-        my._Marked.use(markedHighlight({
-            emptyLangClass: 'hljs',
-            langPrefix: 'hljs language-', // CSS class prefix
-            highlight(Code, Language, Info) {
-                Language = hljs.getLanguage(Language) ? Language : 'plaintext';
-                return hljs.highlight(Code, { language: Language }).value;
-            }
-        }));
-        //  my._HTMLContent = my._Marked.parse(my.Value)           // will be done later
+        installStylesheet(`
+      .WAT.Widget > .WAT.MarkdownView {
+        left:0px; top:0px; width:100%; height:100%;
+        overflow:visible;
+        font:inherit;
+      }
+    `); // geometry as before the JCL migration - and, most importantly,
+        // typography and overflow are RESET to the applet's own settings
+        // (the h1/p/... rules from WAT's global stylesheet still win over
+        //  JCL's own MarkdownView rules by specificity)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter Markdown)',
@@ -7755,12 +7756,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
                     this.on('Value')(newValue);
-                    this._HTMLContent = this._Marked.parse(newValue);
-                    this.rerender();
+                    this.rerender(); // Markdown parsing now happens in JCL_ui.MarkdownView
                 }
             },
         });
-        my._HTMLContent = my._Marked.parse(my.Value); // render after deserialization
         /**** Renderer ****/
         onRender(function () {
             const { Enabling, readonly } = this;
@@ -7815,21 +7814,29 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             /**** actual rendering ****/
             // *C* SECURITY: content is rendered as raw HTML without sanitization (XSS risk!)
-            return html `<div class="WAT Content MarkdownView"
+            // (JCL_ui.MarkdownView does not sanitize either - unchanged security level)
+            return html `<${JCL_ui.MarkdownView} Class="WAT Content MarkdownView"
+        Value=${this.Value || ''}
         onDragOver=${allowsDropping ? _onDragOver : undefined}
         onDrop=${allowsDropping ? _onDrop : undefined}
-        dangerouslySetInnerHTML=${{ __html: this._HTMLContent || '' }}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.MarkdownView', WAT_MarkdownView);
     /**** ImageView ****/
+    // a thin WAT wrapper around the "ui.ImageView" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from
+    // JCL, this behavior only contributes widget geometry, file dropping and
+    // the WAT property interface (WAT's "ImageScaling" and "ImageAlignment"
+    // are mapped onto JCL's "Scaling" and "Alignment" props)
     const WAT_ImageView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.ImageView {
-        object-fit:contain; object-position:center;
+        left:0px; top:0px; width:100%; height:100%;
       }
-    `);
+    `); // n.b.: an <img> is a "replaced element" and does NOT stretch with
+        // insets and width/height:auto alone - width and height must be
+        // set explicitly (or the image would appear in its natural size)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter image URL)',
@@ -7923,9 +7930,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             function _onClick(Event) { my.on('click')(Event); }
             /**** actual rendering ****/
-            return html `<img class="WAT Content ImageView"
-        src=${ImageURL || ''}
-        style="object-fit:${ImageScaling === 'stretch' ? 'fill' : ImageScaling}; object-position:${ImageAlignment}"
+            return html `<${JCL_ui.ImageView} Class="WAT Content ImageView"
+        Value=${ImageURL || undefined}
+        Scaling=${ImageScaling} Alignment=${ImageAlignment}
         onDragOver=${allowsDropping ? _onDragOver : undefined}
         onDrop=${allowsDropping ? _onDrop : undefined}
         onClick=${_onClick}
@@ -7934,12 +7941,19 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.ImageView', WAT_ImageView);
     /**** SVGView ****/
+    // a thin WAT wrapper around the "ui.SVGView" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from
+    // JCL, this behavior only contributes widget geometry and the WAT property
+    // interface (WAT's "ImageScaling" and "ImageAlignment" are mapped onto
+    // JCL's "Scaling" and "Alignment" props)
     const WAT_SVGView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.SVGView {
-        object-fit:contain; object-position:center;
+        left:0px; top:0px; width:100%; height:100%;
       }
-    `);
+    `); // n.b.: an <img> is a "replaced element" and does NOT stretch with
+        // insets and width/height:auto alone - width and height must be
+        // set explicitly (or the image would appear in its natural size)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter SVG)',
@@ -7951,17 +7965,29 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const DataURL = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(this.Value || '');
-            const { ImageScaling, ImageAlignment } = this;
-            return html `<img class="WAT Content SVGView"
-        src=${DataURL}
-        style="object-fit:${ImageScaling === 'stretch' ? 'fill' : ImageScaling}; object-position:${ImageAlignment}"
+            const { Value, ImageScaling, ImageAlignment } = this;
+            return html `<${JCL_ui.SVGView} Class="WAT Content SVGView"
+        Value=${Value || undefined}
+        Scaling=${ImageScaling} Alignment=${ImageAlignment}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SVGView', WAT_SVGView);
     /**** WebView ****/
+    // a thin WAT wrapper around the "ui.WebView" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from
+    // JCL, this behavior only contributes widget geometry and the WAT property
+    // interface. WAT's "PermissionsPolicy", "allowsFullscreen",
+    // "SandboxPermissions" and "ReferrerPolicy" are mapped onto JCL's "allow",
+    // "allowFullscreen", "Sandbox" and "ReferrerPolicy" props
     const WAT_WebView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.WebView {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // n.b.: an <iframe> is a "replaced element" and does NOT stretch
+        // with insets and width/height:auto alone - width and height must
+        // be set explicitly (or the iframe would keep its natural size)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter URL)',
@@ -7996,100 +8022,126 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             const WebURL = (this.Value == null ? '' : this.Applet.AssetURL(this.Value));
             const { PermissionsPolicy, allowsFullscreen, SandboxPermissions, ReferrerPolicy } = this;
-            return html `<iframe class="WAT Content WebView"
-        src=${WebURL || ''}
-        allow=${PermissionsPolicy} allowfullscreen=${allowsFullscreen}
-        sandbox=${SandboxPermissions} referrerpolicy=${ReferrerPolicy}
+            // *C* SECURITY: JCL_ui.WebView removes the "sandbox" attribute upon
+            // Sandbox="none" - WAT never did that: an explicit "none" therefore
+            // still keeps the iframe fully sandboxed (as before the migration)
+            const Sandbox = (SandboxPermissions === 'none' ? '' : SandboxPermissions);
+            return html `<${JCL_ui.WebView} Class="WAT Content WebView"
+        Value=${WebURL || ''}
+        allow=${PermissionsPolicy} allowFullscreen=${allowsFullscreen}
+        Sandbox=${Sandbox} ReferrerPolicy=${ReferrerPolicy}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
     /**** TitleView ****/
+    // a thin WAT wrapper around the "ui.Title" component from the
+    // "javascript-code-library" (JCL) - this behavior deliberately keeps WAT's
+    // own typography rules: applets must render identically in every WAT
+    // instance, regardless of any changes to JCL's own styling
+    // (nota bene: JCL's Title/Subtitle/Label/Fineprint read "PropSet.class"
+    //  literally before merging - the "class" prop is therefore lowercase here)
     const WAT_TitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.TitleView {
+        left:0px; top:0px; width:100%; height:100%;
         font-size:22px; font-weight:bold; line-height:32px;
         overflow:hidden; text-overflow:ellipsis;
       }
-    `);
+    `); // WAT's original geometry and typography rules
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter title)',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
         ];
         onRender(function () {
-            return html `<div class="WAT Content TitleView">${my.Value}</>`;
+            return html `<${JCL_ui.Title} class="WAT Content TitleView"
+        Value=${my.Value}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TitleView', WAT_TitleView);
     /**** SubtitleView ****/
+    // a thin WAT wrapper around the "ui.Subtitle" component from the
+    // "javascript-code-library" (JCL) - see WAT_TitleView for details
     const WAT_SubtitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.SubtitleView {
-        top:2px;
+        left:0px; top:2px; width:100%; height:100%;
         font-size:18px; font-weight:bold; line-height:27px;
         overflow:hidden; text-overflow:ellipsis;
       }
-    `);
+    `); // WAT's original geometry and typography rules
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter subtitle)',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
         ];
         onRender(function () {
-            return html `<div class="WAT Content SubtitleView">${my.Value}</>`;
+            return html `<${JCL_ui.Subtitle} class="WAT Content SubtitleView"
+        Value=${my.Value}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SubtitleView', WAT_SubtitleView);
     /**** LabelView ****/
+    // a thin WAT wrapper around the "ui.Label" component from the
+    // "javascript-code-library" (JCL) - see WAT_TitleView for details
     const WAT_LabelView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.LabelView {
-        top:4px;
+        left:0px; top:4px; width:100%; height:100%;
         font-size:14px; font-weight:bold; line-height:21px;
         overflow:hidden; text-overflow:ellipsis;
       }
-    `);
+    `); // WAT's original geometry and typography rules
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter label)',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
         ];
         function _onClick(Event) { my.on('click')(Event); }
         onRender(function () {
-            return html `<div class="WAT Content LabelView"
-        onClick=${_onClick}
-      >${my.Value}</>`;
+            return html `<${JCL_ui.Label} class="WAT Content LabelView"
+        Value=${my.Value} onClick=${_onClick}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.LabelView', WAT_LabelView);
     /**** FineprintView ****/
+    // a thin WAT wrapper around the "ui.Fineprint" component from the
+    // "javascript-code-library" (JCL) - see WAT_TitleView for details
     const WAT_FineprintView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.FineprintView {
+        left:0px; top:0px; width:100%; height:100%;
         font-size:12px; font-weight:normal; line-height:18px;
-        text-overflow:ellipsis;
+        overflow:visible; text-overflow:ellipsis;
       }
-    `);
+    `); // WAT's original geometry and typography rules (fineprints may be
+        // multi-line - JCL's Fineprint would clip them via overflow:hidden)
         my.configurableProperties = [
             { Name: 'Value', Placeholder: '(enter fineprint)',
                 EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true, },
         ];
         onRender(function () {
-            return html `<div class="WAT Content FineprintView">${my.Value}</>`;
+            return html `<${JCL_ui.Fineprint} class="WAT Content FineprintView"
+        Value=${my.Value}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.FineprintView', WAT_FineprintView);
     /**** Icon ****/
+    // a thin WAT wrapper around the "ui.Icon" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from
+    // JCL, this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Icon {
+        left:1px; top:1px; right:1px; bottom:1px;
+        width:auto !important; height:auto !important;
         display:flex; justify-content:center; align-items:center;
       }
-      .WAT.Widget > .WAT.Icon > div {
-        display:block; position:relative;
-        width:24px; height:24px;
-        -webkit-mask-size:contain;           mask-size:contain;
-        -webkit-mask-position:center center; mask-position:center center;
-      }
-    `);
+    `); // geometry only - but it must override JCL's fixed 24x24px sizing
+        // (!important) so that the 24x24px inner icon gets centered again
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Icon', Default: 'icons/circle-information.png',
@@ -8123,12 +8175,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.on('click')(Event);
             };
             /**** actual rendering ****/
-            return html `<div class="WAT Content Icon ${disabled ? 'disabled' : ''}">
-        <div style="
-          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
-          background-color:${Color || 'black'};
-        " onClick=${_onClick}/>
-      </>`;
+            return html `<${JCL_ui.Icon} Class="WAT Content Icon"
+        Value=${IconURL} Color=${Color || 'black'}
+        disabled=${disabled} onClick=${_onClick}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Icon', WAT_Icon);
@@ -8311,15 +8361,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.CurvedArrow', WAT_CurvedArrow);
     /**** Button ****/
+    // a thin WAT wrapper around the "native.Button" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_Button = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Button {
-        border:solid 1px black; border-radius:4px;
-        background:white;
-        font-weight:bold; color:black;
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
         text-align:center;
       }
-    `);
+    `); // geometry and label alignment only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Label', Placeholder: '(enter label)',
@@ -8327,28 +8379,30 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const onClick = (Event) => {
-                if (this.Enabling == false) {
+            const { Label, Enabling } = this;
+            const _onClick = (Event) => {
+                if (Enabling == false) {
                     return consumingEvent(Event);
                 }
                 this.on('click')(Event);
             };
-            const Label = this.Label;
-            return html `<button class="WAT Content Button" style="
-        line-height:${this.LineHeight || this.Height}px;
-      " disabled=${this.Enabling == false} onClick=${onClick}
+            return html `<${JCL_native.Button} Class="WAT Content Button"
+        disabled=${Enabling == false} onClick=${_onClick}
       >${Label}</>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Button', WAT_Button);
     /**** Checkbox ****/
+    // a thin WAT wrapper around the "native.Checkbox" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_Checkbox = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Checkbox {
-        left:50%; top:50%;
-        transform:translate(-50%,-50%);
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
       }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8356,32 +8410,33 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const onClick = (Event) => {
-                if (this.Enabling == false) {
-                    return consumingEvent(Event);
+            const { Value, Enabling } = this;
+            const _onValueInput = (newValue, Event) => {
+                if (Enabling == false) {
+                    return;
                 }
-                this.Value = Event.target.checked;
+                this.Value = newValue;
                 this.on('click')(Event);
                 this.on('input')(Event);
             };
-            const Value = this.Value;
-            const checked = (Value == true);
-            const indeterminate = (Value == null);
-            return html `<input type="checkbox" class="WAT Checkbox"
-        checked=${checked} indeterminate=${indeterminate}
-        disabled=${this.Enabling == false} onClick=${onClick}
-      />`;
+            return html `<${JCL_native.Checkbox} Class="WAT Content Checkbox"
+        Value=${Value} disabled=${Enabling == false}
+        onValueInput=${_onValueInput}
+      />`; // a null "Value" shows an "indeterminate" checkbox
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Checkbox', WAT_Checkbox);
     /**** Radiobutton ****/
+    // a thin WAT wrapper around the "native.Radiobutton" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_Radiobutton = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Radiobutton {
-        left:50%; top:50%;
-        transform:translate(-50%,-50%);
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
       }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8390,23 +8445,33 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             // *C* radiobuttons lack a grouping mechanism ("name" attribute) - group behavior must be scripted manually
-            const onClick = (Event) => {
-                if (this.Enabling == false) {
-                    return consumingEvent(Event);
+            const { Value, Enabling } = this;
+            const _onValueInput = (newValue, Event) => {
+                if (Enabling == false) {
+                    return;
                 }
-                this.Value = Event.target.checked;
+                this.Value = newValue;
                 this.on('click')(Event);
                 this.on('input')(Event);
             };
-            return html `<input type="radio" class="WAT Radiobutton"
-        checked=${this.Value == true}
-        disabled=${this.Enabling == false} onClick=${onClick}
+            return html `<${JCL_native.Radiobutton} Class="WAT Content Radiobutton"
+        Value=${Value} disabled=${Enabling == false}
+        onValueInput=${_onValueInput}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Radiobutton', WAT_Radiobutton);
     /**** Gauge ****/
+    // a thin WAT wrapper around the "native.Gauge" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_Gauge = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.Gauge {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+      }
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8425,30 +8490,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Minimum, lowerBound, Optimum, upperBound, Maximum } = this;
-            return html `<meter class="WAT Content Gauge" value=${Value}
-        min=${Minimum} low=${lowerBound} opt=${Optimum}
-        high=${upperBound} max=${Maximum}
+            return html `<${JCL_native.Gauge} Class="WAT Content Gauge"
+        Value=${Value} Minimum=${Minimum} lowerBound=${lowerBound}
+        Optimum=${Optimum} upperBound=${upperBound} Maximum=${Maximum}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Gauge', WAT_Gauge);
     /**** Progressbar ****/
+    // a thin WAT wrapper around the "native.Progressbar" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry, the WAT progress color
+    // and the WAT property interface
     const WAT_Progressbar = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.Progressbar {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+      }
+      .WAT.Widget > .WAT.Progressbar > progress {
         -webkit-appearance:none; -moz-appearance:none; appearance:none;
         background-color:#EEEEEE;
       }
-      .WAT.Widget > .WAT.Progressbar::-webkit-progress-bar {
-        background-color:#EEEEEE;
-        border:solid 1px #E0E0E0; border-radius:2px;
-      }
-      .WAT.Widget > .WAT.Progressbar::-webkit-progress-value,
-      .WAT.Widget > .WAT.Progressbar::-moz-progress-bar {
+      .WAT.Widget > .WAT.Progressbar > progress::-webkit-progress-value,
+      .WAT.Widget > .WAT.Progressbar > progress::-moz-progress-bar {
         background-color:var(--WAT-ProgressColor,dodgerblue);
-        border:none; border-radius:2px;
       }
-    `);
+    `); // geometry plus those rules JCL does not provide identically
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8459,14 +8526,25 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Maximum } = this;
-            return html `<progress class="WAT Content Progressbar" value=${Value} max=${Maximum}
-      style="--WAT-ProgressColor:${this.ForegroundColor || 'dodgerblue'}; accent-color:${this.ForegroundColor || 'dodgerblue'}"/>`;
+            return html `<${JCL_native.Progressbar} Class="WAT Content Progressbar"
+        Value=${Value} Maximum=${Maximum}
+        Style="--WAT-ProgressColor:${this.ForegroundColor || 'dodgerblue'}; accent-color:${this.ForegroundColor || 'dodgerblue'}"
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Progressbar', WAT_Progressbar);
     /**** Slider ****/
+    // a thin WAT wrapper around the "native.Slider" component from the
+    // "javascript-code-library" (JCL) - the actual appearance, hashmark support
+    // and the protection of local input against external changes now come from
+    // JCL, this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_Slider = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
+        installStylesheet(`
+      .WAT.Widget > .WAT.Slider {
+        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+      }
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8482,67 +8560,40 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value;
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Minimum, Stepping, Maximum, Hashmarks } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                const newValue = parseFloat(Event.target.value);
-                this._shownValue = this.Value = (isNaN(newValue) ? undefined : newValue);
+                this.Value = (isNaN(newValue) ? undefined : newValue);
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Minimum, Stepping, Maximum, Hashmarks } = this;
-            let HashmarkList = '', HashmarkId;
-            if ((Hashmarks != null) && (Hashmarks.length > 0)) {
-                HashmarkId = IdOfVisual(this) + '-Hashmarks';
-                HashmarkList = html `\n<datalist id=${HashmarkId}>
-          ${Hashmarks.map((Item) => {
-                    Item = '' + Item;
-                    const Value = Item.replace(/:.*$/, '').trim();
-                    const Label = (Item.includes(':') ? Item.replace(/^[^:]*:/, '').trim() : '');
-                    return html `<option value=${Value}>${Label}</option>`;
-                })}
-        </datalist>`;
-            }
             /**** actual rendering ****/
-            return html `<input type="range" class="WAT Content Slider" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${HashmarkId}
-      />${HashmarkList}`;
+            const HashmarkList = ( // JCL expects hashmarks to be textlines
+            Hashmarks == null ? undefined : Hashmarks.map((Item) => '' + Item));
+            return html `<${JCL_native.Slider} Class="WAT Content Slider"
+        Value=${Value} Minimum=${Minimum} Step=${Stepping} Maximum=${Maximum}
+        Hashmarks=${HashmarkList} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Slider', WAT_Slider);
     /**** TextlineInput ****/
+    // a thin WAT wrapper around the "native.TextlineInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_TextlineInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TextlineInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.TextlineInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8565,63 +8616,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="text" class="WAT Content TextlineInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.TextlineInput} Class="WAT Content TextlineInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        Pattern=${Pattern} SpellCheck=${SpellChecking}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
     /**** PasswordInput ****/
+    // a thin WAT wrapper around the "native.PasswordInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_PasswordInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.PasswordInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.PasswordInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8640,55 +8667,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern } = this;
-            /**** actual rendering ****/
-            return html `<input type="password" class="WAT Content PasswordInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+            return html `<${JCL_native.PasswordInput} Class="WAT Content PasswordInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        Pattern=${Pattern} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
       />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
     /**** NumberInput ****/
+    // a thin WAT wrapper around the "native.NumberInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_NumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.NumberInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.NumberInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8708,63 +8718,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value;
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, Minimum, Stepping, Maximum, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                const newValue = parseFloat(Event.target.value);
-                this._shownValue = this.Value = (isNaN(newValue) ? undefined : newValue);
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, Minimum, Stepping, Maximum, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="number" class="WAT Content NumberInput" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum} step=${Stepping}
-        readOnly=${readonly} placeholder=${Placeholder}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.NumberInput} Class="WAT Content NumberInput"
+        Value=${Value == null ? undefined : parseFloat(Value)}
+        Placeholder=${Placeholder} readonly=${readonly}
+        Minimum=${Minimum} Maximum=${Maximum} Step=${Stepping}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.NumberInput', WAT_NumberInput);
     /**** PhoneNumberInput ****/
+    // a thin WAT wrapper around the "native.PhoneNumberInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_PhoneNumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.PhoneNumberInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.PhoneNumberInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8787,63 +8773,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="tel" class="WAT Content PhoneNumberInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-        });
+            return html `<${JCL_native.PhoneNumberInput} Class="WAT Content PhoneNumberInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        Pattern=${Pattern} spellcheck=${SpellChecking}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
+        }); // "spellcheck" reaches the <input> via JCL "RestProps"
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput);
     /**** EMailAddressInput ****/
+    // a thin WAT wrapper around the "native.EMailAddressInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_EMailAddressInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.EMailAddressInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.EMailAddressInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8866,63 +8828,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="email" class="WAT Content EMailAddressInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-        });
+            return html `<${JCL_native.EMailAddressInput} Class="WAT Content EMailAddressInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        Pattern=${Pattern} spellcheck=${SpellChecking}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
+        }); // "spellcheck" reaches the <input> via JCL "RestProps"
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.EMailAddressInput', WAT_EMailAddressInput);
     /**** URLInput ****/
+    // a thin WAT wrapper around the "native.URLInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_URLInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.URLInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.URLInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -8945,63 +8883,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="url" class="WAT Content URLInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
-        });
+            return html `<${JCL_native.URLInput} Class="WAT Content URLInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        Pattern=${Pattern} spellcheck=${SpellChecking}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
+        }); // "spellcheck" reaches the <input> via JCL "RestProps"
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.URLInput', WAT_URLInput);
     /**** TimeInput ****/
+    // a thin WAT wrapper around the "native.TimeInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_TimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.TimeInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9019,63 +8933,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="time" class="WAT Content TimeInput" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${WAT_TimePattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.TimeInput} Class="WAT Content TimeInput"
+        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
+        withSeconds=${withSeconds} Minimum=${Minimum} Maximum=${Maximum}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput);
     /**** DateTimeInput ****/
+    // a thin WAT wrapper around the "native.DateTimeInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_DateTimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.DateTimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.DateTimeInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9093,63 +8982,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="datetime-local" class="WAT Content DateTimeInput" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        step=${withSeconds ? 1 : 60}
-        readOnly=${readonly} pattern=${WAT_DateTimePattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.DateTimeInput} Class="WAT Content DateTimeInput"
+        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
+        withSeconds=${withSeconds} Minimum=${Minimum} Maximum=${Maximum}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateTimeInput', WAT_DateTimeInput);
     /**** DateInput ****/
+    // a thin WAT wrapper around the "native.DateInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_DateInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.DateInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.DateInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9172,62 +9036,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         }
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, readonly, Minimum, Maximum, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { readonly, Minimum, Maximum, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="date" class="WAT Content DateInput" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WAT_DatePattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.DateInput} Class="WAT Content DateInput"
+        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
+        Minimum=${Minimum} Maximum=${Maximum}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateInput', WAT_DateInput);
     /**** WeekInput ****/
+    // a thin WAT wrapper around the "native.WeekInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_WeekInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.WeekInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.WeekInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9251,62 +9091,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         }
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, readonly, Minimum, Maximum, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { readonly, Minimum, Maximum, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="week" class="WAT Content WeekInput" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WAT_WeekPattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.WeekInput} Class="WAT Content WeekInput"
+        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
+        Minimum=${Minimum} Maximum=${Maximum}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.WeekInput', WAT_WeekInput);
     /**** MonthInput ****/
+    // a thin WAT wrapper around the "native.MonthInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_MonthInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.MonthInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.MonthInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9329,43 +9145,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
         }
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, readonly, Minimum, Maximum, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { readonly, Minimum, Maximum, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="month" class="WAT Content MonthInput" ref=${this._InputElement}
-        value=${ValueToShow} min=${Minimum} max=${Maximum}
-        readOnly=${readonly} pattern=${WAT_MonthPattern}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.MonthInput} Class="WAT Content MonthInput"
+        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
+        Minimum=${Minimum} Maximum=${Maximum}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput);
@@ -9460,19 +9256,16 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileInput', WAT_FileInput);
     /**** PseudoFileInput ****/
+    // a thin WAT wrapper around the "legacy.PseudoFileInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry, file type filtering and
+    // the WAT property interface
     const WAT_PseudoFileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
-      .WAT.Widget > .WAT.PseudoFileInput {
-        display:flex; justify-content:center; align-items:center;
-      }
       .WAT.Widget > .WAT.PseudoFileInput > div {
-        display:block; position:relative;
-        width:24px; height:24px;
-        -webkit-mask-size:contain;           mask-size:contain;
-        -webkit-mask-position:center center; mask-position:center center;
         user-select:none;
       }
-    `);
+    `); // only rules JCL does not provide - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9519,31 +9312,24 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 return acceptedFiles;
             }; // the file dialog does not enforce "accept" settings
-            const _onInput = async (Event) => {
+            const _onValueInput = async (ValueList, Event) => {
                 if (this.Enabling == false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                const acceptedFiles = acceptedFilesIn(Event.target.files);
+                const acceptedFiles = acceptedFilesIn(ValueList);
                 if (acceptedFiles.length === 0) {
-                    Event.target.value = '';
                     return;
                 }
                 this.Value = acceptedFiles.map((File) => File.name).join('\n');
                 // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
                 await this.on('input')(Event, acceptedFiles);
-                Event.target.value = '';
             };
             /**** actual rendering ****/
-            return html `<label class="WAT Content PseudoFileInput">
-        <div style="
-          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
-          background-color:${Color || 'black'};
-        "></div>
-        <input type="file" style="display:none"
-          multiple=${allowMultiple} accept=${acceptableFileTypes}
-          disabled=${Enabling === false} onInput=${_onInput}
-        />
-      </label>`;
+            return html `<${JCL_legacy.PseudoFileInput} Class="WAT Content PseudoFileInput"
+        Icon=${IconURL} Color=${Color || 'black'} multiple=${allowMultiple}
+        Accept=${acceptableFileTypes == null ? undefined : acceptableFileTypes.join(',')}
+        disabled=${Enabling === false} onValueInput=${_onValueInput}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoFileInput', WAT_PseudoFileInput);
@@ -9635,21 +9421,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
     /**** SearchInput ****/
+    // a thin WAT wrapper around the "native.SearchInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry and the WAT property interface
     const WAT_SearchInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.SearchInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-
-      .WAT.Widget > .WAT.SearchInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9672,57 +9454,38 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
-            /**** actual rendering ****/
-            return html `<input type="search" class="WAT Content SearchInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        pattern=${Pattern} spellcheck=${SpellChecking}
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.SearchInput} Class="WAT Content SearchInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        Pattern=${Pattern} SpellCheck=${SpellChecking}
+        Suggestions=${Suggestions} disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.SearchInput', WAT_SearchInput);
     /**** ColorInput ****/
+    // a thin WAT wrapper around the "native.ColorInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // this behavior only contributes widget geometry and the WAT property
+    // interface
     const WAT_ColorInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.ColorInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
       }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9761,27 +9524,18 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Enabling, Suggestions } = this;
-            const _onInput = (Event) => {
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
-            /**** process any other parameters ****/
-            let SuggestionList = '', SuggestionId;
-            if ((Suggestions != null) && (Suggestions.length > 0)) {
-                SuggestionId = IdOfVisual(this) + '-Suggestions';
-                SuggestionList = html `<datalist id=${SuggestionId}>
-          ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-        </datalist>`;
-            }
             /**** actual rendering ****/
-            return html `<input type="color" class="WAT Content ColorInput"
-        value=${Value}
-        disabled=${Enabling == false} onInput=${_onInput}
-        list=${SuggestionId}
-      />${SuggestionList}`;
+            return html `<${JCL_native.ColorInput} Class="WAT Content ColorInput"
+        Value=${Value} Suggestions=${Suggestions} minWidth=${0}
+        disabled=${Enabling == false} onValueInput=${_onValueInput}
+      />`; // "minWidth=0" keeps the former WAT geometry behavior
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput);
@@ -9948,21 +9702,18 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoDropDown', WAT_PseudoDropDown);
     /**** TextInput ****/
+    // a thin WAT wrapper around the "native.TextInput" component from the
+    // "javascript-code-library" (JCL) - the actual appearance and the protection
+    // of local input against external changes now come from JCL, this behavior
+    // only contributes widget geometry, the WAT property interface and the
+    // WAT-specific file dropping support
     const WAT_TextInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        my._InputElement = createRef();
         installStylesheet(`
       .WAT.Widget > .WAT.TextInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
         padding:2px 2px 2px 2px;
       }
-
-      .WAT.Widget > .WAT.TextInput:read-only {
-        border:solid 1px #DDDDDD; border-radius:2px;
-        background:#F0F0F0;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL (except padding)
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9985,29 +9736,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling } = this;
-            /**** handle external changes ****/
-            let ValueToShow = Value || '';
-            if ((this._InputElement.current != null) &&
-                (document.activeElement === this._InputElement.current)) {
-                ValueToShow = this._shownValue;
-            }
-            else {
-                this._shownValue = ValueToShow;
-            }
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, LineWrapping, SpellChecking, acceptableFileTypes } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this._shownValue = this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
             const _onBlur = (Event) => {
-                this.rerender(); // because "ValueToShow" may now be different
                 this.on('blur')(Event);
             };
-            /**** process any other parameters ****/
-            const { Placeholder, readonly, minLength, maxLength, LineWrapping, SpellChecking, acceptableFileTypes } = this;
             /**** prepare file dropping ****/
             const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
             function _acceptableDataIn(Event) {
@@ -10030,17 +9769,20 @@ function registerIntrinsicBehaviorsIn(Applet) {
             const _onDrop = async (Event) => {
                 if (_acceptableDataIn(Event)) {
                     Event.preventDefault();
+                    const InputElement = Event.target;
+                    const _updateWith = (newText) => {
+                        InputElement.value = newText; // route dropped text through the
+                        InputElement.dispatchEvent(// JCL input pipeline in order to
+                        new InputEvent('input', { bubbles: true })); // keep its internal state in sync
+                    };
                     if (Event.dataTransfer.types.includes('text/plain')) {
-                        const Value = Event.dataTransfer.getData('text');
-                        this._shownValue = this.Value = Value;
-                        this.on('input')(Event);
+                        _updateWith(Event.dataTransfer.getData('text'));
                     }
                     else {
                         try {
                             for (let Item of Event.dataTransfer.items) {
                                 if ((Item.kind === 'file') && acceptableFileTypes.includes(Item.type)) {
-                                    this._shownValue = this.Value = await FileReadAsText(Item.getAsFile(), Item.type);
-                                    this.on('input')(Event);
+                                    _updateWith(await FileReadAsText(Item.getAsFile(), Item.type));
                                     break;
                                 }
                             }
@@ -10053,17 +9795,16 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
             };
             /**** actual rendering ****/
-            return html `<textarea class="WAT Content TextInput" ref=${this._InputElement}
-        value=${ValueToShow} minlength=${minLength} maxlength=${maxLength}
-        readOnly=${readonly} placeholder=${Placeholder}
-        spellcheck=${SpellChecking} style="resize:none; ${LineWrapping == true
-                ? 'overflow-wrap:break-word; hyphens:auto'
-                : 'white-space:pre'}"
-        disabled=${Enabling === false} onInput=${_onInput} onBlur=${_onBlur}
+            return html `<${JCL_native.TextInput} Class="WAT Content TextInput"
+        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
+        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
+        wrap=${LineWrapping} SpellCheck=${SpellChecking}
+        disabled=${Enabling === false}
+        onValueInput=${_onValueInput} onBlur=${_onBlur}
         onDragOver=${allowsDropping ? _onDragOver : undefined}
         onDrop=${allowsDropping ? _onDrop : undefined}
       />`;
-        });
+        }); // "onDragOver"/"onDrop" reach the <textarea> via JCL "RestProps"
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextInput', WAT_TextInput);
     /**** FlatListView ****/
@@ -10375,9 +10116,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // import map of the hosting page)
     const WAT_QRCodeECCLevels = ['L', 'M', 'Q', 'H'];
     const WAT_QRCodeView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        const JCL = await import('javascript-code-library');
-        // JCL is lazily loaded on first use - it then loads "uqr" by itself
-        const legacyQRCodeView = JCL.ui.legacy.QRCodeView;
+        const legacyQRCodeView = JCL_legacy.QRCodeView;
         installStylesheet(`
       .WAT.Widget > .WAT.QRCodeView {
         display:block; position:absolute;
@@ -10416,40 +10155,6 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.QRCodeView', WAT_QRCodeView);
-}
-/**** ValueIsTextFormat ****/
-export const WAT_supportedTextFormats = [
-    'application/javascript', 'application/typescript', 'application/json',
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/html', 'text/markdown', 'text/plain'
-];
-export function ValueIsTextFormat(Value) {
-    return ValueIsOneOf(Value, WAT_supportedTextFormats);
-}
-/**** ValueIsHTMLFormat ****/
-export const WAT_supportedHTMLFormats = [
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/html', 'text/markdown', 'text/plain'
-];
-export function ValueIsHTMLFormat(Value) {
-    return ValueIsOneOf(Value, WAT_supportedHTMLFormats);
-}
-/**** ValueIsMarkdownFormat ****/
-export const WAT_supportedMarkdownFormats = [
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/markdown', 'text/plain'
-];
-export function ValueIsMarkdownFormat(Value) {
-    return ValueIsOneOf(Value, WAT_supportedMarkdownFormats);
-}
-/**** ValueIsImageFormat ****/
-export const WAT_supportedImageFormats = [
-    'image/apng', 'image/avif', 'image/bmp', 'image/gif', 'image/jpeg',
-    'image/png', 'image/svg+xml', 'image/webp'
-];
-export function ValueIsImageFormat(Value) {
-    return ValueIsOneOf(Value, WAT_supportedImageFormats);
 }
 /**** readTextFile ****/
 async function readTextFile(File) {

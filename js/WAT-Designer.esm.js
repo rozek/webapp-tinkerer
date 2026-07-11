@@ -30,13 +30,23 @@ function ValuesAreEqual(a, b, Mode) {
 import Conversion from 'svelte-coordinate-conversion';
 const { fromViewportTo } = Conversion;
 import { html, useState, useRef, useEffect, useMemo, useCallback, } from 'htm/preact';
+/**** most WAD-specific controls are now thin wrappers around JCL components ****/
+// n.b.: JCL and WAT must share the same preact instance (which they do, as
+// both resolve "preact", "preact/hooks" etc. through the import map of the
+// hosting page)
+// @ts-ignore TS2307 allow importing from "javascript-code-library"
+import { ui as JCL_ui, JCL_noSelection, JCL_mixedValues } from 'javascript-code-library';
+const JCL_native = JCL_ui.native;
+const JCL_legacy = JCL_ui.legacy;
 import { customAlphabet } from 'nanoid';
 // @ts-ignore TS2307 typescript has problems importing "nanoid-dictionary"
 import { nolookalikesSafe } from 'nanoid-dictionary';
 import { throwError, throwReadOnlyError, fromDocumentTo, WAT_FontWeights, WAT_FontStyles, WAT_TextDecorationLines, WAT_TextDecorationStyles, WAT_TextAlignments, WAT_BackgroundModes, WAT_BorderStyles, WAT_Cursors, WAT_Overflows, WAT_Orientations, ValueIsBehavior, ValueIsApplet, ValueIsPage, ValueIsWidget, ValueIsErrorReport, allowPage, acceptableValue, ValueIsLineList, ValueIsNumberList, BehaviorIsIntrinsic, GestureRecognizer, useDesigner, rerender as WAT_rerender, OperationWasConfirmed, } from "./WAT-Runtime.esm.js";
-/**** constants for special input situations ****/
-const noSelection = {};
-const multipleValues = {};
+/**** constants for special input situations (now shared with JCL) ****/
+// aliased to JCL's special values so that identity comparisons keep working
+// on both sides of any WAD/JCL boundary
+const noSelection = JCL_noSelection;
+const multipleValues = JCL_mixedValues;
 /**** HTMLsafe_ ****/
 function HTMLsafe_(Argument, EOLReplacement) {
     return (Argument == null ? undefined : HTMLsafe(Argument, EOLReplacement));
@@ -131,12 +141,13 @@ appendStyle(`
 
   .WAD.Icon {
     display:flex; position:relative; align-items:center; justify-content:center;
-    width:30px; height:30px;
+    width:30px !important; height:30px !important;
     pointer-events:auto;
-  }
+  }        /* "!important" beats JCL's fixed 24x24px rule for its icon boxes */
   .WAD.Icon.active {
     background:#e8f0ff;
     border:solid 2px lightgray; border-radius:4px;
+    outline:none;              /* the border above replaces JCL's active outline */
   }
   .WAD.Icon div {
     display:block; position:relative;
@@ -172,8 +183,12 @@ appendStyle(`
     width:30px; height:30px;
     pointer-events:none;
   }
-  .WAD.Checkbox > input {
-    display:block; position:relative;
+  .WAD.Checkbox > .jcl-component.native-checkbox {
+    position:relative;              /* JCL wraps the actual <input> in a div */
+    width:100%; height:100%;
+    pointer-events:none;
+  }
+  .WAD.Checkbox input {
     background:transparent; color:inherit;
     pointer-events:auto;
   }
@@ -189,11 +204,7 @@ appendStyle(`
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:0px 2px 0px 4px;
     pointer-events:auto;
-  }
-  .WAD.TextLineInput.wrong > input, .WAD.NumberInput.wrong > input,
-  .WAD.TimeInput.wrong > input {
-    color:red;
-  }
+  }                    /* still matches (and beats) JCL's bare input elements */
   .WAD.TextLineInput > input:read-only, .WAD.NumberInput > input:read-only,
   .WAD.TimeInput > input:read-only {
     background:transparent;
@@ -226,10 +237,14 @@ appendStyle(`
     -webkit-mask-position:center center; mask-position:center center;
     pointer-events:none;
   }
-  .WAD.PseudoDropDown > select {
-    display:block; position:absolute;
+  .WAD.PseudoDropDown > select {  /* for controls not (yet) based on JCL, */
+    display:block; position:absolute;   /* e.g. WAD_BehaviorPseudoDropDown */
     left:0px; top:0px; right:0px; bottom:0px;
     opacity:0.01;
+  }
+  .WAD.PseudoDropDown > label {
+    display:flex; position:relative;   /* JCL wraps icon + hidden <select> */
+    width:100%; height:100%;           /* in a <label> and styles both     */
   }
 
 /**** PseudoFileInput ****/
@@ -239,17 +254,9 @@ appendStyle(`
     width:30px; height:30px;
     pointer-events:auto;
   }
-  .WAD.PseudoFileInput div {
-    display:block; position:relative;
-    width:24px; height:24px;
-    -webkit-mask-size:contain;           mask-size:contain;
-    -webkit-mask-position:center center; mask-position:center center;
-    pointer-events:none;
-  }
-  .WAD.PseudoFileInput > input {
-    display:block; position:absolute;
-    left:0px; top:0px; right:0px; bottom:0px;
-    opacity:0.01;
+  .WAD.PseudoFileInput > label {
+    display:flex; position:relative;  /* JCL wraps icon + hidden <input> in */
+    width:100%; height:100%;          /* a <label> and styles both itself  */
   }
 
 /**** TextInput ****/
@@ -281,9 +288,6 @@ appendStyle(`
     border:solid 1px #888888; border-radius:2px;
     background:#e8f0ff; padding:0px;
     pointer-events:auto;
-  }
-  .WAD.ColorInput.wrong > input {
-    color:red;
   }
   .WAD.ColorInput > input:read-only {
     background:transparent;
@@ -1058,32 +1062,14 @@ function WAD_Gap(PropSet) {
 //------------------------------------------------------------------------------
 //--                                 WAD_Icon                                 --
 //------------------------------------------------------------------------------
+// (thin wrapper around JCL_ui.Icon)
 function WAD_Icon(PropSet) {
     const { Icon, Color, enabled, active, onClick } = PropSet, otherProps = __rest(PropSet, ["Icon", "Color", "enabled", "active", "onClick"]);
-    const _onClick = useCallback((Event) => {
-        if (enabled === false) { // deliberately chosen "==="
-            Event.stopPropagation();
-            Event.preventDefault();
-        }
-        else {
-            if (typeof onClick === 'function') {
-                onClick(Event);
-            }
-        }
-    }, [enabled, onClick]);
-    let Classes = ['WAD Icon'];
-    if (enabled === false) {
-        Classes.push('disabled');
-    }
-    if (active === true) {
-        Classes.push('active');
-    }
-    return html `<div class=${Classes.join(' ')} onClick=${_onClick} ...${otherProps}>
-      <div style="
-        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-        background-color:${Color || 'black'};
-      "></>
-    </>`;
+    return html `<${JCL_ui.Icon} Class="WAD Icon"
+      Value=${Icon} Color=${Color || 'black'}
+      disabled=${enabled === false} active=${active === true}
+      onClick=${onClick} ...${otherProps}
+    />`; // "enabled === false" deliberately kept as-is
 }
 //------------------------------------------------------------------------------
 //--                                WAD_Label                                 --
@@ -1094,185 +1080,73 @@ function WAD_Label(PropSet) {
 //------------------------------------------------------------------------------
 //--                                WAD_Button                                --
 //------------------------------------------------------------------------------
+// (thin wrapper around JCL_native.Button)
 function WAD_Button(PropSet) {
-    const { enabled } = PropSet, otherProps = __rest(PropSet, ["enabled"]);
-    return html `<button class="WAD Button" disabled=${enabled === false}
-      ...${otherProps}
+    const { enabled, children } = PropSet, otherProps = __rest(PropSet, ["enabled", "children"]);
+    return html `<${JCL_native.Button} Class="WAD Button"
+      disabled=${enabled === false} ...${otherProps}
     >
-      ${PropSet.children}
+      ${children}
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                               WAD_Checkbox                               --
 //------------------------------------------------------------------------------
+// (thin wrapper around JCL_native.Checkbox - "noSelection"/"multipleValues" are
+// aliases for JCL's special values and thus understood natively: they render an
+// indeterminate checkbox, "noSelection" additionally disables it, and missing
+// values - i.e. null/undefined - become indeterminate but remain enabled, just
+// like before)
 function WAD_Checkbox(PropSet) {
-    let { enabled, readonly, Value, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "style"]);
-    let checked = false, indeterminate = false;
-    switch (Value) {
-        case null:
-        case undefined:
-        case multipleValues:
-            indeterminate = true;
-            break;
-        case noSelection:
-            indeterminate = true;
-            enabled = false;
-            break;
-        default: checked = Value;
-    }
-    const CheckboxRef = useRef(null);
-    useEffect(() => CheckboxRef.current.indeterminate = indeterminate, [indeterminate]);
-    return html `<div class="WAD Checkbox" style=${style}>
-      <input type="checkbox" ref=${CheckboxRef}
-        disabled=${(enabled === false) || (readonly === true)}
-        checked=${checked}
-        ...${otherProps}
-      />
-    </>`;
+    const { enabled, readonly, Value, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "style"]);
+    return html `<${JCL_native.Checkbox} Class="WAD Checkbox" style=${style}
+      Value=${Value}
+      disabled=${(enabled === false) || (readonly === true)}
+      ...${otherProps}
+    />`;
 }
 //------------------------------------------------------------------------------
 //--                            WAD_TextlineInput                             --
 //------------------------------------------------------------------------------
+const WAD_TextlineInputTypes = {
+    text: JCL_native.TextlineInput,
+    password: JCL_native.PasswordInput,
+    email: JCL_native.EMailAddressInput,
+    url: JCL_native.URLInput,
+    tel: JCL_native.PhoneNumberInput,
+    search: JCL_native.SearchInput,
+};
 function WAD_TextlineInput(PropSet) {
-    var _a;
     let { Type, // for similar input elements
-    enabled, readonly, Value, Placeholder, minLength, maxLength, multiple, Pattern, SpellChecking, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
-    /**** Value Handling ****/
-    , ["Type", "enabled", "readonly", "Value", "Placeholder", "minLength", "maxLength", "multiple", "Pattern", "SpellChecking", "Suggestions", "onInput", "onBlur", "style"]);
-    /**** Value Handling ****/
-    const shownValue = useRef('');
-    const InputElement = useRef(null);
-    let ValueToShow = '';
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = '';
-            break;
-        case multipleValues:
-            ValueToShow = '';
-            Placeholder = '(multiple values)';
-            break;
-        case noSelection:
-            ValueToShow = '';
-            Placeholder = '(no selection)';
-            enabled = false;
-            break;
-        default: ValueToShow = Value;
-    }
-    let wrong = '';
-    if (document.activeElement === InputElement.current) {
-        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
-        ValueToShow = shownValue.current;
-    }
-    else {
-        shownValue.current = ValueToShow;
-    }
-    /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
-    let SuggestionList = '';
-    if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionList = html `<datalist id=${SuggestionId}>
-        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-      </datalist>`;
-    }
-    /**** Event Handling ****/
-    const _onInput = useCallback((Event) => {
-        Event.stopPropagation();
-        //    Event.preventDefault() // NO!
-        if (enabled !== false) {
-            shownValue.current = Event.target.value;
-            if (typeof onInput === 'function') {
-                onInput(Event);
-            }
-        }
-    }, [enabled]);
-    const _onBlur = useCallback((Event) => {
-        WAT_rerender();
-        if (typeof onBlur === 'function') {
-            onBlur(Event);
-        }
-    });
-    /**** actual Rendering ****/
-    return html `<div class="WAD TextLineInput ${wrong}" style=${style}>
-      <input type=${Type || 'text'}
+    enabled, readonly, Value, Placeholder, minLength, maxLength, multiple, Pattern, SpellChecking, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["Type", "enabled", "readonly", "Value", "Placeholder", "minLength", "maxLength", "multiple", "Pattern", "SpellChecking", "Suggestions", "onInput", "onBlur", "style"]);
+    const KnownInput = WAD_TextlineInputTypes[Type || 'text'];
+    const ExtraProps = ( // unknown "Type"s reach a plain <input> as before
+    KnownInput == null ? Object.assign({ type: Type }, otherProps) : otherProps); // n.b.: extra props must be SPREAD into the JCL component - JCL's
+    // PropSet proxy computes "RestProps" from unconsumed props itself
+    const JCL_Input = KnownInput !== null && KnownInput !== void 0 ? KnownInput : JCL_native.TextlineInput;
+    return html `<div class="WAD TextLineInput" style=${style}>
+      <${JCL_Input}
         disabled=${enabled === false} readonly=${readonly}
-        ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
-        minlength=${minLength} maxlength=${maxLength}
-        pattern=${Pattern} spellcheck=${SpellChecking == true}
-        list=${SuggestionId} multiple=${multiple}
-        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
-      />${SuggestionList}
+        Value=${Value !== null && Value !== void 0 ? Value : ''} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : ''}
+        minLength=${minLength} maxLength=${maxLength} multiple=${multiple}
+        Pattern=${Pattern} SpellCheck=${SpellChecking == true}
+        Suggestions=${Suggestions}
+        onInput=${onInput} onBlur=${onBlur} ...${ExtraProps}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                             WAD_NumberInput                              --
 //------------------------------------------------------------------------------
 function WAD_NumberInput(PropSet) {
-    var _a;
-    let { enabled, readonly, Value, Placeholder, Suggestions, Minimum, Maximum, StepValue, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
-    /**** Value Handling ****/
-    , ["enabled", "readonly", "Value", "Placeholder", "Suggestions", "Minimum", "Maximum", "StepValue", "onInput", "onBlur", "style"]);
-    /**** Value Handling ****/
-    const shownValue = useRef('');
-    const InputElement = useRef(null);
-    let ValueToShow = undefined;
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = undefined;
-            break;
-        case multipleValues:
-            ValueToShow = undefined;
-            Placeholder = '(multiple values)';
-            break;
-        case noSelection:
-            ValueToShow = undefined;
-            Placeholder = '(no selection)';
-            enabled = false;
-            break;
-        default: ValueToShow = Value;
-    }
-    let wrong = '';
-    if (document.activeElement === InputElement.current) {
-        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
-        ValueToShow = shownValue.current;
-    }
-    else {
-        shownValue.current = ValueToShow;
-    }
-    /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
-    let SuggestionList = '';
-    if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionList = html `<datalist id=${SuggestionId}>
-        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-      </datalist>`;
-    }
-    /**** Event Handling ****/
-    const _onInput = useCallback((Event) => {
-        Event.stopPropagation();
-        //    Event.preventDefault() // NO!
-        if (enabled !== false) {
-            shownValue.current = Event.target.value;
-            if (typeof onInput === 'function') {
-                onInput(Event);
-            }
-        }
-    }, [enabled]);
-    const _onBlur = useCallback((Event) => {
-        WAT_rerender();
-        if (typeof onBlur === 'function') {
-            onBlur(Event);
-        }
-    });
-    /**** actual Rendering ****/
-    return html `<div class="WAD NumberInput ${wrong}" style=${style}>
-      <input type="number"
+    let { enabled, readonly, Value, Placeholder, Suggestions, Minimum, Maximum, StepValue, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "Placeholder", "Suggestions", "Minimum", "Maximum", "StepValue", "onInput", "onBlur", "style"]);
+    return html `<div class="WAD NumberInput" style=${style}>
+      <${JCL_native.NumberInput}
         disabled=${enabled === false} readonly=${readonly}
-        min=${Minimum} step=${StepValue} max=${Maximum}
-        ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
-        list=${SuggestionId}
-        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
+        Value=${Value} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : ''}
+        Suggestions=${Suggestions}
+        Minimum=${Minimum} Maximum=${Maximum} Step=${StepValue}
+        onInput=${onInput} onBlur=${onBlur} ...${otherProps}
       />
     </>`;
 }
@@ -1300,204 +1174,79 @@ function WAD_IntegerInput(PropSet) {
 //--                                WAD_Slider                                --
 //------------------------------------------------------------------------------
 function WAD_Slider(PropSet) {
-    var _a;
-    let { enabled, readonly, Value, Minimum, Maximum, StepValue, Hashmarks, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
-    /**** Value Handling ****/
-    , ["enabled", "readonly", "Value", "Minimum", "Maximum", "StepValue", "Hashmarks", "onInput", "onBlur", "style"]);
-    /**** Value Handling ****/
-    const shownValue = useRef('');
-    const InputElement = useRef(null);
-    let ValueToShow = undefined;
-    switch (Value) {
-        case null:
-        case undefined:
-        case multipleValues:
-            ValueToShow = undefined;
-            break;
-        case noSelection:
-            ValueToShow = undefined;
-            enabled = false;
-            break;
-        default: ValueToShow = Value;
+    let { enabled, readonly, Value, Minimum, Maximum, StepValue, Hashmarks, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "Minimum", "Maximum", "StepValue", "Hashmarks", "onInput", "onBlur", "style"]);
+    if (Hashmarks != null) { // JCL sliders expect hashmark textlines
+        Hashmarks = Hashmarks.map((Item) => '' + Item);
     }
-    let wrong = '';
-    if (document.activeElement === InputElement.current) {
-        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
-        ValueToShow = shownValue.current;
-    }
-    else {
-        shownValue.current = ValueToShow;
-    }
-    /**** Hashmark Handling ****/
-    const HashmarkId = useMemo(() => newId() + '-Hashmarks', []);
-    let HashmarkList = '';
-    if ((Hashmarks != null) && (Hashmarks.length > 0)) {
-        HashmarkList = html `\n<datalist id=${HashmarkId}>
-        ${Hashmarks.map((Item) => {
-            Item = '' + Item;
-            const Value = Item.replace(/:.*$/, '').trim();
-            const Label = Item.replace(/^[^:]+:/, '').trim();
-            return html `<option value=${Value}>${Label}</option>`;
-        })}
-      </datalist>`;
-    }
-    /**** Event Handling ****/
-    const _onInput = useCallback((Event) => {
-        Event.stopPropagation();
-        //    Event.preventDefault() // NO!
-        if (enabled !== false) {
-            shownValue.current = Event.target.value;
-            if (typeof onInput === 'function') {
-                onInput(Event);
-            }
-        }
-    }, [enabled]);
-    const _onBlur = useCallback((Event) => {
-        WAT_rerender();
-        if (typeof onBlur === 'function') {
-            onBlur(Event);
-        }
-    });
-    return html `<div class="WAD Slider ${wrong}" style=${style}>
-      <input type="range"
-        disabled=${enabled === false} readonly=${readonly}
-        min=${Minimum} step=${StepValue} max=${Maximum}
-        ref=${InputElement} value=${ValueToShow} list=${HashmarkId}
-        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
+    return html `<div class="WAD Slider" style=${style}>
+      <${JCL_native.Slider}
+        disabled=${enabled === false} Value=${Value}
+        Minimum=${Minimum} Maximum=${Maximum} Step=${StepValue}
+        Hashmarks=${Hashmarks}
+        onInput=${onInput} onBlur=${onBlur}
+        ...${Object.assign({ readonly }, otherProps)}
       />
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                              WAD_TimeInput                               --
 //------------------------------------------------------------------------------
+const WAD_TimeInputTypes = {
+    'time': JCL_native.TimeInput,
+    'datetime-local': JCL_native.DateTimeInput,
+    'date': JCL_native.DateInput,
+    'week': JCL_native.WeekInput,
+    'month': JCL_native.MonthInput,
+};
 function WAD_TimeInput(PropSet) {
-    var _a;
     let { Type, // for similar input elements
-    enabled, readonly, Value, Placeholder, Minimum, Maximum, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
-    /**** Value Handling ****/
-    , ["Type", "enabled", "readonly", "Value", "Placeholder", "Minimum", "Maximum", "Suggestions", "onInput", "onBlur", "style"]);
-    /**** Value Handling ****/
-    const shownValue = useRef('');
-    const InputElement = useRef(null);
-    let ValueToShow = '';
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = '';
-            break;
-        case multipleValues:
-            ValueToShow = '';
-            Placeholder = '(multiple values)';
-            break;
-        case noSelection:
-            ValueToShow = '';
-            Placeholder = '(no selection)';
-            enabled = false;
-            break;
-        default: ValueToShow = Value;
-    }
-    let wrong = '';
-    if (document.activeElement === InputElement.current) {
-        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
-        ValueToShow = shownValue.current;
-    }
-    else {
-        shownValue.current = ValueToShow;
-    }
-    /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
-    let SuggestionList = '';
-    if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionList = html `<datalist id=${SuggestionId}>
-        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-      </datalist>`;
-    }
-    /**** Event Handling ****/
-    const _onInput = useCallback((Event) => {
-        Event.stopPropagation();
-        //    Event.preventDefault() // NO!
-        if (enabled !== false) {
-            shownValue.current = Event.target.value;
-            if (typeof onInput === 'function') {
-                onInput(Event);
-            }
-        }
-    }, [enabled]);
-    const _onBlur = useCallback((Event) => {
-        WAT_rerender();
-        if (typeof onBlur === 'function') {
-            onBlur(Event);
-        }
-    });
-    /**** actual Rendering ****/
-    return html `<div class="WAD TimeInput ${wrong}" style=${style}>
-      <input type=${Type || 'time'}
+    enabled, readonly, Value, Placeholder, Minimum, Maximum, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["Type", "enabled", "readonly", "Value", "Placeholder", "Minimum", "Maximum", "Suggestions", "onInput", "onBlur", "style"]);
+    const KnownInput = WAD_TimeInputTypes[Type || 'time'];
+    const ExtraProps = ( // unknown "Type"s reach a plain <input> as before
+    KnownInput == null
+        ? Object.assign({ type: Type, placeholder: Placeholder }, otherProps) : Object.assign({ placeholder: Placeholder }, otherProps)); // JCL temporal inputs have no "Placeholder" prop of their own
+    const JCL_Input = KnownInput !== null && KnownInput !== void 0 ? KnownInput : JCL_native.TimeInput;
+    return html `<div class="WAD TimeInput" style=${style}>
+      <${JCL_Input}
         disabled=${enabled === false} readonly=${readonly}
-        ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
-        min=${Minimum} max=${Maximum}
-        list=${SuggestionId}
-        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
-      />${SuggestionList}
+        Value=${Value} Minimum=${Minimum} Maximum=${Maximum}
+        Suggestions=${Suggestions}
+        onInput=${onInput} onBlur=${onBlur} ...${ExtraProps}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                               WAD_DropDown                               --
 //------------------------------------------------------------------------------
 function WAD_DropDown(PropSet) {
-    let { enabled, Value, Placeholder, Options, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "Options", "style"]);
-    let ValueToShow = '';
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = '';
-            break;
-        case multipleValues:
-            ValueToShow = '';
-            Placeholder = '(multiple values)';
-            break;
-        case noSelection:
-            ValueToShow = '';
-            Placeholder = '(no selection)';
-            enabled = false;
-            break;
-        default: ValueToShow = '' + Value;
-    }
+    let { enabled, Value, Placeholder, Options, onInput, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "Options", "onInput", "style"]);
+    const OptionList = [
+        ...(Placeholder == null ? [] : [':-' + Placeholder]),
+        ':-(please select)',
+        ...(Options || [])
+    ];
     return html `<div class="WAD DropDown" style=${style}>
-      <select disabled=${enabled === false} ...${otherProps}>
-        ${Placeholder == null
-        ? ''
-        : html `<option value="" disabled>${Placeholder}</option>`}
-        <option disabled selected=${(ValueToShow || '') === ''}>(please select)</>
-        ${(Options || []).map((Option) => html `<option selected=${Option === ValueToShow}>${Option}</>`)}
-      </select>
+      <${JCL_native.DropDown}
+        disabled=${enabled === false} Value=${Value !== null && Value !== void 0 ? Value : ''} Options=${OptionList}
+        onInput=${onInput} ...${otherProps}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                            WAD_PseudoDropDown                            --
 //------------------------------------------------------------------------------
 function WAD_PseudoDropDown(PropSet) {
-    let { Icon, Color, enabled, Value, Placeholder, OptionList } = PropSet, otherProps = __rest(PropSet, ["Icon", "Color", "enabled", "Value", "Placeholder", "OptionList"]);
+    let { Icon, Color, enabled, Value, Placeholder, OptionList, onInput } = PropSet, otherProps = __rest(PropSet, ["Icon", "Color", "enabled", "Value", "Placeholder", "OptionList", "onInput"]);
+    const Options = [
+        ...(Placeholder == null ? [] : [':-' + Placeholder]),
+        ...(OptionList || [])
+    ];
     return html `<div class="WAD PseudoDropDown ${enabled === false ? 'disabled' : ''}">
-      <div style="
-        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-        background-color:${Color || 'black'};
-      "></>
-      <select disabled=${enabled === false} ...${otherProps}>
-        ${Placeholder == null
-        ? ''
-        : html `<option value="" disabled selected=${Value === ''}>${Placeholder}</option>`}
-        ${(OptionList || []).map((Option) => {
-        const OptionValue = Option.replace(/:.*$/, '').trim();
-        let OptionLabel = Option.replace(/^[^:]+:/, '').trim();
-        const disabled = (OptionLabel[0] === '-');
-        if (/^-[^-]+$/.test(OptionLabel)) {
-            OptionLabel = OptionLabel.slice(1);
-        }
-        return html `<option value=${OptionValue} disabled=${disabled}
-            selected=${OptionValue === Value}
-          >${OptionLabel}</option>`;
-    })}
-      </select>
+      <${JCL_legacy.PseudoDropDown}
+        Icon=${Icon} Color=${Color} disabled=${enabled === false}
+        Value=${Value !== null && Value !== void 0 ? Value : ''} Options=${Options}
+        onInput=${onInput} ...${otherProps}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
@@ -1560,142 +1309,60 @@ function WAD_BehaviorPseudoDropDown(PropSet) {
 //--                           WAD_PseudoFileInput                            --
 //------------------------------------------------------------------------------
 function WAD_PseudoFileInput(PropSet) {
-    let { Icon, Color, enabled } = PropSet, otherProps = __rest(PropSet, ["Icon", "Color", "enabled"]);
+    let { Icon, Color, enabled, onInput, onChange } = PropSet, otherProps = __rest(PropSet
+    /**** JCL resets the file input right after its "onInput" callback ran   ****/
+    /**** which breaks native "onChange" listeners (they would only see an   ****/
+    /**** empty file list) - "onChange" is therefore invoked early, on input ****/
+    , ["Icon", "Color", "enabled", "onInput", "onChange"]);
+    /**** JCL resets the file input right after its "onInput" callback ran   ****/
+    /**** which breaks native "onChange" listeners (they would only see an   ****/
+    /**** empty file list) - "onChange" is therefore invoked early, on input ****/
+    const _onInput = (Event) => {
+        if (typeof onInput === 'function') {
+            onInput(Event);
+        }
+        if (typeof onChange === 'function') {
+            onChange(Event);
+        }
+    };
     return html `<label class="WAD PseudoFileInput ${enabled === false ? 'disabled' : ''}">
-      <div style="
-        -webkit-mask-image:url(${Icon}); mask-image:url(${Icon});
-        background-color:${Color || 'black'};
-      "></>
-      <input type="file" style="display:none" ...${otherProps}/>
+      <${JCL_legacy.PseudoFileInput}
+        Icon=${Icon} Color=${Color} disabled=${enabled === false}
+        onInput=${_onInput} ...${otherProps}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                              WAD_ColorInput                              --
 //------------------------------------------------------------------------------
 function WAD_ColorInput(PropSet) {
-    var _a;
     let { enabled, readonly, Value, Suggestions, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet
-    /**** Value Handling ****/
+    // JCL colour inputs have no "onBlur" prop - as an unknown
+    // prop, the given callback ends up directly on the <input>
     , ["enabled", "readonly", "Value", "Suggestions", "onInput", "onBlur", "style"]);
-    /**** Value Handling ****/
-    const shownValue = useRef('');
-    const InputElement = useRef(null);
-    let ValueToShow = '';
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = '';
-            break;
-        case multipleValues:
-            ValueToShow = '';
-            break;
-        case noSelection:
-            ValueToShow = '';
-            enabled = false;
-            break;
-        default: ValueToShow = Value;
-    }
-    let wrong = '';
-    if (document.activeElement === InputElement.current) {
-        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
-        ValueToShow = shownValue.current;
-    }
-    else {
-        shownValue.current = ValueToShow;
-    }
-    /**** Suggestion Handling ****/
-    const SuggestionId = useMemo(() => newId() + '-Suggestions', []);
-    let SuggestionList = '';
-    if ((Suggestions != null) && (Suggestions.length > 0)) {
-        SuggestionList = html `<datalist id=${SuggestionId}>
-        ${Suggestions.map((Value) => html `<option value=${Value}></option>`)}
-      </datalist>`;
-    }
-    /**** Event Handling ****/
-    const _onInput = useCallback((Event) => {
-        Event.stopPropagation();
-        //    Event.preventDefault() // NO!
-        if (enabled !== false) {
-            shownValue.current = Event.target.value;
-            if (typeof onInput === 'function') {
-                onInput(Event);
-            }
-        }
-    }, [enabled]);
-    const _onBlur = useCallback((Event) => {
-        WAT_rerender();
-        if (typeof onBlur === 'function') {
-            onBlur(Event);
-        }
-    });
-    /**** actual Rendering ****/
-    return html `<div class="WAD ColorInput ${wrong}" style=${style}>
-      <input type="color"
+    // JCL colour inputs have no "onBlur" prop - as an unknown
+    // prop, the given callback ends up directly on the <input>
+    return html `<div class="WAD ColorInput" style=${style}>
+      <${JCL_native.ColorInput}
         disabled=${enabled === false} readonly=${readonly}
-        ref=${InputElement} value=${ValueToShow}
-        list=${SuggestionId}
-        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
-      />${SuggestionList}
+        Value=${Value} Suggestions=${Suggestions} onInput=${onInput}
+        ...${Object.assign(Object.assign({}, otherProps), { onBlur })}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
 //--                              WAD_TextInput                               --
 //------------------------------------------------------------------------------
 function WAD_TextInput(PropSet) {
-    var _a;
     let { enabled, readonly, Value, Placeholder, minLength, maxLength, Resizability, LineWrapping, onInput, onBlur, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "readonly", "Value", "Placeholder", "minLength", "maxLength", "Resizability", "LineWrapping", "onInput", "onBlur", "style"]);
-    const shownValue = useRef('');
-    const InputElement = useRef(null);
-    let ValueToShow = '';
-    switch (Value) {
-        case null:
-        case undefined:
-            ValueToShow = '';
-            break;
-        case multipleValues:
-            ValueToShow = '';
-            Placeholder = '(multiple values)';
-            break;
-        case noSelection:
-            ValueToShow = '';
-            Placeholder = '(no selection)';
-            enabled = false;
-            break;
-        default: ValueToShow = Value;
-    }
-    let wrong = '';
-    if (document.activeElement === InputElement.current) {
-        wrong = ((ValueToShow !== null && ValueToShow !== void 0 ? ValueToShow : '') + '' !== ((_a = shownValue.current) !== null && _a !== void 0 ? _a : '') + '' ? 'wrong' : '');
-        ValueToShow = shownValue.current;
-    }
-    else {
-        shownValue.current = ValueToShow;
-    }
-    const _onInput = useCallback((Event) => {
-        Event.stopPropagation();
-        //    Event.preventDefault() // NO!
-        if (enabled !== false) {
-            shownValue.current = Event.target.value;
-            if (typeof onInput === 'function') {
-                onInput(Event);
-            }
-        }
-    }, [enabled]);
-    const _onBlur = useCallback((Event) => {
-        WAT_rerender();
-        if (typeof onBlur === 'function') {
-            onBlur(Event);
-        }
-    });
-    return html `<div class="WAD TextInput ${wrong}" style=${style}>
-      <textarea
-        disabled=${enabled === false} readonly=${readonly} style="${LineWrapping == true
-        ? 'white-space:pre-wrap; overflow-wrap:break-word; hyphens:auto'
-        : 'white-space:pre'}; resize:${Resizability || 'none'}"
-        minlength=${minLength} maxlength=${maxLength}
-        ref=${InputElement} value=${ValueToShow} placeholder=${Placeholder}
-        ...${otherProps} onInput=${_onInput} onBlur=${_onBlur}
-      ></textarea>
+    return html `<div class="WAD TextInput" style=${style}>
+      <${JCL_native.TextInput}
+        disabled=${enabled === false} readonly=${readonly}
+        Value=${Value !== null && Value !== void 0 ? Value : ''} Placeholder=${Placeholder}
+        minLength=${minLength} maxLength=${maxLength}
+        wrap=${LineWrapping} Resizability=${Resizability}
+        onInput=${onInput} onBlur=${onBlur} ...${otherProps}
+      />
     </>`;
 }
 //------------------------------------------------------------------------------
