@@ -1,1455 +1,1766 @@
-/*******************************************************************************
-*                                                                              *
-*                      JavaScript Interface Library (JIL)                      *
-*                                                                              *
-*******************************************************************************/
-/**** get a reference to the "global" object ****/
-export const global = globalThis;
-//------------------------------------------------------------------------------
-//--                             Object Functions                             --
-//------------------------------------------------------------------------------
-// allow methods from Object.prototype to be applied to "vanilla" objects
-/**** Object_hasOwnProperty ****/
-export function Object_hasOwnProperty(Value, PropertyName) {
-    return ((Value == null) || // let this method crash like its original
-        ('hasOwnProperty' in Value) && (typeof Value.hasOwnProperty === 'function')
-        ? Value.hasOwnProperty(PropertyName)
-        : Object.prototype.hasOwnProperty.call(Value, PropertyName));
+const Fr = globalThis;
+function je(e, t) {
+  return e == null || // let this method crash like its original
+  "hasOwnProperty" in e && typeof e.hasOwnProperty == "function" ? e.hasOwnProperty(t) : Object.prototype.hasOwnProperty.call(e, t);
 }
-/**** Object_isPrototypeOf ****/
-export function Object_isPrototypeOf(Value, Candidate) {
-    return ((Value == null) || // let this method crash like its original
-        ('isPrototypeOf' in Value) && (typeof Value.isPrototypeOf === 'function')
-        ? Value.isPrototypeOf(Candidate)
-        : Object.prototype.isPrototypeOf.call(Value, Candidate));
+function Be(e, t) {
+  return e == null || // let this method crash like its original
+  "isPrototypeOf" in e && typeof e.isPrototypeOf == "function" ? e.isPrototypeOf(t) : Object.prototype.isPrototypeOf.call(e, t);
 }
-/**** Object_propertyIsEnumerable ****/
-export function Object_propertyIsEnumerable(Value, PropertyName) {
-    return ((Value == null) || // let this method crash like its original
-        ('propertyIsEnumerable' in Value) && (typeof Value.propertyIsEnumerable === 'function')
-        ? Value.propertyIsEnumerable(PropertyName)
-        : Object.prototype.propertyIsEnumerable.call(Value, PropertyName));
+function Pr(e, t) {
+  return e == null || // let this method crash like its original
+  "propertyIsEnumerable" in e && typeof e.propertyIsEnumerable == "function" ? e.propertyIsEnumerable(t) : Object.prototype.propertyIsEnumerable.call(e, t);
 }
-/**** Object_toString ****/
-export function Object_toString(Value) {
-    return ((Value == null) || // let this method crash like its original
-        ('toString' in Value) && (typeof Value.toString === 'function')
-        ? Value.toString()
-        : Object.prototype.toString.call(Value));
+function Re(e) {
+  return e == null || // let this method crash like its original
+  "toString" in e && typeof e.toString == "function" ? e.toString() : Object.prototype.toString.call(e);
 }
-/**** Object_toLocaleString ****/
-export function Object_toLocaleString(Value) {
-    return ((Value == null) || // let this method crash like its original
-        ('toLocaleString' in Value) && (typeof Value.toLocaleString === 'function')
-        ? Value.toLocaleString()
-        : Object_toString(Value) // "toLocaleString" delegates to "toString", too
-    );
+function $r(e) {
+  return e == null || // let this method crash like its original
+  "toLocaleString" in e && typeof e.toLocaleString == "function" ? e.toLocaleString() : Re(e);
 }
-/**** Object_valueOf ****/
-export function Object_valueOf(Value) {
-    return ((Value == null) || // let this method crash like its original
-        ('valueOf' in Value) && (typeof Value.valueOf === 'function')
-        ? Value.valueOf()
-        : Object.prototype.valueOf.call(Value));
+function Er(e) {
+  return e == null || // let this method crash like its original
+  "valueOf" in e && typeof e.valueOf == "function" ? e.valueOf() : Object.prototype.valueOf.call(e);
 }
-/**** ObjectMergedWith ****/
-export function ObjectMergedWith(TargetObject, ...otherObjectList) {
-    for (let i = 0, l = otherObjectList.length; i < l; i++) {
-        let otherObject = otherObjectList[i];
-        if (otherObject == null) {
-            continue;
+function jr(e, ...t) {
+  for (let n = 0, r = t.length; n < r; n++) {
+    let i = t[n];
+    if (i != null)
+      if (typeof i == "object") {
+        const o = Object.getOwnPropertyDescriptors(i);
+        for (const I of Reflect.ownKeys(o)) {
+          const x = o[I];
+          x.enumerable && Object.defineProperty(e, I, x);
         }
-        if (typeof otherObject === 'object') {
-            const DescriptorSet = Object.getOwnPropertyDescriptors(otherObject);
-            for (const Key of Reflect.ownKeys(DescriptorSet)) {
-                const Descriptor = DescriptorSet[Key]; // incl. symbol keys
-                if (Descriptor.enumerable) {
-                    Object.defineProperty(TargetObject, Key, Descriptor);
-                }
-            }
-        }
-        else {
-            throwError('InvalidArgument: argument #' + (i + 1) + ' is not an object');
-        }
-    }
-    return TargetObject;
+      } else
+        f("InvalidArgument: argument #" + (n + 1) + " is not an object");
+  }
+  return e;
 }
-/**** throwError - simplifies construction of named errors ****/
-export function throwError(Message) {
-    let Match = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(Message);
-    if (Match == null) {
-        throw new Error(Message);
-    }
-    else {
-        let namedError = new Error(Match[2]);
-        namedError.name = Match[1];
-        throw namedError;
-    }
+function f(e) {
+  let t = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(e);
+  if (t == null)
+    throw new Error(e);
+  {
+    let n = new Error(t[2]);
+    throw n.name = t[1], n;
+  }
 }
-//------------------------------------------------------------------------------
-//--                      Value Classification Functions                      --
-//------------------------------------------------------------------------------
-/**** ValueExists ****/
-export function ValueExists(Value) {
-    return (Value != null);
+function Br(e) {
+  return e != null;
 }
-/**** ValueIsMissing ****/
-export function ValueIsMissing(Value) {
-    return (Value == null);
+function Rr(e) {
+  return e == null;
 }
-/**** ValueIsBoolean ****/
-export function ValueIsBoolean(Value) {
-    return (typeof Value === 'boolean') || (Value instanceof Boolean);
+function P(e) {
+  return typeof e == "boolean" || e instanceof Boolean;
 }
-/**** ValueIsNumber ****/
-export function ValueIsNumber(Value) {
-    return (typeof Value === 'number') || (Value instanceof Number);
+function $(e) {
+  return typeof e == "number" || e instanceof Number;
 }
-/**** ValueIsFiniteNumber (pure "isFinite" breaks on objects) ****/
-export function ValueIsFiniteNumber(Value) {
-    return ((typeof Value === 'number') || (Value instanceof Number)) && isFinite(Value.valueOf());
+function y(e) {
+  return (typeof e == "number" || e instanceof Number) && isFinite(e.valueOf());
 }
-/**** ValueIsNaN (numeric, but NaN - this differs from pure "isNaN") ****/
-export function ValueIsNaN(Value) {
-    return ((typeof Value === 'number') || (Value instanceof Number)) && isNaN(Value.valueOf());
+function z(e) {
+  return (typeof e == "number" || e instanceof Number) && isNaN(e.valueOf());
 }
-/**** ValueIsNumberInRange ****/
-export function ValueIsNumberInRange(Value, minValue, maxValue, withMin = true, withMax = true) {
-    if (!ValueIsNumber(Value)) {
-        return false;
-    }
-    const numValue = Value.valueOf(); // unboxes boxed numbers
-    if (isNaN(numValue)) {
-        return false;
-    }
-    if (ValueIsFiniteNumber(minValue)) { // more robust than "isFinite" alone
-        if (ValueIsFiniteNumber(maxValue)) { // more robust than "isFinite" alone
-            if ((numValue < minValue) || (!withMin && (numValue === minValue)) ||
-                (numValue > maxValue) || (!withMax && (numValue === maxValue))) {
-                return false;
-            }
-        }
-        else {
-            if ((numValue < minValue) || (!withMin && (numValue === minValue))) {
-                return false;
-            }
-        }
-    }
-    else {
-        if (ValueIsFiniteNumber(maxValue)) { // more robust than "isFinite" alone
-            if ((numValue > maxValue) || (!withMax && (numValue === maxValue))) {
-                return false;
-            }
-        }
-    }
-    return true;
+function kr(e, t, n, r = !0, i = !0) {
+  if (!$(e))
+    return !1;
+  const o = e.valueOf();
+  if (isNaN(o))
+    return !1;
+  if (y(t)) {
+    if (y(n)) {
+      if (o < t || !r && o === t || o > n || !i && o === n)
+        return !1;
+    } else if (o < t || !r && o === t)
+      return !1;
+  } else if (y(n) && (o > n || !i && o === n))
+    return !1;
+  return !0;
 }
-/**** ValueIsInteger ****/
-export function ValueIsInteger(Value) {
-    if ((typeof Value !== 'number') && !(Value instanceof Number)) {
-        return false;
-    }
-    const numValue = Value.valueOf();
-    return isFinite(numValue) && (Math.round(numValue) === numValue);
+function E(e) {
+  if (typeof e != "number" && !(e instanceof Number))
+    return !1;
+  const t = e.valueOf();
+  return isFinite(t) && Math.round(t) === t;
 }
-/**** ValueIsIntegerInRange ****/
-export function ValueIsIntegerInRange(Value, minValue, maxValue) {
-    if (!ValueIsInteger(Value) || isNaN(Value)) {
-        return false;
-    }
-    if (ValueIsFiniteNumber(minValue)) { // more robust than "isFinite" alone
-        if (ValueIsFiniteNumber(maxValue)) { // more robust than "isFinite" alone
-            if ((Value < minValue) || (Value > maxValue)) {
-                return false;
-            }
-        }
-        else {
-            if (Value < minValue) {
-                return false;
-            }
-        }
-    }
-    else {
-        if (ValueIsFiniteNumber(maxValue)) { // more robust than "isFinite" alone
-            if (Value > maxValue) {
-                return false;
-            }
-        }
-    }
-    return true;
+function ke(e, t, n) {
+  if (!E(e) || isNaN(e))
+    return !1;
+  if (y(t)) {
+    if (y(n)) {
+      if (e < t || e > n)
+        return !1;
+    } else if (e < t)
+      return !1;
+  } else if (y(n) && e > n)
+    return !1;
+  return !0;
 }
-/**** ValueIsOrdinal ****/
-export function ValueIsOrdinal(Value) {
-    if ((typeof Value !== 'number') && !(Value instanceof Number)) {
-        return false;
-    }
-    const numValue = Value.valueOf();
-    return isFinite(numValue) && (Math.round(numValue) === numValue) && (numValue >= 0);
+function J(e) {
+  if (typeof e != "number" && !(e instanceof Number))
+    return !1;
+  const t = e.valueOf();
+  return isFinite(t) && Math.round(t) === t && t >= 0;
 }
-/**** ValueIsCardinal ****/
-export function ValueIsCardinal(Value) {
-    if ((typeof Value !== 'number') && !(Value instanceof Number)) {
-        return false;
-    }
-    const numValue = Value.valueOf();
-    return isFinite(numValue) && (Math.round(numValue) === numValue) && (numValue >= 1);
+function T(e) {
+  if (typeof e != "number" && !(e instanceof Number))
+    return !1;
+  const t = e.valueOf();
+  return isFinite(t) && Math.round(t) === t && t >= 1;
 }
-/**** ValueIsString ****/
-export function ValueIsString(Value) {
-    return (typeof Value === 'string') || (Value instanceof String);
+function v(e) {
+  return typeof e == "string" || e instanceof String;
 }
-/**** ValueIs[Non]EmptyString ****/
-const emptyStringPattern = /^\s*$/;
-export function ValueIsEmptyString(Value) {
-    return ((typeof Value === 'string') || (Value instanceof String)) && emptyStringPattern.test(Value.valueOf());
+const A = /^\s*$/;
+function zr(e) {
+  return (typeof e == "string" || e instanceof String) && A.test(e.valueOf());
 }
-export function ValueIsNonEmptyString(Value) {
-    return ((typeof Value === 'string') || (Value instanceof String)) && !emptyStringPattern.test(Value.valueOf());
+function M(e) {
+  return (typeof e == "string" || e instanceof String) && !A.test(e.valueOf());
 }
-/**** ValueIsStringMatching ****/
-export function ValueIsStringMatching(Value, Pattern) {
-    return ((typeof Value === 'string') || (Value instanceof String)) && Pattern.test(Value.valueOf());
+function p(e, t) {
+  return (typeof e == "string" || e instanceof String) && t.test(e.valueOf());
 }
-/**** ValueIsText ****/
-const noCtrlCharsButCRLFPattern = /^[^\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
-export function ValueIsText(Value) {
-    return ValueIsStringMatching(Value, noCtrlCharsButCRLFPattern);
+const ze = /^[^\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
+function D(e) {
+  return p(e, ze);
 }
-/**** ValueIsTextline ****/
-const noCtrlCharsPattern = /^[^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
-export function ValueIsTextline(Value) {
-    return ValueIsStringMatching(Value, noCtrlCharsPattern);
+const Je = /^[^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
+function L(e) {
+  return p(e, Je);
 }
-/**** ValueIsFunction ****/
-export function ValueIsFunction(Value) {
-    return (typeof Value === 'function');
+function U(e) {
+  return typeof e == "function";
 }
-/**** ValueIsAnonymousFunction ****/
-export function ValueIsAnonymousFunction(Value) {
-    return ((typeof Value === 'function') &&
-        ((Value.name == null) || (Value.name === '')));
+function C(e) {
+  return typeof e == "function" && (e.name == null || e.name === "");
 }
-/**** ValueIsNamedFunction ****/
-export function ValueIsNamedFunction(Value) {
-    return ((typeof Value === 'function') &&
-        (Value.name != null) && (Value.name !== ''));
+function H(e) {
+  return typeof e == "function" && e.name != null && e.name !== "";
 }
-/**** ValueIsNativeFunction ****/
-const NativeFunctionPattern = /^function\s*[^(]*\(\)\s*\{\s*\[native code\]\s*\}\s*$/;
-export function ValueIsNativeFunction(Value) {
-    return ((typeof Value === 'function') &&
-        NativeFunctionPattern.test(Value.toString()) &&
-        !Value.name.startsWith('bound ') // "bound" functions aren't truly native
-    );
+const Te = /^function\s*[^(]*\(\)\s*\{\s*\[native code\]\s*\}\s*$/;
+function j(e) {
+  return typeof e == "function" && Te.test(e.toString()) && !e.name.startsWith("bound ");
 }
-/**** ValueIsScriptedFunction ****/
-export function ValueIsScriptedFunction(Value) {
-    return (typeof Value === 'function') && !ValueIsNativeFunction(Value);
+function q(e) {
+  return typeof e == "function" && !j(e);
 }
-/**** ValueIsObject ****/
-export function ValueIsObject(Value) {
-    return (Value != null) && (typeof Value === 'object');
+function _(e) {
+  return e != null && typeof e == "object";
 }
-/**** ValueIsPlainObject ****/
-export function ValueIsPlainObject(Value) {
-    return ((Value != null) && (typeof Value === 'object') &&
-        (Object.getPrototypeOf(Value) === Object.prototype));
+function N(e) {
+  return e != null && typeof e == "object" && Object.getPrototypeOf(e) === Object.prototype;
 }
-/**** ValueIsVanillaObject ****/
-export function ValueIsVanillaObject(Value) {
-    return ((Value != null) && (typeof Value === 'object') &&
-        !(Value instanceof Object));
+function G(e) {
+  return e != null && typeof e == "object" && !(e instanceof Object);
 }
-/**** ValueIsArray ****/
-export const ValueIsArray = Array.isArray;
-/**** ValueIsList ("dense" array) ****/
-export function ValueIsList(Value, minLength, maxLength) {
-    if (ValueIsArray(Value)) {
-        for (let i = 0, l = Value.length; i < l; i++) {
-            if (Value[i] === undefined) {
-                return false;
-            }
-        }
-        if (minLength != null) {
-            if (Value.length < minLength) {
-                return false;
-            }
-        }
-        if (maxLength != null) {
-            if (Value.length > maxLength) {
-                return false;
-            }
-        }
-        return true;
-    }
-    return false;
+const B = Array.isArray;
+function W(e, t, n) {
+  if (B(e)) {
+    for (let r = 0, i = e.length; r < i; r++)
+      if (e[r] === void 0)
+        return !1;
+    return !(t != null && e.length < t || n != null && e.length > n);
+  }
+  return !1;
 }
-/**** ValueIsListSatisfying ****/
-export function ValueIsListSatisfying(Value, Validator, minLength, maxLength) {
-    if (ValueIsArray(Value)) {
-        try {
-            for (let i = 0, l = Value.length; i < l; i++) {
-                if (!Validator(Value[i])) {
-                    return false;
-                }
-            }
-            if (minLength != null) {
-                if (Value.length < minLength) {
-                    return false;
-                }
-            }
-            if (maxLength != null) {
-                if (Value.length > maxLength) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        catch (Signal) { /* a throwing validator marks the list invalid */ }
-    }
-    return false;
-}
-/**** ValueIsInstanceOf ****/
-export function ValueIsInstanceOf(Value, Constructor) {
-    return (Value instanceof Constructor);
-}
-/**** ValueInheritsFrom ****/
-export function ValueInheritsFrom(Value, Prototype) {
-    return Object_isPrototypeOf(Prototype, Value);
-}
-/**** ValueIsDate ****/
-export function ValueIsDate(Value) {
-    return (Value instanceof Date);
-}
-/**** ValueIsError ****/
-export function ValueIsError(Value) {
-    return (Value instanceof Error);
-}
-/**** ValueIsPromise ****/
-export function ValueIsPromise(Value) {
-    return (Value != null) && (typeof Value.then === 'function');
-}
-// see https://stackoverflow.com/questions/27746304/how-do-i-tell-if-an-object-is-a-promise
-/**** ValueIsRegExp ****/
-export function ValueIsRegExp(Value) {
-    return (Value instanceof RegExp);
-}
-/**** ValueIsOneOf ****/
-export function ValueIsOneOf(Value, ValueList) {
-    return (ValueList.indexOf(Value) >= 0);
-} // no automatic unboxing of boxed values and vice-versa!
-/**** ValueIsColor ****/
-export function ValueIsColor(Value) {
-    if (!ValueIsString(Value)) {
-        return false;
-    }
-    let lowerValue = Value.valueOf().toLowerCase(); // ColorSet keys are l.c.
-    return (ColorSet.hasOwnProperty(lowerValue) ||
-        /^#[a-fA-F0-9]{6}$/.test(lowerValue) ||
-        /^#[a-fA-F0-9]{8}$/.test(lowerValue) ||
-        /^rgb\([0-9]+,\s*[0-9]+,\s*[0-9]+\)$/.test(lowerValue) || // not perfect
-        /^rgba\([0-9]+,\s*[0-9]+,\s*[0-9]+,\s*([01]|[01]?[.][0-9]+)\)$/.test(lowerValue) // dto.
-    );
-}
-/**** ValueIsEMailAddress ****/
-const EMailAddressPattern = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
-// see https://stackoverflow.com/questions/201323/how-to-validate-an-email-address-using-a-regular-expression
-export function ValueIsEMailAddress(Value) {
-    return ValueIsStringMatching(Value, EMailAddressPattern);
-}
-/**** ValueIsURL ****/
-const noCtrlCharsOrWhitespacePattern = /^[^\s\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
-export function ValueIsURL(Value) {
-    if (!ValueIsStringMatching(Value, noCtrlCharsOrWhitespacePattern) ||
-        (Value === '')) {
-        return false;
-    }
+function F(e, t, n, r) {
+  if (B(e))
     try {
-        new URL(Value, 'file://');
-        return true;
+      for (let i = 0, o = e.length; i < o; i++)
+        if (!t(e[i]))
+          return !1;
+      return !(n != null && e.length < n || r != null && e.length > r);
+    } catch {
     }
-    catch (Signal) {
-        return false;
-    }
+  return !1;
 }
-/**** ValueIsPhoneNumber ****/
-// plausibility check only - neither prefixes nor lengths are actually verified!
-const PhoneNumberPattern = /^\+?[0-9(][0-9 \-.\/()]*[0-9)]$/; // not perfect
-export function ValueIsPhoneNumber(Value) {
-    if (!ValueIsString(Value)) {
-        return false;
-    }
-    let Candidate = Value.valueOf();
-    if (!PhoneNumberPattern.test(Candidate)) {
-        return false;
-    }
-    let Digits = Candidate.replace(/[^0-9]/g, '');
-    return (Candidate.charAt(0) === '+'
-        ? /^[1-9][0-9]{6,14}$/.test(Digits) // E.164: 7-15 digits, no leading zero
-        : (Digits.length >= 3) && (Digits.length <= 16));
+function Jr(e, t) {
+  return F(e, (n) => R(n, t));
 }
-/**** ValueIsE164PhoneNumber (canonical machine-readable format) ****/
-const E164PhoneNumberPattern = /^\+[1-9][0-9]{6,14}$/;
-export function ValueIsE164PhoneNumber(Value) {
-    return ValueIsStringMatching(Value, E164PhoneNumberPattern);
+function Tr(e, t) {
+  return e instanceof t;
 }
-/**** ValueIsBigInt ****/
-export function ValueIsBigInt(Value) {
-    return (typeof Value === 'bigint');
+function Ar(e, t) {
+  return Be(t, e);
 }
-/**** ValueIsSymbol ****/
-export function ValueIsSymbol(Value) {
-    return (typeof Value === 'symbol');
+function Z(e) {
+  return e instanceof Date;
 }
-/**** ValueIsMap ****/
-export function ValueIsMap(Value) {
-    return (Value instanceof Map);
+function K(e) {
+  return e instanceof Error;
 }
-/**** ValueIsSet ****/
-export function ValueIsSet(Value) {
-    return (Value instanceof Set);
+function Y(e) {
+  return e != null && typeof e.then == "function";
 }
-export function ValueIsTypedArray(Value) {
-    return ArrayBuffer.isView(Value) && !(Value instanceof DataView);
+function Q(e) {
+  return e instanceof RegExp;
 }
-/**** ValueIsArrayBuffer ****/
-export function ValueIsArrayBuffer(Value) {
-    return (Value instanceof ArrayBuffer);
+function R(e, t) {
+  return t.indexOf(e) >= 0;
 }
-/**** ValueIsUUID ****/
-const UUIDPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function ValueIsUUID(Value) {
-    return ValueIsStringMatching(Value, UUIDPattern);
+function X(e) {
+  if (!v(e))
+    return !1;
+  let t = e.valueOf().toLowerCase();
+  return O.hasOwnProperty(t) || /^#[a-fA-F0-9]{6}$/.test(t) || /^#[a-fA-F0-9]{8}$/.test(t) || /^rgb\([0-9]+,\s*[0-9]+,\s*[0-9]+\)$/.test(t) || // not perfect
+  /^rgba\([0-9]+,\s*[0-9]+,\s*[0-9]+,\s*([01]|[01]?[.][0-9]+)\)$/.test(t);
 }
-/**** ValueIsISODate (a calendar date like "2026-07-03") ****/
-const ISODatePattern = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
-export function ValueIsISODate(Value) {
-    if (!ValueIsString(Value)) {
-        return false;
-    }
-    const Match = ISODatePattern.exec(Value.valueOf());
-    if (Match == null) {
-        return false;
-    }
-    const [Year, Month, Day] = [Match[1], Match[2], Match[3]].map(Number);
-    const Timestamp = new Date(Date.UTC(Year, Month - 1, Day));
-    return ( // detects overflows like 02-31
-    (Timestamp.getUTCFullYear() === Year) &&
-        (Timestamp.getUTCMonth() === Month - 1) && (Timestamp.getUTCDate() === Day));
+const Ae = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
+function V(e) {
+  return p(e, Ae);
 }
-/**** ValueIsISOTimestamp (like "2026-07-03T10:56:00Z") ****/
-const ISOTimestampPattern = new RegExp('^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}' +
-    '(:[0-9]{2}([.][0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2})?$');
-export function ValueIsISOTimestamp(Value) {
-    return (ValueIsStringMatching(Value, ISOTimestampPattern) &&
-        !isNaN(Date.parse(Value.valueOf())));
+const Me = /^[^\s\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
+function ee(e) {
+  if (!p(e, Me) || e === "")
+    return !1;
+  try {
+    return new URL(e, "file://"), !0;
+  } catch {
+    return !1;
+  }
 }
-/**** ValueIsIPv4Address ****/
-const IPv4AddressPattern = new RegExp('^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])[.]){3}' +
-    '(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$');
-export function ValueIsIPv4Address(Value) {
-    return ValueIsStringMatching(Value, IPv4AddressPattern);
+const De = /^\+?[0-9(][0-9 \-.\/()]*[0-9)]$/;
+function te(e) {
+  if (!v(e))
+    return !1;
+  let t = e.valueOf();
+  if (!De.test(t))
+    return !1;
+  let n = t.replace(/[^0-9]/g, "");
+  return t.charAt(0) === "+" ? /^[1-9][0-9]{6,14}$/.test(n) : n.length >= 3 && n.length <= 16;
 }
-/**** ValueIsIPv6Address ****/
-const IPv6CharSetPattern = /^[0-9a-fA-F:.]+$/;
-export function ValueIsIPv6Address(Value) {
-    if (!ValueIsString(Value) || !IPv6CharSetPattern.test(Value.valueOf())) {
-        return false;
-    }
-    try { // URL parsing implements the full IPv6 grammar
-        new URL('http://[' + Value.valueOf() + ']/');
-        return true;
-    }
-    catch (Signal) {
-        return false;
-    }
+const Le = /^\+[1-9][0-9]{6,14}$/;
+function ne(e) {
+  return p(e, Le);
 }
-/**** ValueIsHostName (according to RFC 1123) ****/
-const HostNamePattern = new RegExp('^(?=.{1,253}$)' +
-    '[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?' +
-    '([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$', 'i');
-export function ValueIsHostName(Value) {
-    return ValueIsStringMatching(Value, HostNamePattern);
+function re(e) {
+  return typeof e == "bigint";
 }
-/**** ValueIsPortNumber ****/
-export function ValueIsPortNumber(Value) {
-    return ValueIsIntegerInRange(Value, 1, 65535);
+function ae(e) {
+  return typeof e == "symbol";
 }
-/**** ValueIsJSONString ****/
-export function ValueIsJSONString(Value) {
-    if (!ValueIsString(Value)) {
-        return false;
-    }
-    try {
-        JSON.parse(Value.valueOf());
-        return true;
-    }
-    catch (Signal) {
-        return false;
-    }
+function ie(e) {
+  return e instanceof Map;
 }
-/**** ValueIsBase64 (standard alphabet, correctly padded) ****/
-const Base64Pattern = new RegExp('^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$');
-export function ValueIsBase64(Value) {
-    return ValueIsStringMatching(Value, Base64Pattern);
+function oe(e) {
+  return e instanceof Set;
 }
-/**** ValueIsHexString ****/
-const HexStringPattern = /^[0-9a-fA-F]+$/;
-export function ValueIsHexString(Value) {
-    return ValueIsStringMatching(Value, HexStringPattern);
+function ce(e) {
+  return ArrayBuffer.isView(e) && !(e instanceof DataView);
 }
-/**** ValueIsIdentifier ****/
-const IdentifierPattern = /^[\p{ID_Start}_$][\p{ID_Continue}_$\u200C\u200D]*$/u;
-export function ValueIsIdentifier(Value) {
-    return ValueIsStringMatching(Value, IdentifierPattern);
+function le(e) {
+  return e instanceof ArrayBuffer;
 }
-//------------------------------------------------------------------------------
-//--                      Argument Validation Functions                       --
-//------------------------------------------------------------------------------
-export const rejectNil = false;
-export const acceptNil = true;
-/**** validatedArgument ****/
-export function validatedArgument(Description, Argument, ValueIsValid, NilIsAcceptable, Expectation) {
-    if (Argument == null) {
-        if (NilIsAcceptable) {
-            return Argument;
-        }
-        else {
-            throwError(`MissingArgument: no ${escaped(Description)} given`);
-        }
-    }
-    else {
-        if (ValueIsValid(Argument)) {
-            switch (true) {
-                case Argument instanceof Boolean:
-                case Argument instanceof Number:
-                case Argument instanceof String:
-                    return Argument.valueOf(); // unboxes any primitives
-                default:
-                    return Argument;
-            }
-        }
-        else {
-            throwError(`InvalidArgument: the given ${escaped(Description)} is no valid ${escaped(Expectation)}`);
-        }
-    }
+const Ue = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function se(e) {
+  return p(e, Ue);
 }
-export function ValidatorForClassifier(Classifier, NilIsAcceptable, Expectation) {
-    let Validator = function (Description, Argument) {
-        return validatedArgument(Description, Argument, Classifier, NilIsAcceptable, Expectation);
-    };
-    let ClassifierName = Classifier.name;
-    if ((ClassifierName != null) && /^ValueIs/.test(ClassifierName)) {
-        let ValidatorName = ClassifierName.replace(// derive name from validator
-        /^ValueIs/, NilIsAcceptable ? 'allow' : 'expect');
-        return FunctionWithName(Validator, ValidatorName);
-    }
-    else {
-        return Validator; // without any specific name
-    }
+const Ce = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
+function ue(e) {
+  if (!v(e))
+    return !1;
+  const t = Ce.exec(e.valueOf());
+  if (t == null)
+    return !1;
+  const [n, r, i] = [t[1], t[2], t[3]].map(Number), o = new Date(Date.UTC(n, r - 1, i));
+  return (
+    // detects overflows like 02-31
+    o.getUTCFullYear() === n && o.getUTCMonth() === r - 1 && o.getUTCDate() === i
+  );
 }
-/**** FunctionWithName ****/
-export function FunctionWithName(originalFunction, desiredName) {
-    if (originalFunction == null) {
-        throwError('MissingArgument: no function given');
-    }
-    if (typeof originalFunction !== 'function') {
-        throwError('InvalidArgument: the given 1st Argument is not a JavaScript function');
-    }
-    if (desiredName == null) {
-        throwError('MissingArgument: no desired name given');
-    }
-    if ((typeof desiredName !== 'string') && !(desiredName instanceof String)) {
-        throwError('InvalidArgument: the given desired name is not a string');
-    }
-    if (originalFunction.name === desiredName) {
-        return originalFunction;
-    }
-    Object.defineProperty(originalFunction, 'name', {
-        value: desiredName.valueOf()
-    });
-    return originalFunction;
+const He = new RegExp(
+  "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2})?$"
+);
+function fe(e) {
+  return p(e, He) && !isNaN(Date.parse(e.valueOf()));
 }
-/**** expect[ed]Value ****/
-export function expectValue(Description, Argument) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
-    }
-    else {
-        switch (true) { // unboxes primitives - but nothing else, as
-            case Argument instanceof Boolean: // "valueOf" may return other values
-            case Argument instanceof Number: // for other objects (e.g. Dates)
-            case Argument instanceof String:
-                return Argument.valueOf();
-            default:
-                return Argument;
-        }
-    }
+const qe = new RegExp(
+  "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])[.]){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$"
+);
+function ge(e) {
+  return p(e, qe);
 }
-export const expectedValue = expectValue;
-/**** allow/expect[ed]Boolean ****/
-export const allowBoolean = /*#__PURE__*/ ValidatorForClassifier(ValueIsBoolean, acceptNil, 'boolean value'), allowedBoolean = allowBoolean;
-export const expectBoolean = /*#__PURE__*/ ValidatorForClassifier(ValueIsBoolean, rejectNil, 'boolean value'), expectedBoolean = expectBoolean;
-/**** allow/expect[ed]Number ****/
-export const allowNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsNumber, acceptNil, 'numeric value'), allowedNumber = allowNumber;
-export const expectNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsNumber, rejectNil, 'numeric value'), expectedNumber = expectNumber;
-/**** allow/expect[ed]FiniteNumber ****/
-export const allowFiniteNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsFiniteNumber, acceptNil, 'finite numeric value'), allowedFiniteNumber = allowFiniteNumber;
-export const expectFiniteNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsFiniteNumber, rejectNil, 'finite numeric value'), expectedFiniteNumber = expectFiniteNumber;
-/**** allow/expect[ed]NaN ****/
-export const allowNaN = /*#__PURE__*/ ValidatorForClassifier(ValueIsNaN, acceptNil, 'NaN value'), allowedNaN = allowNaN;
-export const expectNaN = /*#__PURE__*/ ValidatorForClassifier(ValueIsNaN, rejectNil, 'NaN value'), expectedNaN = expectNaN;
-/**** allow[ed]NumberInRange ****/
-export function allowNumberInRange(Description, Argument, minValue, maxValue, withMin, withMax) {
-    return (Argument == null
-        ? Argument
-        : expectedNumberInRange(Description, Argument, minValue, maxValue, withMin, withMax));
+const _e = /^[0-9a-fA-F:.]+$/;
+function be(e) {
+  if (!v(e) || !_e.test(e.valueOf()))
+    return !1;
+  try {
+    return new URL("http://[" + e.valueOf() + "]/"), !0;
+  } catch {
+    return !1;
+  }
 }
-export const allowedNumberInRange = allowNumberInRange;
-/**** expect[ed]NumberInRange ****/
-export function expectNumberInRange(Description, Argument, minValue, maxValue, withMin, withMax) {
-    expectNumber(Description, Argument);
-    if (isNaN(Argument)) {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is not-a-number`);
-    }
-    if (withMin == null) {
-        withMin = true;
-    }
-    if (withMax == null) {
-        withMax = true;
-    }
-    if ((minValue != null) && isFinite(minValue)) {
-        if ((maxValue != null) && isFinite(maxValue)) {
-            if ((Argument < minValue) || (!withMin && (Argument === minValue)) ||
-                (Argument > maxValue) || (!withMax && (Argument === maxValue))) {
-                throw new RangeError(`the given ${escaped(Description)} (${Argument}) is outside ` +
-                    `the allowed range (${minValue}...${maxValue})`);
-            }
-        }
-        else {
-            if ((Argument < minValue) || (!withMin && (Argument === minValue))) {
-                throw new RangeError(`the given ${escaped(Description)} is below the allowed ` +
-                    `minimum (${Argument} ${withMin ? '<' : '<='} ${minValue})`);
-            }
-        }
-    }
-    else {
-        if ((maxValue != null) && isFinite(maxValue)) {
-            if ((Argument > maxValue) || (!withMax && (Argument === maxValue))) {
-                throw new RangeError(`the given ${escaped(Description)} exceeds the allowed ` +
-                    `maximum (${Argument} ${withMax ? '>' : '>='} ${maxValue})`);
-            }
-        }
-    }
-    return Argument.valueOf();
+const Ge = new RegExp(
+  "^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$",
+  "i"
+);
+function de(e) {
+  return p(e, Ge);
 }
-export const expectedNumberInRange = expectNumberInRange;
-/**** allow/expect[ed]Integer ****/
-export const allowInteger = /*#__PURE__*/ ValidatorForClassifier(ValueIsInteger, acceptNil, 'integral numeric value'), allowedInteger = allowInteger;
-export const expectInteger = /*#__PURE__*/ ValidatorForClassifier(ValueIsInteger, rejectNil, 'integral numeric value'), expectedInteger = expectInteger;
-/**** allow[ed]IntegerInRange ****/
-export function allowIntegerInRange(Description, Argument, minValue, maxValue) {
-    return (Argument == null
-        ? Argument
-        : expectedIntegerInRange(Description, Argument, minValue, maxValue));
+function pe(e) {
+  return ke(e, 1, 65535);
 }
-export const allowedIntegerInRange = allowIntegerInRange;
-/**** expect[ed]IntegerInRange ****/
-export function expectIntegerInRange(Description, Argument, minValue, maxValue) {
-    expectInteger(Description, Argument);
-    if (isNaN(Argument)) {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is not-a-number`);
-    }
-    if ((minValue != null) && isFinite(minValue)) {
-        if ((maxValue != null) && isFinite(maxValue)) {
-            if ((Argument < minValue) || (Argument > maxValue)) {
-                throw new RangeError(`the given ${escaped(Description)} (${Argument}) is outside ` +
-                    `the allowed range (${minValue}...${maxValue})`);
-            }
-        }
-        else {
-            if (Argument < minValue) {
-                throw new RangeError(`the given ${escaped(Description)} is below the allowed ` +
-                    `minimum (${Argument} < ${minValue})`);
-            }
-        }
-    }
-    else {
-        if ((maxValue != null) && isFinite(maxValue)) {
-            if (Argument > maxValue) {
-                throw new RangeError(`the given ${escaped(Description)} exceeds the allowed ` +
-                    `maximum (${Argument} > ${maxValue})`);
-            }
-        }
-    }
-    return Argument.valueOf();
+function m(e, t = /* @__PURE__ */ new WeakSet()) {
+  switch (!0) {
+    case e == null:
+    // deliberately also allows undefined
+    case P(e):
+    case y(e):
+    // NaN/Infinity are not serializable
+    case v(e):
+      return !0;
+    case W(e):
+      if (t.has(e))
+        return !1;
+      t.add(e);
+      try {
+        return F(
+          e,
+          (n) => n === void 0 ? !1 : m(n, t)
+        );
+      } finally {
+        t.delete(e);
+      }
+    case N(e):
+      if (t.has(e))
+        return !1;
+      t.add(e);
+      try {
+        for (let n in e)
+          if (e.hasOwnProperty(n) && !m(e[n], t))
+            return !1;
+        return !0;
+      } finally {
+        t.delete(e);
+      }
+  }
+  return !1;
 }
-export const expectedIntegerInRange = expectIntegerInRange;
-/**** allow/expect[ed]Ordinal ****/
-export const allowOrdinal = /*#__PURE__*/ ValidatorForClassifier(ValueIsOrdinal, acceptNil, 'ordinal number'), allowedOrdinal = allowOrdinal;
-export const expectOrdinal = /*#__PURE__*/ ValidatorForClassifier(ValueIsOrdinal, rejectNil, 'ordinal number'), expectedOrdinal = expectOrdinal;
-/**** allow/expect[ed]Cardinal ****/
-export const allowCardinal = /*#__PURE__*/ ValidatorForClassifier(ValueIsCardinal, acceptNil, 'cardinal number'), allowedCardinal = allowCardinal;
-export const expectCardinal = /*#__PURE__*/ ValidatorForClassifier(ValueIsCardinal, rejectNil, 'cardinal number'), expectedCardinal = expectCardinal;
-/**** allow/expect[ed]String ****/
-export const allowString = /*#__PURE__*/ ValidatorForClassifier(ValueIsString, acceptNil, 'literal string'), allowedString = allowString;
-export const expectString = /*#__PURE__*/ ValidatorForClassifier(ValueIsString, rejectNil, 'literal string'), expectedString = expectString;
-/**** allow/expect[ed]NonEmptyString ****/
-export const allowNonEmptyString = /*#__PURE__*/ ValidatorForClassifier(ValueIsNonEmptyString, acceptNil, 'non-empty literal string'), allowedNonEmptyString = allowNonEmptyString;
-export const expectNonEmptyString = /*#__PURE__*/ ValidatorForClassifier(ValueIsNonEmptyString, rejectNil, 'non-empty literal string'), expectedNonEmptyString = expectNonEmptyString;
-/**** allow[ed]StringMatching ****/
-export function allowStringMatching(Description, Argument, Pattern) {
-    return (Argument == null
-        ? Argument
-        : expectedStringMatching(Description, Argument, Pattern));
+function xe(e) {
+  if (N(e)) {
+    for (let t in e)
+      if (e.hasOwnProperty(t) && !m(e[t]))
+        return !1;
+    return !0;
+  } else
+    return !1;
 }
-export const allowedStringMatching = allowStringMatching;
-/**** expect[ed]StringMatching ****/
-export function expectStringMatching(Description, Argument, Pattern) {
-    expectString(Description, Argument);
-    if (Pattern.test(Argument)) {
-        return Argument.valueOf();
-    }
-    else {
-        throwError(`InvalidArgument: the given ${escaped(Description)} does not match the specified pattern`);
-    }
+function we(e) {
+  if (!v(e))
+    return !1;
+  try {
+    return JSON.parse(e.valueOf()), !0;
+  } catch {
+    return !1;
+  }
 }
-export const expectedStringMatching = expectStringMatching;
-/**** allow/expect[ed]Text ****/
-export const allowText = /*#__PURE__*/ ValidatorForClassifier(ValueIsText, acceptNil, 'literal text'), allowedText = allowText;
-export const expectText = /*#__PURE__*/ ValidatorForClassifier(ValueIsText, rejectNil, 'literal text'), expectedText = expectText;
-/**** allow/expect[ed]Textline ****/
-export const allowTextline = /*#__PURE__*/ ValidatorForClassifier(ValueIsTextline, acceptNil, 'single line of text'), allowedTextline = allowTextline;
-export const expectTextline = /*#__PURE__*/ ValidatorForClassifier(ValueIsTextline, rejectNil, 'single line of text'), expectedTextline = expectTextline;
-/**** allow/expect[ed]Function ****/
-export const allowFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsFunction, acceptNil, 'JavaScript function'), allowedFunction = allowFunction;
-export const expectFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsFunction, rejectNil, 'JavaScript function'), expectedFunction = expectFunction;
-/**** allow/expect[ed]AnonymousFunction ****/
-export const allowAnonymousFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsAnonymousFunction, acceptNil, 'anonymous JavaScript function'), allowedAnonymousFunction = allowAnonymousFunction;
-export const expectAnonymousFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsAnonymousFunction, rejectNil, 'anonymous JavaScript function'), expectedAnonymousFunction = expectAnonymousFunction;
-/**** allow/expect[ed]NamedFunction ****/
-export const allowNamedFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsNamedFunction, acceptNil, 'named JavaScript function'), allowedNamedFunction = allowNamedFunction;
-export const expectNamedFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsNamedFunction, rejectNil, 'named JavaScript function'), expectedNamedFunction = expectNamedFunction;
-/**** allow/expect[ed]NativeFunction ****/
-export const allowNativeFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsNativeFunction, acceptNil, 'native JavaScript function'), allowedNativeFunction = allowNativeFunction;
-export const expectNativeFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsNativeFunction, rejectNil, 'native JavaScript function'), expectedNativeFunction = expectNativeFunction;
-/**** allow/expect[ed]ScriptedFunction ****/
-export const allowScriptedFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsScriptedFunction, acceptNil, 'scripted JavaScript function'), allowedScriptedFunction = allowScriptedFunction;
-export const expectScriptedFunction = /*#__PURE__*/ ValidatorForClassifier(ValueIsScriptedFunction, rejectNil, 'scripted JavaScript function'), expectedScriptedFunction = expectScriptedFunction;
-/**** allow/expect[ed]Object ****/
-export const allowObject = /*#__PURE__*/ ValidatorForClassifier(ValueIsObject, acceptNil, 'JavaScript object'), allowedObject = allowObject;
-export const expectObject = /*#__PURE__*/ ValidatorForClassifier(ValueIsObject, rejectNil, 'JavaScript object'), expectedObject = expectObject;
-/**** allow/expect[ed]PlainObject ****/
-export const allowPlainObject = /*#__PURE__*/ ValidatorForClassifier(ValueIsPlainObject, acceptNil, '"plain" JavaScript object'), allowedPlainObject = allowPlainObject;
-export const expectPlainObject = /*#__PURE__*/ ValidatorForClassifier(ValueIsPlainObject, rejectNil, '"plain" JavaScript object'), expectedPlainObject = expectPlainObject;
-/**** allow/expect[ed]VanillaObject ****/
-export const allowVanillaObject = /*#__PURE__*/ ValidatorForClassifier(ValueIsVanillaObject, acceptNil, '"vanilla" JavaScript object'), allowedVanillaObject = allowVanillaObject;
-export const expectVanillaObject = /*#__PURE__*/ ValidatorForClassifier(ValueIsVanillaObject, rejectNil, '"vanilla" JavaScript object'), expectedVanillaObject = expectVanillaObject;
-/**** allow[ed]Array ****/
-export function allowArray(Description, Argument) {
-    return (Argument == null
-        ? Argument
-        : expectedArray(Description, Argument));
+const We = new RegExp(
+  "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+);
+function ye(e) {
+  return p(e, We);
 }
-export const allowedArray = allowArray;
-/**** expect[ed]Array ****/
-export function expectArray(Description, Argument) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
-    }
-    if (ValueIsArray(Argument)) {
-        return Argument;
-    }
-    else {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is no JavaScript array`);
-    }
+const Ze = /^[0-9a-fA-F]+$/;
+function Ie(e) {
+  return p(e, Ze);
 }
-export const expectedArray = expectArray;
-/**** allow[ed]List ****/
-export function allowList(Description, Argument, Expectation, minLength, maxLength) {
-    return (Argument == null
-        ? Argument
-        : expectedList(Description, Argument, Expectation, minLength, maxLength));
+const Ke = /^[\p{ID_Start}_$][\p{ID_Continue}_$\u200C\u200D]*$/u;
+function ve(e) {
+  return p(e, Ke);
 }
-export const allowedList = allowList;
-/**** expect[ed]List ****/
-export function expectList(Description, Argument, Expectation, minLength, maxLength) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
+const c = !1, l = !0;
+function Ye(e, t, n, r, i) {
+  if (t == null) {
+    if (r)
+      return t;
+    f(`MissingArgument: no ${s(e)} given`);
+  } else if (n(t))
+    switch (!0) {
+      case t instanceof Boolean:
+      case t instanceof Number:
+      case t instanceof String:
+        return t.valueOf();
+      // unboxes any primitives
+      default:
+        return t;
     }
-    if (ValueIsList(Argument, minLength, maxLength)) {
-        return Argument;
-    }
-    else {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is ` + (Expectation == null
-            ? 'either not a list or contains an invalid number of elements'
-            : 'no ' + escaped(Expectation)));
-    }
+  else
+    f(
+      `InvalidArgument: the given ${s(e)} is no valid ${s(i)}`
+    );
 }
-export const expectedList = expectList;
-/**** allow[ed]ListSatisfying ****/
-export function allowListSatisfying(Description, Argument, Validator, Expectation, minLength, maxLength) {
-    return (Argument == null
-        ? Argument
-        : expectedListSatisfying(Description, Argument, Validator, Expectation, minLength, maxLength));
+function a(e, t, n) {
+  let r = function(o, I) {
+    return Ye(
+      o,
+      I,
+      e,
+      t,
+      n
+    );
+  }, i = e.name;
+  if (i != null && /^ValueIs/.test(i)) {
+    let o = i.replace(
+      // derive name from validator
+      /^ValueIs/,
+      t ? "allow" : "expect"
+    );
+    return Qe(r, o);
+  } else
+    return r;
 }
-export const allowedListSatisfying = allowListSatisfying;
-/**** expect[ed]ListSatisfying ****/
-export function expectListSatisfying(Description, Argument, Validator, Expectation, minLength, maxLength) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
-    }
-    if (ValueIsListSatisfying(Argument, Validator, minLength, maxLength)) {
-        return Argument;
-    }
-    else {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is ` + (Expectation == null
-            ? 'either not a list or contains invalid elements'
-            : 'no ' + escaped(Expectation)));
-    }
+function Qe(e, t) {
+  return e == null && f("MissingArgument: no function given"), typeof e != "function" && f("InvalidArgument: the given 1st Argument is not a JavaScript function"), t == null && f("MissingArgument: no desired name given"), typeof t != "string" && !(t instanceof String) && f("InvalidArgument: the given desired name is not a string"), e.name === t || Object.defineProperty(e, "name", {
+    value: t.valueOf()
+  }), e;
 }
-export const expectedListSatisfying = expectListSatisfying;
-/**** allow[ed]InstanceOf ****/
-export function allowInstanceOf(Description, Argument, constructor, Expectation) {
-    return (Argument == null
-        ? Argument
-        : expectedInstanceOf(Description, Argument, constructor, Expectation));
+function Xe(e, t, n) {
+  return t == null ? void 0 : et(e, t, n);
 }
-export const allowedInstanceOf = allowInstanceOf;
-/**** expect[ed]InstanceOf ****/
-export function expectInstanceOf(Description, Argument, constructor, Expectation) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
-    }
-    if (!(Argument instanceof constructor)) {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is no ${escaped(Expectation)}`);
-    }
-    return Argument;
+const Mr = Xe;
+function Ve(e, t, n) {
+  t == null && f(`MissingArgument: no ${s(e)} given`);
+  let r;
+  switch (!0) {
+    // unboxes primitives - but nothing else, as
+    case t instanceof Boolean:
+    // "valueOf" may return other values
+    case t instanceof Number:
+    // for other objects (e.g. Dates)
+    case t instanceof String:
+      r = t.valueOf();
+      break;
+    default:
+      r = t;
+  }
+  if (n == null || n(r) === !0)
+    return r;
+  f(`InvalidArgument: the given ${s(e)} is invalid`);
 }
-export const expectedInstanceOf = expectInstanceOf;
-/**** allow[ed]ValueInheritingFrom ****/
-export function allowValueInheritingFrom(Description, Argument, prototype, Expectation) {
-    return (Argument == null
-        ? Argument
-        : expectedValueInheritingFrom(Description, Argument, prototype, Expectation));
+const et = Ve, tt = /* @__PURE__ */ a(
+  P,
+  l,
+  "boolean value"
+), Dr = tt, nt = /* @__PURE__ */ a(
+  P,
+  c,
+  "boolean value"
+), Lr = nt, rt = /* @__PURE__ */ a(
+  $,
+  l,
+  "numeric value"
+), Ur = rt, Se = /* @__PURE__ */ a(
+  $,
+  c,
+  "numeric value"
+), Cr = Se, at = /* @__PURE__ */ a(
+  y,
+  l,
+  "finite numeric value"
+), Hr = at, it = /* @__PURE__ */ a(
+  y,
+  c,
+  "finite numeric value"
+), qr = it, ot = /* @__PURE__ */ a(
+  z,
+  l,
+  "NaN value"
+), _r = ot, ct = /* @__PURE__ */ a(
+  z,
+  c,
+  "NaN value"
+), Gr = ct;
+function lt(e, t, n, r, i, o) {
+  return t == null ? t : ut(e, t, n, r, i, o);
 }
-export const allowedValueInheritingFrom = allowValueInheritingFrom;
-/**** expect[ed]ValueInheritingFrom ****/
-export function expectValueInheritingFrom(Description, Argument, prototype, Expectation) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
-    }
-    if (prototype.isPrototypeOf(Argument)) {
-        return Argument;
-    }
-    else {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is no ${escaped(Expectation)}`);
-    }
+const Wr = lt;
+function st(e, t, n, r, i, o) {
+  if (Se(e, t), isNaN(t) && f(
+    `InvalidArgument: the given ${s(e)} is not-a-number`
+  ), i == null && (i = !0), o == null && (o = !0), n != null && isFinite(n)) {
+    if (r != null && isFinite(r)) {
+      if (t < n || !i && t === n || t > r || !o && t === r)
+        throw new RangeError(
+          `the given ${s(e)} (${t}) is outside the allowed range (${n}...${r})`
+        );
+    } else if (t < n || !i && t === n)
+      throw new RangeError(
+        `the given ${s(e)} is below the allowed minimum (${t} ${i ? "<" : "<="} ${n})`
+      );
+  } else if (r != null && isFinite(r) && (t > r || !o && t === r))
+    throw new RangeError(
+      `the given ${s(e)} exceeds the allowed maximum (${t} ${o ? ">" : ">="} ${r})`
+    );
+  return t.valueOf();
 }
-export const expectedValueInheritingFrom = expectValueInheritingFrom;
-/**** allow/expect[ed]Date ****/
-export const allowDate = /*#__PURE__*/ ValidatorForClassifier(ValueIsDate, acceptNil, 'JavaScript Date object'), allowedDate = allowDate;
-export const expectDate = /*#__PURE__*/ ValidatorForClassifier(ValueIsDate, rejectNil, 'JavaScript Date object'), expectedDate = expectDate;
-/**** allow/expect[ed]Error ****/
-export const allowError = /*#__PURE__*/ ValidatorForClassifier(ValueIsError, acceptNil, 'JavaScript Error object'), allowedError = allowError;
-export const expectError = /*#__PURE__*/ ValidatorForClassifier(ValueIsError, rejectNil, 'JavaScript Error object'), expectedError = expectError;
-/**** allow/expect[ed]Promise ****/
-export const allowPromise = /*#__PURE__*/ ValidatorForClassifier(ValueIsPromise, acceptNil, 'JavaScript Promise (or "Thenable") object'), allowedPromise = allowPromise;
-export const expectPromise = /*#__PURE__*/ ValidatorForClassifier(ValueIsPromise, rejectNil, 'JavaScript Promise (or "Thenable") object'), expectedPromise = expectPromise;
-/**** allow/expect[ed]RegExp ****/
-export const allowRegExp = /*#__PURE__*/ ValidatorForClassifier(ValueIsRegExp, acceptNil, 'JavaScript RegExp object'), allowedRegExp = allowRegExp;
-export const expectRegExp = /*#__PURE__*/ ValidatorForClassifier(ValueIsRegExp, rejectNil, 'JavaScript RegExp object'), expectedRegExp = expectRegExp;
-/**** allow[ed]OneOf ****/
-export function allowOneOf(Description, Argument, ValueList) {
-    return (Argument == null
-        ? Argument
-        : expectedOneOf(Description, Argument, ValueList));
+const ut = st, ft = /* @__PURE__ */ a(
+  E,
+  l,
+  "integral numeric value"
+), Zr = ft, me = /* @__PURE__ */ a(
+  E,
+  c,
+  "integral numeric value"
+), Kr = me;
+function gt(e, t, n, r) {
+  return t == null ? t : dt(e, t, n, r);
 }
-export const allowedOneOf = allowOneOf;
-/**** expect[ed]OneOf ****/
-export function expectOneOf(Description, Argument, ValueList) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
+const Yr = gt;
+function bt(e, t, n, r) {
+  if (me(e, t), isNaN(t) && f(
+    `InvalidArgument: the given ${s(e)} is not-a-number`
+  ), n != null && isFinite(n)) {
+    if (r != null && isFinite(r)) {
+      if (t < n || t > r)
+        throw new RangeError(
+          `the given ${s(e)} (${t}) is outside the allowed range (${n}...${r})`
+        );
+    } else if (t < n)
+      throw new RangeError(
+        `the given ${s(e)} is below the allowed minimum (${t} < ${n})`
+      );
+  } else if (r != null && isFinite(r) && t > r)
+    throw new RangeError(
+      `the given ${s(e)} exceeds the allowed maximum (${t} > ${r})`
+    );
+  return t.valueOf();
+}
+const dt = bt, pt = /* @__PURE__ */ a(
+  J,
+  l,
+  "ordinal number"
+), Qr = pt, xt = /* @__PURE__ */ a(
+  J,
+  c,
+  "ordinal number"
+), Xr = xt, wt = /* @__PURE__ */ a(
+  T,
+  l,
+  "cardinal number"
+), Vr = wt, yt = /* @__PURE__ */ a(
+  T,
+  c,
+  "cardinal number"
+), ea = yt, It = /* @__PURE__ */ a(
+  v,
+  l,
+  "literal string"
+), ta = It, Oe = /* @__PURE__ */ a(
+  v,
+  c,
+  "literal string"
+), na = Oe, vt = /* @__PURE__ */ a(
+  M,
+  l,
+  "non-empty literal string"
+), ra = vt, St = /* @__PURE__ */ a(
+  M,
+  c,
+  "non-empty literal string"
+), aa = St;
+function mt(e, t, n) {
+  return t == null ? t : ht(e, t, n);
+}
+const ia = mt;
+function Ot(e, t, n) {
+  if (Oe(e, t), n.test(t))
+    return t.valueOf();
+  f(
+    `InvalidArgument: the given ${s(e)} does not match the specified pattern`
+  );
+}
+const ht = Ot, Nt = /* @__PURE__ */ a(
+  D,
+  l,
+  "literal text"
+), oa = Nt, Ft = /* @__PURE__ */ a(
+  D,
+  c,
+  "literal text"
+), ca = Ft, Pt = /* @__PURE__ */ a(
+  L,
+  l,
+  "single line of text"
+), la = Pt, $t = /* @__PURE__ */ a(
+  L,
+  c,
+  "single line of text"
+), sa = $t, Et = /* @__PURE__ */ a(
+  U,
+  l,
+  "JavaScript function"
+), ua = Et, jt = /* @__PURE__ */ a(
+  U,
+  c,
+  "JavaScript function"
+), fa = jt, Bt = /* @__PURE__ */ a(
+  C,
+  l,
+  "anonymous JavaScript function"
+), ga = Bt, Rt = /* @__PURE__ */ a(
+  C,
+  c,
+  "anonymous JavaScript function"
+), ba = Rt, kt = /* @__PURE__ */ a(
+  H,
+  l,
+  "named JavaScript function"
+), da = kt, zt = /* @__PURE__ */ a(
+  H,
+  c,
+  "named JavaScript function"
+), pa = zt, Jt = /* @__PURE__ */ a(
+  j,
+  l,
+  "native JavaScript function"
+), xa = Jt, Tt = /* @__PURE__ */ a(
+  j,
+  c,
+  "native JavaScript function"
+), wa = Tt, At = /* @__PURE__ */ a(
+  q,
+  l,
+  "scripted JavaScript function"
+), ya = At, Mt = /* @__PURE__ */ a(
+  q,
+  c,
+  "scripted JavaScript function"
+), Ia = Mt, Dt = /* @__PURE__ */ a(
+  _,
+  l,
+  "JavaScript object"
+), va = Dt, he = /* @__PURE__ */ a(
+  _,
+  c,
+  "JavaScript object"
+), Sa = he, Lt = /* @__PURE__ */ a(
+  N,
+  l,
+  '"plain" JavaScript object'
+), ma = Lt, Ut = /* @__PURE__ */ a(
+  N,
+  c,
+  '"plain" JavaScript object'
+), Oa = Ut, Ct = /* @__PURE__ */ a(
+  G,
+  l,
+  '"vanilla" JavaScript object'
+), ha = Ct, Ht = /* @__PURE__ */ a(
+  G,
+  c,
+  '"vanilla" JavaScript object'
+), Na = Ht;
+function qt(e, t) {
+  return t == null ? t : Gt(e, t);
+}
+const Fa = qt;
+function _t(e, t) {
+  if (t == null && f(`MissingArgument: no ${s(e)} given`), B(t))
+    return t;
+  f(
+    `InvalidArgument: the given ${s(e)} is no JavaScript array`
+  );
+}
+const Gt = _t;
+function Wt(e, t, n, r, i) {
+  return t == null ? t : Kt(e, t, n, r, i);
+}
+const Pa = Wt;
+function Zt(e, t, n, r, i) {
+  if (t == null && f(`MissingArgument: no ${s(e)} given`), W(t, r, i))
+    return t;
+  f(
+    `InvalidArgument: the given ${s(e)} is ` + (n == null ? "either not a list or contains an invalid number of elements" : "no " + s(n))
+  );
+}
+const Kt = Zt;
+function Yt(e, t, n, r, i, o) {
+  return t == null ? t : Xt(
+    e,
+    t,
+    n,
+    r,
+    i,
+    o
+  );
+}
+const $a = Yt;
+function Qt(e, t, n, r, i, o) {
+  if (t == null && f(`MissingArgument: no ${s(e)} given`), F(t, n, i, o))
+    return t;
+  f(
+    `InvalidArgument: the given ${s(e)} is ` + (r == null ? "either not a list or contains invalid elements" : "no " + s(r))
+  );
+}
+const Xt = Qt;
+function Vt(e, t, n) {
+  return t == null ? t : tn(e, t, n);
+}
+const Ea = Vt;
+function en(e, t, n) {
+  if (t == null)
+    f(`MissingArgument: no ${s(e)} given`);
+  else {
+    if (F(t, (r) => R(r, n)))
+      return t;
+    f(`InvalidArgument: the given value is no ${s(e)}`);
+  }
+}
+const tn = en;
+function nn(e, t, n, r) {
+  return t == null ? t : an(e, t, n, r);
+}
+const ja = nn;
+function rn(e, t, n, r) {
+  return t == null && f(`MissingArgument: no ${s(e)} given`), t instanceof n || f(
+    `InvalidArgument: the given ${s(e)} is no ${s(r)}`
+  ), t;
+}
+const an = rn;
+function on(e, t, n, r) {
+  return t == null ? t : ln(e, t, n, r);
+}
+const Ba = on;
+function cn(e, t, n, r) {
+  if (t == null && f(`MissingArgument: no ${s(e)} given`), n.isPrototypeOf(t))
+    return t;
+  f(
+    `InvalidArgument: the given ${s(e)} is no ${s(r)}`
+  );
+}
+const ln = cn, sn = /* @__PURE__ */ a(
+  Z,
+  l,
+  "JavaScript Date object"
+), Ra = sn, un = /* @__PURE__ */ a(
+  Z,
+  c,
+  "JavaScript Date object"
+), ka = un, fn = /* @__PURE__ */ a(
+  K,
+  l,
+  "JavaScript Error object"
+), za = fn, gn = /* @__PURE__ */ a(
+  K,
+  c,
+  "JavaScript Error object"
+), Ja = gn, bn = /* @__PURE__ */ a(
+  Y,
+  l,
+  'JavaScript Promise (or "Thenable") object'
+), Ta = bn, dn = /* @__PURE__ */ a(
+  Y,
+  c,
+  'JavaScript Promise (or "Thenable") object'
+), Aa = dn, pn = /* @__PURE__ */ a(
+  Q,
+  l,
+  "JavaScript RegExp object"
+), Ma = pn, xn = /* @__PURE__ */ a(
+  Q,
+  c,
+  "JavaScript RegExp object"
+), Da = xn;
+function wn(e, t, n) {
+  return t == null ? t : In(e, t, n);
+}
+const La = wn;
+function yn(e, t, n) {
+  if (t == null && f(`MissingArgument: no ${s(e)} given`), R(t, n))
+    switch (!0) {
+      // unboxes primitives - but nothing else, as
+      case t instanceof Boolean:
+      // "valueOf" may return other values
+      case t instanceof Number:
+      // for other objects (e.g. Dates)
+      case t instanceof String:
+        return t.valueOf();
+      default:
+        return t;
     }
-    if (ValueIsOneOf(Argument, ValueList)) {
-        switch (true) { // unboxes primitives - but nothing else, as
-            case Argument instanceof Boolean: // "valueOf" may return other values
-            case Argument instanceof Number: // for other objects (e.g. Dates)
-            case Argument instanceof String:
-                return Argument.valueOf();
-            default:
-                return Argument;
-        }
+  else
+    f(
+      `InvalidArgument: the given ${s(e)} is not among the supported values`
+    );
+}
+const In = yn, vn = /* @__PURE__ */ a(
+  X,
+  l,
+  "CSS color specification"
+), Ua = vn, Sn = /* @__PURE__ */ a(
+  X,
+  c,
+  "CSS color specification"
+), Ca = Sn, mn = /* @__PURE__ */ a(
+  V,
+  l,
+  "EMail address"
+), Ha = mn, On = /* @__PURE__ */ a(
+  V,
+  c,
+  "EMail address"
+), qa = On, hn = /* @__PURE__ */ a(
+  ee,
+  l,
+  "URL"
+), _a = hn, Nn = /* @__PURE__ */ a(
+  ee,
+  c,
+  "URL"
+), Ga = Nn, Fn = /* @__PURE__ */ a(
+  te,
+  l,
+  "phone number"
+), Wa = Fn, Pn = /* @__PURE__ */ a(
+  te,
+  c,
+  "phone number"
+), Za = Pn, $n = /* @__PURE__ */ a(
+  ne,
+  l,
+  "phone number in E.164 format"
+), Ka = $n, En = /* @__PURE__ */ a(
+  ne,
+  c,
+  "phone number in E.164 format"
+), Ya = En, jn = /* @__PURE__ */ a(
+  re,
+  l,
+  "BigInt value"
+), Qa = jn, Bn = /* @__PURE__ */ a(
+  re,
+  c,
+  "BigInt value"
+), Xa = Bn, Rn = /* @__PURE__ */ a(
+  ae,
+  l,
+  "symbol"
+), Va = Rn, kn = /* @__PURE__ */ a(
+  ae,
+  c,
+  "symbol"
+), ei = kn, zn = /* @__PURE__ */ a(
+  ie,
+  l,
+  "JavaScript Map"
+), ti = zn, Jn = /* @__PURE__ */ a(
+  ie,
+  c,
+  "JavaScript Map"
+), ni = Jn, Tn = /* @__PURE__ */ a(
+  oe,
+  l,
+  "JavaScript Set"
+), ri = Tn, An = /* @__PURE__ */ a(
+  oe,
+  c,
+  "JavaScript Set"
+), ai = An, Mn = /* @__PURE__ */ a(
+  ce,
+  l,
+  "typed array"
+), ii = Mn, Dn = /* @__PURE__ */ a(
+  ce,
+  c,
+  "typed array"
+), oi = Dn, Ln = /* @__PURE__ */ a(
+  le,
+  l,
+  "ArrayBuffer"
+), ci = Ln, Un = /* @__PURE__ */ a(
+  le,
+  c,
+  "ArrayBuffer"
+), li = Un, Cn = /* @__PURE__ */ a(
+  se,
+  l,
+  "UUID"
+), si = Cn, Hn = /* @__PURE__ */ a(
+  se,
+  c,
+  "UUID"
+), ui = Hn, qn = /* @__PURE__ */ a(
+  ue,
+  l,
+  "ISO 8601 date"
+), fi = qn, _n = /* @__PURE__ */ a(
+  ue,
+  c,
+  "ISO 8601 date"
+), gi = _n, Gn = /* @__PURE__ */ a(
+  fe,
+  l,
+  "ISO 8601 timestamp"
+), bi = Gn, Wn = /* @__PURE__ */ a(
+  fe,
+  c,
+  "ISO 8601 timestamp"
+), di = Wn, Zn = /* @__PURE__ */ a(
+  ge,
+  l,
+  "IPv4 address"
+), pi = Zn, Kn = /* @__PURE__ */ a(
+  ge,
+  c,
+  "IPv4 address"
+), xi = Kn, Yn = /* @__PURE__ */ a(
+  be,
+  l,
+  "IPv6 address"
+), wi = Yn, Qn = /* @__PURE__ */ a(
+  be,
+  c,
+  "IPv6 address"
+), yi = Qn, Xn = /* @__PURE__ */ a(
+  de,
+  l,
+  "host name"
+), Ii = Xn, Vn = /* @__PURE__ */ a(
+  de,
+  c,
+  "host name"
+), vi = Vn, er = /* @__PURE__ */ a(
+  pe,
+  l,
+  "port number"
+), Si = er, tr = /* @__PURE__ */ a(
+  pe,
+  c,
+  "port number"
+), mi = tr, nr = /* @__PURE__ */ a(
+  m,
+  l,
+  "serializable value"
+), Oi = nr, rr = /* @__PURE__ */ a(
+  m,
+  c,
+  "serializable value"
+), hi = rr, ar = /* @__PURE__ */ a(
+  xe,
+  l,
+  "serializable object"
+), Ni = ar, ir = /* @__PURE__ */ a(
+  xe,
+  c,
+  "serializable object"
+), Fi = ir, or = /* @__PURE__ */ a(
+  we,
+  l,
+  "JSON string"
+), Pi = or, cr = /* @__PURE__ */ a(
+  we,
+  c,
+  "JSON string"
+), $i = cr, lr = /* @__PURE__ */ a(
+  ye,
+  l,
+  "Base64-encoded string"
+), Ei = lr, sr = /* @__PURE__ */ a(
+  ye,
+  c,
+  "Base64-encoded string"
+), ji = sr, ur = /* @__PURE__ */ a(
+  Ie,
+  l,
+  "hexadecimal string"
+), Bi = ur, fr = /* @__PURE__ */ a(
+  Ie,
+  c,
+  "hexadecimal string"
+), Ri = fr, gr = /* @__PURE__ */ a(
+  ve,
+  l,
+  "JavaScript identifier"
+), ki = gr, br = /* @__PURE__ */ a(
+  ve,
+  c,
+  "JavaScript identifier"
+), zi = br, dr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?/g, Ne = /[\x00-\x1f\x7f-\x9f]/g;
+function s(e) {
+  return e.replace(dr, (t) => t === "\\" ? "\\\\" : t).replace(Ne, (t) => {
+    switch (t) {
+      case "\0":
+        return "\\0";
+      case "\b":
+        return "\\b";
+      case "\f":
+        return "\\f";
+      case `
+`:
+        return "\\n";
+      case "\r":
+        return "\\r";
+      case "	":
+        return "\\t";
+      case "\v":
+        return "\\v";
+      default: {
+        const n = t.charCodeAt(0).toString(16);
+        return "\\x" + "00".slice(n.length) + n;
+      }
     }
-    else {
-        throwError(`InvalidArgument: the given ${escaped(Description)} is not among the supported values`);
+  });
+}
+const pr = /\\[0bfnrtv'"\\\/]|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}/g;
+function Ji(e) {
+  return e.replace(pr, (t) => {
+    switch (t) {
+      case "\\0":
+        return "\0";
+      case "\\b":
+        return "\b";
+      case "\\f":
+        return "\f";
+      case "\\n":
+        return `
+`;
+      case "\\r":
+        return "\r";
+      case "\\t":
+        return "	";
+      case "\\v":
+        return "\v";
+      case "\\'":
+        return "'";
+      case '\\"':
+        return '"';
+      case "\\\\":
+        return "\\";
+      default: {
+        const n = t.charAt(2) === "{" ? parseInt(t.slice(3, -1), 16) : parseInt(t.slice(2), 16);
+        return n <= 1114111 ? String.fromCodePoint(n) : t;
+      }
     }
+  });
 }
-export const expectedOneOf = expectOneOf;
-/**** allow/expect[ed]Color ****/
-export const allowColor = /*#__PURE__*/ ValidatorForClassifier(ValueIsColor, acceptNil, 'CSS color specification'), allowedColor = allowColor;
-export const expectColor = /*#__PURE__*/ ValidatorForClassifier(ValueIsColor, rejectNil, 'CSS color specification'), expectedColor = expectColor;
-/**** allow/expect[ed]EMailAddress ****/
-export const allowEMailAddress = /*#__PURE__*/ ValidatorForClassifier(ValueIsEMailAddress, acceptNil, 'EMail address'), allowedEMailAddress = allowEMailAddress;
-export const expectEMailAddress = /*#__PURE__*/ ValidatorForClassifier(ValueIsEMailAddress, rejectNil, 'EMail address'), expectedEMailAddress = expectEMailAddress;
-/**** allow/expect[ed]URL ****/
-export const allowURL = /*#__PURE__*/ ValidatorForClassifier(ValueIsURL, acceptNil, 'URL'), allowedURL = allowURL;
-export const expectURL = /*#__PURE__*/ ValidatorForClassifier(ValueIsURL, rejectNil, 'URL'), expectedURL = expectURL;
-/**** allow/expect[ed]PhoneNumber ****/
-export const allowPhoneNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsPhoneNumber, acceptNil, 'phone number'), allowedPhoneNumber = allowPhoneNumber;
-export const expectPhoneNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsPhoneNumber, rejectNil, 'phone number'), expectedPhoneNumber = expectPhoneNumber;
-/**** allow/expect[ed]E164PhoneNumber ****/
-export const allowE164PhoneNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsE164PhoneNumber, acceptNil, 'phone number in E.164 format'), allowedE164PhoneNumber = allowE164PhoneNumber;
-export const expectE164PhoneNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsE164PhoneNumber, rejectNil, 'phone number in E.164 format'), expectedE164PhoneNumber = expectE164PhoneNumber;
-/**** allow/expect[ed]BigInt ****/
-export const allowBigInt = /*#__PURE__*/ ValidatorForClassifier(ValueIsBigInt, acceptNil, 'BigInt value'), allowedBigInt = allowBigInt;
-export const expectBigInt = /*#__PURE__*/ ValidatorForClassifier(ValueIsBigInt, rejectNil, 'BigInt value'), expectedBigInt = expectBigInt;
-/**** allow/expect[ed]Symbol ****/
-export const allowSymbol = /*#__PURE__*/ ValidatorForClassifier(ValueIsSymbol, acceptNil, 'symbol'), allowedSymbol = allowSymbol;
-export const expectSymbol = /*#__PURE__*/ ValidatorForClassifier(ValueIsSymbol, rejectNil, 'symbol'), expectedSymbol = expectSymbol;
-/**** allow/expect[ed]Map ****/
-export const allowMap = /*#__PURE__*/ ValidatorForClassifier(ValueIsMap, acceptNil, 'JavaScript Map'), allowedMap = allowMap;
-export const expectMap = /*#__PURE__*/ ValidatorForClassifier(ValueIsMap, rejectNil, 'JavaScript Map'), expectedMap = expectMap;
-/**** allow/expect[ed]Set ****/
-export const allowSet = /*#__PURE__*/ ValidatorForClassifier(ValueIsSet, acceptNil, 'JavaScript Set'), allowedSet = allowSet;
-export const expectSet = /*#__PURE__*/ ValidatorForClassifier(ValueIsSet, rejectNil, 'JavaScript Set'), expectedSet = expectSet;
-/**** allow/expect[ed]TypedArray ****/
-export const allowTypedArray = /*#__PURE__*/ ValidatorForClassifier(ValueIsTypedArray, acceptNil, 'typed array'), allowedTypedArray = allowTypedArray;
-export const expectTypedArray = /*#__PURE__*/ ValidatorForClassifier(ValueIsTypedArray, rejectNil, 'typed array'), expectedTypedArray = expectTypedArray;
-/**** allow/expect[ed]ArrayBuffer ****/
-export const allowArrayBuffer = /*#__PURE__*/ ValidatorForClassifier(ValueIsArrayBuffer, acceptNil, 'ArrayBuffer'), allowedArrayBuffer = allowArrayBuffer;
-export const expectArrayBuffer = /*#__PURE__*/ ValidatorForClassifier(ValueIsArrayBuffer, rejectNil, 'ArrayBuffer'), expectedArrayBuffer = expectArrayBuffer;
-/**** allow/expect[ed]UUID ****/
-export const allowUUID = /*#__PURE__*/ ValidatorForClassifier(ValueIsUUID, acceptNil, 'UUID'), allowedUUID = allowUUID;
-export const expectUUID = /*#__PURE__*/ ValidatorForClassifier(ValueIsUUID, rejectNil, 'UUID'), expectedUUID = expectUUID;
-/**** allow/expect[ed]ISODate ****/
-export const allowISODate = /*#__PURE__*/ ValidatorForClassifier(ValueIsISODate, acceptNil, 'ISO 8601 date'), allowedISODate = allowISODate;
-export const expectISODate = /*#__PURE__*/ ValidatorForClassifier(ValueIsISODate, rejectNil, 'ISO 8601 date'), expectedISODate = expectISODate;
-/**** allow/expect[ed]ISOTimestamp ****/
-export const allowISOTimestamp = /*#__PURE__*/ ValidatorForClassifier(ValueIsISOTimestamp, acceptNil, 'ISO 8601 timestamp'), allowedISOTimestamp = allowISOTimestamp;
-export const expectISOTimestamp = /*#__PURE__*/ ValidatorForClassifier(ValueIsISOTimestamp, rejectNil, 'ISO 8601 timestamp'), expectedISOTimestamp = expectISOTimestamp;
-/**** allow/expect[ed]IPv4Address ****/
-export const allowIPv4Address = /*#__PURE__*/ ValidatorForClassifier(ValueIsIPv4Address, acceptNil, 'IPv4 address'), allowedIPv4Address = allowIPv4Address;
-export const expectIPv4Address = /*#__PURE__*/ ValidatorForClassifier(ValueIsIPv4Address, rejectNil, 'IPv4 address'), expectedIPv4Address = expectIPv4Address;
-/**** allow/expect[ed]IPv6Address ****/
-export const allowIPv6Address = /*#__PURE__*/ ValidatorForClassifier(ValueIsIPv6Address, acceptNil, 'IPv6 address'), allowedIPv6Address = allowIPv6Address;
-export const expectIPv6Address = /*#__PURE__*/ ValidatorForClassifier(ValueIsIPv6Address, rejectNil, 'IPv6 address'), expectedIPv6Address = expectIPv6Address;
-/**** allow/expect[ed]HostName ****/
-export const allowHostName = /*#__PURE__*/ ValidatorForClassifier(ValueIsHostName, acceptNil, 'host name'), allowedHostName = allowHostName;
-export const expectHostName = /*#__PURE__*/ ValidatorForClassifier(ValueIsHostName, rejectNil, 'host name'), expectedHostName = expectHostName;
-/**** allow/expect[ed]PortNumber ****/
-export const allowPortNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsPortNumber, acceptNil, 'port number'), allowedPortNumber = allowPortNumber;
-export const expectPortNumber = /*#__PURE__*/ ValidatorForClassifier(ValueIsPortNumber, rejectNil, 'port number'), expectedPortNumber = expectPortNumber;
-/**** allow/expect[ed]JSONString ****/
-export const allowJSONString = /*#__PURE__*/ ValidatorForClassifier(ValueIsJSONString, acceptNil, 'JSON string'), allowedJSONString = allowJSONString;
-export const expectJSONString = /*#__PURE__*/ ValidatorForClassifier(ValueIsJSONString, rejectNil, 'JSON string'), expectedJSONString = expectJSONString;
-/**** allow/expect[ed]Base64 ****/
-export const allowBase64 = /*#__PURE__*/ ValidatorForClassifier(ValueIsBase64, acceptNil, 'Base64-encoded string'), allowedBase64 = allowBase64;
-export const expectBase64 = /*#__PURE__*/ ValidatorForClassifier(ValueIsBase64, rejectNil, 'Base64-encoded string'), expectedBase64 = expectBase64;
-/**** allow/expect[ed]HexString ****/
-export const allowHexString = /*#__PURE__*/ ValidatorForClassifier(ValueIsHexString, acceptNil, 'hexadecimal string'), allowedHexString = allowHexString;
-export const expectHexString = /*#__PURE__*/ ValidatorForClassifier(ValueIsHexString, rejectNil, 'hexadecimal string'), expectedHexString = expectHexString;
-/**** allow/expect[ed]Identifier ****/
-export const allowIdentifier = /*#__PURE__*/ ValidatorForClassifier(ValueIsIdentifier, acceptNil, 'JavaScript identifier'), allowedIdentifier = allowIdentifier;
-export const expectIdentifier = /*#__PURE__*/ ValidatorForClassifier(ValueIsIdentifier, rejectNil, 'JavaScript identifier'), expectedIdentifier = expectIdentifier;
-/**** escaped - escapes all control characters in a given string ****/
-const EscSequenceScanPattern = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?/g;
-const CtrlCharCodePattern = /[\x00-\x1f\x7f-\x9f]/g;
-export function escaped(Text) {
-    return Text
-        .replace(EscSequenceScanPattern, (Match) => (Match === '\\' ? '\\\\' : Match))
-        .replace(CtrlCharCodePattern, (Match) => {
-        switch (Match) {
-            case '\0': return '\\0';
-            case '\b': return '\\b';
-            case '\f': return '\\f';
-            case '\n': return '\\n';
-            case '\r': return '\\r';
-            case '\t': return '\\t';
-            case '\v': return '\\v';
-            default: {
-                const HexCode = Match.charCodeAt(0).toString(16);
-                return '\\x' + '00'.slice(HexCode.length) + HexCode;
-            }
-        }
-    });
-}
-/**** unescaped - evaluates all escape sequences in a given string ****/
-const EscSequenceEvalPattern = /\\[0bfnrtv'"\\\/]|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}/g;
-export function unescaped(Text) {
-    return Text
-        .replace(EscSequenceEvalPattern, (Match) => {
-        switch (Match) {
-            case '\\0': return '\0';
-            case '\\b': return '\b';
-            case '\\f': return '\f';
-            case '\\n': return '\n';
-            case '\\r': return '\r';
-            case '\\t': return '\t';
-            case '\\v': return '\v';
-            case "\\'": return "'";
-            case '\\"': return '"';
-            case '\\\\': return '\\';
-            default: {
-                const CodePoint = (Match.charAt(2) === '{'
-                    ? parseInt(Match.slice(3, -1), 16) // handles "\u{...}" escapes
-                    : parseInt(Match.slice(2), 16) // handles "\xNN" and "\uNNNN"
-                );
-                return (CodePoint <= 0x10FFFF ? String.fromCodePoint(CodePoint) : Match); // leaves invalid code point escapes untouched
-            }
-        }
-    });
-}
-/**** quotable - makes a given string ready to be put in quotes ****/
-const EscSeqOrSglQuotePattern = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|'/g;
-const EscSeqOrDblQuotePattern = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|"/g;
-const EscSeqOrBackQuotePattern = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|`|\$\{/g;
-export function quotable(Text, Quote = '"') {
-    const QuotePattern = (Quote === "'"
-        ? EscSeqOrSglQuotePattern
-        : (Quote === '`' ? EscSeqOrBackQuotePattern : EscSeqOrDblQuotePattern));
-    return Text
-        .replace(QuotePattern, (Match) => {
-        switch (Match) {
-            case "'": return "\\'";
-            case '"': return '\\"';
-            case '`': return '\\`';
-            case '${': return '\\${';
-            case '\\': return '\\\\';
-            default: return Match;
-        }
-    })
-        .replace(CtrlCharCodePattern, (Match) => {
-        switch (Match) {
-            case '\0': return '\\0';
-            case '\b': return '\\b';
-            case '\f': return '\\f';
-            case '\n': return '\\n';
-            case '\r': return '\\r';
-            case '\t': return '\\t';
-            case '\v': return '\\v';
-            default: {
-                const HexCode = Match.charCodeAt(0).toString(16);
-                return '\\x' + '00'.slice(HexCode.length) + HexCode;
-            }
-        }
-    });
-}
-/**** quoted ****/
-export function quoted(Text, Quote = '"') {
-    return Quote + quotable(Text, Quote) + Quote;
-}
-/**** HTMLsafe ****/
-// warning: any "EOLReplacement" is inserted as given - it must be trusted HTML!
-const HTMLSpecialsPattern = /[&<>"'\x00-\x1F\x7F-\x9F\\]/g;
-export function HTMLsafe(Argument, EOLReplacement) {
-    EOLReplacement = (EOLReplacement || '').trim() || '<br/>';
-    return Argument.replace(HTMLSpecialsPattern, (Match) => {
-        switch (Match) {
-            case '&': return '&amp;';
-            case '<': return '&lt;';
-            case '>': return '&gt;';
-            case '"': return '&quot;';
-            case "'": return '&apos;';
-            case '\b': return '&#92;b';
-            case '\f': return '&#92;f';
-            case '\n': return EOLReplacement;
-            case '\r': return '&#92;r';
-            case '\t': return '&#92;t';
-            case '\v': return '&#92;v';
-            case '\\': return '&#92;';
-            default: {
-                const Result = Match.charCodeAt(0).toString(16);
-                return '&#x0000'.substring(0, 7 - Result.length) + Result + ';';
-            }
-        }
-    });
-}
-/**** MarkDownSafe ****/
-// warning: any "EOLReplacement" is inserted as given - it must be trusted HTML
-// and must not contain any MarkDown-relevant characters!
-const MarkDownSpecialsPattern = /[:`*_\[\]#|~]/g;
-export function MarkDownSafe(Argument, EOLReplacement) {
-    return HTMLsafe(Argument, EOLReplacement).replace(MarkDownSpecialsPattern, (Match) => '&#' + Match.charCodeAt(0) + ';');
-}
-export function ValuesDiffer(thisValue, otherValue, ModeOrOptions, visitedPairs // for internal use only
-) {
-    if (thisValue === otherValue) {
-        return false;
+const xr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|'/g, wr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|"/g, yr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|`|\$\{/g;
+function Ir(e, t = '"') {
+  const n = t === "'" ? xr : t === "`" ? yr : wr;
+  return e.replace(n, (r) => {
+    switch (r) {
+      case "'":
+        return "\\'";
+      case '"':
+        return '\\"';
+      case "`":
+        return "\\`";
+      case "${":
+        return "\\${";
+      case "\\":
+        return "\\\\";
+      default:
+        return r;
     }
-    let Mode = undefined;
-    let Tolerance = undefined;
-    if ((ModeOrOptions != null) && (typeof ModeOrOptions === 'object')) {
-        Mode = ModeOrOptions.Mode;
-        Tolerance = ModeOrOptions.Tolerance;
+  }).replace(Ne, (r) => {
+    switch (r) {
+      case "\0":
+        return "\\0";
+      case "\b":
+        return "\\b";
+      case "\f":
+        return "\\f";
+      case `
+`:
+        return "\\n";
+      case "\r":
+        return "\\r";
+      case "	":
+        return "\\t";
+      case "\v":
+        return "\\v";
+      default: {
+        const i = r.charCodeAt(0).toString(16);
+        return "\\x" + "00".slice(i.length) + i;
+      }
     }
-    else {
-        Mode = ModeOrOptions;
-    }
-    let thisType = typeof thisValue;
-    if (thisType !== typeof otherValue) {
-        return true;
-    }
-    /**** ArraysDiffer ****/
-    function ArraysDiffer(thisArray, otherArray, ModeOrOptions, visitedPairs) {
-        if (!Array.isArray(otherArray)) {
-            return true;
-        }
-        if (thisArray.length !== otherArray.length) {
-            return true;
-        }
-        for (let i = 0, l = thisArray.length; i < l; i++) {
-            if (ValuesDiffer(thisArray[i], otherArray[i], ModeOrOptions, visitedPairs)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    /**** MapsDiffer - keys are matched by identity, values recursively ****/
-    function MapsDiffer(thisMap, otherMap, ModeOrOptions, visitedPairs) {
-        if (!(otherMap instanceof Map)) {
-            return true;
-        }
-        if (thisMap.size !== otherMap.size) {
-            return true;
-        }
-        let Difference = false;
-        thisMap.forEach(function (Value, Key) {
-            if (!Difference) {
-                Difference = (!otherMap.has(Key) ||
-                    ValuesDiffer(Value, otherMap.get(Key), ModeOrOptions, visitedPairs));
-            }
-        });
-        return Difference;
-    }
-    /**** SetsDiffer - elements are matched by identity ****/
-    function SetsDiffer(thisSet, otherSet) {
-        if (!(otherSet instanceof Set)) {
-            return true;
-        }
-        if (thisSet.size !== otherSet.size) {
-            return true;
-        }
-        let Difference = false;
-        thisSet.forEach(function (Value) {
-            if (!Difference && !otherSet.has(Value)) {
-                Difference = true;
-            }
-        });
-        return Difference;
-    }
-    /**** TypedArraysDiffer - typed arrays are compared byte-wise ****/
-    function TypedArraysDiffer(thisArray, otherArray) {
-        if (Object.getPrototypeOf(thisArray) !== Object.getPrototypeOf(otherArray)) {
-            return true;
-        }
-        if (thisArray.byteLength !== otherArray.byteLength) {
-            return true;
-        }
-        let thisView = new Uint8Array(thisArray.buffer, thisArray.byteOffset, thisArray.byteLength);
-        let otherView = new Uint8Array(otherArray.buffer, otherArray.byteOffset, otherArray.byteLength);
-        for (let i = 0, l = thisView.length; i < l; i++) {
-            if (thisView[i] !== otherView[i]) {
-                return true;
-            }
-        }
-        return false;
-    }
-    /**** ObjectsDiffer ****/
-    function ObjectsDiffer(thisObject, otherObject, ModeOrOptions, visitedPairs) {
-        if (Object.getPrototypeOf(thisObject) !== Object.getPrototypeOf(otherObject)) {
-            return true;
-        }
-        for (let key in thisObject) {
-            if (!(key in otherObject)) {
-                return true;
-            }
-        }
-        for (let key in otherObject) {
-            if (!(key in thisObject)) {
-                return true;
-            }
-            if (ValuesDiffer(thisObject[key], otherObject[key], ModeOrOptions, visitedPairs)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    switch (thisType) {
-        case 'undefined':
-        case 'boolean':
-        case 'string':
-        case 'bigint':
-        case 'symbol':
-        case 'function': return true; // most primitives are compared using "==="
-        case 'number': {
-            if (isNaN(thisValue) !== isNaN(otherValue)) {
-                return true;
-            }
-            if (Tolerance != null) { // explicit absolute tolerance
-                return (Math.abs(thisValue - otherValue) > Tolerance);
-            }
-            const relTolerance = Number.EPSILON * Math.max(// default is relative!
-            1, Math.abs(thisValue), Math.abs(otherValue));
-            return (Math.abs(thisValue - otherValue) > relTolerance);
-        }
-        case 'object':
-            if (thisValue == null) {
-                return true;
-            } // since "other_value" != null!
-            if (otherValue == null) {
-                return true;
-            } // since "this_value" != null!
-            if ( // boxed primitives are compared by their values
-            (thisValue instanceof Boolean) ||
-                (thisValue instanceof Number) ||
-                (thisValue instanceof String)) {
-                if (Mode === 'by-reference') {
-                    return true;
-                } // s.a. thisValue !== otherValue
-                return ((Object.getPrototypeOf(thisValue) !== Object.getPrototypeOf(otherValue)) ||
-                    (thisValue.valueOf() !== otherValue.valueOf()));
-            }
-            if (thisValue instanceof Date) { // Dates are compared by their times
-                if (Mode === 'by-reference') {
-                    return true;
-                }
-                if (!(otherValue instanceof Date)) {
-                    return true;
-                }
-                let thisTime = thisValue.getTime(), otherTime = otherValue.getTime();
-                return ((thisTime !== otherTime) && !(isNaN(thisTime) && isNaN(otherTime))); // two "invalid" Dates are considered equal
-            }
-            if (thisValue instanceof RegExp) { // RegExps: compare source + flags
-                if (Mode === 'by-reference') {
-                    return true;
-                }
-                return (!(otherValue instanceof RegExp) ||
-                    (thisValue.source !== otherValue.source) ||
-                    (thisValue.flags !== otherValue.flags));
-            }
-            /**** cycle detection - matching cycles are considered "equal" ****/
-            if (visitedPairs == null) {
-                visitedPairs = new WeakMap();
-            }
-            let visitedPartners = visitedPairs.get(thisValue);
-            if (visitedPartners == null) {
-                visitedPairs.set(thisValue, visitedPartners = new WeakSet());
-            }
-            if (visitedPartners.has(otherValue)) {
-                return false;
-            }
-            visitedPartners.add(otherValue);
-            if (Array.isArray(thisValue)) {
-                return ArraysDiffer(thisValue, otherValue, ModeOrOptions, visitedPairs);
-            }
-            if (thisValue instanceof Map) {
-                if (Mode === 'by-reference') {
-                    return true;
-                }
-                return MapsDiffer(thisValue, otherValue, ModeOrOptions, visitedPairs);
-            }
-            if (thisValue instanceof Set) {
-                if (Mode === 'by-reference') {
-                    return true;
-                }
-                return SetsDiffer(thisValue, otherValue);
-            }
-            if (ArrayBuffer.isView(thisValue)) { // typed arrays incl. DataViews
-                if (Mode === 'by-reference') {
-                    return true;
-                }
-                return TypedArraysDiffer(thisValue, otherValue);
-            }
-            return (Mode === 'by-reference'
-                ? true // because (thisValue !== otherValue)
-                : ObjectsDiffer(thisValue, otherValue, ModeOrOptions, visitedPairs));
-        default: return true; // unsupported property type
-    }
+  });
 }
-/**** ValuesAreEqual ****/
-export function ValuesAreEqual(thisValue, otherValue, ModeOrOptions) {
-    return !ValuesDiffer(thisValue, otherValue, ModeOrOptions);
+function Ti(e, t = '"') {
+  return t + Ir(e, t) + t;
 }
-/**** ObjectIsEmpty ****/
-export function ObjectIsEmpty(Candidate) {
-    expectObject('candidate', Candidate);
-    for (let Key in Candidate) {
-        if (Object_hasOwnProperty(Candidate, Key)) {
-            return false;
-        }
+const vr = /[&<>"'\x00-\x1F\x7F-\x9F\\]/g;
+function Sr(e, t) {
+  return t = (t || "").trim() || "<br/>", e.replace(vr, (n) => {
+    switch (n) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&apos;";
+      case "\b":
+        return "&#92;b";
+      case "\f":
+        return "&#92;f";
+      case `
+`:
+        return t;
+      case "\r":
+        return "&#92;r";
+      case "	":
+        return "&#92;t";
+      case "\v":
+        return "&#92;v";
+      case "\\":
+        return "&#92;";
+      default: {
+        const r = n.charCodeAt(0).toString(16);
+        return "&#x0000".substring(0, 7 - r.length) + r + ";";
+      }
     }
-    return true;
+  });
 }
-/**** ObjectIsNotEmpty ****/
-export function ObjectIsNotEmpty(Candidate) {
-    return !ObjectIsEmpty(Candidate);
+const mr = /[:`*_\[\]#|~]/g;
+function Ai(e, t) {
+  return Sr(e, t).replace(
+    mr,
+    (n) => "&#" + n.charCodeAt(0) + ";"
+  );
 }
-/**** StringIsEmpty ****/
-export function StringIsEmpty(Candidate) {
-    return /^\s*$/.test(Candidate);
+function h(e, t, n, r) {
+  if (e === t)
+    return !1;
+  let i, o;
+  n != null && typeof n == "object" ? (i = n.Mode, o = n.Tolerance) : i = n;
+  let I = typeof e;
+  if (I !== typeof t)
+    return !0;
+  function x(g, u, d, w) {
+    if (!Array.isArray(u) || g.length !== u.length)
+      return !0;
+    for (let b = 0, S = g.length; b < S; b++)
+      if (h(g[b], u[b], d, w))
+        return !0;
+    return !1;
+  }
+  function Fe(g, u, d, w) {
+    if (!(u instanceof Map) || g.size !== u.size)
+      return !0;
+    let b = !1;
+    return g.forEach(function(S, k) {
+      b || (b = !u.has(k) || h(S, u.get(k), d, w));
+    }), b;
+  }
+  function Pe(g, u) {
+    if (!(u instanceof Set) || g.size !== u.size)
+      return !0;
+    let d = !1;
+    return g.forEach(function(w) {
+      !d && !u.has(w) && (d = !0);
+    }), d;
+  }
+  function $e(g, u) {
+    if (Object.getPrototypeOf(g) !== Object.getPrototypeOf(u) || g.byteLength !== u.byteLength)
+      return !0;
+    let d = new Uint8Array(
+      g.buffer,
+      g.byteOffset,
+      g.byteLength
+    ), w = new Uint8Array(
+      u.buffer,
+      u.byteOffset,
+      u.byteLength
+    );
+    for (let b = 0, S = d.length; b < S; b++)
+      if (d[b] !== w[b])
+        return !0;
+    return !1;
+  }
+  function Ee(g, u, d, w) {
+    if (Object.getPrototypeOf(g) !== Object.getPrototypeOf(u))
+      return !0;
+    for (let b in g)
+      if (!(b in u))
+        return !0;
+    for (let b in u)
+      if (!(b in g) || h(g[b], u[b], d, w))
+        return !0;
+    return !1;
+  }
+  switch (I) {
+    case "undefined":
+    case "boolean":
+    case "string":
+    case "bigint":
+    case "symbol":
+    case "function":
+      return !0;
+    // most primitives are compared using "==="
+    case "number": {
+      if (isNaN(e) !== isNaN(t))
+        return !0;
+      if (o != null)
+        return Math.abs(e - t) > o;
+      const u = Number.EPSILON * Math.max(
+        // default is relative!
+        1,
+        Math.abs(e),
+        Math.abs(t)
+      );
+      return Math.abs(e - t) > u;
+    }
+    case "object":
+      if (e == null || t == null)
+        return !0;
+      if (
+        // boxed primitives are compared by their values
+        e instanceof Boolean || e instanceof Number || e instanceof String
+      )
+        return i === "by-reference" ? !0 : Object.getPrototypeOf(e) !== Object.getPrototypeOf(t) || e.valueOf() !== t.valueOf();
+      if (e instanceof Date) {
+        if (i === "by-reference" || !(t instanceof Date))
+          return !0;
+        let u = e.getTime(), d = t.getTime();
+        return u !== d && !(isNaN(u) && isNaN(d));
+      }
+      if (e instanceof RegExp)
+        return i === "by-reference" ? !0 : !(t instanceof RegExp) || e.source !== t.source || e.flags !== t.flags;
+      r == null && (r = /* @__PURE__ */ new WeakMap());
+      let g = r.get(e);
+      return g == null && r.set(e, g = /* @__PURE__ */ new WeakSet()), g.has(t) ? !1 : (g.add(t), Array.isArray(e) ? x(e, t, n, r) : e instanceof Map ? i === "by-reference" ? !0 : Fe(e, t, n, r) : e instanceof Set ? i === "by-reference" ? !0 : Pe(e, t) : ArrayBuffer.isView(e) ? i === "by-reference" ? !0 : $e(e, t) : i === "by-reference" ? !0 : Ee(e, t, n, r));
+    default:
+      return !0;
+  }
 }
-/**** StringIsNotEmpty ****/
-export function StringIsNotEmpty(Candidate) {
-    return !StringIsEmpty(Candidate);
+function Mi(e, t, n) {
+  return !h(e, t, n);
 }
-/**** constrained ****/
-export function constrained(Value, Minimum = -Infinity, Maximum = Infinity) {
-    return Math.max(Minimum, Math.min(Value, Maximum));
+function Or(e) {
+  he("candidate", e);
+  for (let t in e)
+    if (je(e, t))
+      return !1;
+  return !0;
 }
-//------------------------------------------------------------------------------
-//--                             Color Utilities                              --
-//------------------------------------------------------------------------------
-// built-in color names (see http://www.w3.org/TR/SVG/types.html#ColorKeywords) ----
-export const ColorSet = /*#__PURE__*/ Object.freeze({
-    transparent: 'rgba(0,0,0,0.0)',
-    aliceblue: 'rgba(240,248,255,1.0)', lightpink: 'rgba(255,182,193,1.0)',
-    antiquewhite: 'rgba(250,235,215,1.0)', lightsalmon: 'rgba(255,160,122,1.0)',
-    aqua: 'rgba(0,255,255,1.0)', lightseagreen: 'rgba(32,178,170,1.0)',
-    aquamarine: 'rgba(127,255,212,1.0)', lightskyblue: 'rgba(135,206,250,1.0)',
-    azure: 'rgba(240,255,255,1.0)', lightslategray: 'rgba(119,136,153,1.0)',
-    beige: 'rgba(245,245,220,1.0)', lightslategrey: 'rgba(119,136,153,1.0)',
-    bisque: 'rgba(255,228,196,1.0)', lightsteelblue: 'rgba(176,196,222,1.0)',
-    black: 'rgba(0,0,0,1.0)', lightyellow: 'rgba(255,255,224,1.0)',
-    blanchedalmond: 'rgba(255,235,205,1.0)', lime: 'rgba(0,255,0,1.0)',
-    blue: 'rgba(0,0,255,1.0)', limegreen: 'rgba(50,205,50,1.0)',
-    blueviolet: 'rgba(138,43,226,1.0)', linen: 'rgba(250,240,230,1.0)',
-    brown: 'rgba(165,42,42,1.0)', magenta: 'rgba(255,0,255,1.0)',
-    burlywood: 'rgba(222,184,135,1.0)', maroon: 'rgba(128,0,0,1.0)',
-    cadetblue: 'rgba(95,158,160,1.0)', mediumaquamarine: 'rgba(102,205,170,1.0)',
-    chartreuse: 'rgba(127,255,0,1.0)', mediumblue: 'rgba(0,0,205,1.0)',
-    chocolate: 'rgba(210,105,30,1.0)', mediumorchid: 'rgba(186,85,211,1.0)',
-    coral: 'rgba(255,127,80,1.0)', mediumpurple: 'rgba(147,112,219,1.0)',
-    cornflowerblue: 'rgba(100,149,237,1.0)', mediumseagreen: 'rgba(60,179,113,1.0)',
-    cornsilk: 'rgba(255,248,220,1.0)', mediumslateblue: 'rgba(123,104,238,1.0)',
-    crimson: 'rgba(220,20,60,1.0)', mediumspringgreen: 'rgba(0,250,154,1.0)',
-    cyan: 'rgba(0,255,255,1.0)', mediumturquoise: 'rgba(72,209,204,1.0)',
-    darkblue: 'rgba(0,0,139,1.0)', mediumvioletred: 'rgba(199,21,133,1.0)',
-    darkcyan: 'rgba(0,139,139,1.0)', midnightblue: 'rgba(25,25,112,1.0)',
-    darkgoldenrod: 'rgba(184,134,11,1.0)', mintcream: 'rgba(245,255,250,1.0)',
-    darkgray: 'rgba(169,169,169,1.0)', mistyrose: 'rgba(255,228,225,1.0)',
-    darkgreen: 'rgba(0,100,0,1.0)', moccasin: 'rgba(255,228,181,1.0)',
-    darkgrey: 'rgba(169,169,169,1.0)', navajowhite: 'rgba(255,222,173,1.0)',
-    darkkhaki: 'rgba(189,183,107,1.0)', navy: 'rgba(0,0,128,1.0)',
-    darkmagenta: 'rgba(139,0,139,1.0)', oldlace: 'rgba(253,245,230,1.0)',
-    darkolivegreen: 'rgba(85,107,47,1.0)', olive: 'rgba(128,128,0,1.0)',
-    darkorange: 'rgba(255,140,0,1.0)', olivedrab: 'rgba(107,142,35,1.0)',
-    darkorchid: 'rgba(153,50,204,1.0)', orange: 'rgba(255,165,0,1.0)',
-    darkred: 'rgba(139,0,0,1.0)', orangered: 'rgba(255,69,0,1.0)',
-    darksalmon: 'rgba(233,150,122,1.0)', orchid: 'rgba(218,112,214,1.0)',
-    darkseagreen: 'rgba(143,188,143,1.0)', palegoldenrod: 'rgba(238,232,170,1.0)',
-    darkslateblue: 'rgba(72,61,139,1.0)', palegreen: 'rgba(152,251,152,1.0)',
-    darkslategray: 'rgba(47,79,79,1.0)', paleturquoise: 'rgba(175,238,238,1.0)',
-    darkslategrey: 'rgba(47,79,79,1.0)', palevioletred: 'rgba(219,112,147,1.0)',
-    darkturquoise: 'rgba(0,206,209,1.0)', papayawhip: 'rgba(255,239,213,1.0)',
-    darkviolet: 'rgba(148,0,211,1.0)', peachpuff: 'rgba(255,218,185,1.0)',
-    deeppink: 'rgba(255,20,147,1.0)', peru: 'rgba(205,133,63,1.0)',
-    deepskyblue: 'rgba(0,191,255,1.0)', pink: 'rgba(255,192,203,1.0)',
-    dimgray: 'rgba(105,105,105,1.0)', plum: 'rgba(221,160,221,1.0)',
-    dimgrey: 'rgba(105,105,105,1.0)', powderblue: 'rgba(176,224,230,1.0)',
-    dodgerblue: 'rgba(30,144,255,1.0)', purple: 'rgba(128,0,128,1.0)',
-    firebrick: 'rgba(178,34,34,1.0)', red: 'rgba(255,0,0,1.0)',
-    floralwhite: 'rgba(255,250,240,1.0)', rosybrown: 'rgba(188,143,143,1.0)',
-    forestgreen: 'rgba(34,139,34,1.0)', royalblue: 'rgba(65,105,225,1.0)',
-    fuchsia: 'rgba(255,0,255,1.0)', saddlebrown: 'rgba(139,69,19,1.0)',
-    gainsboro: 'rgba(220,220,220,1.0)', salmon: 'rgba(250,128,114,1.0)',
-    ghostwhite: 'rgba(248,248,255,1.0)', sandybrown: 'rgba(244,164,96,1.0)',
-    gold: 'rgba(255,215,0,1.0)', seagreen: 'rgba(46,139,87,1.0)',
-    goldenrod: 'rgba(218,165,32,1.0)', seashell: 'rgba(255,245,238,1.0)',
-    gray: 'rgba(128,128,128,1.0)', sienna: 'rgba(160,82,45,1.0)',
-    green: 'rgba(0,128,0,1.0)', silver: 'rgba(192,192,192,1.0)',
-    greenyellow: 'rgba(173,255,47,1.0)', skyblue: 'rgba(135,206,235,1.0)',
-    grey: 'rgba(128,128,128,1.0)', slateblue: 'rgba(106,90,205,1.0)',
-    honeydew: 'rgba(240,255,240,1.0)', slategray: 'rgba(112,128,144,1.0)',
-    hotpink: 'rgba(255,105,180,1.0)', slategrey: 'rgba(112,128,144,1.0)',
-    indianred: 'rgba(205,92,92,1.0)', snow: 'rgba(255,250,250,1.0)',
-    indigo: 'rgba(75,0,130,1.0)', springgreen: 'rgba(0,255,127,1.0)',
-    ivory: 'rgba(255,255,240,1.0)', steelblue: 'rgba(70,130,180,1.0)',
-    khaki: 'rgba(240,230,140,1.0)', tan: 'rgba(210,180,140,1.0)',
-    lavender: 'rgba(230,230,250,1.0)', teal: 'rgba(0,128,128,1.0)',
-    lavenderblush: 'rgba(255,240,245,1.0)', thistle: 'rgba(216,191,216,1.0)',
-    lawngreen: 'rgba(124,252,0,1.0)', tomato: 'rgba(255,99,71,1.0)',
-    lemonchiffon: 'rgba(255,250,205,1.0)', turquoise: 'rgba(64,224,208,1.0)',
-    lightblue: 'rgba(173,216,230,1.0)', violet: 'rgba(238,130,238,1.0)',
-    lightcoral: 'rgba(240,128,128,1.0)', wheat: 'rgba(245,222,179,1.0)',
-    lightcyan: 'rgba(224,255,255,1.0)', white: 'rgba(255,255,255,1.0)',
-    lightgoldenrodyellow: 'rgba(250,250,210,1.0)', whitesmoke: 'rgba(245,245,245,1.0)',
-    lightgray: 'rgba(211,211,211,1.0)', yellow: 'rgba(255,255,0,1.0)',
-    lightgreen: 'rgba(144,238,144,1.0)', yellowgreen: 'rgba(154,205,50,1.0)',
-    lightgrey: 'rgba(211,211,211,1.0)',
+function Di(e) {
+  return !Or(e);
+}
+function hr(e) {
+  return /^\s*$/.test(e);
+}
+function Li(e) {
+  return !hr(e);
+}
+function Ui(e, t = -1 / 0, n = 1 / 0) {
+  return Math.max(t, Math.min(e, n));
+}
+const O = /* @__PURE__ */ Object.freeze({
+  transparent: "rgba(0,0,0,0.0)",
+  aliceblue: "rgba(240,248,255,1.0)",
+  lightpink: "rgba(255,182,193,1.0)",
+  antiquewhite: "rgba(250,235,215,1.0)",
+  lightsalmon: "rgba(255,160,122,1.0)",
+  aqua: "rgba(0,255,255,1.0)",
+  lightseagreen: "rgba(32,178,170,1.0)",
+  aquamarine: "rgba(127,255,212,1.0)",
+  lightskyblue: "rgba(135,206,250,1.0)",
+  azure: "rgba(240,255,255,1.0)",
+  lightslategray: "rgba(119,136,153,1.0)",
+  beige: "rgba(245,245,220,1.0)",
+  lightslategrey: "rgba(119,136,153,1.0)",
+  bisque: "rgba(255,228,196,1.0)",
+  lightsteelblue: "rgba(176,196,222,1.0)",
+  black: "rgba(0,0,0,1.0)",
+  lightyellow: "rgba(255,255,224,1.0)",
+  blanchedalmond: "rgba(255,235,205,1.0)",
+  lime: "rgba(0,255,0,1.0)",
+  blue: "rgba(0,0,255,1.0)",
+  limegreen: "rgba(50,205,50,1.0)",
+  blueviolet: "rgba(138,43,226,1.0)",
+  linen: "rgba(250,240,230,1.0)",
+  brown: "rgba(165,42,42,1.0)",
+  magenta: "rgba(255,0,255,1.0)",
+  burlywood: "rgba(222,184,135,1.0)",
+  maroon: "rgba(128,0,0,1.0)",
+  cadetblue: "rgba(95,158,160,1.0)",
+  mediumaquamarine: "rgba(102,205,170,1.0)",
+  chartreuse: "rgba(127,255,0,1.0)",
+  mediumblue: "rgba(0,0,205,1.0)",
+  chocolate: "rgba(210,105,30,1.0)",
+  mediumorchid: "rgba(186,85,211,1.0)",
+  coral: "rgba(255,127,80,1.0)",
+  mediumpurple: "rgba(147,112,219,1.0)",
+  cornflowerblue: "rgba(100,149,237,1.0)",
+  mediumseagreen: "rgba(60,179,113,1.0)",
+  cornsilk: "rgba(255,248,220,1.0)",
+  mediumslateblue: "rgba(123,104,238,1.0)",
+  crimson: "rgba(220,20,60,1.0)",
+  mediumspringgreen: "rgba(0,250,154,1.0)",
+  cyan: "rgba(0,255,255,1.0)",
+  mediumturquoise: "rgba(72,209,204,1.0)",
+  darkblue: "rgba(0,0,139,1.0)",
+  mediumvioletred: "rgba(199,21,133,1.0)",
+  darkcyan: "rgba(0,139,139,1.0)",
+  midnightblue: "rgba(25,25,112,1.0)",
+  darkgoldenrod: "rgba(184,134,11,1.0)",
+  mintcream: "rgba(245,255,250,1.0)",
+  darkgray: "rgba(169,169,169,1.0)",
+  mistyrose: "rgba(255,228,225,1.0)",
+  darkgreen: "rgba(0,100,0,1.0)",
+  moccasin: "rgba(255,228,181,1.0)",
+  darkgrey: "rgba(169,169,169,1.0)",
+  navajowhite: "rgba(255,222,173,1.0)",
+  darkkhaki: "rgba(189,183,107,1.0)",
+  navy: "rgba(0,0,128,1.0)",
+  darkmagenta: "rgba(139,0,139,1.0)",
+  oldlace: "rgba(253,245,230,1.0)",
+  darkolivegreen: "rgba(85,107,47,1.0)",
+  olive: "rgba(128,128,0,1.0)",
+  darkorange: "rgba(255,140,0,1.0)",
+  olivedrab: "rgba(107,142,35,1.0)",
+  darkorchid: "rgba(153,50,204,1.0)",
+  orange: "rgba(255,165,0,1.0)",
+  darkred: "rgba(139,0,0,1.0)",
+  orangered: "rgba(255,69,0,1.0)",
+  darksalmon: "rgba(233,150,122,1.0)",
+  orchid: "rgba(218,112,214,1.0)",
+  darkseagreen: "rgba(143,188,143,1.0)",
+  palegoldenrod: "rgba(238,232,170,1.0)",
+  darkslateblue: "rgba(72,61,139,1.0)",
+  palegreen: "rgba(152,251,152,1.0)",
+  darkslategray: "rgba(47,79,79,1.0)",
+  paleturquoise: "rgba(175,238,238,1.0)",
+  darkslategrey: "rgba(47,79,79,1.0)",
+  palevioletred: "rgba(219,112,147,1.0)",
+  darkturquoise: "rgba(0,206,209,1.0)",
+  papayawhip: "rgba(255,239,213,1.0)",
+  darkviolet: "rgba(148,0,211,1.0)",
+  peachpuff: "rgba(255,218,185,1.0)",
+  deeppink: "rgba(255,20,147,1.0)",
+  peru: "rgba(205,133,63,1.0)",
+  deepskyblue: "rgba(0,191,255,1.0)",
+  pink: "rgba(255,192,203,1.0)",
+  dimgray: "rgba(105,105,105,1.0)",
+  plum: "rgba(221,160,221,1.0)",
+  dimgrey: "rgba(105,105,105,1.0)",
+  powderblue: "rgba(176,224,230,1.0)",
+  dodgerblue: "rgba(30,144,255,1.0)",
+  purple: "rgba(128,0,128,1.0)",
+  firebrick: "rgba(178,34,34,1.0)",
+  red: "rgba(255,0,0,1.0)",
+  floralwhite: "rgba(255,250,240,1.0)",
+  rosybrown: "rgba(188,143,143,1.0)",
+  forestgreen: "rgba(34,139,34,1.0)",
+  royalblue: "rgba(65,105,225,1.0)",
+  fuchsia: "rgba(255,0,255,1.0)",
+  saddlebrown: "rgba(139,69,19,1.0)",
+  gainsboro: "rgba(220,220,220,1.0)",
+  salmon: "rgba(250,128,114,1.0)",
+  ghostwhite: "rgba(248,248,255,1.0)",
+  sandybrown: "rgba(244,164,96,1.0)",
+  gold: "rgba(255,215,0,1.0)",
+  seagreen: "rgba(46,139,87,1.0)",
+  goldenrod: "rgba(218,165,32,1.0)",
+  seashell: "rgba(255,245,238,1.0)",
+  gray: "rgba(128,128,128,1.0)",
+  sienna: "rgba(160,82,45,1.0)",
+  green: "rgba(0,128,0,1.0)",
+  silver: "rgba(192,192,192,1.0)",
+  greenyellow: "rgba(173,255,47,1.0)",
+  skyblue: "rgba(135,206,235,1.0)",
+  grey: "rgba(128,128,128,1.0)",
+  slateblue: "rgba(106,90,205,1.0)",
+  honeydew: "rgba(240,255,240,1.0)",
+  slategray: "rgba(112,128,144,1.0)",
+  hotpink: "rgba(255,105,180,1.0)",
+  slategrey: "rgba(112,128,144,1.0)",
+  indianred: "rgba(205,92,92,1.0)",
+  snow: "rgba(255,250,250,1.0)",
+  indigo: "rgba(75,0,130,1.0)",
+  springgreen: "rgba(0,255,127,1.0)",
+  ivory: "rgba(255,255,240,1.0)",
+  steelblue: "rgba(70,130,180,1.0)",
+  khaki: "rgba(240,230,140,1.0)",
+  tan: "rgba(210,180,140,1.0)",
+  lavender: "rgba(230,230,250,1.0)",
+  teal: "rgba(0,128,128,1.0)",
+  lavenderblush: "rgba(255,240,245,1.0)",
+  thistle: "rgba(216,191,216,1.0)",
+  lawngreen: "rgba(124,252,0,1.0)",
+  tomato: "rgba(255,99,71,1.0)",
+  lemonchiffon: "rgba(255,250,205,1.0)",
+  turquoise: "rgba(64,224,208,1.0)",
+  lightblue: "rgba(173,216,230,1.0)",
+  violet: "rgba(238,130,238,1.0)",
+  lightcoral: "rgba(240,128,128,1.0)",
+  wheat: "rgba(245,222,179,1.0)",
+  lightcyan: "rgba(224,255,255,1.0)",
+  white: "rgba(255,255,255,1.0)",
+  lightgoldenrodyellow: "rgba(250,250,210,1.0)",
+  whitesmoke: "rgba(245,245,245,1.0)",
+  lightgray: "rgba(211,211,211,1.0)",
+  yellow: "rgba(255,255,0,1.0)",
+  lightgreen: "rgba(144,238,144,1.0)",
+  yellowgreen: "rgba(154,205,50,1.0)",
+  lightgrey: "rgba(211,211,211,1.0)"
 });
-/**** HexColor - converts a given color to #rrggbbaa ****/
-export function HexColor(Color) {
-    let lowerColor = Color.toLowerCase();
-    if (ColorSet.hasOwnProperty(lowerColor)) {
-        // @ts-ignore TS dislikes indexing with literal keys
-        Color = ColorSet[lowerColor];
-    } // do not return here as color is now in RGBA format
-    if (/^#[a-fA-F0-9]{6}$/.test(Color)) {
-        return Color + 'FF';
-    }
-    if (/^#[a-fA-F0-9]{8}$/.test(Color)) {
-        return Color;
-    }
-    const HexDigit = '0123456789ABCDEF';
-    function dec2hex(Value) {
-        Value = Math.max(0, Math.min(255, Math.round(Value)));
-        return HexDigit[Math.trunc(Value / 16)] + HexDigit[Value % 16];
-    }
-    const RGBPattern = /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i; // not perfect
-    let Match = RGBPattern.exec(Color);
-    if (Match != null) {
-        return ('#' +
-            dec2hex(parseInt(Match[1], 10)) +
-            dec2hex(parseInt(Match[2], 10)) +
-            dec2hex(parseInt(Match[3], 10)) + 'FF');
-    }
-    const RGBAPattern = /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i; // not perfect
-    Match = RGBAPattern.exec(Color);
-    if (Match != null) {
-        return ('#' +
-            dec2hex(parseInt(Match[1], 10)) +
-            dec2hex(parseInt(Match[2], 10)) +
-            dec2hex(parseInt(Match[3], 10)) +
-            dec2hex(parseFloat(Match[4]) * 255));
-    }
-    throwError('InvalidArgument: the given Value is not a valid CSS Color specification');
+function Nr(e) {
+  let t = e.toLowerCase();
+  if (O.hasOwnProperty(t) && (e = O[t]), /^#[a-fA-F0-9]{6}$/.test(e))
+    return e + "FF";
+  if (/^#[a-fA-F0-9]{8}$/.test(e))
+    return e;
+  const n = "0123456789ABCDEF";
+  function r(x) {
+    return x = Math.max(0, Math.min(255, Math.round(x))), n[Math.trunc(x / 16)] + n[x % 16];
+  }
+  let o = /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i.exec(e);
+  if (o != null)
+    return "#" + r(parseInt(o[1], 10)) + r(parseInt(o[2], 10)) + r(parseInt(o[3], 10)) + "FF";
+  if (o = /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i.exec(e), o != null)
+    return "#" + r(parseInt(o[1], 10)) + r(parseInt(o[2], 10)) + r(parseInt(o[3], 10)) + r(parseFloat(o[4]) * 255);
+  f("InvalidArgument: the given Value is not a valid CSS Color specification");
 }
-/**** RGBAColor - converts a given color to RGBA(r,g,b,a) ****/
-export function RGBAColor(Color) {
-    let lowerColor = Color.toLowerCase();
-    if (ColorSet.hasOwnProperty(lowerColor)) {
-        // @ts-ignore TS dislikes indexing with literal keys
-        return ColorSet[lowerColor]; // color is already in RGBA format
-    }
-    if (/^#[a-fA-F0-9]{6}$/.test(Color)) {
-        return ('rgba(' +
-            parseInt(Color.slice(1, 3), 16) + ',' +
-            parseInt(Color.slice(3, 5), 16) + ',' +
-            parseInt(Color.slice(5, 7), 16) + ',1' +
-            ')');
-    }
-    if (/^#[a-fA-F0-9]{8}$/.test(Color)) {
-        return ('rgba(' +
-            parseInt(Color.slice(1, 3), 16) + ',' +
-            parseInt(Color.slice(3, 5), 16) + ',' +
-            parseInt(Color.slice(5, 7), 16) + ',' +
-            (parseInt(Color.slice(7), 16) / 255) +
-            ')');
-    }
-    const RGBPattern = /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i; //not perfect
-    let Match = RGBPattern.exec(Color);
-    if (Match != null) {
-        return Color.slice(0, Color.length - 1) + ',1)';
-    }
-    const RGBAPattern = /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i; // not perfect
-    Match = RGBAPattern.exec(Color);
-    if (Match != null) {
-        return Color;
-    }
-    throwError('InvalidArgument: the given Value is not a valid CSS Color specification');
+function Ci(e) {
+  let t = e.toLowerCase();
+  if (O.hasOwnProperty(t))
+    return O[t];
+  if (/^#[a-fA-F0-9]{6}$/.test(e))
+    return "rgba(" + parseInt(e.slice(1, 3), 16) + "," + parseInt(e.slice(3, 5), 16) + "," + parseInt(e.slice(5, 7), 16) + ",1)";
+  if (/^#[a-fA-F0-9]{8}$/.test(e))
+    return "rgba(" + parseInt(e.slice(1, 3), 16) + "," + parseInt(e.slice(3, 5), 16) + "," + parseInt(e.slice(5, 7), 16) + "," + parseInt(e.slice(7), 16) / 255 + ")";
+  let r = /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i.exec(e);
+  if (r != null)
+    return e.slice(0, e.length - 1) + ",1)";
+  if (r = /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i.exec(e), r != null)
+    return e;
+  f("InvalidArgument: the given Value is not a valid CSS Color specification");
 }
-/**** shortHexColor - converts a given color into #RRGGBB ****/
-export function shortHexColor(Color) {
-    return HexColor(Color).slice(0, 7);
+function Hi(e) {
+  return Nr(e).slice(0, 7);
 }
+export {
+  O as ColorSet,
+  Qe as FunctionWithName,
+  Sr as HTMLsafe,
+  Nr as HexColor,
+  Ai as MarkDownSafe,
+  Or as ObjectIsEmpty,
+  Di as ObjectIsNotEmpty,
+  jr as ObjectMergedWith,
+  je as Object_hasOwnProperty,
+  Be as Object_isPrototypeOf,
+  Pr as Object_propertyIsEnumerable,
+  $r as Object_toLocaleString,
+  Re as Object_toString,
+  Er as Object_valueOf,
+  Ci as RGBAColor,
+  hr as StringIsEmpty,
+  Li as StringIsNotEmpty,
+  a as ValidatorForClassifier,
+  Br as ValueExists,
+  Ar as ValueInheritsFrom,
+  C as ValueIsAnonymousFunction,
+  B as ValueIsArray,
+  le as ValueIsArrayBuffer,
+  ye as ValueIsBase64,
+  re as ValueIsBigInt,
+  P as ValueIsBoolean,
+  T as ValueIsCardinal,
+  X as ValueIsColor,
+  Z as ValueIsDate,
+  ne as ValueIsE164PhoneNumber,
+  V as ValueIsEMailAddress,
+  zr as ValueIsEmptyString,
+  K as ValueIsError,
+  y as ValueIsFiniteNumber,
+  U as ValueIsFunction,
+  Ie as ValueIsHexString,
+  de as ValueIsHostName,
+  ge as ValueIsIPv4Address,
+  be as ValueIsIPv6Address,
+  ue as ValueIsISODate,
+  fe as ValueIsISOTimestamp,
+  ve as ValueIsIdentifier,
+  Tr as ValueIsInstanceOf,
+  E as ValueIsInteger,
+  ke as ValueIsIntegerInRange,
+  we as ValueIsJSONString,
+  W as ValueIsList,
+  Jr as ValueIsListOf,
+  F as ValueIsListSatisfying,
+  ie as ValueIsMap,
+  Rr as ValueIsMissing,
+  z as ValueIsNaN,
+  H as ValueIsNamedFunction,
+  j as ValueIsNativeFunction,
+  M as ValueIsNonEmptyString,
+  $ as ValueIsNumber,
+  kr as ValueIsNumberInRange,
+  _ as ValueIsObject,
+  R as ValueIsOneOf,
+  J as ValueIsOrdinal,
+  te as ValueIsPhoneNumber,
+  N as ValueIsPlainObject,
+  pe as ValueIsPortNumber,
+  Y as ValueIsPromise,
+  Q as ValueIsRegExp,
+  q as ValueIsScriptedFunction,
+  xe as ValueIsSerializableObject,
+  m as ValueIsSerializableValue,
+  oe as ValueIsSet,
+  v as ValueIsString,
+  p as ValueIsStringMatching,
+  ae as ValueIsSymbol,
+  D as ValueIsText,
+  L as ValueIsTextline,
+  ce as ValueIsTypedArray,
+  ee as ValueIsURL,
+  se as ValueIsUUID,
+  G as ValueIsVanillaObject,
+  Mi as ValuesAreEqual,
+  h as ValuesDiffer,
+  l as acceptNil,
+  Bt as allowAnonymousFunction,
+  qt as allowArray,
+  Ln as allowArrayBuffer,
+  lr as allowBase64,
+  jn as allowBigInt,
+  tt as allowBoolean,
+  wt as allowCardinal,
+  vn as allowColor,
+  sn as allowDate,
+  $n as allowE164PhoneNumber,
+  mn as allowEMailAddress,
+  fn as allowError,
+  at as allowFiniteNumber,
+  Et as allowFunction,
+  ur as allowHexString,
+  Xn as allowHostName,
+  Zn as allowIPv4Address,
+  Yn as allowIPv6Address,
+  qn as allowISODate,
+  Gn as allowISOTimestamp,
+  gr as allowIdentifier,
+  nn as allowInstanceOf,
+  ft as allowInteger,
+  gt as allowIntegerInRange,
+  or as allowJSONString,
+  Wt as allowList,
+  Vt as allowListOf,
+  Yt as allowListSatisfying,
+  zn as allowMap,
+  ot as allowNaN,
+  kt as allowNamedFunction,
+  Jt as allowNativeFunction,
+  vt as allowNonEmptyString,
+  rt as allowNumber,
+  lt as allowNumberInRange,
+  Dt as allowObject,
+  wn as allowOneOf,
+  pt as allowOrdinal,
+  Fn as allowPhoneNumber,
+  Lt as allowPlainObject,
+  er as allowPortNumber,
+  bn as allowPromise,
+  pn as allowRegExp,
+  At as allowScriptedFunction,
+  ar as allowSerializableObject,
+  nr as allowSerializableValue,
+  Tn as allowSet,
+  It as allowString,
+  mt as allowStringMatching,
+  Rn as allowSymbol,
+  Nt as allowText,
+  Pt as allowTextline,
+  Mn as allowTypedArray,
+  hn as allowURL,
+  Cn as allowUUID,
+  Xe as allowValue,
+  on as allowValueInheritingFrom,
+  Ct as allowVanillaObject,
+  ga as allowedAnonymousFunction,
+  Fa as allowedArray,
+  ci as allowedArrayBuffer,
+  Ei as allowedBase64,
+  Qa as allowedBigInt,
+  Dr as allowedBoolean,
+  Vr as allowedCardinal,
+  Ua as allowedColor,
+  Ra as allowedDate,
+  Ka as allowedE164PhoneNumber,
+  Ha as allowedEMailAddress,
+  za as allowedError,
+  Hr as allowedFiniteNumber,
+  ua as allowedFunction,
+  Bi as allowedHexString,
+  Ii as allowedHostName,
+  pi as allowedIPv4Address,
+  wi as allowedIPv6Address,
+  fi as allowedISODate,
+  bi as allowedISOTimestamp,
+  ki as allowedIdentifier,
+  ja as allowedInstanceOf,
+  Zr as allowedInteger,
+  Yr as allowedIntegerInRange,
+  Pi as allowedJSONString,
+  Pa as allowedList,
+  Ea as allowedListOf,
+  $a as allowedListSatisfying,
+  ti as allowedMap,
+  _r as allowedNaN,
+  da as allowedNamedFunction,
+  xa as allowedNativeFunction,
+  ra as allowedNonEmptyString,
+  Ur as allowedNumber,
+  Wr as allowedNumberInRange,
+  va as allowedObject,
+  La as allowedOneOf,
+  Qr as allowedOrdinal,
+  Wa as allowedPhoneNumber,
+  ma as allowedPlainObject,
+  Si as allowedPortNumber,
+  Ta as allowedPromise,
+  Ma as allowedRegExp,
+  ya as allowedScriptedFunction,
+  Ni as allowedSerializableObject,
+  Oi as allowedSerializableValue,
+  ri as allowedSet,
+  ta as allowedString,
+  ia as allowedStringMatching,
+  Va as allowedSymbol,
+  oa as allowedText,
+  la as allowedTextline,
+  ii as allowedTypedArray,
+  _a as allowedURL,
+  si as allowedUUID,
+  Mr as allowedValue,
+  Ba as allowedValueInheritingFrom,
+  ha as allowedVanillaObject,
+  Ui as constrained,
+  s as escaped,
+  Rt as expectAnonymousFunction,
+  _t as expectArray,
+  Un as expectArrayBuffer,
+  sr as expectBase64,
+  Bn as expectBigInt,
+  nt as expectBoolean,
+  yt as expectCardinal,
+  Sn as expectColor,
+  un as expectDate,
+  En as expectE164PhoneNumber,
+  On as expectEMailAddress,
+  gn as expectError,
+  it as expectFiniteNumber,
+  jt as expectFunction,
+  fr as expectHexString,
+  Vn as expectHostName,
+  Kn as expectIPv4Address,
+  Qn as expectIPv6Address,
+  _n as expectISODate,
+  Wn as expectISOTimestamp,
+  br as expectIdentifier,
+  rn as expectInstanceOf,
+  me as expectInteger,
+  bt as expectIntegerInRange,
+  cr as expectJSONString,
+  Zt as expectList,
+  en as expectListOf,
+  Qt as expectListSatisfying,
+  Jn as expectMap,
+  ct as expectNaN,
+  zt as expectNamedFunction,
+  Tt as expectNativeFunction,
+  St as expectNonEmptyString,
+  Se as expectNumber,
+  st as expectNumberInRange,
+  he as expectObject,
+  yn as expectOneOf,
+  xt as expectOrdinal,
+  Pn as expectPhoneNumber,
+  Ut as expectPlainObject,
+  tr as expectPortNumber,
+  dn as expectPromise,
+  xn as expectRegExp,
+  Mt as expectScriptedFunction,
+  ir as expectSerializableObject,
+  rr as expectSerializableValue,
+  An as expectSet,
+  Oe as expectString,
+  Ot as expectStringMatching,
+  kn as expectSymbol,
+  Ft as expectText,
+  $t as expectTextline,
+  Dn as expectTypedArray,
+  Nn as expectURL,
+  Hn as expectUUID,
+  Ve as expectValue,
+  cn as expectValueInheritingFrom,
+  Ht as expectVanillaObject,
+  ba as expectedAnonymousFunction,
+  Gt as expectedArray,
+  li as expectedArrayBuffer,
+  ji as expectedBase64,
+  Xa as expectedBigInt,
+  Lr as expectedBoolean,
+  ea as expectedCardinal,
+  Ca as expectedColor,
+  ka as expectedDate,
+  Ya as expectedE164PhoneNumber,
+  qa as expectedEMailAddress,
+  Ja as expectedError,
+  qr as expectedFiniteNumber,
+  fa as expectedFunction,
+  Ri as expectedHexString,
+  vi as expectedHostName,
+  xi as expectedIPv4Address,
+  yi as expectedIPv6Address,
+  gi as expectedISODate,
+  di as expectedISOTimestamp,
+  zi as expectedIdentifier,
+  an as expectedInstanceOf,
+  Kr as expectedInteger,
+  dt as expectedIntegerInRange,
+  $i as expectedJSONString,
+  Kt as expectedList,
+  tn as expectedListOf,
+  Xt as expectedListSatisfying,
+  ni as expectedMap,
+  Gr as expectedNaN,
+  pa as expectedNamedFunction,
+  wa as expectedNativeFunction,
+  aa as expectedNonEmptyString,
+  Cr as expectedNumber,
+  ut as expectedNumberInRange,
+  Sa as expectedObject,
+  In as expectedOneOf,
+  Xr as expectedOrdinal,
+  Za as expectedPhoneNumber,
+  Oa as expectedPlainObject,
+  mi as expectedPortNumber,
+  Aa as expectedPromise,
+  Da as expectedRegExp,
+  Ia as expectedScriptedFunction,
+  Fi as expectedSerializableObject,
+  hi as expectedSerializableValue,
+  ai as expectedSet,
+  na as expectedString,
+  ht as expectedStringMatching,
+  ei as expectedSymbol,
+  ca as expectedText,
+  sa as expectedTextline,
+  oi as expectedTypedArray,
+  Ga as expectedURL,
+  ui as expectedUUID,
+  et as expectedValue,
+  ln as expectedValueInheritingFrom,
+  Na as expectedVanillaObject,
+  Fr as global,
+  Ir as quotable,
+  Ti as quoted,
+  c as rejectNil,
+  Hi as shortHexColor,
+  f as throwError,
+  Ji as unescaped,
+  Ye as validatedArgument
+};
+//# sourceMappingURL=javascript-interface-library.esm.js.map

@@ -17,7 +17,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 const WAT_Version = '0.1';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, ValueIsURL, ValidatorForClassifier, acceptNil, rejectNil, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, HexColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsListOf, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, ValueIsURL, ValueIsSerializableValue, ValueIsSerializableObject, ValueIsJSONString, ValidatorForClassifier, acceptNil, rejectNil, allowValue, allowedValue, expectValue, expectedValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowListOf, allowedListOf, expectListOf, expectedListOf, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject, allowJSONString, allowedJSONString, expectJSONString, expectedJSONString, HexColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 function ValuesAreEqual(a, b, Mode) {
     try {
@@ -55,6 +55,11 @@ const JCL_legacy = JCL_ui.legacy;
 // carry x/y/Width/Height are no longer accepted (plain objects and proxies
 // over plain objects still are)
 export { ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier, ValueIsPhoneNumber, ValueIsDimension, allowDimension, allowedDimension, expectDimension, expectedDimension, ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition, ValueIsSize, allowSize, allowedSize, expectSize, expectedSize, ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry, ValueIsTextFormat, ValueIsHTMLFormat, ValueIsMarkdownFormat, ValueIsImageFormat, };
+/**** validators adopted from JIL remain part of WAT's public API ****/
+// n.b.: "ValueIsJSON" and "allow/expect[ed]JSON" were replaced by JIL's
+// "ValueIsJSONString" and "allow/expect[ed]JSONString" - JIL's "expectValue"
+// unboxes boxed primitives before validation (WAT's former one did not)
+export { allowValue, allowedValue, expectValue, expectedValue, ValueIsListOf, allowListOf, allowedListOf, expectListOf, expectedListOf, ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue, ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject, ValueIsJSONString, allowJSONString, allowedJSONString, expectJSONString, expectedJSONString, };
 /**** supported MIME format lists (now shared with JCL) ****/
 export const WAT_supportedTextFormats = JCL_supportedTextFormats;
 export const WAT_supportedHTMLFormats = JCL_supportedHTMLFormats;
@@ -138,27 +143,6 @@ export function throwReadOnlyError(Name) {
 //------------------------------------------------------------------------------
 //--                 Classification and Validation Functions                  --
 //------------------------------------------------------------------------------
-/**** allowValue ****/
-export function allowValue(Description, Value, Validator) {
-    if (Value == null) {
-        return undefined;
-    }
-    else {
-        return expectValue(Description, Value, Validator);
-    }
-}
-/**** expectValue ****/
-export function expectValue(Description, Value, Validator) {
-    if (Value == null) {
-        throwError(`MissingArgument: no ${Description} given`);
-    }
-    if ((Validator == null) || (Validator(Value) === true)) {
-        return Value;
-    }
-    else {
-        throwError(`InvalidArgument: the given ${Description} is invalid`);
-    }
-}
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
 // no ctrl.char.s, no "/", no leading " " or "#"
@@ -316,108 +300,6 @@ export function ValueIsErrorReport(Value) {
 /**** allow/expect[ed]ErrorReport ****/
 export const allowErrorReport = ValidatorForClassifier(ValueIsErrorReport, acceptNil, 'WAT error report'), allowedErrorReport = allowErrorReport;
 export const expectErrorReport = ValidatorForClassifier(ValueIsErrorReport, rejectNil, 'WAT error report'), expectedErrorReport = expectErrorReport;
-/**** ValueIsSerializableValue ****/
-export function ValueIsSerializableValue(Value, visitedObjects = new WeakSet()) {
-    switch (true) {
-        case (Value == null): // deliberately also allows undefined
-        case ValueIsBoolean(Value):
-        case ValueIsFiniteNumber(Value): // NaN/Infinity are not serializable
-        case ValueIsString(Value):
-            return true;
-        case ValueIsList(Value):
-            if (visitedObjects.has(Value)) {
-                return false;
-            } // recursion detected
-            visitedObjects.add(Value);
-            try {
-                return ValueIsListSatisfying(Value, (Item) => {
-                    if (Item === undefined) {
-                        return false;
-                    } // JSON would make "null" of it
-                    return ValueIsSerializableValue(Item, visitedObjects);
-                });
-            }
-            finally {
-                visitedObjects.delete(Value);
-            }
-        case ValueIsPlainObject(Value):
-            if (visitedObjects.has(Value)) {
-                return false;
-            } // recursion detected
-            visitedObjects.add(Value);
-            try {
-                for (let Property in Value) {
-                    if (Value.hasOwnProperty(Property) &&
-                        !ValueIsSerializableValue(Value[Property], visitedObjects)) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            finally {
-                visitedObjects.delete(Value);
-            }
-    }
-    return false;
-}
-/**** allow/expect[ed]SerializableValue ****/
-export const allowSerializableValue = ValidatorForClassifier(ValueIsSerializableValue, acceptNil, 'serializable value'), allowedSerializableValue = allowSerializableValue;
-export const expectSerializableValue = ValidatorForClassifier(ValueIsSerializableValue, rejectNil, 'serializable value'), expectedSerializableValue = expectSerializableValue;
-/**** ValueIsSerializableObject ****/
-export function ValueIsSerializableObject(Value) {
-    if (ValueIsPlainObject(Value)) {
-        for (let Property in Value) {
-            if (Value.hasOwnProperty(Property) &&
-                !ValueIsSerializableValue(Value[Property])) {
-                return false;
-            }
-        }
-        return true;
-    }
-    else {
-        return false;
-    }
-}
-/**** allow/expect[ed]SerializableObject ****/
-export const allowSerializableObject = ValidatorForClassifier(ValueIsSerializableObject, acceptNil, 'serializable object'), allowedSerializableObject = allowSerializableObject;
-export const expectSerializableObject = ValidatorForClassifier(ValueIsSerializableObject, rejectNil, 'serializable object'), expectedSerializableObject = expectSerializableObject;
-/**** ValueIsListOf ****/
-export function ValueIsListOf(Value, ValueList) {
-    return ValueIsListSatisfying(Value, (Value) => ValueIsOneOf(Value, ValueList));
-}
-/**** allow/expect[ed]ListOf ****/
-export function allowListOf(Description, Argument, ValueList) {
-    return (Argument == null
-        ? Argument
-        : expectedListOf(Description, Argument, ValueList));
-}
-export const allowedListOf = allowListOf;
-export function expectListOf(Description, Argument, ValueList) {
-    if (Argument == null) {
-        throwError(`MissingArgument: no ${escaped(Description)} given`);
-    }
-    else {
-        if (ValueIsListSatisfying(Argument, (Value) => ValueIsOneOf(Value, ValueList))) {
-            return Argument;
-        }
-        else {
-            throwError(`InvalidArgument: the given value is no ${escaped(Description)}`);
-        }
-    }
-}
-export const expectedListOf = expectListOf;
-/**** ValueIsJSON ****/
-export function ValueIsJSON(Value) {
-    try {
-        return ValueIsText(Value) && (JSON.parse(Value) !== undefined); // tricky!
-    }
-    catch (Signal) {
-        return false;
-    }
-}
-/**** allow/expect[ed]JSON ****/
-export const allowJSON = ValidatorForClassifier(ValueIsJSON, acceptNil, 'JSON string'), allowedJSON = allowJSON;
-export const expectJSON = ValidatorForClassifier(ValueIsJSON, rejectNil, 'JSON string'), expectedJSON = expectJSON;
 /**** ValueIsLineList ****/
 export function ValueIsLineList(Value, Pattern) {
     const Validator = (Pattern == null
@@ -1484,7 +1366,7 @@ function installAccessorFor(Visual, Descriptor) {
                 Validator = ValueIsText;
                 break;
             case 'json-input':
-                Validator = ValueIsJSON;
+                Validator = ValueIsJSONString;
                 break;
             case 'linelist-input':
                 Validator = (Value) => ValueIsLineList(Value, RegEx);
@@ -9334,23 +9216,16 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoFileInput', WAT_PseudoFileInput);
     /**** FileDropArea ****/
+    // a thin WAT wrapper around the "legacy.FileDropArea" component from the
+    // "javascript-code-library" (JCL) - file filtering ("Accept") and single-
+    // file slicing now come from JCL, this behavior only contributes widget
+    // geometry, the WAT property interface and the WAT callbacks
     const WAT_FileDropArea = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.FileDropArea {
-        display:flex; flex-flow:column nowrap;
-          justify-content:center; align-items:center;
-        border:dashed 4px #DDDDDD; border-radius:4px;
-        color:#DDDDDD; background:white;
+        left:0px; top:0px; width:100%; height:100%;
       }
-
-      .WAT.Widget > .WAT.FileDropArea * { pointer-events:none }
-
-      .WAT.Widget > .WAT.FileDropArea > input[type="file"] {
-        display:block; position:absolute; appearance:none;
-        left:0px; top:0px; right:0px; bottom:0px;
-        opacity:0.01;
-      }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9364,59 +9239,22 @@ function registerIntrinsicBehaviorsIn(Applet) {
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
-            const acceptedFilesIn = (FileList) => {
-                let acceptedFiles = Array.from(FileList);
-                if ((acceptableFileTypes != null) && (acceptableFileTypes.length > 0)) {
-                    acceptedFiles = acceptedFiles.filter((acceptedFile) => (acceptableFileTypes.some((FileType) => {
-                        FileType = FileType.trim().toLowerCase();
-                        return (FileType.startsWith('.') ? acceptedFile.name.toLowerCase().endsWith(FileType) :
-                            FileType.endsWith('/*') ? acceptedFile.type.toLowerCase().startsWith(FileType.slice(0, -1)) :
-                                (acceptedFile.type.toLowerCase() === FileType));
-                    })));
+            const { Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
+            const _onValueInput = async (FileList, Event) => {
+                this.Value = FileList.map((File) => File.name).join('\n');
+                if (Event.type === 'drop') {
+                    await this.on('drop')(Event, FileList);
                 }
-                if ((allowMultiple != true) && (acceptedFiles.length > 1)) {
-                    acceptedFiles = acceptedFiles.slice(0, 1);
+                else {
+                    // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
+                    await this.on('input')(Event, FileList);
                 }
-                return acceptedFiles;
-            }; // the file dialog does not enforce "accept" settings
-            const _onInput = async (Event) => {
-                if (this.Enabling === false) {
-                    return consumingEvent(Event);
-                }
-                const acceptedFiles = acceptedFilesIn(Event.target.files);
-                if (acceptedFiles.length === 0) {
-                    Event.target.value = '';
-                    return;
-                }
-                this.Value = acceptedFiles.map((File) => File.name).join('\n');
-                // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
-                await this.on('input')(Event, acceptedFiles);
-                Event.target.value = '';
             };
-            const _onDragEnter = (Event) => { return consumingEvent(Event); };
-            const _onDragOver = (Event) => { return consumingEvent(Event); };
-            const _onDrop = async (Event) => {
-                consumeEvent(Event);
-                if (this.Enabling === false) {
-                    return;
-                }
-                const droppedFiles = acceptedFilesIn(Event.dataTransfer.files);
-                if (droppedFiles.length === 0) {
-                    return;
-                }
-                this.Value = droppedFiles.map((File) => File.name).join('\n');
-                await this.on('drop')(Event, droppedFiles);
-            }; // nota bene: "files" is now in "Event.dataTransfer.files"
-            /**** actual rendering ****/
-            return html `<label class="WAT Content FileDropArea"
-        onDragEnter=${_onDragEnter} onDragOver=${_onDragOver} onDrop=${_onDrop}>
-        <span>${Placeholder}</span>
-        <input type="file"
-          multiple=${allowMultiple} accept=${acceptableFileTypes}
-          disabled=${Enabling === false} onInput=${_onInput}
-        />
-      </label>`;
+            return html `<${JCL_legacy.FileDropArea} Class="WAT Content FileDropArea"
+        Placeholder=${Placeholder} multiple=${allowMultiple == true}
+        Accept=${acceptableFileTypes} disabled=${Enabling === false}
+        onValueInput=${_onValueInput}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
@@ -9540,88 +9378,57 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput);
     /**** DropDown ****/
+    // a thin WAT wrapper around the "native.DropDown" component from the
+    // "javascript-code-library" (JCL) - missing or unmatched "Value" settings
+    // are handled by JCL's "Placeholder" prop (a disabled, initially selected
+    // entry without any value of its own, replacing WAT's former
+    // "<option hidden selected>" logic)
     const WAT_DropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.DropDown {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff;
-        padding:0px 2px 0px 2px;
+        line-height:normal;
       }
-    `);
+    `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
                 EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder', Placeholder: '(please select)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'Options', Default: [],
                 EditorType: 'linelist-input', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
         onRender(function () {
-            const { Value, Enabling, Options } = this;
-            const _onInput = (Event) => {
+            const { Value, Enabling, Placeholder, Options } = this;
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
-            /**** actual rendering ****/
-            const hasMatch = Options.some((Option) => {
-                let OptionValue = Option.replace(/:.*$/, '').trim();
-                const OptionLabel = Option.replace(/^[^:]*:/, '').trim();
-                if (/^[-]+$/.test(OptionLabel)) {
-                    return false;
-                }
-                if (OptionValue === Option) {
-                    OptionValue = OptionValue.replace(/^-/, '');
-                }
-                return (OptionValue === Value);
-            }); // dto. for a missing or unmatched "Value" setting
-            return html `<select class="WAT Content DropDown"
-        disabled=${Enabling == false} onInput=${_onInput}
-      >${hasMatch ? '' : html `<option hidden selected value=""></option>`}${Options.map((Option) => {
-                let OptionValue = Option.replace(/:.*$/, '').trim();
-                let OptionLabel = Option.replace(/^[^:]*:/, '').trim(); // allows for empty values
-                const disabled = (OptionLabel[0] === '-');
-                if (/^[-]+$/.test(OptionLabel)) {
-                    return html `<hr/>`;
-                }
-                else {
-                    if (OptionValue === Option) {
-                        OptionValue = OptionValue.replace(/^-/, '');
-                    }
-                    if (disabled) {
-                        OptionLabel = OptionLabel.replace(/^-/, '');
-                    }
-                    return html `<option value=${OptionValue}
-              selected=${OptionValue === Value} disabled=${disabled}
-            >${OptionLabel}</option>`;
-                }
-            })}</select>`;
+            return html `<${JCL_native.DropDown} Class="WAT Content DropDown"
+        Value=${Value == null ? '' : '' + Value} Options=${Options}
+        Placeholder=${Placeholder} disabled=${Enabling === false}
+        onValueInput=${_onValueInput}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DropDown', WAT_DropDown);
     /**** PseudoDropDown ****/
+    // a thin WAT wrapper around the "legacy.PseudoDropDown" component from the
+    // "javascript-code-library" (JCL) - JCL now also provides WAT's former
+    // "<option hidden selected>" logic for missing or unmatched "Value"s
     const WAT_PseudoDropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoDropDown {
-        display:flex; justify-content:center; align-items:center;
+        left:0px; top:0px; width:100%; height:100%;
       }
-      .WAT.Widget > .WAT.PseudoDropDown > div {
-        display:block; position:relative;
-        width:24px; height:24px;
-        -webkit-mask-size:contain;           mask-size:contain;
-        -webkit-mask-position:center center; mask-position:center center;
-        user-select:none;
-      }
-
-      .WAT.Widget > .WAT.PseudoDropDown > select {
-        display:block; position:absolute;
-        left:0px; top:0px; right:0px; bottom:0px;
-        opacity:0.01;
-      }
-    `);
+      .WAT.Widget > .WAT.PseudoDropDown div { user-select:none }
+    `); // geometry (plus WAT's original "user-select" setting for the icon)
+        // - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
             { Name: 'Value',
@@ -9651,53 +9458,18 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             const { Value, Enabling, Icon, Color, Options } = this;
             const IconURL = this.Applet.AssetURL(this.Icon.trim() === '' ? '/icons/drop-down.png' : this.Icon);
-            const _onInput = (Event) => {
+            const _onValueInput = (newValue, Event) => {
                 if (Enabling === false) {
-                    return consumingEvent(Event);
+                    return;
                 }
-                this.Value = Event.target.value;
+                this.Value = newValue;
                 this.on('input')(Event);
             };
-            /**** actual rendering ****/
-            const hasMatch = Options.some((Option) => {
-                let OptionValue = Option.replace(/:.*$/, '').trim();
-                const OptionLabel = Option.replace(/^[^:]*:/, '').trim();
-                if (/^[-]+$/.test(OptionLabel)) {
-                    return false;
-                }
-                if (OptionValue === Option) {
-                    OptionValue = OptionValue.replace(/^-/, '');
-                }
-                return (OptionValue === Value);
-            }); // dto. for a missing or unmatched "Value" setting
-            return html `<div class="WAT Content PseudoDropDown">
-        <div style="
-          -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
-          background-color:${Color || 'black'};
-        "></div>
-        <select disabled=${Enabling == false} onInput=${_onInput}>
-          ${hasMatch ? '' : html `<option hidden selected value=""></option>`}
-          ${Options.map((Option) => {
-                let OptionValue = Option.replace(/:.*$/, '').trim();
-                let OptionLabel = Option.replace(/^[^:]*:/, '').trim(); // allows for empty values
-                const disabled = (OptionLabel[0] === '-');
-                if (/^[-]+$/.test(OptionLabel)) {
-                    return html `<hr/>`;
-                }
-                else {
-                    if (OptionValue === Option) {
-                        OptionValue = OptionValue.replace(/^-/, '');
-                    }
-                    if (disabled) {
-                        OptionLabel = OptionLabel.replace(/^-/, '');
-                    }
-                    return html `<option value=${OptionValue}
-                selected=${OptionValue === Value} disabled=${disabled}
-              >${OptionLabel}</option>`;
-                }
-            })}
-        </select>
-      </div>`;
+            return html `<${JCL_legacy.PseudoDropDown} Class="WAT Content PseudoDropDown"
+        Icon=${IconURL} Color=${Color || 'black'}
+        Value=${Value == null ? '' : '' + Value} Options=${Options}
+        disabled=${Enabling === false} onValueInput=${_onValueInput}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PseudoDropDown', WAT_PseudoDropDown);
