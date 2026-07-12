@@ -17,7 +17,7 @@ var __rest = (this && this.__rest) || function (s, e) {
 const WAT_Version = '0.1';
 import { ObjectMergedWith as Object_assign, 
 //  throwError,
-quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject, ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsListOf, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, ValueIsURL, ValueIsSerializableValue, ValueIsSerializableObject, ValueIsJSONString, ValidatorForClassifier, acceptNil, rejectNil, allowValue, allowedValue, expectValue, expectedValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowListOf, allowedListOf, expectListOf, expectedListOf, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject, allowJSONString, allowedJSONString, expectJSONString, expectedJSONString, HexColor, } from 'javascript-interface-library';
+quoted, escaped, ValuesAreEqual as _ValuesAreEqual, ValuesDiffer as _ValuesDiffer, ValueIsBoolean, ValueIsNumber, ValueIsFiniteNumber, ValueIsNumberInRange, ValueIsInteger, ValueIsIntegerInRange, ValueIsOrdinal, ValueIsCardinal, ValueIsString, ValueIsStringMatching, ValueIsText, ValueIsTextline, ValueIsObject as JIL_ValueIsObject, ValueIsPlainObject as JIL_ValueIsPlainObject, ValueIsList, ValueIsListSatisfying, ValueIsListOf, ValueIsFunction, ValueIsOneOf, ValueIsColor, ValueIsEMailAddress, ValueIsURL, ValueIsSerializableValue, ValueIsSerializableObject, ValueIsJSONString, ValidatorForClassifier, acceptNil, rejectNil, allowValue, allowedValue, expectValue, expectedValue, allowBoolean, expectBoolean, expectNumber, allowFiniteNumber, allowInteger, expectInteger, allowIntegerInRange, allowOrdinal, expectCardinal, expectString, allowText, expectText, allowTextline, expectTextline, expectPlainObject, allowList, expectList, allowListSatisfying, expectListSatisfying, allowListOf, allowedListOf, expectListOf, expectedListOf, allowFunction, expectFunction, allowOneOf, expectOneOf, allowColor, allowURL, expectURL, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject, allowJSONString, allowedJSONString, expectJSONString, expectedJSONString, HexColor, } from 'javascript-interface-library';
 import * as JIL from 'javascript-interface-library';
 function ValuesAreEqual(a, b, Mode) {
     try {
@@ -39,6 +39,16 @@ function ValuesDiffer(a, b, Mode) {
     ;
     return true;
 }
+// JIL 1.1.x declares "ValueIsObject"/"ValueIsPlainObject" as type guards
+// ("Value is object") which would narrow any checked value down to "object"
+// and break property accesses afterwards - these boolean wrappers restore
+// the former semantics
+function ValueIsObject(Value) {
+    return JIL_ValueIsObject(Value);
+}
+function ValueIsPlainObject(Value) {
+    return JIL_ValueIsPlainObject(Value);
+}
 /**** most built-in behaviors are now thin wrappers around JCL components ****/
 // n.b.: render/html/Component/createRef/useRef/useEffect/useCallback are
 // taken from JCL_ui, NOT from a separately import-mapped "preact"/"htm/preact":
@@ -49,10 +59,14 @@ function ValuesDiffer(a, b, Mode) {
 // instance's render loop.
 // @ts-ignore TS2307 allow importing from "javascript-code-library"
 import { ui as JCL_ui, ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier, expectedIdentifier, ValueIsPhoneNumber, // implements the former WAT stub
-ValueIsDimension, allowDimension, allowedDimension, expectDimension, expectedDimension, ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition, ValueIsSize, allowSize, allowedSize, expectSize, expectedSize, ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry, ValueIsTextFormat, ValueIsHTMLFormat, ValueIsMarkdownFormat, ValueIsImageFormat, JCL_supportedTextFormats, JCL_supportedHTMLFormats, JCL_supportedMarkdownFormats, JCL_supportedImageFormats, } from 'javascript-code-library';
+ValueIsDimension, allowDimension, allowedDimension, expectDimension, expectedDimension, ValueIsPosition, allowPosition, allowedPosition, expectPosition, expectedPosition, ValueIsSize, allowSize, allowedSize, expectSize, expectedSize, ValueIsGeometry, allowGeometry, allowedGeometry, expectGeometry, expectedGeometry, ValueIsTextFormat, ValueIsHTMLFormat, ValueIsMarkdownFormat, ValueIsImageFormat, ValueIsTextWithTabs, // permits tabs, unlike plain "ValueIsText"
+JCL_supportedTextFormats, JCL_supportedHTMLFormats, JCL_supportedMarkdownFormats, JCL_supportedImageFormats, } from 'javascript-code-library';
 const JCL_native = JCL_ui.native;
 const JCL_legacy = JCL_ui.legacy;
 const { render, html, Component, createRef, useRef, useEffect, useCallback } = JCL_ui;
+if ((render == null) || (html == null) || (Component == null))
+    throwError('MissingDependency: "javascript-code-library" does not provide the ' +
+        'expected UI exports');
 /**** validators adopted from JCL remain part of WAT's public API ****/
 // n.b.: JCL's ValueIsPosition/Size/Geometry use "ValueIsPlainObject" where
 // WAT formerly used "ValueIsObject" - i.e., class instances which happen to
@@ -65,10 +79,12 @@ export { ValueIsIdentifier, allowIdentifier, allowedIdentifier, expectIdentifier
 // unboxes boxed primitives before validation (WAT's former one did not)
 export { allowValue, allowedValue, expectValue, expectedValue, ValueIsListOf, allowListOf, allowedListOf, expectListOf, expectedListOf, ValueIsSerializableValue, allowSerializableValue, allowedSerializableValue, expectSerializableValue, expectedSerializableValue, ValueIsSerializableObject, allowSerializableObject, allowedSerializableObject, expectSerializableObject, expectedSerializableObject, ValueIsJSONString, allowJSONString, allowedJSONString, expectJSONString, expectedJSONString, };
 /**** supported MIME format lists (now shared with JCL) ****/
-export const WAT_supportedTextFormats = JCL_supportedTextFormats;
-export const WAT_supportedHTMLFormats = JCL_supportedHTMLFormats;
-export const WAT_supportedMarkdownFormats = JCL_supportedMarkdownFormats;
-export const WAT_supportedImageFormats = JCL_supportedImageFormats;
+// n.b.: frozen copies - otherwise a mutation (e.g. from a behavior script)
+// would silently affect JCL and every other consumer as well
+export const WAT_supportedTextFormats = Object.freeze([...JCL_supportedTextFormats]);
+export const WAT_supportedHTMLFormats = Object.freeze([...JCL_supportedHTMLFormats]);
+export const WAT_supportedMarkdownFormats = Object.freeze([...JCL_supportedMarkdownFormats]);
+export const WAT_supportedImageFormats = Object.freeze([...JCL_supportedImageFormats]);
 import hyperactiv from 'hyperactiv';
 const { observe, computed, dispose } = hyperactiv;
 import { customAlphabet } from 'nanoid';
@@ -80,12 +96,14 @@ export { fromLocalTo, fromViewportTo, fromDocumentTo };
 /**** generic constructor for asynchronous functions ****/
 export const AsyncFunction = (async () => { }).constructor;
 /**** provide "toReversed" polyfill ****/
+// n.b.: installed via "defineProperty" to keep it non-enumerable - a plain
+// assignment would make "toReversed" show up in every "for...in" loop
 // @ts-ignore TS2550 allow polyfilling
 if (!Array.prototype.toReversed) {
-    // @ts-ignore TS2550 allow polyfilling
-    Array.prototype.toReversed = function () {
-        return Array.from(this).reverse();
-    };
+    Object.defineProperty(Array.prototype, 'toReversed', {
+        value: function () { return Array.from(this).reverse(); },
+        writable: true, configurable: true
+    });
 }
 /**** WAT Visual Categories ****/
 const WAT_Categories = ['applet', 'page', 'widget'];
@@ -949,11 +967,6 @@ function collectInternalNamesFrom(WAT_Class) {
         }
     });
 }
-/**** validatePropertyName ****/
-function validatePropertyName(Name) {
-    if (Name.toLowerCase() in forbiddenPropertyNames)
-        throwError('InvalidArgument: forbidden property name ' + quoted(Name));
-}
 /**** PatternIsCompilable ****/
 function PatternIsCompilable(Pattern) {
     try {
@@ -968,6 +981,10 @@ function PatternIsCompilable(Pattern) {
 function ValueIsPropertyDescriptor(Value) {
     if (!ValueIsPlainObject(Value) ||
         !ValueIsIdentifier(Value.Name) ||
+        Value.Name.startsWith('_') || // reject internal and "dangerous"
+        ValueIsOneOf(Value.Name.toLowerCase(), [
+            '__proto__', 'prototype', 'constructor' // ...even if not yet "forbidden"
+        ]) ||
         (Value.Name.toLowerCase() in forbiddenPropertyNames) ||
         (Value.Label != null) && !ValueIsTextline(Value.Label) ||
         (Value.EditorType == null) ||
@@ -1291,10 +1308,25 @@ function installAccessorFor(Visual, Descriptor) {
     const RegEx = (Pattern == null
         ? undefined
         : Pattern instanceof RegExp // anchor given RegExp as well
-            ? new RegExp('^(?:' + Pattern.source + ')$', Pattern.flags)
+            ? new RegExp(// only "i" and "u" flags make sense here - "g"...
+            '^(?:' + Pattern.source + ')$', // ...and "y" would even break...
+            Pattern.flags.replace(/[^iu]/g, '') // ...repeated validations
+            )
             : new RegExp('^(?:' + Pattern + ')$'));
     let Validator = Descriptor.Validator;
-    if (Validator == null) {
+    if (Validator != null) { // safeguard custom validators: if one throws,
+        const customValidator = Validator; // ...its value is considered invalid
+        Validator = (Value) => {
+            try {
+                return (customValidator(Value) === true);
+            }
+            catch (Signal) {
+                console.warn('validator for property ' + quoted(Descriptor.Name) + ' failed:', Signal);
+                return false;
+            }
+        };
+    }
+    else {
         switch (Descriptor.EditorType) {
             case 'checkbox':
             case 'choice':
@@ -1304,7 +1336,9 @@ function installAccessorFor(Visual, Descriptor) {
             case 'password-input':
                 Validator = (Pattern == null
                     ? ValueIsTextline
-                    : (Value) => ValueIsStringMatching(Value, RegEx));
+                    : (Value) => ( // a pattern must not overrule the basic...
+                    ValueIsTextline(Value) && // ..."textline" constraint
+                        ValueIsStringMatching(Value, RegEx)));
                 break;
             case 'email-address-input':
                 Validator = ValueIsEMailAddress;
@@ -1390,14 +1424,16 @@ function installAccessorFor(Visual, Descriptor) {
         configurable: true, enumerable: true,
         get: () => {
             const Result = acceptableValue(Visual[Container][Descriptor.Name], Validator, Default);
-            return ( // never hand out the list default itself...
-            ValueIsList(Result) && (Result === Default) ? Result.slice() : Result); // ...as it could be mutated by the caller
+            return ( // never hand out a stored list (or the list...
+            ValueIsList(Result) ? Result.slice() : Result); // ...default) itself - it could then be mutated
         },
         set: (newValue) => {
-            ;
-            (Default == null ? allowValue : expectValue)(Descriptor.Name, newValue, Validator);
+            newValue = allowValue(Descriptor.Name, newValue, Validator);
+            // "allowValue" unboxes boxed primitives - and "undefined"/"null"
+            // reset even properties with a "Default" (the getter will then
+            // deliver that default again)
             const originalValue = newValue; // for callbacks, prior normalization
-            if (ValuesAreEqual(newValue, Default)) {
+            if ((newValue == null) || ValuesAreEqual(newValue, Default)) {
                 newValue = undefined;
             }
             if (ValuesDiffer(newValue, Visual[Container][Descriptor.Name])) {
@@ -1449,6 +1485,7 @@ function makeVisualReady(Visual) {
 //------------------------------------------------------------------------------
 //--                           Reactivity Handling                            --
 //------------------------------------------------------------------------------
+const WAT_DebugTracking = false; // log async function tracking?
 const reactiveFunctionsForVisual = new WeakMap();
 /**** registerReactiveFunctionIn ****/
 function registerReactiveFunctionIn(Visual, reactiveFunction) {
@@ -1580,6 +1617,14 @@ export function GestureRecognizer(OptionSet) {
     // (already detached) former capture element itself - like Chrome's spurious
     // "pointercancel" after such a removal - never pass "window" and are
     // deliberately ignored (see the actual recognizer function below)
+    //
+    // n.b.: "lostpointercapture" is deliberately NOT treated as a cancellation:
+    // it also fires on every perfectly normal release (in some browsers even
+    // BEFORE the corresponding "pointerup") and, when the capture node is
+    // removed mid-gesture, at the Document - in both cases cancelling would
+    // break perfectly normal gestures. loss of capture is harmless here anyway:
+    // capture is "just an optimisation" (see "onPointerDown") and the
+    // window-level listeners keep the gesture alive without it
     function handleEventOnWindow(Event) {
         switch (Event.type) {
             case 'pointermove': return onPointerMove(Event);
@@ -1686,10 +1731,22 @@ export function GestureRecognizer(OptionSet) {
         if (Event.pointerId !== curPointerId) {
             return;
         } // ignore other pointers
-        if (Event.buttons !== 1) { // only handle events for primary button
-            if (Status !== '') {
-                onPointerCancel(Event);
-            }
+        if ((Event.buttons & 1) !== 1) {
+            // the primary button is no longer pressed, i.e., it was released
+            // while the pointer was still moving: browsers may deliver
+            // (coalesced) "pointermove"s which already carry the released
+            // button state BEFORE the corresponding "pointerup" arrives - and a
+            // "chorded" release of the primary button (while another button is
+            // still held) fires no "pointerup" at all, just a "pointermove".
+            // in both cases this is a perfectly normal END of the gesture at
+            // the current position - NOT an anomaly to be cancelled: cancelling
+            // here used to snap dragged widgets back to their pre-drag geometry
+            // whenever the mouse was released in mid-movement (which is why
+            // drag/resize operations failed so frequently, in the Designer as
+            // well as with any runtime "WAT_Mover"/"WAT_Resizer"). the real
+            // "pointerup" arriving afterwards is harmless - the gesture is
+            // already over by then and it will simply be ignored
+            onPointerUp(Event);
             return;
         }
         Event.stopPropagation(); // consume event
@@ -1723,7 +1780,11 @@ export function GestureRecognizer(OptionSet) {
         if (Event.pointerId !== curPointerId) {
             return;
         } // ignore other pointers
-        if (Event.buttons !== 0) { // only handle events for primary button
+        if ((Event.buttons & 1) !== 0) {
+            // a "pointerup" with the primary button still pressed does not
+            // belong to this gesture (per spec, releasing the primary button
+            // while other buttons are held fires "pointermove", not
+            // "pointerup", see above) - treat as anomaly
             if (Status !== '') {
                 onPointerCancel(Event);
             }
@@ -1983,6 +2044,7 @@ export function WAT_Shaper(PropSet) {
         onDragStart: (dx, dy, x, y, Event) => {
             const { Widget, onDragStart } = PropsRef.current;
             if ((Widget == null) || (Widget.Page == null)) {
+                DragInfo.initialGeometry = undefined; // marks an unusable drag
                 return;
             }
             DragInfo.initialGeometry = Widget.Geometry;
@@ -2012,7 +2074,9 @@ export function WAT_Shaper(PropSet) {
             }
             if (typeof onShape === 'function') { // restore original geometry
                 const { initialGeometry } = DragInfo;
-                onShape(initialGeometry.x, initialGeometry.y, initialGeometry.Width, initialGeometry.Height);
+                if (initialGeometry != null) {
+                    onShape(initialGeometry.x, initialGeometry.y, initialGeometry.Width, initialGeometry.Height);
+                }
             }
         },
     }));
@@ -2022,6 +2086,9 @@ export function WAT_Shaper(PropSet) {
         if (typeof onShape !== 'function') {
             return;
         }
+        if (DragInfo.initialGeometry == null) {
+            return;
+        } // drag did not start
         const dxWest = Math.min(dx, DragInfo.initialGeometry.Width);
         const dyNorth = Math.min(dy, DragInfo.initialGeometry.Height);
         let dX = 0, dY = 0, dW = 0, dH = 0;
@@ -2216,7 +2283,8 @@ export function WAT_Dragger(PropSet) {
                 return (xl >= x) && (xr <= x + Width) && (yt >= y) && (yb <= y + Height);
             }
         });
-        let Catcher = CatcherList.find((Candidate) => {
+        let Catcher = CatcherList.toReversed() // topmost of all overlapping...
+            .find((Candidate) => {
             try {
                 return (Candidate.on('drop-request')(Widget) === true);
             }
@@ -2921,14 +2989,20 @@ export class WAT_Visual {
                 try {
                     const Result = reactiveFunction();
                     if (Result instanceof Promise) {
-                        console.warn('started  tracking asynchronous reactive function');
+                        if (WAT_DebugTracking) {
+                            console.warn('started  tracking asynchronous reactive function');
+                        }
                         Result.catch((Signal) => {
                             console.warn(`asynchronous reactive function failed`, Signal);
                             setErrorReport(this, {
                                 Type: 'Reactivity Failure',
                                 Sufferer: this, Message: '' + Signal, Cause: Signal
                             });
-                        }).then(() => console.warn('finished tracking asynchronous reactive function'));
+                        }).then(() => {
+                            if (WAT_DebugTracking) {
+                                console.warn('finished tracking asynchronous reactive function');
+                            }
+                        });
                     }
                 }
                 catch (Signal) {
@@ -3163,9 +3237,13 @@ export class WAT_Visual {
         try {
             let Result = Callback.apply(this, ArgList);
             if (Result instanceof Promise) {
-                console.warn('started  tracking asynchronous callback ' + quoted(CallbackName));
+                if (WAT_DebugTracking) {
+                    console.warn('started  tracking asynchronous callback ' + quoted(CallbackName));
+                }
                 return Result.then((Value) => {
-                    console.warn('finished tracking asynchronous callback ' + quoted(CallbackName));
+                    if (WAT_DebugTracking) {
+                        console.warn('finished tracking asynchronous callback ' + quoted(CallbackName));
+                    }
                     return Value;
                 }, (Signal) => {
                     console.warn(`asynchronous callback ${quoted(CallbackName)} failed`, Signal);
@@ -3198,6 +3276,7 @@ export class WAT_Visual {
     }
     /**** CSSStyle ****/
     get CSSStyle() {
+        var _a;
         let CSSStyleList = [];
         const { FontFamily, FontSize, FontWeight, FontStyle, TextDecoration, TextShadow, TextAlignment, LineHeight, ForegroundColor, hasBackground, BackgroundColor, BackgroundTexture, Opacity, Cursor, Overflows, } = this;
         if (FontFamily != null) {
@@ -3207,7 +3286,7 @@ export class WAT_Visual {
             CSSStyleList.push(`font-size:${FontSize}px`);
         }
         if (FontWeight != null) {
-            CSSStyleList.push(`font-weight:${FontWeight}`);
+            CSSStyleList.push(`font-weight:${(_a = WAT_FontWeightValues[FontWeight]) !== null && _a !== void 0 ? _a : FontWeight}`);
         }
         if (FontStyle != null) {
             CSSStyleList.push(`font-style:${FontStyle}`);
@@ -3293,7 +3372,7 @@ export class WAT_Visual {
         let serializableMemoized = undefined;
         if (this._memoized != null) { // test serializability of "memoized" as well
             for (const Key in this._memoized) { // ...but per entry: unserializable
-                if (!this._memoized.hasOwnProperty(Key)) {
+                if (!Object.prototype.hasOwnProperty.call(this._memoized, Key)) {
                     continue;
                 } // entries...
                 if (ValueIsSerializableValue(this._memoized[Key])) { // ...are just...
@@ -3565,6 +3644,9 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** AssetURL ****/
     AssetURL(relativeURL) {
+        if (ValueIsString(relativeURL) && /^(data|blob):/.test(relativeURL)) {
+            return relativeURL; // "data:" and "blob:" URLs pass through as-is
+        }
         expectURL('asset URL', (relativeURL == null ? undefined : relativeURL + '/.')); // because AssetURL is incomplete
         const AssetsBase = this.AssetsBase.replace(/\/*$/, '/');
         switch (true) {
@@ -3699,9 +3781,26 @@ export class WAT_Applet extends WAT_Visual {
         if (newName === oldName) {
             return;
         }
-        if (normalizedNewName === normalizedOldName) {
+        if (normalizedNewName === normalizedOldName) { // just a change in casing
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedOldName].Name = newName;
+            switch (Category) { // adjust the "_Behavior" of users as well,
+                case 'applet': // but without script reactivation
+                    if (this._normalizedBehavior === normalizedOldName) {
+                        this._Behavior = newName;
+                    }
+                    break;
+                case 'page':
+                    this.PagesWithBehavior(oldName).forEach((Page) => {
+                        Page['_Behavior'] = newName;
+                    });
+                    break;
+                case 'widget':
+                    this.WidgetsWithBehavior(oldName).forEach((Widget) => {
+                        Widget['_Behavior'] = newName;
+                    });
+            }
+            this.rerender();
             return;
         }
         // @ts-ignore TS7053 allow indexing
@@ -3746,6 +3845,8 @@ export class WAT_Applet extends WAT_Visual {
         expectBehavior('behavior name', Behavior);
         expectText('behavior script', Script);
         const normalizedBehavior = Behavior.toLowerCase();
+        if (BehaviorIsIntrinsic(normalizedBehavior))
+            throwError('InvalidArgument: intrinsic behaviors must not be modified');
         // @ts-ignore TS7053 allow indexing
         const Registration = this._BehaviorPool[Category][normalizedBehavior];
         if (Registration == null)
@@ -4102,8 +4203,9 @@ export class WAT_Applet extends WAT_Visual {
     /**** WidgetsNamed ****/
     WidgetsNamed(NameSet) {
         expectPlainObject('widget name set', NameSet);
-        const WidgetSet = {};
+        const WidgetSet = Object.create(null);
         for (const [PageName, NameList] of Object.entries(NameSet)) {
+            expectListSatisfying('widget name list', NameList, ValueIsName);
             const Page = this.existingPage(PageName); // may fail
             NameList.forEach((WidgetName) => {
                 const Widget = Page.existingWidget(WidgetName); // may fail
@@ -4390,7 +4492,17 @@ export class WAT_Applet extends WAT_Visual {
     DuplicateOfPageAt(Index) {
         expectInteger('page index', Index);
         const Page = this.existingPage(Index); // DRY
-        return this.PageDeserializedAt(Page.Serialization, Page.Index + 1);
+        const Serialization = Page.Serialization;
+        if (ValueIsName(Serialization.Name)) { // make duplicate's name unique
+            const PageName = Serialization.Name;
+            let uniqueName = PageName + ' (copy)';
+            let n = 2;
+            while (this.PageNamed(uniqueName) != null) {
+                uniqueName = `${PageName} (copy ${n++})`;
+            }
+            Serialization.Name = uniqueName;
+        }
+        return this.PageDeserializedAt(Serialization, Page.Index + 1);
     }
     /**** mayShiftPageUp/Down ****/
     mayShiftPageUp(PageOrNameOrIndex) {
@@ -4436,9 +4548,13 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** shiftPagesTo (for Designer only, less strict argument validations) ****/
     shiftPagesTo(PageList, newIndexList) {
+        if (newIndexList.length !== PageList.length)
+            throwError('InvalidArgument: "PageList" and "newIndexList" differ in length');
         const IndexSet = [];
         newIndexList.forEach((Index, i) => {
             if (this._PageList.indexOf(PageList[i]) >= 0) {
+                if (IndexSet[Index] != null)
+                    throwError(`InvalidArgument: duplicate target index ${Index}`);
                 IndexSet[Index] = PageList[i];
             }
         });
@@ -4536,6 +4652,7 @@ export class WAT_Applet extends WAT_Visual {
     /**** WidgetAtPath ****/
     WidgetAtPath(Path) {
         expectPath('widget path', Path);
+        Path = Path.replace(/\/+$/, ''); // ignore any trailing slashes
         const PathItemList = Path.replace(/\/\/+/g, '/').replace(/^\//, '')
             .split('/').map((PathItem) => {
             if (/^#\d+$/.test(PathItem.trim())) {
@@ -4576,13 +4693,19 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** openOverlay ****/
     openOverlay(Descriptor) {
+        expectPlainObject('overlay descriptor', Descriptor);
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
         const Overlay = new WAT_AppletOverlay(this, Descriptor);
         this._OverlayList.push(Overlay);
         this.rerender();
         if (Overlay.onOpen != null) {
-            Overlay.onOpen(Overlay);
+            try {
+                Overlay.onOpen(Overlay);
+            }
+            catch (Signal) {
+                console.warn('"onOpen" callback failure', Signal);
+            }
         }
     }
     /**** closeOverlay ****/
@@ -4598,7 +4721,12 @@ export class WAT_Applet extends WAT_Visual {
         }
         this.rerender();
         if (Overlay.onClose != null) {
-            Overlay.onClose(Overlay);
+            try {
+                Overlay.onClose(Overlay);
+            }
+            catch (Signal) {
+                console.warn('"onClose" callback failure', Signal);
+            }
         }
     }
     /**** closeAllOverlays ****/
@@ -4619,16 +4747,19 @@ export class WAT_Applet extends WAT_Visual {
     GeometryOfOverlay(OverlayName) {
         const Overlay = this.existingOverlayNamed(OverlayName);
         const { x, y, Width, Height } = Overlay;
-        // @ts-ignore TS2322 "x" and "y2 are no longer undefined here
-        return { x, y, Width, Height };
+        return {
+            x: (x == null ? (this.Width - Width) / 2 : x),
+            y: (y == null ? (this.Height - Height) / 2 : y),
+            Width, Height
+        };
     }
     /**** moveOverlayBy ****/
     moveOverlayBy(OverlayName, dx, dy) {
-        const Overlay = this.existingOverlayNamed(OverlayName);
         expectNumber('dx', dx);
         expectNumber('dy', dy);
-        // @ts-ignore TS2322 "x" and "y2 are no longer undefined here
-        this.moveOverlayTo(OverlayName, Overlay.x + dx, Overlay.y + dy); // DRY
+        const { x, y } = this.GeometryOfOverlay(OverlayName);
+        // "GeometryOfOverlay" also handles still undefined "x" and "y"
+        this.moveOverlayTo(OverlayName, x + dx, y + dy); // DRY
     }
     /**** moveOverlayTo ****/
     moveOverlayTo(OverlayName, x, y) {
@@ -4637,7 +4768,6 @@ export class WAT_Applet extends WAT_Visual {
         expectLocation('y coordinate', y);
         Overlay.x = x;
         Overlay.y = y;
-        this.rerender();
     }
     /**** sizeOverlayBy ****/
     sizeOverlayBy(OverlayName, dW, dH) {
@@ -4651,9 +4781,8 @@ export class WAT_Applet extends WAT_Visual {
         const Overlay = this.existingOverlayNamed(OverlayName);
         expectDimension('Width', Width);
         expectDimension('Height', Height);
-        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, Overlay.maxWidth || Infinity));
-        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, Overlay.maxHeight || Infinity));
-        this.rerender();
+        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, (Overlay.maxWidth == null ? Infinity : Overlay.maxWidth)));
+        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, (Overlay.maxHeight == null ? Infinity : Overlay.maxHeight)));
     }
     /**** bringOverlayToFront ****/
     bringOverlayToFront(OverlayName) {
@@ -4666,13 +4795,19 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** openDialog ****/
     openDialog(Descriptor) {
+        expectPlainObject('overlay descriptor', Descriptor);
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
         const Dialog = new WAT_Dialog(this, Descriptor);
         this._OverlayList.push(Dialog);
         this.rerender();
         if (Dialog.onOpen != null) {
-            Dialog.onOpen(Dialog);
+            try {
+                Dialog.onOpen(Dialog);
+            }
+            catch (Signal) {
+                console.warn('"onOpen" callback failure', Signal);
+            }
         }
     }
     /**** closeDialog ****/
@@ -5165,7 +5300,7 @@ export class WAT_Page extends WAT_Visual {
         return acceptableValue((this._Overflows == null ? undefined : this._Overflows.slice()), (Value) => ValueIsListOf(Value, ['hidden', 'scroll', 'auto']), ['hidden', 'hidden']);
     }
     set Overflows(newValue) {
-        allowListOf('overflow settings', newValue, ['hidden', 'scroll', 'auto']);
+        allowListSatisfying('overflow settings', newValue, (Value) => ValueIsOneOf(Value, ['hidden', 'scroll', 'auto']), undefined, 2, 2);
         if (ValuesDiffer(this._Overflows, newValue)) {
             this._Overflows = (newValue == null ? undefined : newValue.slice());
             this.rerender();
@@ -5356,9 +5491,13 @@ export class WAT_Page extends WAT_Visual {
     }
     /**** shiftWidgetsTo (for Designer only, less strict argument validations) ****/
     shiftWidgetsTo(WidgetList, newIndexList) {
+        if (newIndexList.length !== WidgetList.length)
+            throwError('InvalidArgument: "WidgetList" and "newIndexList" differ in length');
         const IndexSet = [];
         newIndexList.forEach((Index, i) => {
             if (this._WidgetList.indexOf(WidgetList[i]) >= 0) {
+                if (IndexSet[Index] != null)
+                    throwError(`InvalidArgument: duplicate target index ${Index}`);
                 IndexSet[Index] = WidgetList[i];
             }
         });
@@ -5607,6 +5746,9 @@ export class WAT_Widget extends WAT_Visual {
     set isAttached(_) { throwReadOnlyError('isAttached'); }
     /**** closestOutline ****/
     get closestOutline() {
+        if (this.Page == null) {
+            return undefined;
+        }
         const { x, y, Width, Height } = this.Geometry;
         const Outlines = this.Page.WidgetList.slice(this.Index + 1)
             .filter((Widget) => {
@@ -5635,6 +5777,9 @@ export class WAT_Widget extends WAT_Visual {
     Outline(Name) {
         expectName('outline name', Name);
         const normalizedName = Name.toLowerCase();
+        if (this.Page == null) {
+            return undefined;
+        }
         const { x, y, Width, Height } = this.Geometry;
         const Outlines = this.Page.WidgetList.slice(this.Index + 1)
             .filter((Widget) => {
@@ -6369,7 +6514,7 @@ export class WAT_Widget extends WAT_Visual {
         return acceptableValue((this._Overflows == null ? undefined : this._Overflows.slice()), (Value) => ValueIsListOf(Value, WAT_Overflows), ['visible', 'visible']);
     }
     set Overflows(newValue) {
-        allowListOf('overflow settings', newValue, WAT_Overflows);
+        allowListSatisfying('overflow settings', newValue, (Value) => ValueIsOneOf(Value, WAT_Overflows), undefined, 2, 2);
         if (ValuesDiffer(this._Overflows, newValue)) {
             this._Overflows = (newValue == null ? undefined : newValue.slice());
             this.rerender();
@@ -6446,13 +6591,19 @@ export class WAT_Widget extends WAT_Visual {
     }
     /**** openOverlay ****/
     openOverlay(Descriptor) {
+        expectPlainObject('overlay descriptor', Descriptor);
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
         const Overlay = new WAT_WidgetOverlay(this, Descriptor);
         this._OverlayList.push(Overlay);
         this.rerender();
         if (Overlay.onOpen != null) {
-            Overlay.onOpen(Overlay);
+            try {
+                Overlay.onOpen(Overlay);
+            }
+            catch (Signal) {
+                console.warn('"onOpen" callback failure', Signal);
+            }
         }
     }
     /**** closeOverlay ****/
@@ -6468,7 +6619,12 @@ export class WAT_Widget extends WAT_Visual {
         }
         this.rerender();
         if (Overlay.onClose != null) {
-            Overlay.onClose(Overlay);
+            try {
+                Overlay.onClose(Overlay);
+            }
+            catch (Signal) {
+                console.warn('"onClose" callback failure', Signal);
+            }
         }
     }
     /**** closeAllOverlays ****/
@@ -6505,7 +6661,6 @@ export class WAT_Widget extends WAT_Visual {
         expectLocation('y coordinate', y);
         Overlay.x = x;
         Overlay.y = y;
-        this.rerender();
     }
     /**** sizeOverlayBy ****/
     sizeOverlayBy(OverlayName, dW, dH) {
@@ -6519,9 +6674,8 @@ export class WAT_Widget extends WAT_Visual {
         const Overlay = this.existingOverlayNamed(OverlayName);
         expectDimension('Width', Width);
         expectDimension('Height', Height);
-        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, Overlay.maxWidth || Infinity));
-        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, Overlay.maxHeight || Infinity));
-        this.rerender();
+        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, (Overlay.maxWidth == null ? Infinity : Overlay.maxWidth)));
+        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, (Overlay.maxHeight == null ? Infinity : Overlay.maxHeight)));
     }
     /**** Serialization ****/
     get Serialization() {
@@ -6665,6 +6819,7 @@ class WAT_AppletOverlay {
             writable: true,
             value: void 0
         });
+        // "undefined" x/y make the overlay view center this overlay when shown
         Object.defineProperty(this, "_minWidth", {
             enumerable: true,
             configurable: true,
@@ -6752,6 +6907,8 @@ class WAT_AppletOverlay {
                 break;
             case ValueIsWidget(Descriptor.SourceWidget):
                 SourceWidget = Descriptor.SourceWidget;
+                if (SourceWidget.Applet !== Applet)
+                    throwError('InvalidArgument: the given source widget belongs to a different applet');
                 SourceWidgetPath = SourceWidget.Path;
                 break;
             default:
@@ -6768,8 +6925,8 @@ class WAT_AppletOverlay {
                 Height = SourceGeometry.Height;
             }
         }
-        this._Width = Math.max(this._minWidth, Math.min(Width, maxWidth || Infinity));
-        this._Height = Math.max(this._minHeight, Math.min(Height, maxHeight || Infinity));
+        this._Width = Math.max(this._minWidth, Math.min(Width, (maxWidth == null ? Infinity : maxWidth)));
+        this._Height = Math.max(this._minHeight, Math.min(Height, (maxHeight == null ? Infinity : maxHeight)));
     }
     /**** Applet ****/
     get Applet() { return this._Applet; }
@@ -6817,6 +6974,7 @@ class WAT_AppletOverlay {
     get Width() { return this._Width; }
     set Width(newWidth) {
         expectDimension('overlay width', newWidth);
+        newWidth = Math.max(this._minWidth, Math.min(newWidth, (this._maxWidth == null ? Infinity : this._maxWidth)));
         if (this._Width !== newWidth) {
             this._Width = newWidth;
             this._Applet.rerender();
@@ -6826,6 +6984,7 @@ class WAT_AppletOverlay {
     get Height() { return this._Height; }
     set Height(newHeight) {
         expectDimension('overlay height', newHeight);
+        newHeight = Math.max(this._minHeight, Math.min(newHeight, (this._maxHeight == null ? Infinity : this._maxHeight)));
         if (this._Height !== newHeight) {
             this._Height = newHeight;
             this._Applet.rerender();
@@ -6837,6 +6996,12 @@ class WAT_AppletOverlay {
         expectDimension('minimal overlay width', newValue);
         if (this._minWidth !== newValue) {
             this._minWidth = newValue;
+            if ((this._maxWidth != null) && (this._maxWidth < this._minWidth)) {
+                this._maxWidth = this._minWidth;
+            }
+            if (this._Width < this._minWidth) {
+                this._Width = this._minWidth;
+            }
             this._Applet.rerender();
         }
     }
@@ -6844,8 +7009,14 @@ class WAT_AppletOverlay {
     get maxWidth() { return this._maxWidth; }
     set maxWidth(newValue) {
         allowDimension('maximal overlay width', newValue);
+        if (newValue != null) {
+            newValue = Math.max(this._minWidth, newValue);
+        }
         if (this._maxWidth !== newValue) {
             this._maxWidth = newValue;
+            if ((newValue != null) && (this._Width > newValue)) {
+                this._Width = newValue;
+            }
             this._Applet.rerender();
         }
     }
@@ -6855,6 +7026,12 @@ class WAT_AppletOverlay {
         expectDimension('minimal overlay height', newValue);
         if (this._minHeight !== newValue) {
             this._minHeight = newValue;
+            if ((this._maxHeight != null) && (this._maxHeight < this._minHeight)) {
+                this._maxHeight = this._minHeight;
+            }
+            if (this._Height < this._minHeight) {
+                this._Height = this._minHeight;
+            }
             this._Applet.rerender();
         }
     }
@@ -6862,8 +7039,14 @@ class WAT_AppletOverlay {
     get maxHeight() { return this._maxHeight; }
     set maxHeight(newValue) {
         allowDimension('maximal overlay height', newValue);
+        if (newValue != null) {
+            newValue = Math.max(this._minHeight, newValue);
+        }
         if (this._maxHeight !== newValue) {
             this._maxHeight = newValue;
+            if ((newValue != null) && (this._Height > newValue)) {
+                this._Height = newValue;
+            }
             this._Applet.rerender();
         }
     }
@@ -6939,8 +7122,8 @@ class WAT_Dialog extends WAT_AppletOverlay {
                 this._maxHeight += 10;
             }
         }
-        this._Width = Math.max(this._minWidth, Math.min(this._Width, this._maxWidth || Infinity));
-        this._Height = Math.max(this._minHeight, Math.min(this._Height, this._maxHeight || Infinity));
+        this._Width = Math.max(this._minWidth, Math.min(this._Width, (this._maxWidth == null ? Infinity : this._maxWidth)));
+        this._Height = Math.max(this._minHeight, Math.min(this._Height, (this._maxHeight == null ? Infinity : this._maxHeight)));
     }
     /**** Title ****/
     get Title() { return this._Title; }
@@ -7112,8 +7295,8 @@ class WAT_WidgetOverlay {
                 Height = SourceGeometry.Height;
             }
         }
-        this._Width = Math.max(this._minWidth, Math.min(Width, maxWidth || Infinity));
-        this._Height = Math.max(this._minHeight, Math.min(Height, maxHeight || Infinity));
+        this._Width = Math.max(this._minWidth, Math.min(Width, (maxWidth == null ? Infinity : maxWidth)));
+        this._Height = Math.max(this._minHeight, Math.min(Height, (maxHeight == null ? Infinity : maxHeight)));
     }
     /**** Widget ****/
     get Widget() { return this._Widget; }
@@ -7158,6 +7341,7 @@ class WAT_WidgetOverlay {
     get Width() { return this._Width; }
     set Width(newWidth) {
         expectDimension('overlay width', newWidth);
+        newWidth = Math.max(this._minWidth, Math.min(newWidth, (this._maxWidth == null ? Infinity : this._maxWidth)));
         if (this._Width !== newWidth) {
             this._Width = newWidth;
             this._Widget.rerender();
@@ -7167,6 +7351,7 @@ class WAT_WidgetOverlay {
     get Height() { return this._Height; }
     set Height(newHeight) {
         expectDimension('overlay height', newHeight);
+        newHeight = Math.max(this._minHeight, Math.min(newHeight, (this._maxHeight == null ? Infinity : this._maxHeight)));
         if (this._Height !== newHeight) {
             this._Height = newHeight;
             this._Widget.rerender();
@@ -7178,6 +7363,12 @@ class WAT_WidgetOverlay {
         expectDimension('minimal overlay width', newValue);
         if (this._minWidth !== newValue) {
             this._minWidth = newValue;
+            if ((this._maxWidth != null) && (this._maxWidth < this._minWidth)) {
+                this._maxWidth = this._minWidth;
+            }
+            if (this._Width < this._minWidth) {
+                this._Width = this._minWidth;
+            }
             this._Widget.rerender();
         }
     }
@@ -7185,8 +7376,14 @@ class WAT_WidgetOverlay {
     get maxWidth() { return this._maxWidth; }
     set maxWidth(newValue) {
         allowDimension('maximal overlay width', newValue);
+        if (newValue != null) {
+            newValue = Math.max(this._minWidth, newValue);
+        }
         if (this._maxWidth !== newValue) {
             this._maxWidth = newValue;
+            if ((newValue != null) && (this._Width > newValue)) {
+                this._Width = newValue;
+            }
             this._Widget.rerender();
         }
     }
@@ -7196,6 +7393,12 @@ class WAT_WidgetOverlay {
         expectDimension('minimal overlay height', newValue);
         if (this._minHeight !== newValue) {
             this._minHeight = newValue;
+            if ((this._maxHeight != null) && (this._maxHeight < this._minHeight)) {
+                this._maxHeight = this._minHeight;
+            }
+            if (this._Height < this._minHeight) {
+                this._Height = this._minHeight;
+            }
             this._Widget.rerender();
         }
     }
@@ -7203,8 +7406,14 @@ class WAT_WidgetOverlay {
     get maxHeight() { return this._maxHeight; }
     set maxHeight(newValue) {
         allowDimension('maximal overlay height', newValue);
+        if (newValue != null) {
+            newValue = Math.max(this._minHeight, newValue);
+        }
         if (this._maxHeight !== newValue) {
             this._maxHeight = newValue;
+            if ((newValue != null) && (this._Height > newValue)) {
+                this._Height = newValue;
+            }
             this._Widget.rerender();
         }
     }
@@ -7267,21 +7476,14 @@ export function WAT_MonthMatcher(Value) {
     return ValueIsStringMatching(Value, WAT_MonthRegExp);
 }
 /**** for MarkdownView ****/
+// "Marked" is still needed by "MarkdownAsText"/"MarkdownAsHTML" - the
+// Markdown rendering of the MarkdownView widget itself now comes from JCL
+// which lazily loads its own "marked", KaTeX and "highlight.js" instances
+// (the former "marked-katex-extension", "marked-highlight" and "highlight.js"
+//  imports incl. language registrations were therefore removed)
 import { Marked } from 'marked';
-import hljs from 'highlight.js/lib/core';
-import { default as _css } from 'highlight.js/lib/languages/css';
-hljs.registerLanguage('css', _css);
-import { default as _javascript } from 'highlight.js/lib/languages/javascript';
-hljs.registerLanguage('javascript', _javascript);
-import { default as _java } from 'highlight.js/lib/languages/java';
-hljs.registerLanguage('java', _java);
-import { default as _json } from 'highlight.js/lib/languages/json';
-hljs.registerLanguage('json', _json);
-import { default as _typescript } from 'highlight.js/lib/languages/typescript';
-hljs.registerLanguage('typescript', _typescript);
-import { default as _xml } from 'highlight.js/lib/languages/xml';
-hljs.registerLanguage('html', _xml);
-hljs.registerLanguage('xml', _xml);
+/**** collect all internal property names (now that all classes exist) ****/
+collectInternalNames(); // idempotent - may be called multiple times
 /**** now actually register all intrinsic behaviours ****/
 function registerIntrinsicBehaviorsIn(Applet) {
     /**** plain_Widget ****/
@@ -7445,7 +7647,14 @@ function registerIntrinsicBehaviorsIn(Applet) {
             const SourceWidget = ((Value == null) || (Value.trim() === '')
                 ? undefined
                 : (_a = this.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(Value));
-            const noSourceWidget = (SourceWidget == null) || (SourceWidget === this);
+            let noSourceWidget = (SourceWidget == null);
+            if (!noSourceWidget && ((SourceWidget === this) || (SourceWidget.Page === this.Page))) { // same self/same-page check as in the
+                noSourceWidget = true; // "Value" setter - show nothing then
+                if (this._warnedAboutSelfOrSamePage !== true) {
+                    this._warnedAboutSelfOrSamePage = true;
+                    console.warn('WidgetPane: refusing to show itself or a widget from its own page');
+                }
+            }
             const withPattern = (noSourceWidget && (my.visiblePattern === true));
             let WidgetsToShow;
             if (noSourceWidget) {
@@ -7502,6 +7711,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
             if (acceptableFileTypes.length === 0) {
                 acceptableFileTypes = WAT_supportedTextFormats.slice();
             }
+            // *C* NOTE: an empty "acceptableFileTypes" list means "all supported
+            // formats" (this applies to all "...View" widgets) - as a consequence,
+            // the "acceptableFileTypes.length > 0" term below can never be false
             /**** prepare file dropping ****/
             const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
             function _acceptableDataIn(Event) {
@@ -7720,7 +7932,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 if (_acceptableDataIn(Event)) {
                     Event.preventDefault();
                     if (Event.dataTransfer.types.includes('text/plain')) {
-                        // *C* SECURITY: dropped text is taken over verbatim and will be rendered as HTML
+                        // *C* SECURITY: dropped text is taken over verbatim and will be parsed as Markdown
                         const Value = Event.dataTransfer.getData('text');
                         this.Value = Value;
                         this.on('input')(Event);
@@ -8139,12 +8351,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
             const ArrowHeads = this.ArrowHeads || 'end';
             const xm = Width / 2, ym = Height / 2;
             let x1, y1, x2, y2;
-            switch (Direction) {
+            switch (Direction) { // all line ends are inset by 6px - otherwise the
+                // arrow heads would be clipped at the SVG bounds
                 case 'n':
                     x1 = xm;
-                    y1 = Height;
+                    y1 = Height - 6;
                     x2 = xm;
-                    y2 = 0;
+                    y2 = 6;
                     break;
                 case 'ne':
                     x1 = 6;
@@ -8153,9 +8366,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     y2 = 6;
                     break;
                 case 'e':
-                    x1 = 0;
+                    x1 = 6;
                     y1 = ym;
-                    x2 = Width;
+                    x2 = Width - 6;
                     y2 = ym;
                     break;
                 case 'se':
@@ -8166,9 +8379,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     break;
                 case 's':
                     x1 = xm;
-                    y1 = 0;
+                    y1 = 6;
                     x2 = xm;
-                    y2 = Height;
+                    y2 = Height - 6;
                     break;
                 case 'sw':
                     x1 = Width - 6;
@@ -8177,9 +8390,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     y2 = Height - 6;
                     break;
                 case 'w':
-                    x1 = Width;
+                    x1 = Width - 6;
                     y1 = ym;
-                    x2 = 0;
+                    x2 = 6;
                     y2 = ym;
                     break;
                 default:
@@ -8238,30 +8451,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
             const Direction = this.Direction || 'cw';
             const TipPosition = this.TipPosition || 'n';
             const ArrowHeads = this.ArrowHeads || 'end';
-            let Arc;
+            let Arc; // all arc start points are inset by 6px (like the arc
+            // ends already are) - otherwise stroke and arrow heads
+            // would be clipped at the SVG bounds
             switch (Direction + ' ' + TipPosition) {
                 case 'cw n':
-                    Arc = `M ${W},${H - 6} A ${W - 6} ${H - 18} 0 0 1 6 12`;
+                    Arc = `M ${W - 6},${H - 6} A ${W - 6} ${H - 18} 0 0 1 6 12`;
                     break;
                 case 'cw e':
-                    Arc = `M 6,${H} A ${W - 18} ${H - 6} 0 0 1 ${W - 12} 6`;
+                    Arc = `M 6,${H - 6} A ${W - 18} ${H - 6} 0 0 1 ${W - 12} 6`;
                     break;
                 case 'cw s':
-                    Arc = `M 0,6 A ${W - 6} ${H - 18} 0 0 1 ${W - 6} ${H - 12}`;
+                    Arc = `M 6,6 A ${W - 6} ${H - 18} 0 0 1 ${W - 6} ${H - 12}`;
                     break;
                 case 'cw w':
-                    Arc = `M ${W - 6},0 A ${W - 18} ${H - 6} 0 0 1 12 ${H - 6}`;
+                    Arc = `M ${W - 6},6 A ${W - 18} ${H - 6} 0 0 1 12 ${H - 6}`;
                     break;
                 case 'ccw n':
-                    Arc = `M 0,${H - 6} A ${W - 6} ${H - 18} 0 0 0 ${W - 6} 12`;
+                    Arc = `M 6,${H - 6} A ${W - 6} ${H - 18} 0 0 0 ${W - 6} 12`;
                     break;
                 case 'ccw e':
-                    Arc = `M 6,0 A ${W - 18} ${H - 6} 0 0 0 ${W - 12} ${H - 6}`;
+                    Arc = `M 6,6 A ${W - 18} ${H - 6} 0 0 0 ${W - 12} ${H - 6}`;
                     break;
                 case 'ccw s':
-                    Arc = `M ${W},6 A ${W - 6} ${H - 18} 0 0 0 6 ${H - 12}`;
+                    Arc = `M ${W - 6},6 A ${W - 6} ${H - 18} 0 0 0 6 ${H - 12}`;
                     break;
-                default: Arc = `M ${W - 6},${H} A ${W - 18} ${H - 6} 0 0 0 12 6`; // 'ccw w'
+                default: Arc = `M ${W - 6},${H - 6} A ${W - 18} ${H - 6} 0 0 0 12 6`; // 'ccw w'
             }
             const HeadAtStart = (ArrowHeads === 'start') || (ArrowHeads === 'both');
             const HeadAtEnd = (ArrowHeads === 'end') || (ArrowHeads === 'both');
@@ -8443,6 +8658,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Minimum, lowerBound, Optimum, upperBound, Maximum } = this;
+            // *C* NOTE: JCL currently renders "Optimum" as an (unknown) "opt"
+            // attribute on its <meter> - i.e., the optimum is ignored by browsers.
+            // A WAT-side workaround is impossible: JCL prop names are matched
+            // case-insensitively and the "Optimum" lookup consumes a lowercase
+            // "optimum" prop before RestProps are spread - requires JCL fix
             return html `<${JCL_native.Gauge} Class="WAT Content Gauge"
         Value=${Value} Minimum=${Minimum} lowerBound=${lowerBound}
         Optimum=${Optimum} upperBound=${upperBound} Maximum=${Maximum}
@@ -8464,7 +8684,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
         -webkit-appearance:none; -moz-appearance:none; appearance:none;
         background-color:#EEEEEE;
       }
-      .WAT.Widget > .WAT.Progressbar > progress::-webkit-progress-value,
+      /* the following two rules MUST remain separate: a combined selector
+         list would be dropped completely by Chromium (unknown "::-moz-*")
+         and by Firefox (unknown "::-webkit-*") */
+      .WAT.Widget > .WAT.Progressbar > progress::-webkit-progress-value {
+        background-color:var(--WAT-ProgressColor,dodgerblue);
+      }
       .WAT.Widget > .WAT.Progressbar > progress::-moz-progress-bar {
         background-color:var(--WAT-ProgressColor,dodgerblue);
       }
@@ -8479,9 +8704,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
         /**** Renderer ****/
         onRender(function () {
             const { Value, Maximum } = this;
+            // *C* the former inline "accent-color" was removed - it has no effect
+            // on a <progress> rendered with "appearance:none"
             return html `<${JCL_native.Progressbar} Class="WAT Content Progressbar"
         Value=${Value} Maximum=${Maximum}
-        Style="--WAT-ProgressColor:${this.ForegroundColor || 'dodgerblue'}; accent-color:${this.ForegroundColor || 'dodgerblue'}"
+        Style="--WAT-ProgressColor:${this.ForegroundColor || 'dodgerblue'}"
       />`;
         });
     };
@@ -8706,6 +8933,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
+            // *C* NOTE: "ValueIsPhoneNumber" is strict now - previously persisted free-form values will read as undefined
             { Name: 'Value',
                 EditorType: 'phone-number-input', AccessorsFor: 'memoized', withCallback: true },
             { Name: 'Placeholder',
@@ -9276,8 +9504,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.Value = acceptedFiles.map((File) => File.name).join('\n');
                 // *C* NOTE: "input" is fired with (Event,FileList) here - unlike other widgets
                 await this.on('input')(Event, acceptedFiles);
+                // *C* NOTE: JCL resets the underlying <input type="file"> itself after
+                // every selection - no WAT-side reset is needed here
             };
             /**** actual rendering ****/
+            // *C* NOTE: JCL "legacy.PseudoFileInput" expects "Accept" as a comma-
+            // separated string (unlike "legacy.FileDropArea" which expects a list)
             return html `<${JCL_legacy.PseudoFileInput} Class="WAT Content PseudoFileInput"
         Icon=${IconURL} Color=${Color || 'black'} multiple=${allowMultiple}
         Accept=${acceptableFileTypes == null ? undefined : acceptableFileTypes.join(',')}
@@ -9312,6 +9544,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onRender(function () {
             const { Enabling, Placeholder, allowMultiple, acceptableFileTypes } = this;
             const _onValueInput = async (FileList, Event) => {
+                if (this.Enabling == false) {
+                    return;
+                }
+                // *C* NOTE: file type filtering ("Accept") and single-file slicing
+                // already happen inside JCL "legacy.FileDropArea" - "FileList" thus
+                // only contains acceptable files here
                 this.Value = FileList.map((File) => File.name).join('\n');
                 if (Event.type === 'drop') {
                     await this.on('drop')(Event, FileList);
@@ -9325,7 +9563,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Placeholder=${Placeholder} multiple=${allowMultiple == true}
         Accept=${acceptableFileTypes} disabled=${Enabling === false}
         onValueInput=${_onValueInput}
-      />`;
+      />`; // JCL "legacy.FileDropArea" expects "Accept" as a list of strings
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
@@ -9410,7 +9648,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             set Value(newValue) {
                 allowColor('value', newValue);
-                newValue = (newValue == null ? undefined : HexColor(newValue));
+                newValue = (newValue == null ? undefined : HexColor(newValue).slice(0, 7));
+                // "HexColor" returns #rrggbbaa - <input type="color"> needs #rrggbb
                 if (this.memoized.Value !== newValue) {
                     this.memoized.Value = newValue;
                     this.on('Value')(newValue);
@@ -9592,7 +9831,12 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             /**** prepare file dropping ****/
             const allowsDropping = ((Enabling == true) && !readonly && (acceptableFileTypes.length > 0));
+            // *C* n.b.: plain text drops are deliberately accepted regardless of
+            //     "acceptableFileTypes" - the latter only restricts *file* drops
             function _acceptableDataIn(Event) {
+                if (Event.dataTransfer == null) {
+                    return false;
+                }
                 if (Event.dataTransfer.types.includes('text/plain')) {
                     return true;
                 }
@@ -9718,7 +9962,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return (this._selectedIndices || []).slice();
             },
             set selectedIndices(newList) {
-                expectListSatisfying('indicies of selected list elements', newList, ValueIsOrdinal);
+                expectListSatisfying('indices of selected list elements', newList, ValueIsOrdinal);
                 if (ValuesDiffer(this._selectedIndices, newList)) {
                     const selectedIndexSet = Object.create(null);
                     this._selectedIndices = newList.filter((selectedIndex) => {
@@ -9764,7 +10008,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 const IndicesToDeselect = oldSelectedIndices.filter((selectedIndex) => !(selectedIndex in selectedIndexSet));
                 const IndicesToSelect = selectedIndices.filter((selectedIndex) => (oldSelectedIndices.indexOf(selectedIndex) < 0));
                 setTimeout(() => {
-                    this.on('selection-change')(selectedIndices);
+                    this.on('selection-change')(selectedIndices.slice());
+                    // *C* pass a copy - callbacks must not mutate the internal array
                     IndicesToDeselect.forEach((deselectedIndex) => {
                         // *C* "List" may have shrunk - pass "undefined" for items gone by now
                         this.on('item-deselected')((deselectedIndex < List.length ? List[deselectedIndex] : undefined), deselectedIndex);
@@ -9808,7 +10053,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 this._selectedIndices = selectedIndices;
                 if (SelectionChanged) {
-                    this.on('selection-change')(selectedIndices);
+                    this.on('selection-change')(selectedIndices.slice());
+                    // *C* pass a copy - callbacks must not mutate the internal array
                 }
                 // @ts-ignore TS2454 let's check IF variables were assigned
                 if (IndicesToDeselect != null) {
@@ -9842,18 +10088,23 @@ function registerIntrinsicBehaviorsIn(Applet) {
             return html `<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView">
         ${List.length === 0
                 ? html `<div class="Placeholder"><div>${Placeholder}</></>`
-                : List.map((Item, Index) => html `<div
+                : List.map((Item, Index) => {
+                    var _a;
+                    return html `<div
               class="ListItem ${ItemIsSelected(Index) ? 'selected' : ''}"
               dangerouslySetInnerHTML=${{
-                    __html: ItemRenderer(Item, Index, ItemIsSelected(Index))
-                }}
+                        __html: ((_a = ItemRenderer(Item, Index, ItemIsSelected(Index))) !== null && _a !== void 0 ? _a : '')
+                    }}
               onClick=${(Event) => _onClick(Event, Index)}
               onDblClick=${(Event) => _onDblClick(Event, Index)}
-            />`)}
+            />`;
+                })}
       </>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.FlatListView', WAT_FlatListView);
+    registerIntrinsicBehavior(// *C* legacy alias - "traditional_controls" was renamed to "other_controls"
+    Applet, 'widget', 'traditional_controls.FlatListView', WAT_FlatListView);
     /**** TextlineTab ****/
     const WAT_TextlineTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -9887,11 +10138,13 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             return html `<div class="WAT Content TextlineTab ${isActive ? 'active' : ''}" style="
         line-height:${this.LineHeight || this.Height}px;
-      " disabled=${disabled} onClick=${onClick}
+      " aria-disabled=${disabled} onClick=${onClick}
       >${Label}</>`;
-        });
+        }); // *C* "aria-disabled" - "disabled" is meaningless on a <div>
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.TextlineTab', WAT_TextlineTab);
+    registerIntrinsicBehavior(// *C* legacy alias - "traditional_controls" was renamed to "other_controls"
+    Applet, 'widget', 'traditional_controls.TextlineTab', WAT_TextlineTab);
     /**** IconTab ****/
     const WAT_IconTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
@@ -9943,15 +10196,22 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
                 this.on('click')(Event);
             };
-            return html `<div class="WAT Content IconTab ${isActive ? 'active' : ''}">
+            // *C* click handling sits on the outer container - like in "TextlineTab",
+            //     the whole tab area should be clickable, not just the icon itself
+            //     ("aria-disabled" - "disabled" is meaningless on a <div>)
+            return html `<div class="WAT Content IconTab ${isActive ? 'active' : ''}"
+        aria-disabled=${disabled} onClick=${onClick}
+      >
         <div style="
           -webkit-mask-image:url(${IconURL}); mask-image:url(${IconURL});
           background-color:${Color || 'black'};
-        " disabled=${disabled} onClick=${onClick}/>
+        "/>
       </>`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.IconTab', WAT_IconTab);
+    registerIntrinsicBehavior(// *C* legacy alias - "traditional_controls" was renamed to "other_controls"
+    Applet, 'widget', 'traditional_controls.IconTab', WAT_IconTab);
     /**** QRCodeView ****/
     // a thin WAT wrapper around the "legacy.QRCodeView" component from the
     // "javascript-code-library" (JCL) - n.b.: JCL and WAT must share the same
@@ -10117,15 +10377,21 @@ function registerIntrinsicBehaviorsIn(Applet) {
         Object_assign(me, {
             /**** Columns ****/
             get Columns() {
-                const Candidate = acceptableValue(this.memoized.Columns, ValueIsObjectList);
-                return (Candidate == null
-                    ? WAT_KanbanBoardColumns.map((Column) => (Object.assign({}, Column)))
-                    : Candidate.slice());
+                if (this._normalizedColumns == null) {
+                    // *C* memoized - a stable reference avoids needless re-renders of
+                    //     the JCL board (the memo is invalidated by the setter below)
+                    const Candidate = acceptableValue(this.memoized.Columns, ValueIsObjectList);
+                    this._normalizedColumns = (Candidate == null
+                        ? WAT_KanbanBoardColumns.map((Column) => (Object.assign({}, Column)))
+                        : Candidate.slice());
+                }
+                return this._normalizedColumns;
             },
             set Columns(newColumns) {
                 expectListSatisfying('column list', newColumns, ValueIsPlainObject);
                 if (ValuesDiffer(this.memoized.Columns, newColumns)) {
                     this.memoized.Columns = newColumns.slice();
+                    this._normalizedColumns = undefined; // *C* invalidates the memo
                     this.rerender();
                 }
             },
@@ -10388,6 +10654,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 this.memoized.Value = Data; // silently - a re-render would reload...
                 this.on('Value')(Data); // ...the sheet
                 this.on('input')(Data);
+                this._renderedData = Data;
+                // *C* uncontrolled component - keep the rendered state in sync so
+                //     that an unrelated re-render does not reload a stale sheet
             };
             return html `<${JCL_legacy.Spreadsheet} Class="WAT Content Spreadsheet"
         Data=${this._renderedData} Columns=${this.Columns}
@@ -10402,6 +10671,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
         onUnmount=${() => {
                 this._EditorHandle = undefined;
                 this.on('editor-unmount')();
+                this._renderedData = undefined;
+                // *C* uncontrolled component - a fresh mount then re-initializes
+                //     the sheet from "this.Value"
             }}
       />`;
         });
@@ -10591,6 +10863,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
             set Value(newValue) {
                 allowText('bitmap editor value', newValue);
+                if (this._SnapshotTimer != null) { // *C* an explicit assignment...
+                    clearTimeout(this._SnapshotTimer); // ...supersedes any pending...
+                    this._SnapshotTimer = undefined; // ...debounced snapshot
+                }
                 this.memoized.Value = newValue;
                 if ((newValue != null) && (this._EditorHandle != null)) {
                     this._EditorHandle.setValue(newValue).catch((Signal) => console.warn('BitmapEditor: could not apply the given "Value"', Signal));
@@ -10692,6 +10968,379 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.BitmapEditor', WAT_BitmapEditor);
+    /**** stickyTextNote ****/
+    // a thin WAT wrapper around the "legacy.stickyTextNote" component from the
+    // "javascript-code-library" (JCL). unlike other legacy components, this one
+    // comes with no geometry, chrome or move/resize behavior of its own - it was
+    // designed to be hosted inside a "legacy.NoteBoard". "WAT_Mover"/
+    // "WAT_Resizer" (WAT's own Gesture Support, otherwise only used by the
+    // Designer's Layouter) give it a title bar and a resize handle here, wired
+    // directly into the widget's own "changeGeometryTo" - dragging/resizing
+    // therefore works even without the Designer being attached at all. the
+    // Designer's own "WAD_Cover"/"WAD_ShapeHandle" (z-index 1000000/1000001,
+    // rendered as a whole separate layer above the applet, see "WAT_combinedView"
+    // and "WAD_LayouterLayer and its Parts") sit on top of this and remain the
+    // authoritative move/resize mechanism while the Designer is attached
+    //
+    // n.b.: ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
+    // shared stylesheet - they are positioned here via absolute offsets (like
+    // the Designer itself does for its own handles), not via flexbox. the
+    // resize-handle icon is the same one JCL's own "NoteBoard" uses (see its
+    // "resize-handle" rule) - without it, ".WAT.Resizer" has no background of
+    // its own and stays invisible even though it is present and clickable
+    //
+    // n.b.: "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
+    // the "text-input" editor type's default validator ("ValueIsText"), which
+    // treats tabs as forbidden control characters and would silently reject any
+    // value entered via "TabKeyHandler" - defeating both tab persistence and,
+    // since "Content" would then never contain a tab, JCL's own tab-size styling
+    // (only applied once "Content" already contains one, see "stickyTextNote"
+    // in JCL)
+    //
+    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize (matching how
+    // JCL's own "NoteBoard" already throttles its drag updates, see its header
+    // comment) - mainly to bound the number of re-renders per second, not as a
+    // confirmed fix for a specific bug. "WAT_Mover"/"WAT_Resizer" carry explicit
+    // "key"s so Preact reconciles rather than recreates them; "GestureRecognizer"
+    // itself already tracks an active gesture on "window" specifically so that
+    // DOM replacement mid-gesture cannot abort it (see its own header comment) -
+    // so an occasional aborted first drag/resize is *not* fully explained by
+    // re-rendering yet and needs live diagnosis (browser console output during
+    // a failing attempt) rather than further blind fixes here
+    const WAT_stickyTextNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.stickyTextNote {
+        left:0px; top:0px; width:100%; height:100%;
+        background:#FFFFA8; color:black;
+        border:solid 1px #888888; border-radius:4px;
+        box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
+      }
+      .WAT.stickyTextNote > .WAT.Mover {
+        left:0px; top:0px; right:0px; height:16px;
+        cursor:grab; user-select:none;
+        background:rgba(0,0,0,0.06);
+        border-bottom:solid 1px rgba(0,0,0,0.15);
+        border-radius:3px 3px 0px 0px;
+      }
+      .WAT.stickyTextNote > .content-area {
+        position:absolute; left:0px; top:16px; right:0px; bottom:0px;
+        display:flex; flex-flow:column nowrap; align-items:stretch;
+        overflow:hidden;
+        border-radius:0px 0px 3px 3px;
+      }
+      .WAT.stickyTextNote > .content-area > .sticky-note-content {
+        flex:1 1 auto; width:100%; min-height:0px;
+        border:none; border-radius:0px; background:transparent; padding:4px;
+      }
+      .WAT.stickyTextNote > .WAT.Resizer {
+        right:0px; bottom:0px; width:16px; height:16px;
+        cursor:nwse-resize;
+        background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQA0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==");
+        background-repeat:no-repeat;
+        background-size:contain; background-position:center;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', Label: 'Content', EditorType: 'text-input',
+                AccessorsFor: 'memoized', withCallback: true,
+                Validator: ValueIsTextWithTabs },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            const _onMove = (dx, dy, newX, newY) => {
+                this._pendingPosition = { x: newX, y: newY };
+                if (this._MoveRAF == null) {
+                    this._MoveRAF = requestAnimationFrame(() => {
+                        this._MoveRAF = undefined;
+                        const { x, y } = this._pendingPosition;
+                        this.changeGeometryTo(x, y);
+                    });
+                }
+            };
+            const _onResize = (dW, dH, newWidth, newHeight) => {
+                this._pendingSize = { Width: newWidth, Height: newHeight };
+                if (this._ResizeRAF == null) {
+                    this._ResizeRAF = requestAnimationFrame(() => {
+                        this._ResizeRAF = undefined;
+                        const { Width, Height } = this._pendingSize;
+                        this.changeGeometryTo(undefined, undefined, Width, Height);
+                    });
+                }
+            };
+            const _onValueChange = (newValue) => {
+                this.Value = newValue; // also fires the "Value" callback
+                this.on('input')(newValue);
+            };
+            return html `<div class="WAT Content stickyTextNote">
+        <${WAT_Mover} key="mover" Widget=${this} onMove=${_onMove}/>
+        <div class="content-area" key="content">
+          <${JCL_legacy.stickyTextNote}
+            Content=${Value !== null && Value !== void 0 ? Value : ''}
+            onContentChange=${Enabling === false ? undefined : _onValueChange}
+          />
+        </div>
+        <${WAT_Resizer} key="resizer" Widget=${this} onResize=${_onResize} minWidth=${80} minHeight=${50}/>
+      </div>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.stickyTextNote', WAT_stickyTextNote);
+    /**** stickyHTMLNote ****/
+    // a thin WAT wrapper around the "legacy.stickyHTMLNote" component from the
+    // "javascript-code-library" (JCL). like "stickyTextNote", it comes with no
+    // chrome or geometry of its own - "WAT_Mover"/"WAT_Resizer" give it a title
+    // bar and a resize handle, wired directly into the widget's own
+    // "changeGeometryTo" - dragging/resizing works even without the Designer
+    // being attached. the Designer's own "WAD_Cover"/"WAD_ShapeHandle"
+    // (z-index 1000000/1000001, a whole separate layer above the applet) sit on
+    // top of this and remain the authoritative move/resize mechanism while the
+    // Designer is attached
+    //
+    // n.b.: ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
+    // shared stylesheet - they are positioned here via absolute offsets, not
+    // via flexbox. the resize-handle icon is the same one JCL's own
+    // "NoteBoard" uses (see its "resize-handle" rule) - without it,
+    // ".WAT.Resizer" has no background of its own and stays invisible even
+    // though it is present and clickable
+    //
+    // n.b.: "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
+    // the "html-input" editor type's default validator ("ValueIsText"), which
+    // treats tabs as forbidden control characters and would silently reject
+    // e.g. pretty-printed HTML containing tabs
+    //
+    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize (matching how
+    // JCL's own "NoteBoard" already throttles its drag updates, see its header
+    // comment) - mainly to bound the number of re-renders per second, not as a
+    // confirmed fix for a specific bug. "WAT_Mover"/"WAT_Resizer" carry explicit
+    // "key"s so Preact reconciles rather than recreates them; "GestureRecognizer"
+    // itself already tracks an active gesture on "window" specifically so that
+    // DOM replacement mid-gesture cannot abort it (see its own header comment) -
+    // so an occasional aborted first drag/resize is *not* fully explained by
+    // re-rendering yet and needs live diagnosis (browser console output during
+    // a failing attempt) rather than further blind fixes here
+    const WAT_stickyHTMLNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.stickyHTMLNote {
+        left:0px; top:0px; width:100%; height:100%;
+        background:#FFFFA8; color:black;
+        border:solid 1px #888888; border-radius:4px;
+        box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
+      }
+      .WAT.stickyHTMLNote > .WAT.Mover {
+        left:0px; top:0px; right:0px; height:16px;
+        cursor:grab; user-select:none;
+        background:rgba(0,0,0,0.06);
+        border-bottom:solid 1px rgba(0,0,0,0.15);
+        border-radius:3px 3px 0px 0px;
+      }
+      .WAT.stickyHTMLNote > .content-area {
+        position:absolute; left:0px; top:16px; right:0px; bottom:0px;
+        display:flex; flex-flow:column nowrap; align-items:stretch;
+        overflow:hidden;
+        border-radius:0px 0px 3px 3px;
+      }
+      .WAT.stickyHTMLNote > .content-area > .sticky-note-content {
+        flex:1 1 auto; width:100%; min-height:0px;
+        border:none; background:transparent;
+      }
+      .WAT.stickyHTMLNote > .WAT.Resizer {
+        right:0px; bottom:0px; width:16px; height:16px;
+        cursor:nwse-resize;
+        background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQA0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==");
+        background-repeat:no-repeat;
+        background-size:contain; background-position:center;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', Label: 'Content', EditorType: 'html-input',
+                AccessorsFor: 'memoized', withCallback: true,
+                Validator: ValueIsTextWithTabs },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            const _onMove = (dx, dy, newX, newY) => {
+                this._pendingPosition = { x: newX, y: newY };
+                if (this._MoveRAF == null) {
+                    this._MoveRAF = requestAnimationFrame(() => {
+                        this._MoveRAF = undefined;
+                        const { x, y } = this._pendingPosition;
+                        this.changeGeometryTo(x, y);
+                    });
+                }
+            };
+            const _onResize = (dW, dH, newWidth, newHeight) => {
+                this._pendingSize = { Width: newWidth, Height: newHeight };
+                if (this._ResizeRAF == null) {
+                    this._ResizeRAF = requestAnimationFrame(() => {
+                        this._ResizeRAF = undefined;
+                        const { Width, Height } = this._pendingSize;
+                        this.changeGeometryTo(undefined, undefined, Width, Height);
+                    });
+                }
+            };
+            const _onValueChange = (newValue) => {
+                this.Value = newValue;
+                this.on('input')(newValue);
+            };
+            return html `<div class="WAT Content stickyHTMLNote">
+        <${WAT_Mover} key="mover" Widget=${this} onMove=${_onMove}/>
+        <div class="content-area" key="content">
+          <${JCL_legacy.stickyHTMLNote}
+            Content=${Value !== null && Value !== void 0 ? Value : ''}
+            onContentChange=${Enabling === false ? undefined : _onValueChange}
+          />
+        </div>
+        <${WAT_Resizer} key="resizer" Widget=${this} onResize=${_onResize} minWidth=${80} minHeight=${50}/>
+      </div>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.stickyHTMLNote', WAT_stickyHTMLNote);
+    /**** stickyMarkdownNote ****/
+    // a thin WAT wrapper around the "legacy.stickyMarkdownNote" component from
+    // the "javascript-code-library" (JCL). like "stickyTextNote"/
+    // "stickyHTMLNote" it comes with no geometry/chrome of its own -
+    // "WAT_Mover"/"WAT_Resizer" provide a title bar and a resize handle, wired
+    // directly into the widget's own "changeGeometryTo" - dragging/resizing
+    // therefore works even without the Designer being attached. the Designer's
+    // own "WAD_Cover"/"WAD_ShapeHandle" (z-index 1000000/1000001, a whole
+    // separate layer above the applet) sit on top of this and remain the
+    // authoritative move/resize mechanism while the Designer is attached
+    //
+    // n.b.: ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
+    // shared stylesheet - they are positioned here via absolute offsets, not
+    // via flexbox. the resize-handle icon is the same one JCL's own
+    // "NoteBoard" uses (see its "resize-handle" rule) - without it,
+    // ".WAT.Resizer" has no background of its own and stays invisible even
+    // though it is present and clickable
+    //
+    // n.b.: "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
+    // the "text-input" editor type's default validator ("ValueIsText"), which
+    // treats tabs as forbidden control characters and would silently reject
+    // Markdown content containing tabs
+    //
+    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize (matching how
+    // JCL's own "NoteBoard" already throttles its drag updates, see its header
+    // comment) - mainly to bound the number of re-renders per second, not as a
+    // confirmed fix for a specific bug. "WAT_Mover"/"WAT_Resizer" carry explicit
+    // "key"s so Preact reconciles rather than recreates them; "GestureRecognizer"
+    // itself already tracks an active gesture on "window" specifically so that
+    // DOM replacement mid-gesture cannot abort it (see its own header comment) -
+    // so an occasional aborted first drag/resize is *not* fully explained by
+    // re-rendering yet and needs live diagnosis (browser console output during
+    // a failing attempt) rather than further blind fixes here
+    //
+    // unlike the other two sticky notes, this one opens an edit dialog on
+    // double-click via JCL's own "useDialogContext()/openDialog" (see
+    // "stickyMarkdownNote" in JCL). WAT's own dialog mechanism ("WAT_Dialog"/
+    // "WAT_AppletOverlay") is a separate, JCL-independent system and does not
+    // provide that context (see the "TODO: Dialog-System-Konsolidierung" note
+    // next to "WAT_Dialog") - so a genuine JCL "DialogBase" is wrapped locally
+    // around just this widget. JCL dialogs render with "position:fixed" (see
+    // JCL's "Stylesheet|DialogView"), so they are never clipped by this
+    // wrapper - it only serves as the coordinate anchor the edit dialog opens
+    // next to (via its "BaseRef"). n.b.: because of this wrapper, the widget's
+    // own content is no longer a *direct* child of ".WAT.Widget" - the
+    // stylesheet below therefore uses a descendant (not child) selector
+    //
+    // n.b.: JCL's own "Stylesheet" sets ".jcl-component { position:relative }"
+    // - "DialogBase" renders with that class, and without an explicit size it
+    // has no in-flow content of its own (its content is our absolutely
+    // positioned ".WAT.Content" div, which contributes nothing to normal-flow
+    // height) and therefore collapses to 0px height - which in turn made our
+    // "100%"-sized content (and the Resizer inside it) collapse too. explicit
+    // "style" below makes DialogBase itself fill the widget (also keeping
+    // "BaseRef" correctly positioned for the edit dialog's anchor)
+    const WAT_stickyMarkdownNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget .WAT.stickyMarkdownNote {
+        left:0px; top:0px; width:100%; height:100%;
+        background:#FFFFA8; color:black;
+        border:solid 1px #888888; border-radius:4px;
+        box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
+      }
+      .WAT.stickyMarkdownNote > .WAT.Mover {
+        left:0px; top:0px; right:0px; height:16px;
+        cursor:grab; user-select:none;
+        background:rgba(0,0,0,0.06);
+        border-bottom:solid 1px rgba(0,0,0,0.15);
+        border-radius:3px 3px 0px 0px;
+      }
+      .WAT.stickyMarkdownNote > .content-area {
+        position:absolute; left:0px; top:16px; right:0px; bottom:0px;
+        display:flex; flex-flow:column nowrap; align-items:stretch;
+        overflow:hidden;
+        border-radius:0px 0px 3px 3px;
+      }
+      .WAT.stickyMarkdownNote > .content-area > .sticky-note-content {
+        flex:1 1 auto; width:100%; min-height:0px;
+        padding:4px; cursor:default;
+      }
+      .WAT.stickyMarkdownNote > .WAT.Resizer {
+        right:0px; bottom:0px; width:16px; height:16px;
+        cursor:nwse-resize;
+        background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQA0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==");
+        background-repeat:no-repeat;
+        background-size:contain; background-position:center;
+      }
+      .sticky-markdown-editor {          /* lives in a dialog, not the widget */
+        display:block; width:100%; height:100%;
+        min-width:240px; min-height:180px;
+        resize:none;
+      }
+    `);
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', Label: 'Content', EditorType: 'text-input',
+                AccessorsFor: 'memoized', withCallback: true,
+                Validator: ValueIsTextWithTabs },
+        ];
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling } = this;
+            const _onMove = (dx, dy, newX, newY) => {
+                this._pendingPosition = { x: newX, y: newY };
+                if (this._MoveRAF == null) {
+                    this._MoveRAF = requestAnimationFrame(() => {
+                        this._MoveRAF = undefined;
+                        const { x, y } = this._pendingPosition;
+                        this.changeGeometryTo(x, y);
+                    });
+                }
+            };
+            const _onResize = (dW, dH, newWidth, newHeight) => {
+                this._pendingSize = { Width: newWidth, Height: newHeight };
+                if (this._ResizeRAF == null) {
+                    this._ResizeRAF = requestAnimationFrame(() => {
+                        this._ResizeRAF = undefined;
+                        const { Width, Height } = this._pendingSize;
+                        this.changeGeometryTo(undefined, undefined, Width, Height);
+                    });
+                }
+            };
+            const _onValueChange = (newValue) => {
+                this.Value = newValue;
+                this.on('input')(newValue);
+            };
+            return html `<${JCL_ui.DialogBase}
+        style="position:absolute; left:0px; top:0px; width:100%; height:100%;"
+      >
+        <div class="WAT Content stickyMarkdownNote">
+          <${WAT_Mover} key="mover" Widget=${this} onMove=${_onMove}/>
+          <div class="content-area" key="content">
+            <${JCL_legacy.stickyMarkdownNote}
+              Content=${Value !== null && Value !== void 0 ? Value : ''}
+              onContentChange=${Enabling === false ? undefined : _onValueChange}
+            />
+          </div>
+          <${WAT_Resizer} key="resizer" Widget=${this} onResize=${_onResize} minWidth=${80} minHeight=${50}/>
+        </div>
+      </>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.stickyMarkdownNote', WAT_stickyMarkdownNote);
 }
 /**** readTextFile ****/
 async function readTextFile(File) {
@@ -10772,6 +11421,7 @@ async function FileReadAsImage(File, FileType) {
 async function HTMLFileReadAsText(File) {
     const HTMLContent = await readTextFile(File);
     try {
+        // *C* SECURITY: unpinned CDN import - consider pinning the version and vetting this package
         const { default: HTMLtoText } = await import('https://cdn.jsdelivr.net/npm/@blac-sheep/html-to-text/+esm');
         return HTMLtoText(HTMLContent);
     }
@@ -10787,6 +11437,7 @@ async function MarkdownFileReadAsText(File) {
 export async function MarkdownAsText(Markdown) {
     expectText('markdown document', Markdown);
     try {
+        // *C* SECURITY: unpinned CDN import - consider pinning the version
         const { default: PlainTextRenderer } = await import('https://cdn.jsdelivr.net/npm/marked-plaintext/+esm');
         const marked = new Marked();
         const TextOf = (Value) => {
@@ -10874,6 +11525,7 @@ async function PDFFileReadAsText(File) {
     const Buffer = await readBinaryFile(File);
     let PDF = undefined;
     try {
+        // *C* SECURITY: unpinned CDN imports - consider pinning the pdfjs-dist version
         const { getDocument, GlobalWorkerOptions } = await import('https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.min.mjs');
         GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist/build/pdf.worker.min.mjs';
         PDF = await getDocument(Buffer).promise;
@@ -10989,12 +11641,13 @@ class WAT_AppletView extends Component {
         const Applet = this._Applet = PropSet.Applet;
         const visitedPage = Applet.visitedPage;
         const openOverlays = Applet._OverlayList;
-        const lastOverlayIndex = openOverlays.length - 1;
+        const lastModalIndex = openOverlays.findLastIndex(// topmost MODAL,...
+        (Overlay) => Overlay.isModal // ...not just the topmost
+        );
         let topmostVisibility = undefined;
-        let needsModalLayer = (openOverlays.length > 0) &&
-            openOverlays[lastOverlayIndex].isModal;
+        let needsModalLayer = (lastModalIndex >= 0);
         if (needsModalLayer) { // but not if the topmost modal overlay is hidden
-            const SourceWidget = Applet.WidgetAtPath(openOverlays[lastOverlayIndex].SourceWidgetPath);
+            const SourceWidget = Applet.WidgetAtPath(openOverlays[lastModalIndex].SourceWidgetPath);
             topmostVisibility = (SourceWidget == null
                 ? true
                 : SourceWidget.on('visibility-request')() !== false); // "WAT_AppletOverlayView" renders '' if Visibility === false
@@ -11018,15 +11671,16 @@ class WAT_AppletView extends Component {
         ${OverlayCSSfromApplet(Applet)}
       ">
         ${openOverlays.map((Overlay, Index) => html `
-          ${(Index === lastOverlayIndex) && needsModalLayer ? html `<${WAT_ModalLayer}/>` : ''}
+          ${(Index === lastModalIndex) && needsModalLayer ? html `<${WAT_ModalLayer}/>` : ''}
           <${WAT_AppletOverlayView} key=${Overlay.Name} Applet=${Applet} Overlay=${Overlay}
-            Visibility=${Index === lastOverlayIndex ? topmostVisibility : undefined}/>
+            Visibility=${Index === lastModalIndex ? topmostVisibility : undefined}/>
         `)}
       </div>` : ''}`;
     }
 }
 /**** OverlayCSSfromApplet ****/
 function OverlayCSSfromApplet(Applet) {
+    var _a;
     let CSSStyleList = [];
     const { FontFamily, FontSize, FontWeight, FontStyle, LineHeight, ForegroundColor, } = Applet;
     if (FontFamily != null) {
@@ -11036,7 +11690,7 @@ function OverlayCSSfromApplet(Applet) {
         CSSStyleList.push(`font-size:${FontSize}px`);
     }
     if (FontWeight != null) {
-        CSSStyleList.push(`font-weight:${FontWeight}`);
+        CSSStyleList.push(`font-weight:${(_a = WAT_FontWeightValues[FontWeight]) !== null && _a !== void 0 ? _a : FontWeight}`);
     }
     if (FontStyle != null) {
         CSSStyleList.push(`font-style:${FontStyle}`);
@@ -11059,12 +11713,6 @@ class WAT_PageView extends Component {
             configurable: true,
             writable: true,
             value: void 0
-        });
-        Object.defineProperty(this, "_shownWidgets", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: []
         });
         Object.defineProperty(this, "_Ref", {
             enumerable: true,
@@ -11123,7 +11771,6 @@ class WAT_PageView extends Component {
         this._releaseWidgets();
         const WidgetsToShow = Page.WidgetList.filter((Widget) => (Widget.isVisible && ((Widget._Pane == null) || (Widget._Pane === Page))));
         WidgetsToShow.forEach((Widget) => Widget._Pane = Page);
-        this._shownWidgets = WidgetsToShow;
         const broken = (Page.isBroken ? 'broken' : '');
         return html `<div ref=${this._Ref} class="WAT ${broken} Page" style="
         ${Page.CSSStyle}
@@ -11836,57 +12483,6 @@ export function rerender() {
         }, 0);
     }
 }
-function mapTouchToMouseIn(Target) {
-    function TouchEventMapper(originalEvent) {
-        let simulatedEventType;
-        switch (originalEvent.type) {
-            case 'touchstart':
-                simulatedEventType = 'mousedown';
-                break;
-            case 'touchmove':
-                simulatedEventType = 'mousemove';
-                break;
-            case 'touchend':
-                simulatedEventType = 'mouseup';
-                break;
-            case 'touchcancel':
-                simulatedEventType = 'mouseup';
-                break;
-            default: return;
-        }
-        let firstTouch = originalEvent.changedTouches[0];
-        let clientX = firstTouch.clientX, pageX = firstTouch.pageX, PageXOffset = window.pageXOffset;
-        let clientY = firstTouch.clientY, pageY = firstTouch.pageY, PageYOffset = window.pageYOffset;
-        if ((pageX === 0) && (Math.floor(clientX) > Math.floor(pageX)) ||
-            (pageY === 0) && (Math.floor(clientY) > Math.floor(pageY))) {
-            clientX -= PageXOffset;
-            clientY -= PageYOffset;
-        }
-        else if ((clientX < pageX - PageXOffset) || (clientY < pageY - PageYOffset)) {
-            clientX = pageX - PageXOffset;
-            clientY = pageY - PageYOffset;
-        }
-        let simulatedEvent = new MouseEvent(simulatedEventType, {
-            bubbles: true, cancelable: true,
-            screenX: firstTouch.screenX, screenY: firstTouch.screenY,
-            // @ts-ignore we definitely want "pageX" and "pageY"
-            clientX, clientY, pageX, pageY, buttons: 1, button: 0,
-            ctrlKey: originalEvent.ctrlKey, shiftKey: originalEvent.shiftKey,
-            altKey: originalEvent.altKey, metaKey: originalEvent.metaKey
-        });
-        firstTouch.target.dispatchEvent(simulatedEvent);
-        //    originalEvent.preventDefault()
-    }
-    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
-    Target.addEventListener('touchstart', TouchEventMapper, true);
-    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
-    Target.addEventListener('touchmove', TouchEventMapper, true);
-    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
-    Target.addEventListener('touchend', TouchEventMapper, true);
-    // @ts-ignore TS2345 allow "TouchEventMapper" as callback
-    Target.addEventListener('touchcancel', TouchEventMapper, true);
-}
-//mapTouchToMouseIn(document)
 //----------------------------------------------------------------------------//
 //                           Confirmation Handling                            //
 //----------------------------------------------------------------------------//
@@ -11921,7 +12517,7 @@ export function AppletFor(Value) {
         case ValueIsPage(Value): return Value.Applet;
         case ValueIsWidget(Value): return Value.Applet;
         case (Value instanceof Event):
-            if (Value.target != null) {
+            if (Value.target instanceof Element) {
                 Value = Value.target.closest('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
                     '.WAT.AppletOverlay,.WAT.Dialog,' +
                     '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
@@ -11949,7 +12545,7 @@ export function PageFor(Value) {
         case ValueIsPage(Value): return Value;
         case ValueIsWidget(Value): return Value.Page;
         case (Value instanceof Event):
-            if (Value.target != null) {
+            if (Value.target instanceof Element) {
                 Value = Value.target.closest('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
                     '.WAT.AppletOverlay,.WAT.Dialog,' +
                     '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
@@ -11975,7 +12571,7 @@ export function WidgetFor(Value) {
     switch (true) {
         case ValueIsWidget(Value): return Value;
         case (Value instanceof Event):
-            if (Value.target != null) {
+            if (Value.target instanceof Element) {
                 Value = Value.target.closest('.WAT.Widget,' +
                     '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
                 if (Value == null) {
@@ -11998,15 +12594,18 @@ export function WidgetFor(Value) {
 let AppletStore;
 /**** startup ****/
 function startup() {
-    localforage.ready(function () {
+    localforage.ready(function (Error) {
+        if (Error != null) { // WAT may still run, but without persistence
+            console.warn('"localforage" could not be initialized:', Error);
+        }
         AppletStore = localforage.createInstance({
             name: 'WebApp Tinkerer'
         });
         window.addEventListener('unhandledrejection', (Event) => {
             var _a, _b;
             console.error('caught unhandled error in Promise:', ((_a = Event.reason) === null || _a === void 0 ? void 0 : _a.stack) || ((_b = Event.reason) === null || _b === void 0 ? void 0 : _b.message), Event);
-            Event.preventDefault();
-        });
+        }); // NOTE: no "preventDefault" - the browser's default reporting and any
+        //    other handlers shall still see unhandled rejections
         collectInternalNames();
         startWAT();
     });
@@ -12036,6 +12635,7 @@ async function startWAT() {
     /**** deserialize applet ****/
     let SerializationElement = document.querySelector('script[type="wat/applet"]');
     let Applet = undefined;
+    // *C* NOTE: a local backup always takes precedence over the embedded serialization
     let Serialization = undefined;
     try {
         Serialization = await AppletStore.getItem(AppletName);
@@ -12086,6 +12686,9 @@ async function startWAT() {
         Applet._AssetsBase = AssetsBase;
     }
     if (Applet.visitedPage == null) {
+        if (Applet.PageList.length === 0) { // e.g., after a corrupted backup...
+            Applet.newPageAt(undefined); // ...an applet may not contain any pages
+        }
         Applet.visitPage(Applet.PageList[0]);
     }
     /**** finally render the applet ****/
@@ -12110,7 +12713,7 @@ function IdOfVisual(Visual) {
 }
 /**** newId - uses nanoid with custom dictionary ****/
 export const newId = customAlphabet(nolookalikesSafe, 21);
-const global = (new Function('return this'))();
+const global = globalThis;
 global.JIL = JIL;
 global.WAT = {};
 const WAT = global.WAT; // just for convenience

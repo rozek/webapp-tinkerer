@@ -1184,11 +1184,11 @@ function WAD_Slider(PropSet) {
     }
     return html `<div class="WAD Slider" style=${style}>
       <${JCL_native.Slider}
-        disabled=${enabled === false} Value=${Value}
+        disabled=${(enabled === false) || (readonly === true)} Value=${Value}
         Minimum=${Minimum} Maximum=${Maximum} Step=${StepValue}
         Hashmarks=${Hashmarks}
         onInput=${onInput} onBlur=${onBlur}
-        ...${Object.assign({ readonly }, otherProps)}
+        ...${otherProps}
       />
     </>`;
 }
@@ -1225,8 +1225,7 @@ function WAD_TimeInput(PropSet) {
 function WAD_DropDown(PropSet) {
     let { enabled, Value, Placeholder, Options, onInput, style } = PropSet, otherProps = __rest(PropSet, ["enabled", "Value", "Placeholder", "Options", "onInput", "style"]);
     const OptionList = [
-        ...(Placeholder == null ? [] : [':-' + Placeholder]),
-        ':-(please select)',
+        ':-' + (Placeholder !== null && Placeholder !== void 0 ? Placeholder : '(please select)'),
         ...(Options || [])
     ];
     return html `<div class="WAD DropDown" style=${style}>
@@ -1348,7 +1347,7 @@ function WAD_ColorInput(PropSet) {
     // prop, the given callback ends up directly on the <input>
     return html `<div class="WAD ColorInput" style=${style}>
       <${JCL_native.ColorInput}
-        disabled=${enabled === false} readonly=${readonly}
+        disabled=${(enabled === false) || (readonly === true)}
         Value=${Value} Suggestions=${Suggestions} onInput=${onInput}
         ...${Object.assign(Object.assign({}, otherProps), { onBlur })}
       />
@@ -1362,9 +1361,9 @@ function WAD_TextInput(PropSet) {
     return html `<div class="WAD TextInput" style=${style}>
       <${JCL_native.TextInput}
         disabled=${enabled === false} readonly=${readonly}
-        Value=${Value !== null && Value !== void 0 ? Value : ''} Placeholder=${Placeholder}
+        Value=${Value !== null && Value !== void 0 ? Value : ''} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : ''}
         minLength=${minLength} maxLength=${maxLength}
-        wrap=${LineWrapping} Resizability=${Resizability}
+        LineWrapping=${LineWrapping} Resizability=${Resizability}
         onInput=${onInput} onBlur=${onBlur} ...${otherProps}
       />
     </>`;
@@ -1411,6 +1410,7 @@ function WAD_FlatListView(PropSet) {
     if (selectedIndices.length > SelectionLimit) {
         const deselectedIndices = selectedIndices.slice(SelectionLimit);
         const truncatedIndices = selectedIndices.slice(0, SelectionLimit);
+        deselectedIndices.forEach((Index) => { delete selectedIndexSet[Index]; });
         selectedIndices.length = SelectionLimit;
         setTimeout(() => {
             if (onSelectionChange != null) {
@@ -1607,9 +1607,14 @@ function WAD_NestedListView(PropSet) {
                 selectedPaths = selectedPaths.filter((Path) => !PathsAreEqual(ItemPath, Path));
             }
             else {
-                const ContainerPath = ItemPath.slice(0, ItemPath.length - 1);
-                PathsToDeselect = selectedPaths.filter((Path) => (!ItemInContainer(Path, ContainerPath)));
-                selectedPaths = selectedPaths.filter((Path) => (ItemInContainer(Path, ContainerPath)));
+                if (SelectionMode === 'same-container') {
+                    const ContainerPath = ItemPath.slice(0, ItemPath.length - 1);
+                    PathsToDeselect = selectedPaths.filter((Path) => (!ItemInContainer(Path, ContainerPath)));
+                    selectedPaths = selectedPaths.filter((Path) => (ItemInContainer(Path, ContainerPath)));
+                }
+                else {
+                    PathsToDeselect = [];
+                }
                 if (selectedPaths.length === SelectionLimit) {
                     PathsToDeselect.push(selectedPaths.shift());
                 }
@@ -2020,7 +2025,7 @@ function WAD_PropertyConfigurator(PropSet) {
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
             enabled=${Enabling} readonly=${readonly}
-            Value=${JSON.stringify(Value)} Placeholder=${Placeholder}
+            Value=${(Value === noSelection) || (Value === multipleValues) ? '' : JSON.stringify(Value)} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
             onInput=${(Event) => {
@@ -2047,10 +2052,12 @@ function WAD_PropertyConfigurator(PropSet) {
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
             enabled=${Enabling} readonly=${readonly}
-            Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
+            Value=${ValueIsList(Value) ? Value.join('\n') : ''} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
-            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n'))}
+            onInput=${(Event) => onInput(Event.target.value.trim() === ''
+                ? []
+                : Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n'))}
           />
         `;
         case 'numberlist-input':
@@ -2069,10 +2076,10 @@ function WAD_PropertyConfigurator(PropSet) {
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
             enabled=${Enabling} readonly=${readonly}
-            Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
+            Value=${ValueIsList(Value) ? Value.join('\n') : ''} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
-            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n').map((Line) => parseFloat(Line)))}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n').map((Line) => parseFloat(Line)).filter((Value) => !isNaN(Value)))}
           />
         `;
         case 'integerlist-input':
@@ -2091,10 +2098,10 @@ function WAD_PropertyConfigurator(PropSet) {
 
           <${WAD_TextInput} style="padding-top:4px; min-height:60px"
             enabled=${Enabling} readonly=${readonly}
-            Value=${(Value || []).join('\n')} Placeholder=${Placeholder}
+            Value=${ValueIsList(Value) ? Value.join('\n') : ''} Placeholder=${Placeholder}
             minLength=${minLength} maxLength=${maxLength}
             Resizability=${Resizability} LineWrapping=${LineWrapping}
-            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n').map((Line) => parseInt(Line, 10)))}
+            onInput=${(Event) => onInput(Event.target.value.trim().replace(/\n\s*\n/g, '\n').split('\n').map((Line) => parseInt(Line, 10)).filter((Value) => !isNaN(Value)))}
           />
         `;
     }
@@ -2584,9 +2591,10 @@ function updateObjectInOperationHistory(oldObject, newObject) {
     });
 }
 /**** doOperation ****/
-function doOperation(Operation) {
+function doOperation(OperationFactory) {
     const { OperationHistory, OperationIndex } = DesignerState;
     try {
+        const Operation = OperationFactory(); // may fail
         const prevOperation = OperationHistory[OperationIndex - 1];
         if ((prevOperation != null) && Operation.canExtend(prevOperation)) {
             Operation.extend(prevOperation); // may fail
@@ -2599,10 +2607,15 @@ function doOperation(Operation) {
         }
         else {
             Operation.doNow(); // may fail
-            OperationHistory.length = OperationIndex; // only upon success
-            OperationHistory.push(Operation);
-            DesignerState.OperationIndex += 1;
-            DesignerState.Applet.preserve();
+            if (Operation.isIrrelevant) { // do not historize no-op operations
+                DesignerState.Applet.preserve();
+            }
+            else {
+                OperationHistory.length = OperationIndex; // only upon success
+                OperationHistory.push(Operation);
+                DesignerState.OperationIndex += 1;
+                DesignerState.Applet.preserve();
+            }
         }
     }
     catch (Signal) {
@@ -2612,21 +2625,31 @@ function doOperation(Operation) {
 /**** undoOperation ****/
 function undoOperation() {
     const { OperationHistory, OperationIndex } = DesignerState;
-    let prevOperation = OperationHistory[OperationIndex - 1];
+    const prevOperation = OperationHistory[OperationIndex - 1];
     if (prevOperation != null) {
-        prevOperation.undo();
-        DesignerState.OperationIndex -= 1; // only upon success
-        DesignerState.Applet.preserve();
+        try {
+            prevOperation.undo();
+            DesignerState.OperationIndex -= 1; // only upon success
+            DesignerState.Applet.preserve();
+        }
+        catch (Signal) {
+            console.error('undo failed', Signal);
+        }
     }
 }
 /**** redoOperation ****/
 function redoOperation() {
     const { OperationHistory, OperationIndex } = DesignerState;
-    let nextOperation = OperationHistory[OperationIndex];
+    const nextOperation = OperationHistory[OperationIndex];
     if (nextOperation != null) {
-        nextOperation.redo();
-        DesignerState.OperationIndex += 1; // only upon success
-        DesignerState.Applet.preserve();
+        try {
+            nextOperation.redo();
+            DesignerState.OperationIndex += 1; // only upon success
+            DesignerState.Applet.preserve();
+        }
+        catch (Signal) {
+            console.error('redo failed', Signal);
+        }
     }
 }
 //----------------------------------------------------------------------------//
@@ -3786,29 +3809,29 @@ class WAD_WidgetDeletionOperation extends WAD_Operation {
 //----------------------------------------------------------------------------//
 /**** doCreateNewBehavior ****/
 function doCreateNewBehavior(Category, Behavior) {
-    doOperation(new WAD_BehaviorDeserializationOperation({
+    doOperation(() => new WAD_BehaviorDeserializationOperation({
         BehaviorSet: { [Category]: [{ Name: Behavior, Script: '' }] }
     }));
 }
 /**** doConfigureSelectedBehavior ****/
 function doConfigureSelectedBehavior(Property, Value) {
-    doOperation(new WAD_BehaviorConfigurationOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior, Property, Value));
+    doOperation(() => new WAD_BehaviorConfigurationOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior, Property, Value));
 }
 /**** doApplyBehaviorScript ****/
 function doApplyBehaviorScript() {
-    doOperation(new WAD_BehaviorScriptApplicationOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior));
+    doOperation(() => new WAD_BehaviorScriptApplicationOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior));
 }
 /**** doDeleteSelectedBehavior ****/
 function doDeleteSelectedBehavior() {
-    doOperation(new WAD_BehaviorDeletionOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior));
+    doOperation(() => new WAD_BehaviorDeletionOperation(DesignerState.selectedCategory, DesignerState.selectedBehavior));
 }
 /**** doConfigureApplet ****/
 function doConfigureApplet(Property, Value) {
-    doOperation(new WAD_AppletConfigurationOperation(Property, Value));
+    doOperation(() => new WAD_AppletConfigurationOperation(Property, Value));
 }
 /**** doApplyAppletScript ****/
 function doApplyAppletScript() {
-    doOperation(new WAD_AppletScriptApplicationOperation());
+    doOperation(() => new WAD_AppletScriptApplicationOperation());
 }
 /**** doCreatePage ****/
 function doCreatePage(Behavior) {
@@ -3816,7 +3839,7 @@ function doCreatePage(Behavior) {
     const InsertionIndex = (selectedPages.length === 0
         ? Applet.PageCount
         : Math.max(...selectedPages.map((Page) => Page.Index)) + 1);
-    doOperation(new WAD_PageDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior), WidgetList: [] }], InsertionIndex));
+    doOperation(() => new WAD_PageDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior), WidgetList: [] }], InsertionIndex));
 }
 /**** doDuplicateSelectedPages ****/
 function doDuplicateSelectedPages() {
@@ -3825,48 +3848,68 @@ function doDuplicateSelectedPages() {
         return;
     }
     const InsertionIndex = selectedPages[selectedPages.length - 1].Index + 1;
-    doOperation(new WAD_PageDeserializationOperation(selectedPages.map((Page) => Page.Serialization), InsertionIndex));
+    doOperation(() => new WAD_PageDeserializationOperation(selectedPages.map((Page) => Page.Serialization), InsertionIndex));
 }
 /**** doConfigureVisitedPage ****/
 function doConfigureVisitedPage(Property, Value) {
-    doOperation(new WAD_PageConfigurationOperation([DesignerState.Applet.visitedPage], Property, Value));
+    const visitedPage = DesignerState.Applet.visitedPage;
+    if (visitedPage == null) {
+        return;
+    }
+    doOperation(() => new WAD_PageConfigurationOperation([visitedPage], Property, Value));
 }
 /**** doConfigureSelectedPages ****/
 function doConfigureSelectedPages(Property, Value) {
-    doOperation(new WAD_PageConfigurationOperation(DesignerState.selectedPages, Property, Value));
+    doOperation(() => new WAD_PageConfigurationOperation(DesignerState.selectedPages, Property, Value));
 }
 /**** doApplyVisitedPageScript ****/
 function doApplyVisitedPageScript() {
-    doOperation(new WAD_PageScriptApplicationOperation([DesignerState.Applet.visitedPage]));
+    const visitedPage = DesignerState.Applet.visitedPage;
+    if (visitedPage == null) {
+        return;
+    }
+    doOperation(() => new WAD_PageScriptApplicationOperation([visitedPage]));
 }
 /**** doShiftSelectedPagesToTop ****/
 function doShiftSelectedPagesToTop() {
     const selectedPages = sortedPageSelection();
+    if (selectedPages.length === 0) {
+        return;
+    }
     const IndexList = Array.from({ length: selectedPages.length }, (_, i) => i);
-    doOperation(new WAD_PageShiftOperation(selectedPages, IndexList));
+    doOperation(() => new WAD_PageShiftOperation(selectedPages, IndexList));
 }
 /**** doShiftSelectedPagesUp ****/
 function doShiftSelectedPagesUp() {
     const selectedPages = sortedPageSelection();
+    if (selectedPages.length === 0) {
+        return;
+    }
     const StartIndex = Math.max(0, selectedPages[0].Index - 1);
     const IndexList = Array.from({ length: selectedPages.length }, (_, i) => StartIndex + i);
-    doOperation(new WAD_PageShiftOperation(selectedPages, IndexList));
+    doOperation(() => new WAD_PageShiftOperation(selectedPages, IndexList));
 }
 /**** doShiftSelectedPagesDown ****/
 function doShiftSelectedPagesDown() {
     const selectedPages = sortedPageSelection();
+    if (selectedPages.length === 0) {
+        return;
+    }
     const SelectionCount = selectedPages.length;
     const StartIndex = selectedPages[SelectionCount - 1].Index + 2 - SelectionCount;
     const IndexList = Array.from({ length: selectedPages.length }, (_, i) => StartIndex + i);
-    doOperation(new WAD_PageShiftOperation(selectedPages, IndexList));
+    doOperation(() => new WAD_PageShiftOperation(selectedPages, IndexList));
 }
 /**** doShiftSelectedPagesToBottom ****/
 function doShiftSelectedPagesToBottom() {
     const selectedPages = sortedPageSelection();
+    if (selectedPages.length === 0) {
+        return;
+    }
     const SelectionCount = selectedPages.length;
     const StartIndex = DesignerState.Applet.PageCount - SelectionCount;
     const IndexList = Array.from({ length: selectedPages.length }, (_, i) => StartIndex + i);
-    doOperation(new WAD_PageShiftOperation(selectedPages, IndexList));
+    doOperation(() => new WAD_PageShiftOperation(selectedPages, IndexList));
 }
 /**** doVisitSelectedPage ****/
 function doVisitSelectedPage() {
@@ -3875,11 +3918,15 @@ function doVisitSelectedPage() {
 }
 /**** doDeleteSelectedPages ****/
 function doDeleteSelectedPages() {
-    doOperation(new WAD_PageDeletionOperation(DesignerState.selectedPages));
+    doOperation(() => new WAD_PageDeletionOperation(DesignerState.selectedPages));
 }
 /**** doCreateWidget ****/
 function doCreateWidget(Behavior) {
-    doOperation(new WAD_WidgetDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior) }], DesignerState.Applet.visitedPage, 0));
+    const visitedPage = DesignerState.Applet.visitedPage;
+    if (visitedPage == null) {
+        return;
+    }
+    doOperation(() => new WAD_WidgetDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior) }], visitedPage, 0));
 }
 /**** doDuplicateSelectedWidgets ****/
 function doDuplicateSelectedWidgets() {
@@ -3887,7 +3934,11 @@ function doDuplicateSelectedWidgets() {
     if (selectedWidgets.length === 0) {
         return;
     }
-    doOperation(new WAD_WidgetDeserializationOperation(selectedWidgets.map((Widget) => Widget.Serialization), DesignerState.Applet.visitedPage, 0));
+    const visitedPage = DesignerState.Applet.visitedPage;
+    if (visitedPage == null) {
+        return;
+    }
+    doOperation(() => new WAD_WidgetDeserializationOperation(selectedWidgets.map((Widget) => Widget.Serialization), visitedPage, 0));
 }
 /**** doConfigureSelectedWidgets ****/
 function doConfigureSelectedWidgets(Property, Value) {
@@ -3937,12 +3988,12 @@ function doConfigureSelectedWidgets(Property, Value) {
         default:
             ValuesToSet = selectedWidgets.map((_) => Value);
     }
-    doOperation(new WAD_WidgetConfigurationOperation(selectedWidgets, Property, ValuesToSet));
+    doOperation(() => new WAD_WidgetConfigurationOperation(selectedWidgets, Property, ValuesToSet));
 }
 /**** doApplySelectedWidgetsScript ****/
 function doApplySelectedWidgetsScript() {
     const { selectedWidgets } = DesignerState;
-    doOperation(new WAD_WidgetScriptApplicationOperation(selectedWidgets));
+    doOperation(() => new WAD_WidgetScriptApplicationOperation(selectedWidgets));
 }
 /**** doChangeGeometriesBy ****/
 function doChangeGeometriesBy(WidgetList, Mode, dx, dy, initialGeometries, withSnapToGrid = true) {
@@ -4035,36 +4086,48 @@ function doChangeGeometriesBy(WidgetList, Mode, dx, dy, initialGeometries, withS
         }
         return { x: xl, y: yt, Width: xr - xl, Height: yb - yt };
     });
-    doOperation(new WAD_WidgetShapeOperation(WidgetList, GeometryList));
+    doOperation(() => new WAD_WidgetShapeOperation(WidgetList, GeometryList));
 }
 /**** doShiftSelectedWidgetsToTop ****/
 function doShiftSelectedWidgetsToTop() {
     const selectedWidgets = sortedWidgetSelection();
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     const IndexList = Array.from({ length: selectedWidgets.length }, (_, i) => i);
-    doOperation(new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
+    doOperation(() => new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
 }
 /**** doShiftSelectedWidgetsUp ****/
 function doShiftSelectedWidgetsUp() {
     const selectedWidgets = sortedWidgetSelection();
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     const StartIndex = Math.max(0, selectedWidgets[0].Index - 1);
     const IndexList = Array.from({ length: selectedWidgets.length }, (_, i) => StartIndex + i);
-    doOperation(new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
+    doOperation(() => new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
 }
 /**** doShiftSelectedWidgetsDown ****/
 function doShiftSelectedWidgetsDown() {
     const selectedWidgets = sortedWidgetSelection();
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     const SelectionCount = selectedWidgets.length;
     const StartIndex = selectedWidgets[SelectionCount - 1].Index + 2 - SelectionCount;
     const IndexList = Array.from({ length: selectedWidgets.length }, (_, i) => StartIndex + i);
-    doOperation(new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
+    doOperation(() => new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
 }
 /**** doShiftSelectedWidgetsToBottom ****/
 function doShiftSelectedWidgetsToBottom() {
     const selectedWidgets = sortedWidgetSelection();
+    if (selectedWidgets.length === 0) {
+        return;
+    }
     const SelectionCount = selectedWidgets.length;
     const StartIndex = DesignerState.Applet.visitedPage.WidgetCount - SelectionCount;
     const IndexList = Array.from({ length: selectedWidgets.length }, (_, i) => StartIndex + i);
-    doOperation(new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
+    doOperation(() => new WAD_WidgetShiftOperation(selectedWidgets, IndexList));
 }
 /**** doDeleteSelectedWidgets ****/
 function doDeleteSelectedWidgets() {
@@ -4072,7 +4135,7 @@ function doDeleteSelectedWidgets() {
     if (selectedWidgets.length === 0) {
         return;
     }
-    doOperation(new WAD_WidgetDeletionOperation(selectedWidgets));
+    doOperation(() => new WAD_WidgetDeletionOperation(selectedWidgets));
 }
 /**** doCutSelectedWidgets ****/
 function doCutSelectedWidgets() {
@@ -4102,7 +4165,7 @@ function doPasteShelvedWidgets() {
     if (visitedPage == null) {
         return;
     }
-    doOperation(new WAD_WidgetDeserializationOperation(DesignerState.shelvedWidgets, visitedPage, 0));
+    doOperation(() => new WAD_WidgetDeserializationOperation(DesignerState.shelvedWidgets, visitedPage, 0));
 }
 /**** doImportFromFile ****/
 function doImportFromFile(Event) {
@@ -4160,7 +4223,7 @@ function doImport(FileContent, Type) {
         const BehaviorSet = Serialization.BehaviorSet;
         for (const Category in BehaviorSet) {
             (BehaviorSet[Category] || []).forEach((Registration) => {
-                doOperation(new WAD_BehaviorDeserializationOperation({
+                doOperation(() => new WAD_BehaviorDeserializationOperation({
                     BehaviorSet: { [Category]: [Registration] }
                 }));
             });
@@ -4168,27 +4231,27 @@ function doImport(FileContent, Type) {
         return;
     }
     if (looksLikePage(Serialization)) {
-        doOperation(new WAD_PageDeserializationOperation([Serialization], visitedPage == null ? 0 : visitedPage.Index + 1)); // also selects and visits this page
+        doOperation(() => new WAD_PageDeserializationOperation([Serialization], visitedPage == null ? 0 : visitedPage.Index + 1)); // also selects and visits this page
         return;
     }
     if (looksLikePageList(Serialization)) {
-        doOperation(new WAD_PageDeserializationOperation(Serialization, visitedPage == null ? 0 : visitedPage.Index + 1)); // also selects these pages and visits the last one
+        doOperation(() => new WAD_PageDeserializationOperation(Serialization, visitedPage == null ? 0 : visitedPage.Index + 1)); // also selects these pages and visits the last one
         return;
     }
     if (looksLikeWidget(Serialization)) {
         if (visitedPage == null) { // create a page to insert the widget into
-            doOperation(new WAD_PageDeserializationOperation([{ WidgetList: [] }], Applet.PageCount)); // also visits the new page
+            doOperation(() => new WAD_PageDeserializationOperation([{ WidgetList: [] }], Applet.PageCount)); // also visits the new page
             visitedPage = Applet.visitedPage;
         }
-        doOperation(new WAD_WidgetDeserializationOperation([Serialization], visitedPage, 0)); // also selects this widget
+        doOperation(() => new WAD_WidgetDeserializationOperation([Serialization], visitedPage, 0)); // also selects this widget
         return;
     }
     if (looksLikeWidgetList(Serialization)) {
         if (visitedPage == null) { // create a page to insert the widget into
-            doOperation(new WAD_PageDeserializationOperation([{ WidgetList: [] }], Applet.PageCount)); // also visits the new page
+            doOperation(() => new WAD_PageDeserializationOperation([{ WidgetList: [] }], Applet.PageCount)); // also visits the new page
             visitedPage = Applet.visitedPage;
         }
-        doOperation(new WAD_WidgetDeserializationOperation(Serialization, visitedPage, 0)); // also selects these widgets
+        doOperation(() => new WAD_WidgetDeserializationOperation(Serialization, visitedPage, 0)); // also selects these widgets
         return;
     }
     if (looksLikeApplet(Serialization)) {
@@ -4298,8 +4361,9 @@ function doCreateScreenshot() {
     WAT_rerender();
     window.requestAnimationFrame(async () => {
         var _a;
+        let Stream;
         try {
-            const Stream = await navigator.mediaDevices.getDisplayMedia({
+            Stream = await navigator.mediaDevices.getDisplayMedia({
                 // @ts-ignore TS2353 allow "preferCurrentTab"
                 video: true, preferCurrentTab: true
             });
@@ -4308,6 +4372,9 @@ function doCreateScreenshot() {
             await Video.play();
             const ScaleX = Video.videoWidth / window.innerWidth;
             const ScaleY = Video.videoHeight / window.innerHeight;
+            if (Context == null) {
+                throwError('InternalError: could not obtain a 2d canvas context');
+            }
             // @ts-ignore TS18047 "Context" is not null
             Context.drawImage(Video, x * ScaleX, y * ScaleY, Width * ScaleX, Height * ScaleY, 0, 0, Width, Height);
             Stream.getTracks().forEach((Track) => Track.stop());
@@ -4317,10 +4384,15 @@ function doCreateScreenshot() {
                 ? ((_a = Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.Name) || Applet.Name || 'WAT-Applet'
                 : VisualToRender.Name || 'WAT-Screenshot');
             Canvas.toBlob((Blob) => {
+                if (Blob == null) {
+                    window.alert('Screenshot Error\n\ncould not encode the image');
+                    return;
+                }
                 download(Blob, Name + '.png', 'image/png');
             }, 'image/png');
         }
         catch (Signal) {
+            Stream === null || Stream === void 0 ? void 0 : Stream.getTracks().forEach((Track) => Track.stop());
             console.error('Error while creating screenshot', Signal);
             DesignerState.DesignerDisabled = false;
             WAT_rerender();
@@ -4349,28 +4421,41 @@ function doPrintApplet() {
     DesignerState.DesignerDisabled = true;
     WAT_rerender();
     window.requestAnimationFrame(async () => {
+        const PrinterFrame = document.createElement('iframe');
+        let cleanedUp = false;
+        function cleanUpPrinter() {
+            if (cleanedUp) {
+                return;
+            }
+            ;
+            cleanedUp = true;
+            if (PrinterFrame.parentNode != null) {
+                document.body.removeChild(PrinterFrame);
+            }
+            DesignerState.DesignerDisabled = false;
+            WAT_rerender();
+        }
         try {
-            const PrinterFrame = document.createElement('iframe');
             PrinterFrame.style.position = 'absolute';
             PrinterFrame.style.top = '-1000000px';
             document.body.appendChild(PrinterFrame);
-            const PrinterDoc = PrinterFrame.contentWindow.document;
+            const PrinterWindow = PrinterFrame.contentWindow;
+            if (PrinterWindow == null) {
+                throwError('InternalError: printer frame has no content window');
+            }
+            const PrinterDoc = PrinterWindow.document;
             PrinterDoc.write('<html><head></head><body>');
             PrinterDoc.write(Applet.View.innerHTML);
             PrinterDoc.write('</body></html>');
             PrinterDoc.close();
-            PrinterFrame.contentWindow.addEventListener('afterprint', function () {
-                document.body.removeChild(PrinterFrame);
-                DesignerState.DesignerDisabled = false;
-                WAT_rerender();
-            }, { once: true });
-            PrinterFrame.contentWindow.focus();
-            PrinterFrame.contentWindow.print();
+            PrinterWindow.addEventListener('afterprint', cleanUpPrinter, { once: true });
+            setTimeout(cleanUpPrinter, 60000); // fallback if "afterprint" never fires
+            PrinterWindow.focus();
+            PrinterWindow.print();
         }
         catch (Signal) {
+            cleanUpPrinter();
             console.error('Error while printing', Signal);
-            DesignerState.DesignerDisabled = false;
-            WAT_rerender();
             window.alert('Print Error\n\n' + Signal);
         }
     });
@@ -4530,6 +4615,9 @@ function resizeAppletTo(Applet, Width, Height, minWidth, minHeight, maxWidth, ma
             }
         }
         const HostElement = (_b = (_a = Applet.View) === null || _a === void 0 ? void 0 : _a.parentElement) === null || _b === void 0 ? void 0 : _b.parentElement;
+        if (HostElement == null) {
+            return;
+        }
         HostElement.style.width = Width + 'px';
         HostElement.style.height = Height + 'px';
         HostElement.style.minWidth = (minWidth == null ? 'auto' : minWidth + 'px');
@@ -5021,7 +5109,8 @@ function WAD_AppletConfigurationPane() {
       <${WAD_horizontally}>
         <${WAD_Label} style="width:56px">Applet</>
         <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
-          readonly Value=${Applet.Name}
+          Value=${Applet.Name}
+          onInput=${(Event) => doConfigureApplet('Name', Event.target.value)}
         />
       </>
 
@@ -5618,8 +5707,7 @@ function WAD_PageBrowserPane() {
       <${WAD_horizontally}>
         <${WAD_Label} style="width:56px">Applet</>
         <${WAD_TextlineInput} Placeholder="(applet name)" style="flex:1 0 auto"
-          Value=${Applet.Name}
-          onInput=${(Event) => doConfigureApplet('Name', Event.target.value)}
+          readonly Value=${Applet.Name}
         />
       </>
 
@@ -7809,7 +7897,7 @@ function finishDraggingAndShaping() {
 /**** abortDraggingAndShaping ****/
 function abortDraggingAndShaping() {
     if (LayouterState.shapedWidgets.length > 0) {
-        doOperation(new WAD_WidgetShapeOperation(LayouterState.shapedWidgets, LayouterState.initialGeometries));
+        doOperation(() => new WAD_WidgetShapeOperation(LayouterState.shapedWidgets, LayouterState.initialGeometries));
     }
     finishDraggingAndShaping();
 }
@@ -8010,7 +8098,7 @@ function WAD_LayouterLayer() {
 }
 /**** WAD_Cover ****/
 function WAD_Cover(PropSet) {
-    let { Widget, onPointerEvent } = PropSet, otherProps = __rest(PropSet, ["Widget", "onPointerEvent"]);
+    let { Widget, selected, onPointerEvent } = PropSet, otherProps = __rest(PropSet, ["Widget", "selected", "onPointerEvent"]);
     let { x, y, Width, Height } = Widget.Geometry;
     const FocusAndCoverRecognizer = useCallback((Event) => {
         focusLayouterLayer();
@@ -8018,7 +8106,7 @@ function WAD_Cover(PropSet) {
     }, []);
     const dragging = ((LayouterState.ShapeMode === 'c') && (LayouterState.shapedWidgets.length > 0)
         ? 'dragging' : '');
-    return html `<div class="WAD Cover ${dragging}" style="
+    return html `<div class="WAD Cover ${selected ? 'selected' : ''} ${dragging}" style="
       left:${x}px; top:${y}px; width:${Width}px; height:${Height}px;
       ${Widget.isLocked ? 'pointer-events:none' : ''}
     " ...${otherProps}
@@ -8240,8 +8328,6 @@ localforage.ready(async function () {
     DesignerStore = localforage.createInstance({
         name: 'WAT Designer'
     });
-    console.log('starting WebApp Tinkerer Designer...');
     //      WAD_DesignerLayer.showErrorReport = showErrorReport
     useDesigner(WAD_DesignerLayer);
-    console.log('WebApp Tinkerer Designer is operational');
 });
