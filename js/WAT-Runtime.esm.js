@@ -1625,11 +1625,33 @@ export function GestureRecognizer(OptionSet) {
     // break perfectly normal gestures. loss of capture is harmless here anyway:
     // capture is "just an optimisation" (see "onPointerDown") and the
     // window-level listeners keep the gesture alive without it
+    //
+    // n.b.: Alt-Tab or an OS dialog ("blur" on window) as well as page unloads
+    // ("pagehide") deliver neither "pointerup" nor "pointercancel" - a running
+    // gesture would otherwise never end. Both are therefore treated as a
+    // gesture END at the last known position (see
+    // "finishGestureAtLastPosition" below). Pressing "Escape", in contrast,
+    // deliberately CANCELs a running gesture, i.e., snaps it back (see
+    // "cancelGestureAtLastPosition" below)
     function handleEventOnWindow(Event) {
         switch (Event.type) {
             case 'pointermove': return onPointerMove(Event);
             case 'pointerup': return onPointerUp(Event);
             case 'pointercancel': return onPointerCancel(Event);
+            case 'blur': // in the capture phase, "blur"s of arbitrary inner
+                if (Event.target === window) { // elements pass "window" as well -
+                    finishGestureAtLastPosition(); // but only the window blur matters
+                }
+                return;
+            case 'pagehide':
+                return finishGestureAtLastPosition();
+            case 'keydown':
+                if (Event.key === 'Escape') {
+                    Event.stopPropagation(); // consume event
+                    Event.preventDefault();
+                    cancelGestureAtLastPosition();
+                }
+                return;
         }
     }
     function trackGestureOnWindow() {
@@ -1640,6 +1662,9 @@ export function GestureRecognizer(OptionSet) {
         window.addEventListener('pointermove', handleEventOnWindow, true);
         window.addEventListener('pointerup', handleEventOnWindow, true);
         window.addEventListener('pointercancel', handleEventOnWindow, true);
+        window.addEventListener('blur', handleEventOnWindow, true);
+        window.addEventListener('pagehide', handleEventOnWindow, true);
+        window.addEventListener('keydown', handleEventOnWindow, true);
     }
     function untrackGestureOnWindow() {
         if (!GestureIsTracked) {
@@ -1649,6 +1674,9 @@ export function GestureRecognizer(OptionSet) {
         window.removeEventListener('pointermove', handleEventOnWindow, true);
         window.removeEventListener('pointerup', handleEventOnWindow, true);
         window.removeEventListener('pointercancel', handleEventOnWindow, true);
+        window.removeEventListener('blur', handleEventOnWindow, true);
+        window.removeEventListener('pagehide', handleEventOnWindow, true);
+        window.removeEventListener('keydown', handleEventOnWindow, true);
     }
     /**** actual recognizer ****/
     return (Event) => {
@@ -1784,10 +1812,12 @@ export function GestureRecognizer(OptionSet) {
             // a "pointerup" with the primary button still pressed does not
             // belong to this gesture (per spec, releasing the primary button
             // while other buttons are held fires "pointermove", not
-            // "pointerup", see above) - treat as anomaly
-            if (Status !== '') {
-                onPointerCancel(Event);
-            }
+            // "pointerup", see above) - however, some non-conforming browsers
+            // fire such "pointerup"s upon "chorded" releases anyway: cancelling
+            // here would snap a running drag back to its pre-drag geometry on
+            // those browsers. Ignoring is lossless instead - the "pointermove"
+            // logic above already ends the gesture correctly (at the current
+            // position) as soon as (buttons & 1) is really 0
             return;
         }
         Event.stopPropagation(); // consume event
@@ -1868,6 +1898,42 @@ export function GestureRecognizer(OptionSet) {
         curPointerId = undefined;
         untrackGestureOnWindow();
     }
+    /**** ending gestures without a "pointerup" or "pointercancel" ****/
+    // Alt-Tab or an OS dialog ("blur" on window) as well as page unloads
+    // ("pagehide") deliver neither "pointerup" nor "pointercancel" - a still
+    // running gesture must then be ended explicitly. Since no fresh
+    // PointerEvent exists in these situations, the callbacks receive the
+    // retained "curEvent" instead (i.e., the last PointerEvent seen, which
+    // also carries the last known position curX/curY)
+    function finishGestureAtLastPosition() {
+        if (Status === '') {
+            return;
+        } // recognizer is not active yet
+        if (Status === 'moving') { // end the drag at the last known position...
+            lastClickCount = lastClickTime = 0;
+            call(onDragFinish, [curX - StartX, curY - StartY, StartX, StartY, curEvent]);
+        } // ...but never "click": the press was not released with(in) this page
+        /**** cancel any long-press preparations ****/
+        if (LongPressTimer != null) {
+            clearTimeout(LongPressTimer);
+        }
+        if ((LongPressState === 'waiting') || (LongPressState === 'ready')) {
+            call(onLongPressIndication, [false, curX, curY, StartX, StartY, curEvent]);
+        }
+        LongPressState = '';
+        LongPressTimer = undefined;
+        Status = '';
+        curPointerId = undefined;
+        untrackGestureOnWindow();
+    }
+    function cancelGestureAtLastPosition() {
+        if (Status === '') {
+            return;
+        } // recognizer is not active yet
+        onPointerCancel(curEvent);
+        // "curEvent" carries the last known position and the proper pointer
+        // id - and "consuming" an already dispatched event is a harmless no-op
+    }
     /**** long-press timeout handling ****/
     function handleLongPressTimeout() {
         switch (LongPressState) {
@@ -1896,13 +1962,13 @@ export function GestureRecognizer(OptionSet) {
 }
 /**** WAT_Mover ****/
 export function WAT_Mover(PropSet) {
-    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onMove } = PropSet;
+    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onMoveStart, onMove } = PropSet;
     const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
     const PropsRef = useRef(null);
     PropsRef.current = {
         Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
-        onMove, GridWidth, GridHeight
+        onMoveStart, onMove, GridWidth, GridHeight
     };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
@@ -1920,7 +1986,13 @@ export function WAT_Mover(PropSet) {
         onlyFrom: '.WAT.Mover',
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
-            const { Widget, onDragStart } = PropsRef.current;
+            const { Widget, onDragStart, onMoveStart } = PropsRef.current;
+            if (typeof onMoveStart === 'function') {
+                onMoveStart();
+            }
+            // invoked FIRST, before the start geometry is read below: lets
+            // users with a throttled commit flush any pending value so that
+            // "Widget.x"/"Widget.y" are up-to-date when the drag begins
             DragInfo.StartX = (Widget == null ? 0 : Widget.x);
             DragInfo.StartY = (Widget == null ? 0 : Widget.y);
             if (typeof onDragStart === 'function') {
@@ -1959,7 +2031,7 @@ export function WAT_Mover(PropSet) {
 }
 /**** WAT_Resizer ****/
 export function WAT_Resizer(PropSet) {
-    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onResize } = PropSet;
+    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onResizeStart, onResize } = PropSet;
     const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
     const minWidth = acceptableValue(PropSet.minWidth, ValueIsOrdinal, 0);
@@ -1967,7 +2039,7 @@ export function WAT_Resizer(PropSet) {
     const PropsRef = useRef(null);
     PropsRef.current = {
         Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
-        onResize, GridWidth, GridHeight, minWidth, minHeight
+        onResizeStart, onResize, GridWidth, GridHeight, minWidth, minHeight
     };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
@@ -1987,7 +2059,13 @@ export function WAT_Resizer(PropSet) {
         onlyFrom: '.WAT.Resizer',
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
-            const { Widget, onDragStart } = PropsRef.current;
+            const { Widget, onDragStart, onResizeStart } = PropsRef.current;
+            if (typeof onResizeStart === 'function') {
+                onResizeStart();
+            }
+            // invoked FIRST, before the start geometry is read below: lets
+            // users with a throttled commit flush any pending value so that
+            // "Widget.Width"/"Widget.Height" are up-to-date when the drag begins
             DragInfo.StartWidth = (Widget == null ? 0 : Widget.Width);
             DragInfo.StartHeight = (Widget == null ? 0 : Widget.Height);
             if (typeof onDragStart === 'function') {
@@ -10968,6 +11046,86 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.BitmapEditor', WAT_BitmapEditor);
+    /**** throttledGeometryHandlersFor ****/
+    // shared helper for the three sticky note widgets ("stickyTextNote",
+    // "stickyHTMLNote" and "stickyMarkdownNote") below: their "WAT_Mover"/
+    // "WAT_Resizer" callbacks fire on every pointer move, but committing every
+    // single event through "changeGeometryTo" would re-render the widget just
+    // as often. this factory therefore rAF-throttles them (matching how JCL's
+    // own "NoteBoard" already throttles its drag updates, see its header
+    // comment): "onMove"/"onResize" merely memorize the latest geometry and
+    // schedule (at most) one "changeGeometryTo" commit per animation frame.
+    // "onMoveStart"/"onResizeStart" serve the equally named "WAT_Mover"/
+    // "WAT_Resizer" props (which invoke them at drag start, *before* the
+    // widget's geometry is read) and *flush* a still pending commit
+    // synchronously ("cancelAnimationFrame" plus immediate commit) - without
+    // that flush, a quickly started follow-up drag could base itself on an
+    // already outdated geometry because the previous drag's final commit might
+    // still be waiting for its animation frame. "cancel" drops any pending
+    // commits without committing them (for the behaviors' "onUnmount"). all
+    // state lives in closure variables of this factory - one instance per
+    // widget behavior, no underscore-prefixed fields on the widget itself
+    function throttledGeometryHandlersFor(Widget) {
+        let MoveRAF = undefined;
+        let pendingPosition = undefined;
+        let ResizeRAF = undefined;
+        let pendingSize = undefined;
+        function commitPosition() {
+            MoveRAF = undefined;
+            if (pendingPosition == null) {
+                return;
+            }
+            const { x, y } = pendingPosition;
+            pendingPosition = undefined;
+            Widget.changeGeometryTo(x, y);
+        }
+        function commitSize() {
+            ResizeRAF = undefined;
+            if (pendingSize == null) {
+                return;
+            }
+            const { Width, Height } = pendingSize;
+            pendingSize = undefined;
+            Widget.changeGeometryTo(undefined, undefined, Width, Height);
+        }
+        return {
+            onMoveStart() {
+                if (MoveRAF != null) {
+                    cancelAnimationFrame(MoveRAF);
+                    commitPosition();
+                }
+            },
+            onMove(dx, dy, newX, newY) {
+                pendingPosition = { x: newX, y: newY };
+                if (MoveRAF == null) {
+                    MoveRAF = requestAnimationFrame(commitPosition);
+                }
+            },
+            onResizeStart() {
+                if (ResizeRAF != null) {
+                    cancelAnimationFrame(ResizeRAF);
+                    commitSize();
+                }
+            },
+            onResize(dW, dH, newWidth, newHeight) {
+                pendingSize = { Width: newWidth, Height: newHeight };
+                if (ResizeRAF == null) {
+                    ResizeRAF = requestAnimationFrame(commitSize);
+                }
+            },
+            cancel() {
+                if (MoveRAF != null) {
+                    cancelAnimationFrame(MoveRAF);
+                    MoveRAF = undefined;
+                }
+                if (ResizeRAF != null) {
+                    cancelAnimationFrame(ResizeRAF);
+                    ResizeRAF = undefined;
+                }
+                pendingPosition = pendingSize = undefined;
+            },
+        };
+    }
     /**** stickyTextNote ****/
     // a thin WAT wrapper around the "legacy.stickyTextNote" component from the
     // "javascript-code-library" (JCL). unlike other legacy components, this one
@@ -10997,16 +11155,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // (only applied once "Content" already contains one, see "stickyTextNote"
     // in JCL)
     //
-    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize (matching how
-    // JCL's own "NoteBoard" already throttles its drag updates, see its header
-    // comment) - mainly to bound the number of re-renders per second, not as a
-    // confirmed fix for a specific bug. "WAT_Mover"/"WAT_Resizer" carry explicit
-    // "key"s so Preact reconciles rather than recreates them; "GestureRecognizer"
-    // itself already tracks an active gesture on "window" specifically so that
-    // DOM replacement mid-gesture cannot abort it (see its own header comment) -
-    // so an occasional aborted first drag/resize is *not* fully explained by
-    // re-rendering yet and needs live diagnosis (browser console output during
-    // a failing attempt) rather than further blind fixes here
+    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize via the
+    // shared "throttledGeometryHandlersFor" helper (see above) - mainly to
+    // bound the number of re-renders per second. its "onMoveStart"/
+    // "onResizeStart" flush a still pending commit synchronously before a new
+    // drag reads the widget's geometry (avoiding a frame race on quick
+    // follow-up drags), and "onUnmount" cancels any pending commit outright.
+    // "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
+    // rather than recreates them
+    //
+    // n.b.: while "Enabling" is false or the widget is locked ("Lock", see
+    // "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
+    // "WAT_Resizer" are then not rendered at all (rather than rendered inertly),
+    // as their absence is the clearest signal that moving/resizing is currently
+    // unavailable; the content area keeps its position (the 16px strip normally
+    // covered by the Mover simply remains empty)
+    //
+    // n.b.: "readonly" (like "Enabling === false") suppresses "onContentChange"
+    // - JCL treats a missing "onContentChange" as "read-only" (see
+    // "stickyTextNote" in JCL). font and colour settings ("FontFamily",
+    // "FontSize", "FontWeight", "LineHeight", "ForegroundColor",
+    // "BackgroundColor") are passed through to JCL (evaluated by its
+    // "StickyNoteStyleFrom") - unset (undefined) values contribute nothing and
+    // keep JCL's own defaults. JCL renders "LineHeight" without a unit while
+    // WAT measures it in px - hence the "px" suffix added below. a configured
+    // "BackgroundColor" is additionally applied to the note's frame (not just
+    // its content area) so that the whole note changes colour
     const WAT_stickyTextNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.stickyTextNote {
@@ -11042,46 +11216,41 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', Label: 'Content', EditorType: 'text-input',
+            { Name: 'Value', EditorType: 'text-input',
                 AccessorsFor: 'memoized', withCallback: true,
                 Validator: ValueIsTextWithTabs },
+            { Name: 'readonly', Default: false,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
+        const GeometryHandlers = throttledGeometryHandlersFor(me);
+        onUnmount(function () {
+            GeometryHandlers.cancel();
+        });
         onRender(function () {
-            const { Value, Enabling } = this;
-            const _onMove = (dx, dy, newX, newY) => {
-                this._pendingPosition = { x: newX, y: newY };
-                if (this._MoveRAF == null) {
-                    this._MoveRAF = requestAnimationFrame(() => {
-                        this._MoveRAF = undefined;
-                        const { x, y } = this._pendingPosition;
-                        this.changeGeometryTo(x, y);
-                    });
-                }
-            };
-            const _onResize = (dW, dH, newWidth, newHeight) => {
-                this._pendingSize = { Width: newWidth, Height: newHeight };
-                if (this._ResizeRAF == null) {
-                    this._ResizeRAF = requestAnimationFrame(() => {
-                        this._ResizeRAF = undefined;
-                        const { Width, Height } = this._pendingSize;
-                        this.changeGeometryTo(undefined, undefined, Width, Height);
-                    });
-                }
-            };
+            const { Value, Enabling, readonly, Lock, FontFamily, FontSize, FontWeight, LineHeight, ForegroundColor, BackgroundColor } = this;
+            const mayBeRearranged = (Enabling !== false) && !Lock;
             const _onValueChange = (newValue) => {
                 this.Value = newValue; // also fires the "Value" callback
                 this.on('input')(newValue);
             };
-            return html `<div class="WAT Content stickyTextNote">
-        <${WAT_Mover} key="mover" Widget=${this} onMove=${_onMove}/>
+            return html `<div class="WAT Content stickyTextNote"
+        style=${BackgroundColor == null ? undefined : `background:${BackgroundColor}`}
+      >
+        ${mayBeRearranged && html `<${WAT_Mover} key="mover" Widget=${this}
+          onMoveStart=${GeometryHandlers.onMoveStart} onMove=${GeometryHandlers.onMove}/>`}
         <div class="content-area" key="content">
           <${JCL_legacy.stickyTextNote}
             Content=${Value !== null && Value !== void 0 ? Value : ''}
-            onContentChange=${Enabling === false ? undefined : _onValueChange}
+            FontFamily=${FontFamily} FontSize=${FontSize} FontWeight=${FontWeight}
+            LineHeight=${LineHeight == null ? undefined : LineHeight + 'px'}
+            ForegroundColor=${ForegroundColor} BackgroundColor=${BackgroundColor}
+            onContentChange=${readonly || (Enabling === false) ? undefined : _onValueChange}
           />
         </div>
-        <${WAT_Resizer} key="resizer" Widget=${this} onResize=${_onResize} minWidth=${80} minHeight=${50}/>
+        ${mayBeRearranged && html `<${WAT_Resizer} key="resizer" Widget=${this}
+          onResizeStart=${GeometryHandlers.onResizeStart} onResize=${GeometryHandlers.onResize}
+          minWidth=${80} minHeight=${50}/>`}
       </div>`;
         });
     };
@@ -11109,16 +11278,32 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // treats tabs as forbidden control characters and would silently reject
     // e.g. pretty-printed HTML containing tabs
     //
-    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize (matching how
-    // JCL's own "NoteBoard" already throttles its drag updates, see its header
-    // comment) - mainly to bound the number of re-renders per second, not as a
-    // confirmed fix for a specific bug. "WAT_Mover"/"WAT_Resizer" carry explicit
-    // "key"s so Preact reconciles rather than recreates them; "GestureRecognizer"
-    // itself already tracks an active gesture on "window" specifically so that
-    // DOM replacement mid-gesture cannot abort it (see its own header comment) -
-    // so an occasional aborted first drag/resize is *not* fully explained by
-    // re-rendering yet and needs live diagnosis (browser console output during
-    // a failing attempt) rather than further blind fixes here
+    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize via the
+    // shared "throttledGeometryHandlersFor" helper (see above) - mainly to
+    // bound the number of re-renders per second. its "onMoveStart"/
+    // "onResizeStart" flush a still pending commit synchronously before a new
+    // drag reads the widget's geometry (avoiding a frame race on quick
+    // follow-up drags), and "onUnmount" cancels any pending commit outright.
+    // "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
+    // rather than recreates them
+    //
+    // n.b.: while "Enabling" is false or the widget is locked ("Lock", see
+    // "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
+    // "WAT_Resizer" are then not rendered at all (rather than rendered inertly),
+    // as their absence is the clearest signal that moving/resizing is currently
+    // unavailable; the content area keeps its position (the 16px strip normally
+    // covered by the Mover simply remains empty)
+    //
+    // n.b.: "readonly" (like "Enabling === false") suppresses "onContentChange"
+    // - JCL treats a missing "onContentChange" as "read-only" (see
+    // "stickyHTMLNote" in JCL). font and colour settings ("FontFamily",
+    // "FontSize", "FontWeight", "LineHeight", "ForegroundColor",
+    // "BackgroundColor") are passed through to JCL (evaluated by its
+    // "StickyNoteStyleFrom") - unset (undefined) values contribute nothing and
+    // keep JCL's own defaults. JCL renders "LineHeight" without a unit while
+    // WAT measures it in px - hence the "px" suffix added below. a configured
+    // "BackgroundColor" is additionally applied to the note's frame (not just
+    // its content area) so that the whole note changes colour
     const WAT_stickyHTMLNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         installStylesheet(`
       .WAT.Widget > .WAT.stickyHTMLNote {
@@ -11154,46 +11339,41 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', Label: 'Content', EditorType: 'html-input',
+            { Name: 'Value', EditorType: 'html-input',
                 AccessorsFor: 'memoized', withCallback: true,
                 Validator: ValueIsTextWithTabs },
+            { Name: 'readonly', Default: false,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
+        const GeometryHandlers = throttledGeometryHandlersFor(me);
+        onUnmount(function () {
+            GeometryHandlers.cancel();
+        });
         onRender(function () {
-            const { Value, Enabling } = this;
-            const _onMove = (dx, dy, newX, newY) => {
-                this._pendingPosition = { x: newX, y: newY };
-                if (this._MoveRAF == null) {
-                    this._MoveRAF = requestAnimationFrame(() => {
-                        this._MoveRAF = undefined;
-                        const { x, y } = this._pendingPosition;
-                        this.changeGeometryTo(x, y);
-                    });
-                }
-            };
-            const _onResize = (dW, dH, newWidth, newHeight) => {
-                this._pendingSize = { Width: newWidth, Height: newHeight };
-                if (this._ResizeRAF == null) {
-                    this._ResizeRAF = requestAnimationFrame(() => {
-                        this._ResizeRAF = undefined;
-                        const { Width, Height } = this._pendingSize;
-                        this.changeGeometryTo(undefined, undefined, Width, Height);
-                    });
-                }
-            };
+            const { Value, Enabling, readonly, Lock, FontFamily, FontSize, FontWeight, LineHeight, ForegroundColor, BackgroundColor } = this;
+            const mayBeRearranged = (Enabling !== false) && !Lock;
             const _onValueChange = (newValue) => {
                 this.Value = newValue;
                 this.on('input')(newValue);
             };
-            return html `<div class="WAT Content stickyHTMLNote">
-        <${WAT_Mover} key="mover" Widget=${this} onMove=${_onMove}/>
+            return html `<div class="WAT Content stickyHTMLNote"
+        style=${BackgroundColor == null ? undefined : `background:${BackgroundColor}`}
+      >
+        ${mayBeRearranged && html `<${WAT_Mover} key="mover" Widget=${this}
+          onMoveStart=${GeometryHandlers.onMoveStart} onMove=${GeometryHandlers.onMove}/>`}
         <div class="content-area" key="content">
           <${JCL_legacy.stickyHTMLNote}
             Content=${Value !== null && Value !== void 0 ? Value : ''}
-            onContentChange=${Enabling === false ? undefined : _onValueChange}
+            FontFamily=${FontFamily} FontSize=${FontSize} FontWeight=${FontWeight}
+            LineHeight=${LineHeight == null ? undefined : LineHeight + 'px'}
+            ForegroundColor=${ForegroundColor} BackgroundColor=${BackgroundColor}
+            onContentChange=${readonly || (Enabling === false) ? undefined : _onValueChange}
           />
         </div>
-        <${WAT_Resizer} key="resizer" Widget=${this} onResize=${_onResize} minWidth=${80} minHeight=${50}/>
+        ${mayBeRearranged && html `<${WAT_Resizer} key="resizer" Widget=${this}
+          onResizeStart=${GeometryHandlers.onResizeStart} onResize=${GeometryHandlers.onResize}
+          minWidth=${80} minHeight=${50}/>`}
       </div>`;
         });
     };
@@ -11221,29 +11401,51 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // treats tabs as forbidden control characters and would silently reject
     // Markdown content containing tabs
     //
-    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize (matching how
-    // JCL's own "NoteBoard" already throttles its drag updates, see its header
-    // comment) - mainly to bound the number of re-renders per second, not as a
-    // confirmed fix for a specific bug. "WAT_Mover"/"WAT_Resizer" carry explicit
-    // "key"s so Preact reconciles rather than recreates them; "GestureRecognizer"
-    // itself already tracks an active gesture on "window" specifically so that
-    // DOM replacement mid-gesture cannot abort it (see its own header comment) -
-    // so an occasional aborted first drag/resize is *not* fully explained by
-    // re-rendering yet and needs live diagnosis (browser console output during
-    // a failing attempt) rather than further blind fixes here
+    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize via the
+    // shared "throttledGeometryHandlersFor" helper (see above) - mainly to
+    // bound the number of re-renders per second. its "onMoveStart"/
+    // "onResizeStart" flush a still pending commit synchronously before a new
+    // drag reads the widget's geometry (avoiding a frame race on quick
+    // follow-up drags), and "onUnmount" cancels any pending commit outright.
+    // "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
+    // rather than recreates them
+    //
+    // n.b.: while "Enabling" is false or the widget is locked ("Lock", see
+    // "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
+    // "WAT_Resizer" are then not rendered at all (rather than rendered inertly),
+    // as their absence is the clearest signal that moving/resizing is currently
+    // unavailable; the content area keeps its position (the 16px strip normally
+    // covered by the Mover simply remains empty)
+    //
+    // n.b.: "readonly" (like "Enabling === false") suppresses "onContentChange"
+    // - JCL treats a missing "onContentChange" as "read-only" and then also
+    // refuses to open the edit dialog (see "stickyMarkdownNote" in JCL). font
+    // and colour settings ("FontFamily", "FontSize", "FontWeight",
+    // "LineHeight", "ForegroundColor", "BackgroundColor") are passed through
+    // to JCL (evaluated by its "StickyNoteStyleFrom") - unset (undefined)
+    // values contribute nothing and keep JCL's own defaults. JCL renders
+    // "LineHeight" without a unit while WAT measures it in px - hence the "px"
+    // suffix added below. a configured "BackgroundColor" is additionally
+    // applied to the note's frame (not just its content area) so that the
+    // whole note changes colour
     //
     // unlike the other two sticky notes, this one opens an edit dialog on
     // double-click via JCL's own "useDialogContext()/openDialog" (see
     // "stickyMarkdownNote" in JCL). WAT's own dialog mechanism ("WAT_Dialog"/
-    // "WAT_AppletOverlay") is a separate, JCL-independent system and does not
-    // provide that context (see the "TODO: Dialog-System-Konsolidierung" note
-    // next to "WAT_Dialog") - so a genuine JCL "DialogBase" is wrapped locally
-    // around just this widget. JCL dialogs render with "position:fixed" (see
-    // JCL's "Stylesheet|DialogView"), so they are never clipped by this
-    // wrapper - it only serves as the coordinate anchor the edit dialog opens
-    // next to (via its "BaseRef"). n.b.: because of this wrapper, the widget's
-    // own content is no longer a *direct* child of ".WAT.Widget" - the
-    // stylesheet below therefore uses a descendant (not child) selector
+    // "WAT_AppletOverlay") is JCL-independent and provides no JCL dialog
+    // context - hence a genuine JCL "DialogBase" is wrapped locally around
+    // just this widget. JCL dialogs render with "position:fixed" (see JCL's
+    // "Stylesheet|DialogView"), so they are never clipped by this wrapper - it
+    // only serves as the coordinate anchor the edit dialog opens next to (via
+    // its "BaseRef"). n.b.: because of this wrapper, the widget's own content
+    // is no longer a *direct* child of ".WAT.Widget" - the stylesheet below
+    // therefore uses a descendant (not child) selector
+    //
+    // n.b.: a still open edit dialog is closed in "onUnmount" through the
+    // "DialogBase"'s published API ("APIRef"/"closeAllDialogs") - the JCL
+    // dialog name itself ("stickyMarkdownNote-" plus a "useId" value) is
+    // internal to JCL and not known here, but since this "DialogBase" wraps
+    // nothing but this very widget, closing *all* of its dialogs is exact
     //
     // n.b.: JCL's own "Stylesheet" sets ".jcl-component { position:relative }"
     // - "DialogBase" renders with that class, and without an explicit size it
@@ -11293,49 +11495,52 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `);
         /**** custom Properties ****/
         my.configurableProperties = [
-            { Name: 'Value', Label: 'Content', EditorType: 'text-input',
+            { Name: 'Value', EditorType: 'text-input',
                 AccessorsFor: 'memoized', withCallback: true,
                 Validator: ValueIsTextWithTabs },
+            { Name: 'readonly', Default: false,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
         /**** Renderer ****/
+        const GeometryHandlers = throttledGeometryHandlersFor(me);
+        const DialogBaseAPI = { current: null }; // s. "APIRef" below
+        onUnmount(function () {
+            GeometryHandlers.cancel();
+            if (DialogBaseAPI.current != null) { // close a still open edit dialog
+                DialogBaseAPI.current.closeAllDialogs();
+            }
+        });
         onRender(function () {
-            const { Value, Enabling } = this;
-            const _onMove = (dx, dy, newX, newY) => {
-                this._pendingPosition = { x: newX, y: newY };
-                if (this._MoveRAF == null) {
-                    this._MoveRAF = requestAnimationFrame(() => {
-                        this._MoveRAF = undefined;
-                        const { x, y } = this._pendingPosition;
-                        this.changeGeometryTo(x, y);
-                    });
-                }
-            };
-            const _onResize = (dW, dH, newWidth, newHeight) => {
-                this._pendingSize = { Width: newWidth, Height: newHeight };
-                if (this._ResizeRAF == null) {
-                    this._ResizeRAF = requestAnimationFrame(() => {
-                        this._ResizeRAF = undefined;
-                        const { Width, Height } = this._pendingSize;
-                        this.changeGeometryTo(undefined, undefined, Width, Height);
-                    });
-                }
-            };
+            const { Value, Enabling, readonly, Lock, FontFamily, FontSize, FontWeight, LineHeight, ForegroundColor, BackgroundColor } = this;
+            const mayBeRearranged = (Enabling !== false) && !Lock;
             const _onValueChange = (newValue) => {
                 this.Value = newValue;
                 this.on('input')(newValue);
             };
-            return html `<${JCL_ui.DialogBase}
+            // *C* SECURITY: "JCL_legacy.stickyMarkdownNote" below renders its
+            // Markdown content as raw HTML without sanitization (XSS risk!) - via
+            // JCL's "MarkdownView" and "dangerouslySetInnerHTML" (see the
+            // equivalent marker in "MarkdownView", same security level)
+            return html `<${JCL_ui.DialogBase} APIRef=${DialogBaseAPI}
         style="position:absolute; left:0px; top:0px; width:100%; height:100%;"
       >
-        <div class="WAT Content stickyMarkdownNote">
-          <${WAT_Mover} key="mover" Widget=${this} onMove=${_onMove}/>
+        <div class="WAT Content stickyMarkdownNote"
+          style=${BackgroundColor == null ? undefined : `background:${BackgroundColor}`}
+        >
+          ${mayBeRearranged && html `<${WAT_Mover} key="mover" Widget=${this}
+            onMoveStart=${GeometryHandlers.onMoveStart} onMove=${GeometryHandlers.onMove}/>`}
           <div class="content-area" key="content">
             <${JCL_legacy.stickyMarkdownNote}
               Content=${Value !== null && Value !== void 0 ? Value : ''}
-              onContentChange=${Enabling === false ? undefined : _onValueChange}
+              FontFamily=${FontFamily} FontSize=${FontSize} FontWeight=${FontWeight}
+              LineHeight=${LineHeight == null ? undefined : LineHeight + 'px'}
+              ForegroundColor=${ForegroundColor} BackgroundColor=${BackgroundColor}
+              onContentChange=${readonly || (Enabling === false) ? undefined : _onValueChange}
             />
           </div>
-          <${WAT_Resizer} key="resizer" Widget=${this} onResize=${_onResize} minWidth=${80} minHeight=${50}/>
+          ${mayBeRearranged && html `<${WAT_Resizer} key="resizer" Widget=${this}
+            onResizeStart=${GeometryHandlers.onResizeStart} onResize=${GeometryHandlers.onResize}
+            minWidth=${80} minHeight=${50}/>`}
         </div>
       </>`;
         });
@@ -12094,7 +12299,11 @@ class WAT_AppletOverlayView extends Component {
             },
             onDragContinuation: (dx, dy) => this._handleDrag(dx, dy),
             onDragFinish: (dx, dy) => this._handleDrag(dx, dy),
-            onDragCancellation: (dx, dy) => this._handleDrag(dx, dy),
+            onDragCancellation: (_dx, _dy) => this._handleDrag(0, 0),
+            // "_handleDrag" positions relative to the "initialGeometry" kept
+            // since "onDragStart" - (0,0) thus restores the initial geometry,
+            // for dialog dragging and resizing alike (a cancelled gesture must
+            // snap back, not remain at the last reported offset)
         });
     }
     /**** render ****/
