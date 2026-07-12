@@ -182,6 +182,9 @@ export declare function capitalized(Textline: JCL_Textline): JCL_Textline;
 
 export declare function centered(PropSet: Indexable): any;
 
+/**** coercedNumberSatisfying ****/
+export declare function coercedNumberSatisfying(Value: any, Classifier: Function): number | undefined;
+
 /**** consume/consumingEvent ****/
 export declare function consumeEvent(Event: Event, completely?: boolean): void;
 
@@ -357,6 +360,7 @@ export declare function FlagEmojiForISOCode(ISOCode: string): string;
 /**** FlagEmojiForLocale — returns the flag emoji for a given locale ****/
 export declare function FlagEmojiForLocale(Locale: JCL_Locale): string;
 
+/**** fullsized ****/
 export declare function fullsized(PropSet: Indexable): any;
 
 export declare function horizontal(PropSet: Indexable): any;
@@ -624,6 +628,14 @@ export declare class JCL_BitmapEditor {
     exportedBlob(Format?: string, Quality?: number): Promise<Blob>;
     /**** importImage - draws a given image onto the active layer ****/
     importImage(Source: string | Blob): Promise<void>;
+    /**** getDocument - serialises the complete layer structure ****/
+    getDocument(): Promise<string>;
+    /**** setDocument - restores a formerly serialised layer structure ****/
+    setDocument(Document: string | Indexable): Promise<void>;
+    /**** setValue - accepts a layer document or a plain image data URL ****/
+    setValue(Value: string): Promise<void>;
+    /**** Snapshot - flattens all visible layers into a single bitmap ****/
+    Snapshot(OptionSet?: Indexable): Promise<Blob>;
 }
 
 export declare type JCL_BitmapEditorLayer = {
@@ -709,6 +721,7 @@ export declare type JCL_DataDropEffect = typeof JCL_DataDropEffects[number];
 /**** JCL_DataDropEffect — allowed values for DataTransfer.effectAllowed ****/
 export declare const JCL_DataDropEffects: readonly ["none", "copy", "copyLink", "copyMove", "link", "linkMove", "move", "all"];
 
+/**** useDataDropSupport ****/
 export declare type JCL_DataDropSupportCallbacks = {
     onDragEnter?: (Event: DragEvent) => void;
     onDragOver?: (Event: DragEvent) => void;
@@ -1935,6 +1948,9 @@ export declare function MarkdownView(PropSet: Indexable): any;
 /**** MediaQueryMatches ****/
 export declare function MediaQueryMatches(Query: string): boolean;
 
+/**** memoizedLoader - runs a given loader at most once ****/
+export declare function memoizedLoader(Loader: () => Promise<void>): () => Promise<void>;
+
 /**** bundled exports ****/
 export declare const misc: {
     readFileAsText: typeof readFileAsText;
@@ -2060,6 +2076,9 @@ export declare function OverlayBase(PropSet: Indexable): any;
 
 export declare function parseablePropSet(PropSet: Indexable): Indexable;
 
+/**** parsedOption ****/
+export declare function parsedOption(Option: string): Indexable;
+
 /**** parseHTML ****/
 export declare function parseHTML(HTML: string, Callbacks: HTMLParserCallbackSet): void;
 
@@ -2085,6 +2104,9 @@ export declare function readFileAsDataURL(File: globalThis.File): Promise<string
 /**** readFileAsText ****/
 export declare function readFileAsText(File: globalThis.File): Promise<string>;
 
+/**** RegExpForPattern ****/
+export declare function RegExpForPattern(Pattern: string): RegExp;
+
 export declare function registerCodeEditorLanguage(Name: string, Loader: JCL_CodeEditorLanguageLoader): void;
 
 /**** registerSpreadsheetFormula - registers a single named formula ****/
@@ -2092,6 +2114,9 @@ export declare function registerSpreadsheetFormula(Name: string, Fn: Function): 
 
 /**** registerSpreadsheetFormulas - bulk-registers a whole formula module ****/
 export declare function registerSpreadsheetFormulas(FormulaSet: Indexable): void;
+
+/**** resolvedSpecialValue ****/
+export declare function resolvedSpecialValue(Value: any, disabled?: boolean, Placeholder?: string): Indexable;
 
 /**** safelyRendered ****/
 export declare function safelyRendered(Renderer: Function): any;
@@ -2594,6 +2619,9 @@ export declare const ui: {
         registerSpreadsheetFormulas: typeof registerSpreadsheetFormulas;
         NoteBoard: typeof legacyNoteBoard;
         ChatView: typeof legacyChatView;
+        ChatViewAssistantExtra: typeof legacyChatViewAssistantExtra;
+        ChatViewUserExtra: typeof legacyChatViewUserExtra;
+        ChatViewControls: typeof legacyChatViewControls;
         DataFlowProcessView: typeof legacyDataFlowProcessView;
         WorldPositionOfPort: typeof WorldPositionOfPort;
         QRCodeView: typeof legacyQRCodeView;
@@ -2648,6 +2676,9 @@ export declare function useDataDropSupport(MIMETypes: string | string[], { onDra
     onDrop: Function;
 };
 
+/**** useDatalist ****/
+export declare function useDatalist(Suggestions?: string[], renderedOption?: Function): Indexable;
+
 export declare function useDialogContext(): JCL_DialogContextValue;
 
 /**** useDragging ****/
@@ -2670,9 +2701,18 @@ export declare function useFileDropSupport(accept?: string | string[], { multipl
     onDrop: Function;
 };
 
+/**** useHybridValue ****/
+export declare function useHybridValue(externalValue: any, DefaultValue?: any): Indexable;
+
 export declare function useI18n(): JCL_i18n;
 
+/**** useInputCallbacks ****/
+export declare function useInputCallbacks(Options: Indexable): Indexable;
+
 export declare function useLibraries(Loader: () => Promise<any>): boolean;
+
+/**** useMeasuredPaneSize ****/
+export declare function useMeasuredPaneSize(ScrollerRef: Indexable): Indexable;
 
 /**** useOnlineStatus ****/
 export declare function useOnlineStatus(): boolean;
@@ -2709,6 +2749,9 @@ export declare function usePointerDropSupport({ ViewRef, accepts, onEnter, onOve
 };
 
 export declare function useRerenderer(): () => void;
+
+/**** useShownValue ****/
+export declare function useShownValue(Value: any, normalized?: Function): Indexable;
 
 export declare function useToastContext(): JCL_ToastContextValue;
 
@@ -2757,11 +2800,16 @@ export declare function ValueIsMonth(Value: any): boolean;
 /**** ValueIsName ****/
 export declare function ValueIsName(Value: any): boolean;
 
+/**** non-narrowing variants of some interface-library type guards ****/
+export declare function ValueIsObject(Value: any): boolean;
+
 /**** ValueIsPath ****/
 export declare function ValueIsPath(Value: any): boolean;
 
 /**** ValueIsPhoneNumber ****/
 export declare function ValueIsPhoneNumber(Value: any): boolean;
+
+export declare function ValueIsPlainObject(Value: any): boolean;
 
 /**** ValueIsPosition ****/
 export declare function ValueIsPosition(Value: any): boolean;
