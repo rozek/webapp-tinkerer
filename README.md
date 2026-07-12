@@ -22,6 +22,7 @@
 - [Experimenting live](#experimenting-live)
 - [Exporting and publishing](#exporting-and-publishing)
 - [Where your Applets live](#where-your-applets-live)
+- [Driving WAT with an AI assistant](#driving-wat-with-an-ai-assistant)
 - [API reference for WAT Scripts](#api-reference-for-wat-scripts)
 - [Built with](#built-with)
 - [License](#license)
@@ -77,7 +78,7 @@ Both are plain static HTML — you can host them yourself (e.g. via GitHub Pages
 
 Inside the Developer tool, a small floating button opens the **Designer overlay**, which adds two panels on top of your running Applet:
 
-- **Toolbox** — create new Pages or Widgets by picking a Behavior from a palette (grouped by category, e.g. `basic_controls`, `native_controls`, plus any custom categories of your own), reorder/duplicate/delete Pages, undo/redo, export, print, take a screenshot, and toggle **Layout mode**.
+- **Toolbox** — create new Pages or Widgets by picking a Behavior from a palette (grouped by category, e.g. `basic_controls`, `native_controls`, `other_controls`, plus any custom categories of your own), reorder/duplicate/delete Pages, undo/redo, export, print, take a screenshot, and toggle **Layout mode**.
 - **Inspector** — a tabbed panel with a configuration pane for the Applet, the current Page, and the currently selected Widget(s): name, description, Behavior (fixed once a Widget is created), Behavior-specific configurable properties, and — for widgets — geometry (position, size, anchors) and visibility/enabling.
 
 **Layout mode** is the "edit" counterpart to HyperCard's card editing: while it's on, clicks select/drag/resize widgets (with a lasso for multi-select and snapping guides) instead of reaching the widgets themselves. Turn it off and the very same Page behaves exactly like the finished app — this is also how you try out what you've built without exporting anything (see [Experimenting Live](#experimenting-live)).
@@ -88,9 +89,9 @@ Widgets get their look and default behavior from an intrinsic **widget Behavior*
 
 | category | Widgets |
 |---|---|
-| `basic_controls` | `plain_Widget`, `Outline` (a grouping container), `WidgetPane`, `TextView`, `HTMLView`, `MarkdownView`, `ImageView`, `SVGView`, `WebView`, `TitleView`, `SubtitleView`, `LabelView`, `FineprintView`, `Icon` |
+| `basic_controls` | `plain_Widget`, `Outline` (a grouping container), `WidgetPane`, `TextView`, `HTMLView`, `MarkdownView`, `ImageView`, `SVGView`, `WebView`, `TitleView`, `SubtitleView`, `LabelView`, `FineprintView`, `Icon`, `StraightArrow`, `CurvedArrow`, `madeWithWAT` |
 | `native_controls` | `Button`, `Checkbox`, `Radiobutton`, `Gauge`, `Progressbar`, `Slider`, `TextlineInput`, `PasswordInput`, `NumberInput`, `PhoneNumberInput`, `EMailAddressInput`, `URLInput`, `TimeInput`, `DateTimeInput`, `DateInput`, `WeekInput`, `MonthInput`, `FileInput`, `PseudoFileInput`, `FileDropArea`, `SearchInput`, `ColorInput`, `DropDown`, `PseudoDropDown`, `TextInput` |
-| `traditional_controls` | `FlatListView`, `TextlineTab`, `IconTab` |
+| `other_controls` | `FlatListView`, `NestedListView`, `TextlineTab`, `IconTab`, `QRCodeView`, `ChatView`, `KanbanBoard`, `CodeEditor`, `RichTextEditor`, `Spreadsheet`, `DrawingEditor`, `BitmapEditor`, `stickyTextNote`, `stickyHTMLNote`, `stickyMarkdownNote` |
 
 Only Widgets have intrinsic Behaviors; Applets and Pages always use custom (user-authored) ones, if any.
 
@@ -137,6 +138,8 @@ onRender(() => html`
 `)
 ```
 
+A widget Behavior can also declare the size a new Widget should get when it's dropped from the Toolbox: add a `DefaultSize` pragma anywhere in the Behavior script, as a comment of the form `/**** DefaultSize <width>x<height> ****/` (or `// DefaultSize: <width>x<height>`), e.g. `/**** DefaultSize 80x30 ****/`. If present, the Designer uses that size (instead of its generic 30×30px fallback) whenever you create a Widget with that Behavior; it has no effect on Widgets that already exist.
+
 Behaviors you no longer use can be deleted; intrinsic ones cannot be renamed or removed. A Behavior set can be exported/imported independently as JSON, and — because it's stored on the Applet itself — travels along whenever that Applet is exported or shared.
 
 ## Experimenting live
@@ -157,6 +160,26 @@ The Toolbox's export function offers several scopes and formats:
 ## Where your Applets live
 
 Everything you build is auto-saved locally in your browser (via `localForage`/IndexedDB) as you go, keyed by the Applet's name — that's what lets the Applet Manager list your work and what lets the Developer tool reopen exactly where you left off. You can explicitly discard this local backup and revert to whatever version is embedded in the HTML file itself.
+
+## Driving WAT with an AI assistant
+
+An Applet runs entirely inside your browser tab, with no server of its own — so there's normally no way for an external process to reach it. [**WAT-AI-Broker**](https://github.com/rozek/wat-ai-broker) closes that gap: a small, locally-run [MCP](https://modelcontextprotocol.io) server that sits between an MCP-capable AI assistant (Claude, …) and the WAT tab you have open, forwarding tool calls in both directions in real time.
+
+Once connected, the assistant can do essentially everything you can do by hand in the Designer — list and inspect Pages/Widgets, read and change properties, add/duplicate/delete/reorder Pages and Widgets, set geometry, manage Behaviors (list, read, (re)script, rename, delete, find usages), get/set Scripts and read error reports, read/write a Widget's `Value`, evaluate expressions live in the running Applet, open/close overlays and dialogs, and take a screenshot — all against the very Applet you're looking at (carefully, even while you're still working in the same tab).
+
+Getting it running, in short:
+
+1. **Run the broker** — clone it and start it once with a shared access token:
+   ```bash
+   git clone https://github.com/rozek/wat-ai-broker.git
+   cd wat-ai-broker && npm install && npm run build
+   WAT_ACCESS_TOKEN='your-secret-token' npm start
+   ```
+2. **Connect WAT to it** — in the Designer's Toolbox, click the ⚙ (Settings) icon and enter the broker's WebSocket URL (`ws://localhost:3461/wat` by default) plus the same access token, then *Apply*.
+3. **Point your MCP client at it** — e.g. add an MCP server for `http://127.0.0.1:3460/mcp` in Claude Code / Claude Desktop or any other MCP-capable AI client of your choice (the broker's README also covers a stdio bridge via `mcp-remote` for clients without HTTP transport).
+4. *(recommended)* **Install the two companion Agent Skills** bundled with the broker (`wat-ai-broker`, `wat-reference`) — they teach the assistant the addressing conventions and the full widget/property reference, so it writes correct `widget_add`/`widget_patch`/`script_set` calls right away instead of probing the Applet first.
+
+See the [WAT-AI-Broker README](https://github.com/rozek/wat-ai-broker#readme) for full configuration options, the complete list of tools, and security notes.
 
 ## API reference for WAT Scripts
 
@@ -249,7 +272,7 @@ There's no separate "send a message" primitive beyond this — direct property/m
 
 ### Defining Behaviors programmatically
 
-Behaviors are normally authored through the Behavior Editor (see [above](#building-custom-behaviors)), but the underlying model is simply: a Behavior is a Script registered under a `Category` (`'applet' | 'page' | 'widget'`) and a dotted `Name` (e.g. `my_widgets.Counter`), stored on the Applet itself — which is why custom Behaviors are automatically included whenever that Applet is exported. Intrinsic Behaviors (the `basic_controls.*`, `native_controls.*` and `traditional_controls.*` ones listed [above](#built-in-widgets)) cannot be renamed, replaced or removed.
+Behaviors are normally authored through the Behavior Editor (see [above](#building-custom-behaviors)), but the underlying model is simply: a Behavior is a Script registered under a `Category` (`'applet' | 'page' | 'widget'`) and a dotted `Name` (e.g. `my_widgets.Counter`), stored on the Applet itself — which is why custom Behaviors are automatically included whenever that Applet is exported. Intrinsic Behaviors (the `basic_controls.*`, `native_controls.*` and `other_controls.*` ones listed [above](#built-in-widgets)) cannot be renamed, replaced or removed.
 
 ## Built with
 
