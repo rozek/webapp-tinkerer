@@ -1570,16 +1570,54 @@ export function GestureRecognizer(OptionSet) {
     let curPointerId = undefined;
     let lastClickCount = 0, lastClickTime = 0;
     let LongPressTimer, LongPressState = '';
-    /**** actual recognizer ****/
-    return (Event) => {
+    let GestureIsTracked = false;
+    /**** while a gesture is in progress, it is tracked on "window" ****/
+    // pointer capture alone does not suffice: re-rendering may replace the
+    // captured element in mid-gesture (e.g. upon selection changes in the WAT
+    // Designer) - the browser would then stop delivering events to it and
+    // effectively abort the gesture. window-level tracking (in the capture
+    // phase) survives any DOM restructuring. n.b.: events dispatched to the
+    // (already detached) former capture element itself - like Chrome's spurious
+    // "pointercancel" after such a removal - never pass "window" and are
+    // deliberately ignored (see the actual recognizer function below)
+    function handleEventOnWindow(Event) {
         switch (Event.type) {
-            case 'pointerdown': return onPointerDown(Event);
             case 'pointermove': return onPointerMove(Event);
             case 'pointerup': return onPointerUp(Event);
             case 'pointercancel': return onPointerCancel(Event);
-            default: return; // ignore any other events
         }
-    };
+    }
+    function trackGestureOnWindow() {
+        if (GestureIsTracked) {
+            return;
+        }
+        GestureIsTracked = true;
+        window.addEventListener('pointermove', handleEventOnWindow, true);
+        window.addEventListener('pointerup', handleEventOnWindow, true);
+        window.addEventListener('pointercancel', handleEventOnWindow, true);
+    }
+    function untrackGestureOnWindow() {
+        if (!GestureIsTracked) {
+            return;
+        }
+        GestureIsTracked = false;
+        window.removeEventListener('pointermove', handleEventOnWindow, true);
+        window.removeEventListener('pointerup', handleEventOnWindow, true);
+        window.removeEventListener('pointercancel', handleEventOnWindow, true);
+    }
+    /**** actual recognizer ****/
+    return (Event) => {
+        if (Status !== '') {
+            return;
+        }
+        // an active gesture is exclusively driven by the window-level
+        // listeners installed above - anything delivered here while a
+        // gesture is in progress is either a duplicate (already consumed
+        // on "window") or comes from a detached element
+        if (Event.type === 'pointerdown') {
+            onPointerDown(Event);
+        }
+    }; // other events are of no interest while idle
     /**** onPointerDown ****/
     function onPointerDown(Event) {
         if ((Status !== '') && (Event.pointerId !== curPointerId)) {
@@ -1617,8 +1655,12 @@ export function GestureRecognizer(OptionSet) {
                 }
             }
         }
-        // @ts-ignore TS18047,TS2339 allow "Event.target.setPointerCapture"
-        Event.target.setPointerCapture(Event.pointerId);
+        try {
+            // @ts-ignore TS18047,TS2339 allow "Event.target.setPointerCapture"
+            Event.target.setPointerCapture(Event.pointerId);
+        }
+        catch (Signal) { /* capture is just an optimisation, see above */ }
+        trackGestureOnWindow();
         Event.stopPropagation(); // consume event
         Event.preventDefault();
         if (LongPressTimer != null) {
@@ -1735,6 +1777,7 @@ export function GestureRecognizer(OptionSet) {
         }
         Status = '';
         curPointerId = undefined;
+        untrackGestureOnWindow();
     }
     /**** onPointerCancel ****/
     function onPointerCancel(Event) {
@@ -1762,6 +1805,7 @@ export function GestureRecognizer(OptionSet) {
         LongPressState = '';
         LongPressTimer = undefined;
         curPointerId = undefined;
+        untrackGestureOnWindow();
     }
     /**** long-press timeout handling ****/
     function handleLongPressTimeout() {
@@ -8246,6 +8290,29 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.CurvedArrow', WAT_CurvedArrow);
+    /**** madeWithWAT ****/
+    // a small, single-line credit line reading "made with WebApp Tinkerer",
+    // where "WebApp Tinkerer" links to the WAT GitHub repository
+    const WAT_madeWithWAT = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.madeWithWAT {
+        left:0px; top:0px; width:100%; height:100%;
+        font-size:12px; line-height:18px; white-space:nowrap;
+        overflow:hidden; text-overflow:ellipsis;
+      }
+      .WAT.Widget > .WAT.madeWithWAT > a {
+        color:inherit;
+      }
+    `);
+        /**** Renderer ****/
+        onRender(function () {
+            return html `<div class="WAT Content madeWithWAT">made with <a
+        href="https://github.com/rozek/webapp-tinkerer"
+        target="_blank" rel="noopener noreferrer"
+      >WebApp Tinkerer</a></div>`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.madeWithWAT', WAT_madeWithWAT);
     /**** Button ****/
     // a thin WAT wrapper around the "native.Button" component from the
     // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
@@ -9931,6 +9998,700 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.QRCodeView', WAT_QRCodeView);
+    /**** ChatView ****/
+    // a thin WAT wrapper around the "legacy.ChatView" component from the
+    // "javascript-code-library" (JCL) - the JCL component manages its message
+    // input area itself (and clears it upon submission), this behavior only
+    // contributes widget geometry, message management and the WAT property and
+    // callback interface
+    //
+    // from a WAT script, use
+    //   me.Messages = [...]                 // strings or { Type,Text } objects
+    //   me.addMessage('Hi!','assistant')            // appends a single message
+    //   me.on('submit',(Text,Event) => {...})   // reports submitted user input
+    //
+    // n.b.: "Messages" is kept in "me.memoized" and therefore persisted as long
+    // as it contains strings and plain objects only - "annotation" entries (with
+    // "Renderer" functions) still render but are skipped upon serialization
+    const WAT_ChatView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.ChatView {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'HelloMessage', Label: 'Hello Message',
+                EditorType: 'text-input', AccessorsFor: 'memoized' },
+            { Name: 'Placeholder', Default: 'type a message...',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'Rows', Default: 3,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 1 },
+            { Name: 'SubmitLabel', Label: 'Submit Label',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** Messages ****/
+            get Messages() {
+                const Candidate = acceptableValue(this.memoized.Messages, ValueIsList, []);
+                return (Candidate == null ? [] : Candidate.slice());
+            },
+            set Messages(newMessages) {
+                expectList('message list', newMessages);
+                if (ValuesDiffer(this.memoized.Messages, newMessages)) {
+                    this.memoized.Messages = newMessages.slice();
+                    this.rerender();
+                }
+            },
+            /**** addMessage ****/
+            addMessage: function (Text, Type) {
+                expectText('message text', Text);
+                allowOneOf('message type', Type, ['user', 'assistant']);
+                this.Messages = [
+                    ...this.Messages, (Type == null ? Text : { Type, Text })
+                ];
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, HelloMessage, Messages, Placeholder, Rows, SubmitLabel } = this;
+            const _onSubmit = (Text, Event) => {
+                if (this.Enabling == false) {
+                    return;
+                }
+                this.on('submit')(Text, Event);
+            };
+            return html `<${JCL_legacy.ChatView} Class="WAT Content ChatView"
+        HelloMessage=${(HelloMessage !== null && HelloMessage !== void 0 ? HelloMessage : '').trim() === '' ? undefined : HelloMessage}
+        Messages=${Messages} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : 'type a message...'}
+        Rows=${Rows !== null && Rows !== void 0 ? Rows : 3}
+        SubmitLabel=${(SubmitLabel !== null && SubmitLabel !== void 0 ? SubmitLabel : '').trim() === '' ? undefined : SubmitLabel}
+        disabled=${Enabling === false}
+        onValueInput=${(Value, Event) => this.on('input')(Value, Event)}
+        onSubmit=${_onSubmit}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.ChatView', WAT_ChatView);
+    /**** KanbanBoard ****/
+    // a thin WAT wrapper around the "legacy.KanbanBoard" component from the
+    // "javascript-code-library" (JCL) - JCL contributes column layout, default
+    // renderers and drag-and-drop, this behavior adds widget geometry, board
+    // data management and the WAT property and callback interface
+    //
+    // "Columns" is a list of plain { Id,Title,... } objects, "Tasks" a flat list
+    // of plain { Id,Title,Description,ColumnId,... } objects - both are kept in
+    // "me.memoized" and therefore persisted. task moves (by drag-and-drop) are
+    // applied to "Tasks" automatically. from a WAT script, use
+    //   me.on('task-move',   (Task,FromColumn,ToColumn,ToIndex) => {...})
+    //   me.on('task-click',  (Task,Column,Event) => {...})
+    //   me.on('column-click',(Column,Event) => {...})
+    // and, optionally, override the default renderers with
+    //   me.on('render-task',(Task,List,Index,isSelected,InsertionDirection) => ...)
+    //   me.on('render-column-header',(Column,TaskList) => ...)
+    const WAT_KanbanBoardColumns = [
+        { Id: 'todo', Title: 'To Do' }, { Id: 'doing', Title: 'Doing' },
+        { Id: 'done', Title: 'Done' },
+    ]; // sensible defaults for new widgets
+    const WAT_KanbanBoard = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        const ValueIsObjectList = (Value) => (ValueIsListSatisfying(Value, ValueIsPlainObject));
+        installStylesheet(`
+      .WAT.Widget > .WAT.KanbanBoard {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+      .WAT.Widget > .WAT.KanbanBoard.disabled {
+        opacity:0.6; pointer-events:none;
+      }
+    `); // geometry and disabling only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Placeholder', Default: '(empty)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SelectionLimit', Label: 'Selection Limit', Default: 1,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 0 },
+            { Name: 'allowsReorder', Label: 'allows Reordering', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'allowsCrossColumnDrag', Label: 'allows Column Changes', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** Columns ****/
+            get Columns() {
+                const Candidate = acceptableValue(this.memoized.Columns, ValueIsObjectList);
+                return (Candidate == null
+                    ? WAT_KanbanBoardColumns.map((Column) => (Object.assign({}, Column)))
+                    : Candidate.slice());
+            },
+            set Columns(newColumns) {
+                expectListSatisfying('column list', newColumns, ValueIsPlainObject);
+                if (ValuesDiffer(this.memoized.Columns, newColumns)) {
+                    this.memoized.Columns = newColumns.slice();
+                    this.rerender();
+                }
+            },
+            /**** Tasks ****/
+            get Tasks() {
+                const Candidate = acceptableValue(this.memoized.Tasks, ValueIsObjectList);
+                return (Candidate == null ? [] : Candidate.slice());
+            },
+            set Tasks(newTasks) {
+                expectListSatisfying('task list', newTasks, ValueIsPlainObject);
+                if (ValuesDiffer(this.memoized.Tasks, newTasks)) {
+                    this.memoized.Tasks = newTasks.slice();
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, Columns, Tasks, Placeholder, SelectionLimit, allowsReorder, allowsCrossColumnDrag } = this;
+            /**** apply task moves to "Tasks" itself, then inform the script ****/
+            const _onTaskMove = (movedTask, FromColumn, ToColumn, ToIndex) => {
+                const newTasks = this.Tasks; // n.b.: already a fresh copy
+                const TaskIndex = newTasks.indexOf(movedTask);
+                if (TaskIndex < 0) {
+                    return;
+                }
+                newTasks.splice(TaskIndex, 1);
+                movedTask.ColumnId = ToColumn.Id;
+                const ColumnTasks = newTasks.filter((Task) => (Task.ColumnId === ToColumn.Id));
+                const InsertionIndex = (ToIndex >= ColumnTasks.length
+                    ? (ColumnTasks.length === 0
+                        ? newTasks.length
+                        : newTasks.indexOf(ColumnTasks[ColumnTasks.length - 1]) + 1)
+                    : newTasks.indexOf(ColumnTasks[ToIndex]));
+                newTasks.splice(InsertionIndex, 0, movedTask);
+                this.memoized.Tasks = newTasks; // deliberately bypasses the setter -...
+                this.rerender(); // ..."movedTask" was already mutated in place
+                this.on('task-move')(movedTask, FromColumn, ToColumn, ToIndex);
+            };
+            const TaskRenderer = this.on('render-task');
+            const ColumnHeaderRenderer = this.on('render-column-header');
+            return html `<${JCL_legacy.KanbanBoard}
+        Class="WAT Content KanbanBoard ${Enabling === false ? 'disabled' : ''}"
+        Columns=${Columns} Tasks=${Tasks} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : '(empty)'}
+        SelectionLimit=${SelectionLimit !== null && SelectionLimit !== void 0 ? SelectionLimit : 1}
+        allowsReorder=${allowsReorder != false}
+        allowsCrossColumnDrag=${allowsCrossColumnDrag != false}
+        TaskRenderer=${TaskRenderer === noCallback ? undefined : TaskRenderer}
+        ColumnHeaderRenderer=${ColumnHeaderRenderer === noCallback ? undefined : ColumnHeaderRenderer}
+        onTaskClick=${(Task, Column, Event) => this.on('task-click')(Task, Column, Event)}
+        onColumnClick=${(Column, Event) => this.on('column-click')(Column, Event)}
+        onTaskMove=${_onTaskMove}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.KanbanBoard', WAT_KanbanBoard);
+    /**** CodeEditor ****/
+    // a thin WAT wrapper around the "legacy.CodeEditor" component from the
+    // "javascript-code-library" (JCL), based on CodeMirror 6 - JCL lazily loads
+    // all required "@codemirror/*" packages (resolved through the import map of
+    // the hosting page) upon first use
+    //
+    // from a WAT script, use
+    //   me.Value                            // the edited code (kept up-to-date)
+    //   me.on('input',(Value) => {...})               // reports value changes
+    //   me.on('selection-change',(from,to) => {...})
+    //   me.on('lint',(Code) => [...])       // optional - returns a list of
+    //              // { Line,Column,Message,Severity } objects (or a promise)
+    //   me.EditorHandle   // focus/get/setSelection/undo/redo/... (once mounted)
+    const WAT_CodeEditorLanguages = [
+        'text', 'javascript', 'typescript', 'html', 'css', 'json', 'markdown',
+        'python', 'xml', 'java', 'yaml'
+    ];
+    const WAT_CodeEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.CodeEditor {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Language', Default: 'text',
+                EditorType: 'drop-down', AccessorsFor: 'memoized',
+                ValueList: WAT_CodeEditorLanguages },
+            { Name: 'readonly', Label: 'read-only',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'TabSize', Label: 'Tab Size', Default: 2,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 1 },
+            { Name: 'withLineNumbers', Label: 'Line Numbers', Default: true,
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'withLineWrapping', Label: 'Line Wrapping',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'withSyntaxCheck', Label: 'Syntax Check',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** EditorHandle ****/
+            get EditorHandle() { return this._EditorHandle; },
+            set EditorHandle(_) { throwReadOnlyError('EditorHandle'); },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Language, readonly, TabSize, withLineNumbers, withLineWrapping, withSyntaxCheck } = this;
+            const _onValueChange = (newValue) => {
+                this.Value = newValue; // also fires the "Value" callback
+                this.on('input')(newValue);
+            };
+            const Linter = this.on('lint');
+            return html `<${JCL_legacy.CodeEditor} Class="WAT Content CodeEditor"
+        Value=${Value !== null && Value !== void 0 ? Value : ''} Language=${Language !== null && Language !== void 0 ? Language : 'text'}
+        readonly=${readonly == true} disabled=${Enabling === false}
+        TabSize=${TabSize !== null && TabSize !== void 0 ? TabSize : 2}
+        withLineNumbers=${withLineNumbers != false}
+        withLineWrapping=${withLineWrapping == true}
+        withSyntaxCheck=${withSyntaxCheck == true}
+        Linter=${Linter === noCallback ? undefined : Linter}
+        onValueChange=${_onValueChange}
+        onSelectionChange=${(from, to) => this.on('selection-change')(from, to)}
+        onMount=${(Handle) => {
+                this._EditorHandle = Handle;
+                this.on('editor-mount')(Handle);
+            }}
+        onUnmount=${() => {
+                this._EditorHandle = undefined;
+                this.on('editor-unmount')();
+            }}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.CodeEditor', WAT_CodeEditor);
+    /**** RichTextEditor ****/
+    // a thin WAT wrapper around the "legacy.RichTextEditor" component from the
+    // "javascript-code-library" (JCL), based on "squire-rte" and "dompurify"
+    // (both lazily loaded upon first use, resolved through the import map of
+    // the hosting page)
+    //
+    // the editor comes without any toolbar - from a WAT script, use
+    //   me.Value                            // the edited (sanitised) HTML
+    //   me.on('input',(Value) => {...})               // reports value changes
+    //   me.on('selection-change',(Selection) => {...})
+    //   me.on('undo-state-change',(canUndo,canRedo) => {...})
+    //   me.EditorHandle     // toggleBold/setLink/insertImage/... (once mounted)
+    // e.g. in order to implement a custom toolbar with other WAT widgets
+    const WAT_RichTextEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.RichTextEditor {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value',
+                EditorType: 'html-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'readonly', Label: 'read-only',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** EditorHandle ****/
+            get EditorHandle() { return this._EditorHandle; },
+            set EditorHandle(_) { throwReadOnlyError('EditorHandle'); },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, Placeholder, readonly } = this;
+            const _onValueChange = (newValue) => {
+                this.Value = newValue; // also fires the "Value" callback
+                this.on('input')(newValue);
+            };
+            return html `<${JCL_legacy.RichTextEditor} Class="WAT Content RichTextEditor"
+        Value=${Value !== null && Value !== void 0 ? Value : ''} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : ''}
+        readonly=${readonly == true} disabled=${Enabling === false}
+        onValueChange=${_onValueChange}
+        onSelectionChange=${(Selection) => this.on('selection-change')(Selection)}
+        onUndoStateChange=${(canUndo, canRedo) => this.on('undo-state-change')(canUndo, canRedo)}
+        onMount=${(Handle) => {
+                this._EditorHandle = Handle;
+                this.on('editor-mount')(Handle);
+            }}
+        onUnmount=${() => {
+                this._EditorHandle = undefined;
+                this.on('editor-unmount')();
+            }}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.RichTextEditor', WAT_RichTextEditor);
+    /**** Spreadsheet ****/
+    // a thin WAT wrapper around the "legacy.Spreadsheet" component from the
+    // "javascript-code-library" (JCL), based on "jspreadsheet-ce" v5 (lazily
+    // loaded upon first use, resolved through the import map of the hosting
+    // page) - n.b.: the stylesheets "jsuites.css" and "jspreadsheet.css" have
+    // to be provided by the hosting page itself
+    //
+    // "Value" holds the sheet contents as a list of rows (each being a list of
+    // cell values) and is kept in "me.memoized" (and therefore persisted).
+    // while editing, the JCL component remains "uncontrolled": user edits
+    // update "Value" silently, whereas assignments to "Value" reload the sheet.
+    // "Columns" optionally takes a list of jspreadsheet column descriptors
+    // (plain { type,title,width,... } objects) but is only applied upon
+    // mounting. from a WAT script, use
+    //   me.Value = [ [1,2],[3,4] ]              // replaces the sheet contents
+    //   me.on('input',(Data) => {...})          // reports any contents change
+    //   me.on('cell-change',(x,y,newValue) => {...})
+    //   me.EditorHandle          // getCell/setCell/getData/... (once mounted)
+    const WAT_Spreadsheet = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        const ValueIsRowList = (Value) => (ValueIsListSatisfying(Value, ValueIsList));
+        installStylesheet(`
+      .WAT.Widget > .WAT.Spreadsheet {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'minRows', Label: 'min. Rows', Default: 5,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 0 },
+            { Name: 'minColumns', Label: 'min. Columns',
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 0 },
+            { Name: 'readonly', Label: 'read-only',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** Value - assignments reload the (otherwise uncontrolled) sheet ****/
+            get Value() {
+                const Candidate = acceptableValue(this.memoized.Value, ValueIsRowList);
+                return (Candidate == null ? [[]] : Candidate.slice());
+            },
+            set Value(newData) {
+                expectListSatisfying('spreadsheet contents', newData, ValueIsList);
+                this.memoized.Value = newData.slice();
+                this._renderedData = this.memoized.Value; // a new reference reloads...
+                this.on('Value')(newData); // ...the sheet
+                this.rerender();
+            },
+            /**** Columns ****/
+            get Columns() {
+                return acceptableValue(this.memoized.Columns, (Value) => ValueIsListSatisfying(Value, ValueIsPlainObject));
+            },
+            set Columns(newColumns) {
+                allowListSatisfying('column descriptors', newColumns, ValueIsPlainObject);
+                if (ValuesDiffer(this.memoized.Columns, newColumns)) {
+                    this.memoized.Columns = newColumns === null || newColumns === void 0 ? void 0 : newColumns.slice();
+                    this.rerender(); // only applied upon (re)mounting, though
+                }
+            },
+            /**** EditorHandle ****/
+            get EditorHandle() { return this._EditorHandle; },
+            set EditorHandle(_) { throwReadOnlyError('EditorHandle'); },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Enabling, minRows, minColumns, readonly } = this;
+            if (this._renderedData == null) {
+                this._renderedData = this.Value;
+            }
+            const _onDataChange = (Data) => {
+                this.memoized.Value = Data; // silently - a re-render would reload...
+                this.on('Value')(Data); // ...the sheet
+                this.on('input')(Data);
+            };
+            return html `<${JCL_legacy.Spreadsheet} Class="WAT Content Spreadsheet"
+        Data=${this._renderedData} Columns=${this.Columns}
+        minRows=${minRows !== null && minRows !== void 0 ? minRows : 5} minColumns=${minColumns}
+        readonly=${readonly == true} disabled=${Enabling === false}
+        onDataChange=${_onDataChange}
+        onCellChange=${(x, y, newValue) => this.on('cell-change')(x, y, newValue)}
+        onMount=${(Handle) => {
+                this._EditorHandle = Handle;
+                this.on('editor-mount')(Handle);
+            }}
+        onUnmount=${() => {
+                this._EditorHandle = undefined;
+                this.on('editor-unmount')();
+            }}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.Spreadsheet', WAT_Spreadsheet);
+    /**** DrawingEditor ****/
+    // a thin WAT wrapper around the "legacy.DrawingEditor" component from the
+    // "javascript-code-library" (JCL) - a self-contained SVG vector editor
+    // without any external dependencies. "Value" holds the drawing as a
+    // standalone SVG document
+    //
+    // the editor comes without any toolbar - from a WAT script, use
+    //   me.Value                            // the edited (sanitised) SVG
+    //   me.Tool = 'rect'                    // switches the current tool
+    //   me.on('input',(Value) => {...})               // reports value changes
+    //   me.on('tool-change',(Tool) => {...})
+    //   me.on('selection-change',(SelectedIds) => {...})
+    //   me.on('undo-state-change',(canUndo,canRedo) => {...})
+    //   me.on('text-request',(currentText) => {...})   // replaces the built-in
+    //                       // "prompt"-based text entry, may return a promise
+    //   me.EditorHandle    // setStyle/group/undo/zoomToFit/... (once mounted)
+    // e.g. in order to implement a custom toolbar with other WAT widgets
+    //
+    // n.b.: the drawing size is configured with "DrawingWidth"/"DrawingHeight"
+    // (in SVG user units) - "Width" and "Height" remain the widget's geometry
+    const WAT_DrawingEditorTools = [
+        'select', 'editPoints', 'pan',
+        'rect', 'ellipse', 'line', 'polyline', 'bezier', 'freehand', 'text'
+    ];
+    const WAT_DrawingEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.DrawingEditor {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value',
+                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Tool', Default: 'select',
+                EditorType: 'drop-down', AccessorsFor: 'none',
+                ValueList: WAT_DrawingEditorTools },
+            { Name: 'readonly', Label: 'read-only',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'DrawingWidth', Label: 'Drawing Width', Default: 800,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 1 },
+            { Name: 'DrawingHeight', Label: 'Drawing Height', Default: 600,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 1 },
+            { Name: 'GridSize', Label: 'Grid Size', Default: 10,
+                EditorType: 'number-input', AccessorsFor: 'memoized',
+                minValue: 0.01, maxValue: 1000 },
+            { Name: 'snapToGrid', Label: 'snap to Grid',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+            { Name: 'showGrid', Label: 'show Grid',
+                EditorType: 'checkbox', AccessorsFor: 'memoized' },
+        ];
+        Object_assign(me, {
+            /**** Tool - not a JCL prop, but routed through the editor handle ****/
+            get Tool() {
+                return acceptableValue(this.memoized.Tool, (Value) => ValueIsOneOf(Value, WAT_DrawingEditorTools), 'select');
+            },
+            set Tool(newTool) {
+                var _a;
+                expectOneOf('drawing tool', newTool, WAT_DrawingEditorTools);
+                if (this.memoized.Tool !== newTool) {
+                    this.memoized.Tool = newTool; // no re-rendering required, since...
+                    (_a = this._EditorHandle) === null || _a === void 0 ? void 0 : _a.setTool(newTool); // ...the handle applies it live
+                }
+            },
+            /**** EditorHandle ****/
+            get EditorHandle() { return this._EditorHandle; },
+            set EditorHandle(_) { throwReadOnlyError('EditorHandle'); },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Value, Enabling, readonly, DrawingWidth, DrawingHeight, GridSize, snapToGrid, showGrid } = this;
+            const _onValueChange = (newValue) => {
+                this.Value = newValue; // also fires the "Value" callback
+                this.on('input')(newValue);
+            };
+            const _onToolChange = (Tool) => {
+                this.memoized.Tool = Tool; // deliberately bypasses the setter (the
+                this.on('tool-change')(Tool); // editor itself changed tools)
+            };
+            const _onTextRequest = (currentText) => {
+                var _a;
+                const registeredHandler = this.on('text-request');
+                return (registeredHandler === noCallback
+                    ? ((_a = window.prompt('Text:', currentText)) !== null && _a !== void 0 ? _a : undefined)
+                    : registeredHandler(currentText));
+            };
+            return html `<${JCL_legacy.DrawingEditor} Class="WAT Content DrawingEditor"
+        Value=${Value !== null && Value !== void 0 ? Value : ''}
+        readonly=${readonly == true} disabled=${Enabling === false}
+        Width=${DrawingWidth !== null && DrawingWidth !== void 0 ? DrawingWidth : 800} Height=${DrawingHeight !== null && DrawingHeight !== void 0 ? DrawingHeight : 600}
+        GridSize=${GridSize !== null && GridSize !== void 0 ? GridSize : 10}
+        snapToGrid=${snapToGrid == true} showGrid=${showGrid == true}
+        onValueChange=${_onValueChange}
+        onSelectionChange=${(SelectedIds) => this.on('selection-change')(SelectedIds)}
+        onToolChange=${_onToolChange}
+        onUndoStateChange=${(canUndo, canRedo) => this.on('undo-state-change')(canUndo, canRedo)}
+        onTextRequest=${_onTextRequest}
+        onMount=${(Handle) => {
+                this._EditorHandle = Handle;
+                if (this.Tool !== 'select') {
+                    Handle.setTool(this.Tool);
+                }
+                this.on('editor-mount')(Handle);
+            }}
+        onUnmount=${() => {
+                this._EditorHandle = undefined;
+                this.on('editor-unmount')();
+            }}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.DrawingEditor', WAT_DrawingEditor);
+    /**** BitmapEditor ****/
+    // a thin WAT wrapper around the "legacy.BitmapEditor" component from the
+    // "javascript-code-library" (JCL) - a self-contained, layer-based raster
+    // editor without any external dependencies
+    //
+    // "Value" either holds a complete layer document (JSON, see JCL's
+    // "getDocument") or a plain image data URL - it is kept in "me.memoized"
+    // and therefore persisted, which allows painting sessions to be interrupted
+    // and resumed (including layers). while painting, "Value" is updated with
+    // debounced document snapshots (see "SnapshotDelay") - assignments to
+    // "Value" replace the current document instead
+    //
+    // the editor comes without any toolbar - from a WAT script, use
+    //   me.Tool = 'fill'                        // switches the current tool
+    //   me.PaintColor/me.PaintBackground        // the current colour pair
+    //   me.Snapshot({ Type,Quality,BackgroundColor,Width,Height })
+    //              // returns a promise for a flattened bitmap as a data URL
+    //              // (Type: png/jpeg/webp - GIF is deliberately unsupported)
+    //   me.on('input',(Value) => {...})    // fires after each debounced snapshot
+    //   me.on('value-change',() => {...})       // fires immediately (w/o data)
+    //   me.on('selection-change',(Selection) => {...})
+    //   me.on('undo-state-change',(canUndo,canRedo) => {...})
+    //   me.on('color-picked',(Color,forBackground) => {...})
+    //   me.on('viewport-change',(OffsetX,OffsetY,ZoomFactor) => {...})
+    //   me.on('text-request',(currentText) => {...})   // replaces the built-in
+    //                       // "prompt"-based text entry, may return a promise
+    //   me.EditorHandle          // layers/clipboard/zoom/... (once mounted)
+    //
+    // the text tool follows the widget's own font settings ("FontFamily",
+    // "FontSize", "FontWeight" and "FontStyle"). "ImageWidth"/"ImageHeight"
+    // only affect new (empty) documents - a given "Value" brings its own size
+    const WAT_BitmapEditorTools = [
+        'brush', 'eraser', 'line',
+        'rectangle', 'filledRectangle', 'ellipse', 'filledEllipse',
+        'text', 'fill', 'eyeDropper', 'pan', 'select'
+    ];
+    const WAT_BitmapEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        installStylesheet(`
+      .WAT.Widget > .WAT.BitmapEditor {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Tool', Default: 'brush',
+                EditorType: 'drop-down', AccessorsFor: 'memoized',
+                ValueList: WAT_BitmapEditorTools },
+            { Name: 'PaintColor', Label: 'Paint Colour', Default: '#000000',
+                EditorType: 'color-input', AccessorsFor: 'memoized' },
+            { Name: 'PaintBackground', Label: 'Paint Background', Default: '#ffffff',
+                EditorType: 'color-input', AccessorsFor: 'memoized' },
+            { Name: 'BrushSize', Label: 'Brush Size', Default: 10,
+                EditorType: 'number-input', AccessorsFor: 'memoized',
+                minValue: 1, maxValue: 1000 },
+            { Name: 'BrushOpacity', Label: 'Brush Opacity', Default: 1,
+                EditorType: 'number-input', AccessorsFor: 'memoized',
+                minValue: 0, maxValue: 1 },
+            { Name: 'ImageWidth', Label: 'Image Width', Default: 800,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 1 },
+            { Name: 'ImageHeight', Label: 'Image Height', Default: 600,
+                EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 1 },
+            { Name: 'SnapshotDelay', Label: 'Snapshot Delay [ms]', Default: 2000,
+                EditorType: 'integer-input', AccessorsFor: 'memoized',
+                minValue: 100, maxValue: 60000 },
+        ];
+        Object_assign(me, {
+            /**** Value - assignments replace the current document ****/
+            get Value() {
+                return acceptableValue(this.memoized.Value, ValueIsText);
+            },
+            set Value(newValue) {
+                allowText('bitmap editor value', newValue);
+                this.memoized.Value = newValue;
+                if ((newValue != null) && (this._EditorHandle != null)) {
+                    this._EditorHandle.setValue(newValue).catch((Signal) => console.warn('BitmapEditor: could not apply the given "Value"', Signal));
+                } // no re-rendering required - the JCL component only reads
+            }, // its "Value" prop upon mounting
+            /**** Snapshot - flattens all visible layers into a data URL ****/
+            Snapshot: async function (OptionSet) {
+                const Handle = this._EditorHandle;
+                if (Handle == null)
+                    throwError('NotMounted: the bitmap editor is not (yet) mounted');
+                const SnapshotBlob = await Handle.Snapshot(OptionSet);
+                return await new Promise((resolve, reject) => {
+                    const Reader = new FileReader();
+                    Reader.onload = () => resolve(Reader.result);
+                    Reader.onerror = () => reject(new Error('could not read the snapshot'));
+                    Reader.readAsDataURL(SnapshotBlob);
+                });
+            },
+            /**** EditorHandle ****/
+            get EditorHandle() { return this._EditorHandle; },
+            set EditorHandle(_) { throwReadOnlyError('EditorHandle'); },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            var _a;
+            const { Value, Enabling, Tool, PaintColor, PaintBackground, BrushSize, BrushOpacity, ImageWidth, ImageHeight } = this;
+            /**** the text tool follows the widget's own font settings ****/
+            const FontSize = parseFloat(this.FontSize);
+            const FontWeight = ((('' + this.FontWeight).toLowerCase() === 'bold') ||
+                (parseInt(this.FontWeight, 10) >= 600) ? 'bold' : 'normal');
+            const FontStyle = (('' + this.FontStyle).toLowerCase().includes('italic') ? 'italic' : 'normal');
+            /**** update "Value" with debounced document snapshots ****/
+            const _onValueChange = () => {
+                var _a;
+                this.on('value-change')();
+                if (this._SnapshotTimer != null) {
+                    clearTimeout(this._SnapshotTimer);
+                }
+                this._SnapshotTimer = setTimeout(() => {
+                    var _a;
+                    this._SnapshotTimer = undefined;
+                    (_a = this._EditorHandle) === null || _a === void 0 ? void 0 : _a.getDocument().then((Doc) => {
+                        this.memoized.Value = Doc; // silently - no re-rendering required...
+                        this.on('input')(Doc); // ...(and none wanted, see "Value")
+                    }, (Signal) => console.warn('BitmapEditor: could not snapshot the current document', Signal));
+                }, (_a = this.SnapshotDelay) !== null && _a !== void 0 ? _a : 2000);
+            };
+            /**** by default, the eye dropper updates the colour pair itself ****/
+            const _onColorPicked = (Color, forBackground) => {
+                try {
+                    if (forBackground) {
+                        this.PaintBackground = Color;
+                    }
+                    else {
+                        this.PaintColor = Color;
+                    }
+                }
+                catch (Signal) { /* ignores colours the validator rejects */ }
+                this.on('color-picked')(Color, forBackground);
+            };
+            const _onTextRequest = (currentText) => {
+                var _a;
+                const registeredHandler = this.on('text-request');
+                return (registeredHandler === noCallback
+                    ? ((_a = window.prompt('Text:', currentText)) !== null && _a !== void 0 ? _a : undefined)
+                    : registeredHandler(currentText));
+            };
+            return html `<${JCL_legacy.BitmapEditor} Class="WAT Content BitmapEditor"
+        Value=${Value} Width=${ImageWidth !== null && ImageWidth !== void 0 ? ImageWidth : 800} Height=${ImageHeight !== null && ImageHeight !== void 0 ? ImageHeight : 600}
+        Tool=${Tool !== null && Tool !== void 0 ? Tool : 'brush'}
+        Color=${PaintColor !== null && PaintColor !== void 0 ? PaintColor : '#000000'}
+        BackgroundColor=${PaintBackground !== null && PaintBackground !== void 0 ? PaintBackground : '#ffffff'}
+        BrushSize=${BrushSize !== null && BrushSize !== void 0 ? BrushSize : 10} BrushOpacity=${BrushOpacity !== null && BrushOpacity !== void 0 ? BrushOpacity : 1}
+        FontFamily=${(_a = this.FontFamily) !== null && _a !== void 0 ? _a : 'sans-serif'}
+        FontSize=${isNaN(FontSize) ? 24 : FontSize}
+        FontWeight=${FontWeight} FontStyle=${FontStyle}
+        disabled=${Enabling === false}
+        onValueChange=${_onValueChange}
+        onSelectionChange=${(Selection) => this.on('selection-change')(Selection)}
+        onUndoStateChange=${(canUndo, canRedo) => this.on('undo-state-change')(canUndo, canRedo)}
+        onColorPicked=${_onColorPicked}
+        onViewportChange=${(OffsetX, OffsetY, ZoomFactor) => this.on('viewport-change')(OffsetX, OffsetY, ZoomFactor)}
+        onTextRequest=${_onTextRequest}
+        onMount=${(Handle) => {
+                this._EditorHandle = Handle;
+                this.on('editor-mount')(Handle);
+            }}
+        onUnmount=${() => {
+                var _a;
+                if (this._SnapshotTimer != null) { // capture any pending changes...
+                    clearTimeout(this._SnapshotTimer); // ...in a best-effort manner
+                    this._SnapshotTimer = undefined;
+                    (_a = this._EditorHandle) === null || _a === void 0 ? void 0 : _a.getDocument().then((Doc) => { this.memoized.Value = Doc; }, () => { });
+                }
+                this._EditorHandle = undefined;
+                this.on('editor-unmount')();
+            }}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.BitmapEditor', WAT_BitmapEditor);
 }
 /**** readTextFile ****/
 async function readTextFile(File) {
