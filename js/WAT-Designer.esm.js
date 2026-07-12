@@ -659,8 +659,8 @@ const DesignerState = {
     },
     SettingsDialog: {
         Title: 'WAT Settings', View: undefined,
-        x: NaN, y: NaN, Width: 320, Height: 240,
-        minWidth: 320, minHeight: 240,
+        x: NaN, y: NaN, Width: 360, Height: 300,
+        minWidth: 360, minHeight: 300,
     },
     BehaviorEditor: {
         Title: 'Behavior Editor', View: undefined,
@@ -991,7 +991,12 @@ async function restoreDialogs() {
         if (DialogGeometries != null) {
             for (let DialogName in DialogGeometries) {
                 const { x, y, Width, Height } = DialogGeometries[DialogName];
-                Object.assign(DesignerState[DialogName], { x, y, Width, Height });
+                const { minWidth, minHeight } = DesignerState[DialogName];
+                Object.assign(DesignerState[DialogName], {
+                    x, y, // stored geometries must never undershoot
+                    Width: Math.max(Width !== null && Width !== void 0 ? Width : 0, minWidth !== null && minWidth !== void 0 ? minWidth : 0), // the (possibly...
+                    Height: Math.max(Height !== null && Height !== void 0 ? Height : 0, minHeight !== null && minHeight !== void 0 ? minHeight : 0), // ...raised) minima
+                });
                 openDialog(DialogName);
             }
             bringDialogToFront('Toolbox');
@@ -3926,7 +3931,18 @@ function doCreateWidget(Behavior) {
     if (visitedPage == null) {
         return;
     }
-    doOperation(() => new WAD_WidgetDeserializationOperation([{ Behavior: (Behavior === '' ? null : Behavior) }], visitedPage, 0));
+    const Serialization = {
+        Behavior: (Behavior === '' ? null : Behavior)
+    };
+    const DefaultSize = (Behavior === ''
+        ? undefined
+        : DesignerState.Applet.DefaultSizeOfBehavior('widget', Behavior));
+    if (DefaultSize != null) { // "left-width" and "top-height" are
+        Serialization.Offsets = [
+            10, DefaultSize.Width, 10, DefaultSize.Height
+        ];
+    }
+    doOperation(() => new WAD_WidgetDeserializationOperation([Serialization], visitedPage, 0));
 }
 /**** doDuplicateSelectedWidgets ****/
 function doDuplicateSelectedWidgets() {
@@ -4498,6 +4514,872 @@ function selectedWidgetsMayBeShiftedDown() {
     const StartIndex = visitedPage.WidgetCount - selectedWidgets.length;
     return selectedWidgets.some((Widget, i) => Widget.Index < StartIndex + i);
 }
+//------------------------------------------------------------------------------
+//--                              MCP Connector                               --
+//------------------------------------------------------------------------------
+// WebSocket client for the "WAT-AI-Broker" - it lets an (MCP-capable) AI
+// assistant inspect and modify the applet under design. All modifications are
+// performed as WAD operations and may therefore be undone just like manual
+// ones (n.b.: a "widget_transfer" consists of TWO operations)
+const WAD_AsyncFunction = Object.getPrototypeOf(async function () { }).constructor;
+class WAD_MCPConnector {
+    /**** constructor ****/
+    constructor() {
+        var _a, _b;
+        Object.defineProperty(this, "_URL", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Token", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_keepToken", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Socket", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        Object.defineProperty(this, "_ReconnectionTimer", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        Object.defineProperty(this, "_VisitWatcher", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        Object.defineProperty(this, "_visitedPageName", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
+        let URL = '', Token = '', keepToken = false;
+        try {
+            URL = (_a = localStorage.getItem('wat-mcp-url')) !== null && _a !== void 0 ? _a : '';
+            Token = (_b = localStorage.getItem('wat-mcp-token')) !== null && _b !== void 0 ? _b : '';
+            keepToken = (localStorage.getItem('wat-mcp-token') != null);
+        }
+        catch (Signal) { /* nop - no persistence available */ }
+        this._URL = URL;
+        this._Token = Token;
+        this._keepToken = keepToken;
+    }
+    /**** URL, Token, TokenIsKept, isConnected ****/
+    get URL() { return this._URL; }
+    get Token() { return this._Token; }
+    get TokenIsKept() { return this._keepToken; }
+    get isConnected() {
+        return (this._Socket != null) && (this._Socket.readyState === WebSocket.OPEN);
+    }
+    /**** configure - applies and persists new settings, then reconnects ****/
+    configure(URL, Token, TokenShallBeKept) {
+        this._URL = URL;
+        this._Token = Token;
+        this._keepToken = TokenShallBeKept;
+        try {
+            localStorage.setItem('wat-mcp-url', URL);
+            if (TokenShallBeKept) {
+                localStorage.setItem('wat-mcp-token', Token);
+            }
+            else {
+                localStorage.removeItem('wat-mcp-token');
+            }
+        }
+        catch (Signal) { /* nop - no persistence available */ }
+        this.disconnect();
+        if (URL !== '') {
+            this.connect();
+        }
+    }
+    /**** connect - opens the WebSocket connection if a URL is configured ****/
+    connect() {
+        if (this._URL === '') {
+            return;
+        }
+        if (this._Socket != null) {
+            return;
+        }
+        this._openSocket();
+    }
+    /**** disconnect - closes the connection and stops auto-reconnection ****/
+    disconnect() {
+        if (this._ReconnectionTimer != null) {
+            clearTimeout(this._ReconnectionTimer);
+            this._ReconnectionTimer = undefined;
+        }
+        this._stopVisitWatcher();
+        if (this._Socket != null) {
+            this._Socket.onclose = null;
+            this._Socket.close();
+            this._Socket = undefined;
+        }
+        WAT_rerender();
+    }
+    /**** _openSocket - establishes the WebSocket and wires all handlers ****/
+    _openSocket() {
+        const Socket = new WebSocket(this._URL);
+        Socket.onopen = () => {
+            var _a, _b, _c, _d, _e;
+            const Applet = DesignerState.Applet;
+            Socket.send(JSON.stringify({
+                type: 'hello',
+                accessToken: this._Token,
+                appletName: (_a = Applet === null || Applet === void 0 ? void 0 : Applet.Name) !== null && _a !== void 0 ? _a : '',
+                currentPage: (_c = (_b = Applet === null || Applet === void 0 ? void 0 : Applet.visitedPage) === null || _b === void 0 ? void 0 : _b.Name) !== null && _c !== void 0 ? _c : null,
+            }));
+            this._visitedPageName = (_e = (_d = Applet === null || Applet === void 0 ? void 0 : Applet.visitedPage) === null || _d === void 0 ? void 0 : _d.Name) !== null && _e !== void 0 ? _e : undefined;
+            this._startVisitWatcher();
+            WAT_rerender(); // updates an open "SettingsDialog"
+        };
+        Socket.onmessage = async ({ data }) => {
+            var _a, _b;
+            let Request;
+            try {
+                Request = JSON.parse(data);
+            }
+            catch (Signal) {
+                return;
+            }
+            let result = null;
+            let error = null;
+            try {
+                result = await this._handle(Request.method, (_a = Request.params) !== null && _a !== void 0 ? _a : {});
+            }
+            catch (Signal) {
+                error = String((_b = Signal === null || Signal === void 0 ? void 0 : Signal.message) !== null && _b !== void 0 ? _b : Signal);
+            }
+            Socket.send(JSON.stringify({ id: Request.id, result, error }));
+        };
+        Socket.onclose = () => {
+            this._Socket = undefined;
+            this._stopVisitWatcher();
+            this._ReconnectionTimer = setTimeout(() => {
+                this._ReconnectionTimer = undefined;
+                this._openSocket();
+            }, 3000);
+            WAT_rerender();
+        };
+        Socket.onerror = () => { Socket.close(); };
+        this._Socket = Socket;
+    }
+    /**** _start/_stopVisitWatcher - reports page visits to the broker ****/
+    _startVisitWatcher() {
+        if (this._VisitWatcher != null) {
+            return;
+        }
+        this._VisitWatcher = setInterval(() => {
+            var _a, _b, _c;
+            if (!this.isConnected) {
+                return;
+            }
+            const PageName = (_c = (_b = (_a = DesignerState.Applet) === null || _a === void 0 ? void 0 : _a.visitedPage) === null || _b === void 0 ? void 0 : _b.Name) !== null && _c !== void 0 ? _c : undefined;
+            if (PageName !== this._visitedPageName) {
+                this._visitedPageName = PageName;
+                this._Socket.send(JSON.stringify({
+                    type: 'notify', event: 'page_visited', page: PageName !== null && PageName !== void 0 ? PageName : null
+                }));
+            }
+        }, 500);
+    }
+    _stopVisitWatcher() {
+        if (this._VisitWatcher != null) {
+            clearInterval(this._VisitWatcher);
+            this._VisitWatcher = undefined;
+        }
+    }
+    /**** _Applet - the applet under design (or an error when there is none) ****/
+    get _Applet() {
+        const Applet = DesignerState.Applet;
+        if (Applet == null) {
+            throwError('NoApplet: no applet under design');
+        }
+        return Applet;
+    }
+    /**** _PageFor - resolves a page given by name or 0-based index ****/
+    _PageFor(PageSpec) {
+        const Applet = this._Applet;
+        let Page = undefined;
+        switch (true) {
+            case ValueIsOrdinal(PageSpec):
+                Page = Applet.PageAt(PageSpec);
+                break;
+            case ValueIsTextline(PageSpec):
+                Page = Applet.PageNamed(PageSpec);
+                break;
+            default: throwError('InvalidArgument: invalid page specification');
+        }
+        if (Page == null)
+            throwError(`NotFound: no such page: ${quoted(String(PageSpec))}`);
+        return Page;
+    }
+    /**** _WidgetFor - resolves a widget given by name or 0-based index ****/
+    _WidgetFor(Page, WidgetSpec) {
+        let Widget = undefined;
+        switch (true) {
+            case ValueIsOrdinal(WidgetSpec):
+                Widget = Page.WidgetAt(WidgetSpec);
+                break;
+            case ValueIsTextline(WidgetSpec):
+                Widget = Page.WidgetNamed(WidgetSpec);
+                break;
+            default: throwError('InvalidArgument: invalid widget specification');
+        }
+        if (Widget == null)
+            throwError(`NotFound: no such widget: ${quoted(String(WidgetSpec))}`);
+        return Widget;
+    }
+    /**** _VisualFor - resolves "applet" | "<page>" | "<page>/<widget>" ****/
+    _VisualFor(Target) {
+        if (!ValueIsTextline(Target))
+            throwError('InvalidArgument: invalid target specification');
+        if (Target === 'applet') {
+            return this._Applet;
+        }
+        if (Target.includes('/')) {
+            const Widget = this._Applet.WidgetAtPath(Target);
+            if (Widget == null)
+                throwError(`NotFound: no such widget: ${quoted(Target)}`);
+            return Widget;
+        }
+        return this._PageFor(Target);
+    }
+    /**** _BehaviorRegistration - fails for unknown behaviours ****/
+    _BehaviorRegistration(Category, Behavior) {
+        var _a;
+        allowOneOf('behavior category', Category, ['applet', 'page', 'widget']);
+        const Registration = (_a = this._Applet
+            ._BehaviorPool[Category]) === null || _a === void 0 ? void 0 : _a[String(Behavior).toLowerCase()];
+        if (Registration == null)
+            throwError(`NotFound: no such ${Category} behavior: ${quoted(String(Behavior))}`);
+        return Registration;
+    }
+    /**** _perform - like "doOperation", but reports failures to the caller ****/
+    _perform(OperationFactory) {
+        const { OperationHistory, OperationIndex } = DesignerState;
+        const Operation = OperationFactory(); // may fail
+        const prevOperation = OperationHistory[OperationIndex - 1];
+        if ((prevOperation != null) && Operation.canExtend(prevOperation)) {
+            Operation.extend(prevOperation); // may fail
+            OperationHistory.length = OperationIndex; // only upon success
+            if (prevOperation.isIrrelevant) {
+                DesignerState.OperationIndex -= 1;
+                OperationHistory.length = DesignerState.OperationIndex;
+            }
+        }
+        else {
+            Operation.doNow(); // may fail
+            if (!Operation.isIrrelevant) { // do not historize no-op operations
+                OperationHistory.length = OperationIndex; // only upon success
+                OperationHistory.push(Operation);
+                DesignerState.OperationIndex += 1;
+            }
+        }
+        DesignerState.Applet.preserve();
+    }
+    /**** _configureVisual - configuration op matching the kind of visual ****/
+    _configureVisual(Visual, Key, Value) {
+        switch (true) {
+            case ValueIsApplet(Visual):
+                this._perform(() => new WAD_AppletConfigurationOperation(Key, Value));
+                break;
+            case ValueIsPage(Visual):
+                this._perform(() => new WAD_PageConfigurationOperation([Visual], Key, Value));
+                break;
+            default:
+                this._perform(() => new WAD_WidgetConfigurationOperation([Visual], Key, [Value]));
+        }
+    }
+    /**** _serializable - protects the JSON-based broker protocol ****/
+    _serializable(Value) {
+        if (Value === undefined) {
+            return null;
+        }
+        try {
+            return JSON.parse(JSON.stringify(Value));
+        }
+        catch (Signal) {
+            return String(Value);
+        }
+    }
+    /**** _handle - routes an incoming request to its handler ****/
+    async _handle(Method, Params) {
+        switch (true) {
+            case (Method === 'applet_info'): return this._AppletInfo();
+            case (Method === 'applet_get'): return this._AppletGet();
+            case (Method === 'applet_patch'): return this._AppletPatch(Params);
+            case (Method === 'applet_save'): return this._AppletSave();
+            case (Method === 'applet_export'): return this._AppletExport();
+            case (Method === 'applet_import'): return this._AppletImport(Params);
+            case (Method === 'list_pages'): return this._listPages();
+            case (Method === 'list_widgets'): return this._listWidgets(Params);
+            case (Method === 'find'): return this._find(Params);
+            case (Method === 'page_visit'): return this._PageVisit(Params);
+            case (Method === 'page_get'): return this._PageGet(Params);
+            case (Method === 'page_patch'): return this._PagePatch(Params);
+            case (Method === 'page_add'): return this._PageAdd(Params);
+            case (Method === 'page_duplicate'): return this._PageDuplicate(Params);
+            case (Method === 'page_delete'): return this._PageDelete(Params);
+            case (Method === 'page_reorder'): return this._PageReorder(Params);
+            case (Method === 'widget_get'): return this._WidgetGet(Params);
+            case (Method === 'widget_patch'): return this._WidgetPatch(Params);
+            case (Method === 'widget_add'): return this._WidgetAdd(Params);
+            case (Method === 'widget_duplicate'): return this._WidgetDuplicate(Params);
+            case (Method === 'widget_delete'): return this._WidgetDelete(Params);
+            case (Method === 'widget_reorder'): return this._WidgetReorder(Params);
+            case (Method === 'widget_transfer'): return this._WidgetTransfer(Params);
+            case (Method === 'widget_get_rect'): return this._WidgetGetRect(Params);
+            case (Method === 'widget_set_rect'): return this._WidgetSetRect(Params);
+            case (Method === 'list_behaviors'): return this._listBehaviors(Params);
+            case (Method === 'behavior_get'): return this._BehaviorGet(Params);
+            case (Method === 'behavior_set'): return this._BehaviorSet(Params);
+            case (Method === 'behavior_rename'): return this._BehaviorRename(Params);
+            case (Method === 'behavior_delete'): return this._BehaviorDelete(Params);
+            case (Method === 'behavior_usage'): return this._BehaviorUsage(Params);
+            case (Method === 'script_get'): return this._ScriptGet(Params);
+            case (Method === 'script_set'): return this._ScriptSet(Params);
+            case (Method === 'error_report'): return this._ErrorReport(Params);
+            case (Method === 'configure'): return this._configure(Params);
+            case (Method === 'value_get'): return this._ValueGet(Params);
+            case (Method === 'value_set'): return this._ValueSet(Params);
+            case (Method === 'live_eval'): return this._LiveEval(Params);
+            case (Method === 'overlay_open'): return this._OverlayOpen(Params);
+            case (Method === 'overlay_close'): return this._OverlayClose(Params);
+            case (Method === 'dialog_open'): return this._DialogOpen(Params);
+            case (Method === 'dialog_close'): return this._DialogClose(Params);
+            case (Method === 'live_screenshot'): return this._LiveScreenshot();
+            default: throwError(`InvalidArgument: unknown method ${quoted(Method)}`);
+        }
+    }
+    /**** applet handlers ****/
+    _AppletInfo() {
+        var _a, _b, _c;
+        const Applet = this._Applet;
+        return {
+            name: (_a = Applet.Name) !== null && _a !== void 0 ? _a : null,
+            geometry: Applet.Geometry,
+            page_count: Applet.PageCount,
+            pages: Applet.PageList.map((Page, i) => {
+                var _a;
+                return ({
+                    index: i, name: (_a = Page.Name) !== null && _a !== void 0 ? _a : null
+                });
+            }),
+            visited_page: (_c = (_b = Applet.visitedPage) === null || _b === void 0 ? void 0 : _b.Name) !== null && _c !== void 0 ? _c : null,
+        };
+    }
+    _AppletGet() {
+        var _a, _b, _c, _d, _e;
+        const Applet = this._Applet;
+        return {
+            Name: (_a = Applet.Name) !== null && _a !== void 0 ? _a : null,
+            minWidth: Applet.minWidth,
+            maxWidth: (_b = Applet.maxWidth) !== null && _b !== void 0 ? _b : null,
+            minHeight: Applet.minHeight,
+            maxHeight: (_c = Applet.maxHeight) !== null && _c !== void 0 ? _c : null,
+            toBeCentered: Applet.toBeCentered,
+            withMobileFrame: Applet.withMobileFrame,
+            expectedOrientation: (_d = Applet.expectedOrientation) !== null && _d !== void 0 ? _d : null,
+            SnapToGrid: Applet.SnapToGrid,
+            GridWidth: Applet.GridWidth,
+            GridHeight: Applet.GridHeight,
+            HeadExtensions: (_e = Applet.HeadExtensions) !== null && _e !== void 0 ? _e : '',
+        };
+    }
+    _AppletPatch(Params) {
+        var _a;
+        const Props = (_a = Params.props) !== null && _a !== void 0 ? _a : {};
+        for (const Key of [
+            'Name', 'minWidth', 'maxWidth', 'minHeight', 'maxHeight',
+            'toBeCentered', 'withMobileFrame', 'expectedOrientation',
+            'SnapToGrid', 'GridWidth', 'GridHeight', 'HeadExtensions',
+        ]) {
+            if (Key in Props) {
+                this._perform(() => new WAD_AppletConfigurationOperation(Key, Props[Key]));
+            }
+        }
+        return null;
+    }
+    async _AppletSave() {
+        await this._Applet.preserve();
+        return null;
+    }
+    _AppletExport() {
+        return JSON.stringify(this._Applet.Serialization, null, 2);
+    }
+    _AppletImport(Params) {
+        const Serialization = JSON.parse(Params.serialization); // may fail
+        this._Applet.replaceWith(Serialization);
+        DesignerState.OperationHistory.length = 0; // the old applet is gone, the
+        DesignerState.OperationIndex = 0; // histories and selections
+        DesignerState.VisitHistory.length = 0; // no longer any apply
+        DesignerState.VisitIndex = -1;
+        DesignerState.selectedPages = [];
+        DesignerState.selectedWidgets = [];
+        this._Applet.preserve();
+        WAT_rerender();
+        return null;
+    }
+    /**** navigation and search handlers ****/
+    _listPages() {
+        return this._Applet.PageList.map((Page, i) => {
+            var _a, _b, _c;
+            return ({
+                index: i,
+                name: (_a = Page.Name) !== null && _a !== void 0 ? _a : null,
+                behavior: (_b = Page.Behavior) !== null && _b !== void 0 ? _b : null,
+                widget_count: Page.WidgetCount,
+                has_script: (((_c = Page.Script) !== null && _c !== void 0 ? _c : '').trim() !== ''),
+            });
+        });
+    }
+    _listWidgets(Params) {
+        const Page = this._PageFor(Params.page);
+        return Page.WidgetList.map((Widget, i) => {
+            var _a, _b;
+            return ({
+                index: i,
+                name: (_a = Widget.Name) !== null && _a !== void 0 ? _a : null,
+                behavior: (_b = Widget.Behavior) !== null && _b !== void 0 ? _b : null,
+                visible: (Widget.Visibility == true),
+                geometry: Widget.Geometry,
+            });
+        });
+    }
+    _find(Params) {
+        var _a, _b;
+        const Query = (_a = Params.query) !== null && _a !== void 0 ? _a : {};
+        const Scope = (_b = Query.scope) !== null && _b !== void 0 ? _b : 'all';
+        const NameMatcher = (Query.namePattern ? new RegExp(Query.namePattern, 'i') : undefined);
+        const BehaviorMatcher = (Query.behaviorPattern ? new RegExp(Query.behaviorPattern, 'i') : undefined);
+        const ValueContent = Query.valueContains;
+        const ScriptContent = Query.scriptContains;
+        const matchesVisual = (Visual) => {
+            var _a, _b, _c, _d;
+            if ((NameMatcher != null) && !NameMatcher.test((_a = Visual.Name) !== null && _a !== void 0 ? _a : '')) {
+                return false;
+            }
+            if ((BehaviorMatcher != null) && !BehaviorMatcher.test((_b = Visual.Behavior) !== null && _b !== void 0 ? _b : '')) {
+                return false;
+            }
+            if ((ScriptContent != null) && !((_c = Visual.Script) !== null && _c !== void 0 ? _c : '').includes(ScriptContent)) {
+                return false;
+            }
+            if (ValueContent != null) {
+                const Value = Visual.Value;
+                const ValueAsString = (typeof Value === 'string' ? Value : (_d = JSON.stringify(Value)) !== null && _d !== void 0 ? _d : '');
+                if (!ValueAsString.includes(ValueContent)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        const Result = [];
+        const PageList = this._Applet.PageList;
+        if (Scope !== 'widgets') {
+            PageList.forEach((Page, i) => {
+                var _a, _b;
+                if (matchesVisual(Page)) {
+                    Result.push({
+                        type: 'page', page: (_a = Page.Name) !== null && _a !== void 0 ? _a : null, index: i,
+                        behavior: (_b = Page.Behavior) !== null && _b !== void 0 ? _b : null,
+                    });
+                }
+            });
+        }
+        if (Scope !== 'pages') {
+            PageList.forEach((Page) => {
+                Page.WidgetList.forEach((Widget, i) => {
+                    var _a, _b, _c;
+                    if (matchesVisual(Widget)) {
+                        Result.push({
+                            type: 'widget', page: (_a = Page.Name) !== null && _a !== void 0 ? _a : null,
+                            widget: (_b = Widget.Name) !== null && _b !== void 0 ? _b : null, index: i,
+                            behavior: (_c = Widget.Behavior) !== null && _c !== void 0 ? _c : null,
+                        });
+                    }
+                });
+            });
+        }
+        return Result;
+    }
+    _PageVisit(Params) {
+        visitPage(this._PageFor(Params.page)); // uses the Designer visit history
+        return null;
+    }
+    /**** page handlers ****/
+    _PageGet(Params) {
+        var _a, _b, _c;
+        const Page = this._PageFor(Params.page);
+        const Result = {
+            index: Page.Index,
+            Name: (_a = Page.Name) !== null && _a !== void 0 ? _a : null,
+            Behavior: (_b = Page.Behavior) !== null && _b !== void 0 ? _b : null,
+        };
+        ((_c = Page.configurableProperties) !== null && _c !== void 0 ? _c : []).forEach((Descriptor) => {
+            Result[Descriptor.Name] = this._serializable(Page[Descriptor.Name]);
+        });
+        return Result;
+    }
+    _PagePatch(Params) {
+        var _a;
+        const Page = this._PageFor(Params.page);
+        const Props = (_a = Params.props) !== null && _a !== void 0 ? _a : {};
+        for (const Key of Object.keys(Props)) {
+            this._perform(() => new WAD_PageConfigurationOperation([Page], Key, Props[Key]));
+        }
+        return null;
+    }
+    _PageAdd(Params) {
+        var _a, _b, _c;
+        const InsertionIndex = (_a = Params.index) !== null && _a !== void 0 ? _a : this._Applet.PageCount;
+        const Serialization = (Params.serialization != null
+            ? JSON.parse(Params.serialization) // may fail
+            : Object.assign(Object.assign({ Behavior: null }, ((_b = Params.props) !== null && _b !== void 0 ? _b : {})), { WidgetList: [] }));
+        this._perform(() => new WAD_PageDeserializationOperation([Serialization], InsertionIndex));
+        const newPage = DesignerState.selectedPages[0]; // the op selects new pages
+        return { index: newPage.Index, name: (_c = newPage.Name) !== null && _c !== void 0 ? _c : null };
+    }
+    _PageDuplicate(Params) {
+        var _a, _b;
+        const Page = this._PageFor(Params.page);
+        const InsertionIndex = (_a = Params.index) !== null && _a !== void 0 ? _a : Page.Index + 1;
+        this._perform(() => new WAD_PageDeserializationOperation([Page.Serialization], InsertionIndex));
+        const newPage = DesignerState.selectedPages[0];
+        return { index: newPage.Index, name: (_b = newPage.Name) !== null && _b !== void 0 ? _b : null };
+    }
+    _PageDelete(Params) {
+        const Page = this._PageFor(Params.page);
+        this._perform(() => new WAD_PageDeletionOperation([Page]));
+        return null;
+    }
+    _PageReorder(Params) {
+        const Page = this._PageFor(Params.page);
+        this._perform(() => new WAD_PageShiftOperation([Page], [Params.new_index]));
+        return null;
+    }
+    /**** widget handlers ****/
+    _WidgetGet(Params) {
+        var _a, _b, _c;
+        const Widget = this._WidgetFor(this._PageFor(Params.page), Params.widget);
+        const Result = {
+            index: Widget.Index,
+            Name: (_a = Widget.Name) !== null && _a !== void 0 ? _a : null,
+            Behavior: (_b = Widget.Behavior) !== null && _b !== void 0 ? _b : null,
+            geometry: Widget.Geometry,
+            Value: this._serializable(Widget.Value),
+        };
+        ((_c = Widget.configurableProperties) !== null && _c !== void 0 ? _c : []).forEach((Descriptor) => {
+            Result[Descriptor.Name] = this._serializable(Widget[Descriptor.Name]);
+        });
+        return Result;
+    }
+    _WidgetPatch(Params) {
+        var _a;
+        const Widget = this._WidgetFor(this._PageFor(Params.page), Params.widget);
+        const Props = (_a = Params.props) !== null && _a !== void 0 ? _a : {};
+        for (const Key of Object.keys(Props)) {
+            this._perform(() => new WAD_WidgetConfigurationOperation([Widget], Key, [Props[Key]]));
+        }
+        return null;
+    }
+    _WidgetAdd(Params) {
+        var _a, _b, _c;
+        const Page = this._PageFor(Params.page);
+        const InsertionIndex = (_a = Params.index) !== null && _a !== void 0 ? _a : Page.WidgetCount;
+        const Serialization = Object.assign(Object.assign({}, ((_b = Params.props) !== null && _b !== void 0 ? _b : {})), { Behavior: Params.behavior });
+        if ((Params.geometry == null) && (Serialization.Offsets == null) &&
+            (Params.behavior != null)) {
+            const DefaultSize = DesignerState.Applet.DefaultSizeOfBehavior('widget', Params.behavior);
+            if (DefaultSize != null) { // "left-width" and "top-height" are
+                Serialization.Offsets = [
+                    10, DefaultSize.Width, 10, DefaultSize.Height
+                ];
+            }
+        }
+        this._perform(() => new WAD_WidgetDeserializationOperation([Serialization], Page, InsertionIndex));
+        const newWidget = DesignerState.selectedWidgets[0]; // the op selects new widgets
+        if (Params.geometry != null) {
+            const { x, y, width, height } = Params.geometry;
+            this._perform(() => new WAD_WidgetShapeOperation([newWidget], [{ x, y, Width: width, Height: height }]));
+        }
+        return { index: newWidget.Index, name: (_c = newWidget.Name) !== null && _c !== void 0 ? _c : null };
+    }
+    _WidgetDuplicate(Params) {
+        var _a, _b;
+        const Page = this._PageFor(Params.page);
+        const Widget = this._WidgetFor(Page, Params.widget);
+        const InsertionIndex = (_a = Params.index) !== null && _a !== void 0 ? _a : Widget.Index + 1;
+        this._perform(() => new WAD_WidgetDeserializationOperation([Widget.Serialization], Page, InsertionIndex));
+        const newWidget = DesignerState.selectedWidgets[0];
+        return { index: newWidget.Index, name: (_b = newWidget.Name) !== null && _b !== void 0 ? _b : null };
+    }
+    _WidgetDelete(Params) {
+        const Widget = this._WidgetFor(this._PageFor(Params.page), Params.widget);
+        this._perform(() => new WAD_WidgetDeletionOperation([Widget]));
+        return null;
+    }
+    _WidgetReorder(Params) {
+        const Widget = this._WidgetFor(this._PageFor(Params.page), Params.widget);
+        this._perform(() => new WAD_WidgetShiftOperation([Widget], [Params.new_index]));
+        return null;
+    }
+    _WidgetTransfer(Params) {
+        var _a;
+        const srcPage = this._PageFor(Params.src_page);
+        const Widget = this._WidgetFor(srcPage, Params.widget);
+        const dstPage = this._PageFor(Params.dst_page);
+        const Serialization = Widget.Serialization;
+        this._perform(() => new WAD_WidgetDeletionOperation([Widget]));
+        this._perform(() => new WAD_WidgetDeserializationOperation([Serialization], dstPage, dstPage.WidgetCount)); // n.b.: undoing a transfer takes TWO undo steps
+        const newWidget = DesignerState.selectedWidgets[0];
+        return { index: newWidget.Index, name: (_a = newWidget.Name) !== null && _a !== void 0 ? _a : null };
+    }
+    /**** geometry handlers ****/
+    _WidgetGetRect(Params) {
+        const Widget = this._WidgetFor(this._PageFor(Params.page), Params.widget);
+        const { x, y, Width, Height } = Widget.Geometry;
+        return { x, y, width: Width, height: Height, anchors: Widget.Anchors };
+    }
+    _WidgetSetRect(Params) {
+        const Widget = this._WidgetFor(this._PageFor(Params.page), Params.widget);
+        if (Params.anchors != null) { // anchors first - the geometry is then
+            this._perform(() => new WAD_WidgetConfigurationOperation([Widget], 'Anchors', [Params.anchors.slice()] // set relative to them
+            ));
+        }
+        const { x, y, width, height } = Params.rect;
+        this._perform(() => new WAD_WidgetShapeOperation([Widget], [{ x, y, Width: width, Height: height }]));
+        return null;
+    }
+    /**** behaviour handlers ****/
+    _listBehaviors(Params) {
+        const Applet = this._Applet;
+        const Categories = (Params.category == null
+            ? ['applet', 'page', 'widget']
+            : [Params.category]);
+        const Result = [];
+        Categories.forEach((Category) => {
+            const brokenBehaviors = Applet.brokenBehaviorsOfCategory(Category)
+                .map((Behavior) => Behavior.toLowerCase());
+            const unusedBehaviors = Applet.unusedBehaviorsOfCategory(Category)
+                .map((Behavior) => Behavior.toLowerCase());
+            Applet.BehaviorsOfCategory(Category).forEach((normalizedName) => {
+                const Registration = Applet._BehaviorPool[Category][normalizedName];
+                Result.push({
+                    category: Category,
+                    name: Registration.Name,
+                    origin: (BehaviorIsIntrinsic(normalizedName) ? 'intrinsic' : 'extrinsic'),
+                    missing: false,
+                    broken: brokenBehaviors.includes(normalizedName),
+                    unused: unusedBehaviors.includes(normalizedName),
+                });
+            });
+            Applet.missingBehaviorsOfCategory(Category).forEach((Behavior) => {
+                Result.push({
+                    category: Category,
+                    name: Behavior,
+                    origin: 'extrinsic',
+                    missing: true, broken: false, unused: false,
+                });
+            });
+        });
+        return Result;
+    }
+    _BehaviorGet(Params) {
+        var _a;
+        const Registration = this._BehaviorRegistration(Params.category, Params.name);
+        return (_a = Registration.activeScript) !== null && _a !== void 0 ? _a : '';
+    }
+    _BehaviorSet(Params) {
+        var _a, _b, _c;
+        const { category, name, script } = Params;
+        allowOneOf('behavior category', category, ['applet', 'page', 'widget']);
+        const Applet = this._Applet;
+        const normalizedName = String(name).toLowerCase();
+        const Registration = (_a = Applet._BehaviorPool[category]) === null || _a === void 0 ? void 0 : _a[normalizedName];
+        if (Registration == null) { // register a new behaviour
+            this._perform(() => new WAD_BehaviorDeserializationOperation({ BehaviorSet: { [category]: [{ Name: name, Script: script }] } }));
+        }
+        else { // rescript a known behaviour
+            Applet.prescriptBehaviorOfCategory(category, name, script);
+            this._perform(() => new WAD_BehaviorScriptApplicationOperation(category, name));
+        }
+        const ScriptError = (_c = (_b = Applet
+            ._BehaviorPool[category]) === null || _b === void 0 ? void 0 : _b[normalizedName]) === null || _c === void 0 ? void 0 : _c.Error;
+        return (ScriptError == null ? null : String(ScriptError));
+    }
+    _BehaviorRename(Params) {
+        const { category, name, new_name } = Params;
+        this._BehaviorRegistration(category, name); // fails if the name is unknown
+        this._perform(() => new WAD_BehaviorConfigurationOperation(category, name, 'Name', new_name));
+        return null;
+    }
+    _BehaviorDelete(Params) {
+        const { category, name } = Params;
+        this._BehaviorRegistration(category, name); // fails if the name is unknown
+        this._perform(() => new WAD_BehaviorDeletionOperation(category, name));
+        return null;
+    }
+    _BehaviorUsage(Params) {
+        const { category, name } = Params;
+        allowOneOf('behavior category', category, ['applet', 'page', 'widget']);
+        const Applet = this._Applet;
+        const normalizedName = String(name).toLowerCase();
+        const Result = [];
+        switch (category) {
+            case 'applet':
+                if (Applet.normalizedBehavior === normalizedName) {
+                    Result.push({ target: 'applet' });
+                }
+                break;
+            case 'page':
+                Applet.PageList.forEach((Page, i) => {
+                    var _a, _b;
+                    if (Page.normalizedBehavior === normalizedName) {
+                        Result.push({ target: (_a = Page.Name) !== null && _a !== void 0 ? _a : String(i), page: (_b = Page.Name) !== null && _b !== void 0 ? _b : null, index: i });
+                    }
+                });
+                break;
+            case 'widget':
+                Applet.PageList.forEach((Page) => {
+                    Page.WidgetList.forEach((Widget, i) => {
+                        var _a, _b;
+                        if (Widget.normalizedBehavior === normalizedName) {
+                            Result.push({
+                                target: `${Page.Name}/${Widget.Name}`,
+                                page: (_a = Page.Name) !== null && _a !== void 0 ? _a : null, widget: (_b = Widget.Name) !== null && _b !== void 0 ? _b : null, index: i,
+                            });
+                        }
+                    });
+                });
+        }
+        return Result;
+    }
+    /**** script and configuration handlers ****/
+    _ScriptGet(Params) {
+        var _a, _b;
+        const Visual = this._VisualFor(Params.target);
+        return {
+            active: (_a = Visual.activeScript) !== null && _a !== void 0 ? _a : '',
+            pending: (_b = Visual.pendingScript) !== null && _b !== void 0 ? _b : null,
+        };
+    }
+    _ScriptSet(Params) {
+        const Visual = this._VisualFor(Params.target);
+        Visual.pendingScript = Params.script;
+        switch (true) {
+            case ValueIsApplet(Visual):
+                this._perform(() => new WAD_AppletScriptApplicationOperation());
+                break;
+            case ValueIsPage(Visual):
+                this._perform(() => new WAD_PageScriptApplicationOperation([Visual]));
+                break;
+            default:
+                this._perform(() => new WAD_WidgetScriptApplicationOperation([Visual]));
+        }
+        const ScriptError = Visual.ScriptError;
+        return (ScriptError == null ? null : this._serializable(ScriptError));
+    }
+    _ErrorReport(Params) {
+        var _a;
+        const Visual = this._VisualFor(Params.target);
+        return {
+            is_broken: (Visual.isBroken == true),
+            error_report: this._serializable((_a = Visual.ErrorReport) !== null && _a !== void 0 ? _a : null),
+        };
+    }
+    _configure(Params) {
+        var _a;
+        const Visual = this._VisualFor(Params.target);
+        const Properties = (_a = Params.properties) !== null && _a !== void 0 ? _a : {};
+        for (const Key of Object.keys(Properties)) {
+            this._configureVisual(Visual, Key, Properties[Key]);
+        }
+        return null;
+    }
+    _ValueGet(Params) {
+        return this._serializable(this._VisualFor(Params.target).Value);
+    }
+    _ValueSet(Params) {
+        this._configureVisual(this._VisualFor(Params.target), 'Value', Params.value);
+        return null;
+    }
+    /**** live interaction handlers ****/
+    async _LiveEval(Params) {
+        var _a;
+        const Expression = String((_a = Params.expression) !== null && _a !== void 0 ? _a : '');
+        const Applet = this._Applet;
+        let Evaluator;
+        try { // single expressions come first,
+            Evaluator = new WAD_AsyncFunction('Applet', 'me', 'my', `"use strict"; return (${Expression})`);
+        }
+        catch (Signal) { // then multi-statement scripts
+            Evaluator = new WAD_AsyncFunction('Applet', 'me', 'my', Expression);
+        }
+        return this._serializable(await Evaluator(Applet, Applet, Applet));
+    }
+    _OverlayOpen(Params) {
+        const Visual = this._VisualFor(Params.target);
+        if (ValueIsPage(Visual))
+            throwError('InvalidArgument: overlays may only be opened on the applet or on widgets');
+        const Descriptor = { Name: Params.name };
+        if (Params.geometry != null) {
+            const { x, y, width, height } = Params.geometry;
+            Object.assign(Descriptor, { x, y, Width: width, Height: height });
+        }
+        ;
+        Visual.openOverlay(Descriptor);
+        return null;
+    }
+    _OverlayClose(Params) {
+        const Visual = this._VisualFor(Params.target);
+        if (Params.name == null) {
+            ;
+            Visual.closeAllOverlays();
+        }
+        else {
+            ;
+            Visual.closeOverlay(Params.name);
+        }
+        return null;
+    }
+    _DialogOpen(Params) {
+        this._Applet.openDialog({ Name: Params.name });
+        return null;
+    }
+    _DialogClose(Params) {
+        this._Applet.closeDialog(Params.name);
+        return null;
+    }
+    async _LiveScreenshot() {
+        const html2canvas = globalThis.html2canvas;
+        if (html2canvas == null)
+            throwError(`NotSupported: "html2canvas" not found - please add ` +
+                `${'<'}script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js">` +
+                `${'<'}/script> to this page`);
+        const AppletView = this._Applet.View;
+        if (AppletView == null)
+            throwError('InternalError: the applet is currently not rendered');
+        const Snapshot = await html2canvas(AppletView, { useCORS: true });
+        return Snapshot.toDataURL('image/png');
+    }
+}
+/**** the one and only MCP connector instance of this designer ****/
+const MCPConnector = new WAD_MCPConnector();
 //----------------------------------------------------------------------------//
 //                               Applet Resizer                               //
 //----------------------------------------------------------------------------//
@@ -4804,7 +5686,6 @@ function WAD_Toolbox() {
         />
         <${WAD_Icon} Icon="${IconFolder}/gear.png"
           active=${DialogIsOpen('SettingsDialog')}
-          enabled=${false}
           onClick=${(Event) => toggleDialog('SettingsDialog', Event)}
         />
 
@@ -7337,12 +8218,56 @@ function WAD_WidgetConfigurationPane() {
 //------------------------------------------------------------------------------
 function WAD_SettingsDialog() {
     const onClose = useCallback(() => closeDialog('SettingsDialog'));
-    const { Applet } = DesignerState;
+    const [BrokerURL, setBrokerURL] = useState(MCPConnector.URL);
+    const [AccessToken, setAccessToken] = useState(MCPConnector.Token);
+    const [TokenShallBeKept, setTokenShallBeKept] = useState(MCPConnector.TokenIsKept);
+    const doApply = useCallback(() => {
+        MCPConnector.configure(BrokerURL.trim(), AccessToken.trim(), TokenShallBeKept);
+    });
+    const doDisconnect = useCallback(() => {
+        MCPConnector.disconnect(); // also stops any auto-reconnection loop
+    });
+    const ConnectionState = (MCPConnector.isConnected
+        ? 'connected'
+        : MCPConnector.URL === '' ? 'not configured' : 'disconnected');
     return html `<${WAD_Dialog} Name="SettingsDialog" resizable=${true}
       onClose=${onClose}
     >
-     <${WAD_vertically} style="width:100%; height:100%; padding:4px">
+     <${WAD_vertically} style="width:100%; height:100%; padding:4px; gap:4px">
+       <${WAD_Label}><b>MCP Broker</b> (for AI assistants)</>
 
+       <${WAD_Label}>Broker WebSocket URL</>
+       <${WAD_TextlineInput} style="flex:0 0 auto"
+         Value=${BrokerURL} Placeholder="ws://localhost:3461/wat"
+         onInput=${(Event) => setBrokerURL(Event.target.value)}
+       />
+
+       <${WAD_Label}>Access Token</>
+       <${WAD_TextlineInput} Type="password" style="flex:0 0 auto"
+         Value=${AccessToken} Placeholder="secret token"
+         onInput=${(Event) => setAccessToken(Event.target.value)}
+       />
+
+       <${WAD_horizontally}>
+         <${WAD_Label}>remember Token permanently</>
+         <${WAD_Gap}/>
+         <${WAD_Checkbox}
+           Value=${TokenShallBeKept}
+           onInput=${(Event) => setTokenShallBeKept(Event.target.checked)}
+         />
+       </>
+
+       <${WAD_Gap}/>
+
+       <${WAD_horizontally} style="gap:4px">
+         <${WAD_Label}>Status: ${ConnectionState}</>
+         <${WAD_Gap}/>
+         <${WAD_Button} style="width:100px"
+           enabled=${MCPConnector.isConnected}
+           onClick=${doDisconnect}
+         >Disconnect</>
+         <${WAD_Button} style="width:80px" onClick=${doApply}>Apply</>
+       </>
      </>
     </>`;
 }
@@ -8330,4 +9255,5 @@ localforage.ready(async function () {
     });
     //      WAD_DesignerLayer.showErrorReport = showErrorReport
     useDesigner(WAD_DesignerLayer);
+    MCPConnector.connect(); // connects to a "WAT-AI-Broker" (if configured)
 });

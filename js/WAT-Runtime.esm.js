@@ -894,6 +894,17 @@ export function BehaviorIsIntrinsic(Behavior) {
     expectBehavior('behavior', Behavior);
     return IntrinsicBehaviors.has(Behavior.toLowerCase());
 }
+/**** DefaultSizeOfScript ****/
+// looks for a "DefaultSize" pragma in a (behavior) script - i.e., a comment
+// of the form "/**** DefaultSize <width>x<height> ****/" (or, alternatively,
+// "// DefaultSize: <width>x<height>") - and returns the given size, if found
+const WAT_DefaultSizePattern = /(?:\/\/|\/\*+)[ \t]*DefaultSize[ \t]*:?[ \t]*(\d+)[ \t]*x[ \t]*(\d+)/i;
+function DefaultSizeOfScript(Script) {
+    const Match = WAT_DefaultSizePattern.exec(Script);
+    return (Match == null
+        ? undefined
+        : { Width: parseInt(Match[1], 10), Height: parseInt(Match[2], 10) });
+}
 /**** registerIntrinsicBehavior ****/
 function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
     expectApplet('applet', Applet);
@@ -909,7 +920,8 @@ function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
     ScriptSource.indexOf('{') + 1, ScriptSource.lastIndexOf('}')).trim();
     // @ts-ignore TS7053 allow indexing
     Applet._BehaviorPool[Category][normalizedName] = {
-        Category, Name, activeScript, compiledScript, isNew: true
+        Category, Name, activeScript, compiledScript, isNew: true,
+        DefaultSize: DefaultSizeOfScript(activeScript)
     };
     IntrinsicBehaviors.add(normalizedName);
 }
@@ -3775,6 +3787,19 @@ export class WAT_Applet extends WAT_Visual {
         const { Name, activeScript } = Registration;
         return { Category, Name, activeScript };
     }
+    /**** DefaultSizeOfBehavior ****/
+    DefaultSizeOfBehavior(Category, Behavior) {
+        expectCategory('behavior category', Category);
+        expectBehavior('behavior name', Behavior);
+        const normalizedBehavior = Behavior.toLowerCase();
+        // @ts-ignore TS7053 allow indexing
+        const Registration = this._BehaviorPool[Category][normalizedBehavior];
+        if ((Registration === null || Registration === void 0 ? void 0 : Registration.DefaultSize) == null) {
+            return undefined;
+        }
+        const { Width, Height } = Registration.DefaultSize;
+        return { Width, Height }; // returns a fresh copy
+    }
     /**** registerBehaviorOfCategory ****/
     registerBehaviorOfCategory(Category, Behavior, Script) {
         expectCategory('behavior category', Category);
@@ -3791,7 +3816,8 @@ export class WAT_Applet extends WAT_Visual {
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior] = {
                 Category, Name: Behavior, activeScript: Script, isNew: true,
-                compiledScript, Error: undefined
+                compiledScript, Error: undefined,
+                DefaultSize: DefaultSizeOfScript(Script)
             };
         }
         catch (Signal) {
@@ -3799,7 +3825,8 @@ export class WAT_Applet extends WAT_Visual {
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior] = {
                 Category, Name: Behavior, activeScript: Script, isNew: false,
-                compiledScript: brokenBehavior, Error: Signal
+                compiledScript: brokenBehavior, Error: Signal,
+                DefaultSize: DefaultSizeOfScript(Script)
             };
         }
         uninstallStylesheetForBehavior(this, Category, Behavior);
@@ -7566,6 +7593,7 @@ collectInternalNames(); // idempotent - may be called multiple times
 function registerIntrinsicBehaviorsIn(Applet) {
     /**** plain_Widget ****/
     const WAT_plainWidget = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 100x100 ****/
         my.configurableProperties = [
             { Name: 'visiblePattern', Label: 'visible Pattern', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
@@ -7577,6 +7605,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.plain_Widget', WAT_plainWidget);
     /**** Outline ****/
     const WAT_Outline = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Outline {
         outline:dotted 1px blue;
@@ -7616,6 +7645,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
     /**** WidgetPane ****/
     const WAT_WidgetPane = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x120 ****/
         var _a, _b;
         installStylesheet(`
       .WAT.Widget > .WAT.WidgetPane {
@@ -7762,6 +7792,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // JCL, this behavior only contributes widget geometry, file dropping and
     // the WAT property interface
     const WAT_TextView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x80 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.TextView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7853,6 +7884,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // (JCL_ui.HTMLView renders raw HTML without sanitization - just like this
     //  behavior did before, i.e., the security level remains unchanged)
     const WAT_HTMLView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.HTMLView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7943,6 +7975,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // first use ("loadMarkdownLibraries"). This behavior only contributes
     // widget geometry, file dropping and the WAT property interface
     const WAT_MarkdownView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.MarkdownView {
         left:0px; top:0px; width:100%; height:100%;
@@ -8050,6 +8083,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // the WAT property interface (WAT's "ImageScaling" and "ImageAlignment"
     // are mapped onto JCL's "Scaling" and "Alignment" props)
     const WAT_ImageView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.ImageView {
         left:0px; top:0px; width:100%; height:100%;
@@ -8167,6 +8201,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // interface (WAT's "ImageScaling" and "ImageAlignment" are mapped onto
     // JCL's "Scaling" and "Alignment" props)
     const WAT_SVGView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.SVGView {
         left:0px; top:0px; width:100%; height:100%;
@@ -8201,6 +8236,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "SandboxPermissions" and "ReferrerPolicy" are mapped onto JCL's "allow",
     // "allowFullscreen", "Sandbox" and "ReferrerPolicy" props
     const WAT_WebView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 320x240 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.WebView {
         left:0px; top:0px; width:100%; height:100%;
@@ -8262,6 +8298,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // (nota bene: JCL's Title/Subtitle/Label/Fineprint read "PropSet.class"
     //  literally before merging - the "class" prop is therefore lowercase here)
     const WAT_TitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x32 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.TitleView {
         left:0px; top:0px; width:100%; height:100%;
@@ -8284,6 +8321,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // a thin WAT wrapper around the "ui.Subtitle" component from the
     // "javascript-code-library" (JCL) - see WAT_TitleView for details
     const WAT_SubtitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x26 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.SubtitleView {
         left:0px; top:2px; width:100%; height:100%;
@@ -8306,6 +8344,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // a thin WAT wrapper around the "ui.Label" component from the
     // "javascript-code-library" (JCL) - see WAT_TitleView for details
     const WAT_LabelView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.LabelView {
         left:0px; top:4px; width:100%; height:100%;
@@ -8329,6 +8368,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // a thin WAT wrapper around the "ui.Fineprint" component from the
     // "javascript-code-library" (JCL) - see WAT_TitleView for details
     const WAT_FineprintView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x16 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.FineprintView {
         left:0px; top:0px; width:100%; height:100%;
@@ -8354,6 +8394,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // JCL, this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 24x24 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Icon {
         left:1px; top:1px; right:1px; bottom:1px;
@@ -8409,6 +8450,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     const WAT_ArrowHeadPositions = ['none', 'start', 'end', 'both'];
     /**** StraightArrow ****/
     const WAT_StraightArrow = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 100x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.StraightArrow {
         overflow:visible;
@@ -8508,6 +8550,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.StraightArrow', WAT_StraightArrow);
     /**** CurvedArrow ****/
     const WAT_CurvedArrow = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 100x100 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.CurvedArrow {
         overflow:visible;
@@ -8587,6 +8630,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // a small, single-line credit line reading "made with WebApp Tinkerer",
     // where "WebApp Tinkerer" links to the WAT GitHub repository
     const WAT_madeWithWAT = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.madeWithWAT {
         left:0px; top:0px; width:100%; height:100%;
@@ -8612,6 +8656,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Button = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 80x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Button {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8644,6 +8689,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Checkbox = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 20x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Checkbox {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8678,6 +8724,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Radiobutton = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 20x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Radiobutton {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8713,6 +8760,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Gauge = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Gauge {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8754,6 +8802,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry, the WAT progress color
     // and the WAT property interface
     const WAT_Progressbar = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x20 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Progressbar {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8798,6 +8847,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // JCL, this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Slider = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 160x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Slider {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8846,6 +8896,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_TextlineInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.TextlineInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8901,6 +8952,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_PasswordInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.PasswordInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8951,6 +9003,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_NumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.NumberInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9003,6 +9056,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_PhoneNumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.PhoneNumberInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9059,6 +9113,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_EMailAddressInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.EMailAddressInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9114,6 +9169,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_URLInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.URLInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9169,6 +9225,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_TimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.TimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9218,6 +9275,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_DateTimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.DateTimeInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9267,6 +9325,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_DateInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 150x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.DateInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9321,6 +9380,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_WeekInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 150x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.WeekInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9376,6 +9436,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_MonthInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 150x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.MonthInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9426,6 +9487,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput);
     /**** FileInput ****/
     const WAT_FileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.FileInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9520,6 +9582,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry, file type filtering and
     // the WAT property interface
     const WAT_PseudoFileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 30x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoFileInput > div {
         user-select:none;
@@ -9602,6 +9665,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // file slicing now come from JCL, this behavior only contributes widget
     // geometry, the WAT property interface and the WAT callbacks
     const WAT_FileDropArea = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.FileDropArea {
         left:0px; top:0px; width:100%; height:100%;
@@ -9651,6 +9715,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // of local input against external changes now come from JCL, this behavior
     // only contributes widget geometry and the WAT property interface
     const WAT_SearchInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.SearchInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9706,6 +9771,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_ColorInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 60x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.ColorInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9772,6 +9838,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // entry without any value of its own, replacing WAT's former
     // "<option hidden selected>" logic)
     const WAT_DropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.DropDown {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9810,6 +9877,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "javascript-code-library" (JCL) - JCL now also provides WAT's former
     // "<option hidden selected>" logic for missing or unmatched "Value"s
     const WAT_PseudoDropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 30x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoDropDown {
         left:0px; top:0px; width:100%; height:100%;
@@ -9868,6 +9936,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // only contributes widget geometry, the WAT property interface and the
     // WAT-specific file dropping support
     const WAT_TextInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.TextInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9973,67 +10042,84 @@ function registerIntrinsicBehaviorsIn(Applet) {
     };
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextInput', WAT_TextInput);
     /**** FlatListView ****/
+    // a thin WAT wrapper around the "legacy.FlatListView" component from the
+    // "javascript-code-library" (JCL) - item rendering, selection handling and
+    // drag-and-drop sorting now come from JCL, this behavior only contributes
+    // widget geometry, the index-based selection interface known from earlier
+    // WAT versions and the WAT property and callback interface
+    //
+    // from a WAT script, use
+    //   me.Value = [ 'first','second',... ]
+    //     // persisted "designer" content (one item per line in the designer)
+    //   me.List = [...]           // volatile script data - overrides "me.Value"
+    //     // (arbitrary values are allowed, "undefined" clears the override)
+    //   me.selectedIndices = [...]      // 0-based indices into the shown list
+    //     // (also configurable in the designer - but kept volatile)
+    //   me.DragMIMEType / me.DragEffect       // enable dragging items *out* of
+    //                                         // this list (payload: JSON)
+    //   me.on('selection-change',(selectedIndices) => {...})
+    //   me.on('item-selected',  (Item,Index) => {...})
+    //   me.on('item-deselected',(Item,Index) => {...})
+    //   me.on('click',       (Event,Index) => {...})
+    //   me.on('double-click',(Event,Index) => {...})
+    //   me.on('item-move',(sortedList,movedItems) => {...})
+    //     // registering "item-move" makes the list drag-sortable; moves are
+    //     // applied to the shown list automatically (and persisted when
+    //     // "me.Value" is being shown)
+    //   me.on('items-dropped',(Effect,draggedItems) => {...})
+    //     // reports items dragged out of this list after a successful drop
+    //   me.on('render-item',(Item,Index,isSelected) => {...})
+    //
+    // n.b.: "List" and "selectedIndices" are deliberately kept volatile (in
+    // contrast to "me.Value") - list views usually show projections of
+    // script-managed state and should be filled in an "onReady" callback
+    //
+    // n.b.: since JCL list items must be unique plain objects, all list items
+    // are internally wrapped in { Value } boxes - scripts never see these boxes
     const WAT_FlatListView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x240 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.FlatListView {
-        display:flex; position:relative; flex-flow:column nowrap; align-items:stretch;
-        overflow:scroll; overflow-x:auto; overflow-y:scroll;
-        border:solid 1px #888888; border-radius:2px;
-        background:#e8f0ff; padding:0px 2px 0px 4px;
+        left:0px; top:0px; width:100%; height:100%;
       }
 
-      .WAT.Widget > .WAT.FlatListView.empty {
-        overflow:hidden;
-        background-color:#EEEEEE;
-      }
-
-      .WAT.Widget > .WAT.FlatListView > div.Placeholder {
-        display:flex; position:relative;
-          flex-flow:column nowrap; align-items:center; justify-content:center;
-        width:100%; height:100%;
-      }
-
-      .WAT.Widget > .WAT.FlatListView > div.Placeholder > * {
-        position:relative;
-      }
-
-      .WAT.Widget > .WAT.FlatListView > div.ListItem {
-        display:block; position:relative; overflow:hidden; flex:0 0 auto;
-        left:0px; top:0px; width:auto; height:22px; line-height:22px;
-        background:none;
-        border:none; border-bottom:solid 1px lightgray;
-        white-space:nowrap; text-overflow:ellipsis;
-        user-select:none; pointer-events:auto;
-      }
-
-      .WAT.Widget > .WAT.FlatListView > div.ListItem:last-child {
-        border:none; border-bottom:solid 1px transparent;
-      }
-
-      .WAT.Widget > .WAT.FlatListView > div.ListItem.selected {
-        background:dodgerblue; color:white;
-      }
-    `);
+      .WAT.Widget > .WAT.FlatListView.placeholder {
+        align-items:center !important; /* JCL's "align-items:stretch        */
+      }                                /* !important" would otherwise win   */
+    `); // geometry only - plus a fix for JCL's own placeholder
+        // centering - the look itself still comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
+            { Name: 'Value', Default: [],
+                EditorType: 'linelist-input', AccessorsFor: 'memoized', withCallback: true,
+                Placeholder: '(one item per line)' },
             { Name: 'Placeholder', Default: '(empty)',
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'SelectionLimit', Label: 'Selection Limit',
                 EditorType: 'integer-input', AccessorsFor: 'memoized',
                 minValue: 0, Stepping: 1 }, // *C* SelectionLimit == null means "unlimited"
+            { Name: 'selectedIndices', Label: 'selected Indices',
+                EditorType: 'integerlist-input', AccessorsFor: 'none',
+                minValue: 0 }, // volatile!
+            { Name: 'DragMIMEType', Label: 'Drag MIME Type',
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Placeholder: '(setting a MIME type enables dragging out)' },
+            { Name: 'DragEffect', Label: 'Drag Effect',
+                EditorType: 'drop-down', AccessorsFor: 'memoized',
+                ValueList: ['none', 'copy', 'copyLink', 'copyMove', 'link', 'linkMove', 'move', 'all'] },
         ];
         Object_assign(me, {
-            /**** List ****/
+            /**** List - volatile script data, overriding the persisted "Value" ****/
             get List() {
-                const Candidate = acceptableValue(this._List, ValueIsList, []);
-                return (Candidate == null ? [] : Candidate.slice());
+                var _a;
+                return (this._List == null ? ((_a = this.Value) !== null && _a !== void 0 ? _a : []) : this._List.slice());
             },
             set List(newList) {
-                expectList('list', newList);
+                allowList('list', newList); // "undefined" removes the override again
                 if (ValuesDiffer(this._List, newList)) {
                     this._List = (newList == null ? undefined : newList.slice());
-                    this.rerender();
-                }
+                    this.rerender(); // the renderer re-boxes the list items and the
+                } // render validation prunes the selection
             },
             /**** selectedIndices ****/
             get selectedIndices() {
@@ -10057,15 +10143,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 }
             },
         });
-        /**** Renderer ****/
-        onRender(function () {
-            let { List, Placeholder, SelectionLimit, selectedIndices } = this;
-            const effectiveSelectionLimit = (SelectionLimit == null ? Infinity : SelectionLimit);
-            /**** validate selection ****/
-            const oldSelectedIndices = (this._selectedIndices || []).slice();
+        /**** validatedSelection - dedupes, clips and limits a selection ****/
+        function validatedSelection(selectedIndices, ListLength, SelectionLimit) {
             const selectedIndexSet = Object.create(null);
-            selectedIndices = selectedIndices.filter((selectedIndex) => {
-                if ((selectedIndex < List.length) &&
+            const Result = selectedIndices.filter((selectedIndex) => {
+                if ((selectedIndex < ListLength) &&
                     !(selectedIndex in selectedIndexSet)) {
                     selectedIndexSet[selectedIndex] = true;
                     return true;
@@ -10074,17 +10156,31 @@ function registerIntrinsicBehaviorsIn(Applet) {
                     return false;
                 }
             });
-            if (selectedIndices.length > effectiveSelectionLimit) {
-                const deselectedIndices = selectedIndices.slice(SelectionLimit);
-                selectedIndices.length = SelectionLimit;
-                deselectedIndices.forEach((deselectedIndex) => {
-                    delete selectedIndexSet[deselectedIndex];
-                });
+            if (Result.length > SelectionLimit) {
+                Result.length = SelectionLimit;
             }
+            return Result;
+        }
+        /**** Renderer ****/
+        onRender(function () {
+            var _a;
+            const { Placeholder, SelectionLimit, DragMIMEType, DragEffect } = this;
+            const effectiveSelectionLimit = (SelectionLimit == null ? Infinity : SelectionLimit);
+            /**** box the shown list (the volatile "List" or the persisted "Value") ****/
+            const shownList = (this._List == null ? ((_a = this.Value) !== null && _a !== void 0 ? _a : []) : this._List);
+            if ((this._boxedList == null) || ValuesDiffer(this._shownList, shownList)) {
+                this._shownList = shownList.slice();
+                this._boxedList = this._shownList.map((Item) => ({ Value: Item }) // *C* JCL expects list items to
+                ); // be unique plain objects
+            }
+            const List = this._shownList;
+            const boxedList = this._boxedList;
+            /**** validate selection (fires deferred callbacks upon changes) ****/
+            const oldSelectedIndices = (this._selectedIndices || []).slice();
+            const selectedIndices = validatedSelection(oldSelectedIndices, boxedList.length, effectiveSelectionLimit);
             this._selectedIndices = selectedIndices;
             if (ValuesDiffer(oldSelectedIndices, selectedIndices)) {
-                const IndicesToDeselect = oldSelectedIndices.filter((selectedIndex) => !(selectedIndex in selectedIndexSet));
-                const IndicesToSelect = selectedIndices.filter((selectedIndex) => (oldSelectedIndices.indexOf(selectedIndex) < 0));
+                const IndicesToDeselect = oldSelectedIndices.filter((selectedIndex) => (selectedIndices.indexOf(selectedIndex) < 0));
                 setTimeout(() => {
                     this.on('selection-change')(selectedIndices.slice());
                     // *C* pass a copy - callbacks must not mutate the internal array
@@ -10092,99 +10188,375 @@ function registerIntrinsicBehaviorsIn(Applet) {
                         // *C* "List" may have shrunk - pass "undefined" for items gone by now
                         this.on('item-deselected')((deselectedIndex < List.length ? List[deselectedIndex] : undefined), deselectedIndex);
                     });
-                    // *C* currently unreachable - render validation can only remove indices
-                    IndicesToSelect.forEach((selectedIndex) => {
-                        this.on('item-selected')(List[selectedIndex], selectedIndex);
-                    });
                 }, 0);
             }
-            /**** _onClick ****/
-            const _onClick = (Event, Index) => {
-                Event.stopImmediatePropagation();
-                Event.preventDefault();
-                if (effectiveSelectionLimit === 0) {
-                    this.on('click')(Event, Index);
-                    return;
+            /**** JCL callback adapters ****/
+            const _onSelectionChange = (newSelection) => {
+                const newSelectedIndices = newSelection.map((Box) => boxedList.indexOf(Box)).filter((Index) => (Index >= 0));
+                const IndicesToDeselect = selectedIndices.filter((Index) => (newSelectedIndices.indexOf(Index) < 0));
+                const IndicesToSelect = newSelectedIndices.filter((Index) => (selectedIndices.indexOf(Index) < 0));
+                this._selectedIndices = newSelectedIndices;
+                this.on('selection-change')(newSelectedIndices.slice());
+                // *C* pass a copy - callbacks must not mutate the internal array
+                IndicesToDeselect.forEach((deselectedIndex) => {
+                    this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
+                });
+                IndicesToSelect.forEach((selectedIndex) => {
+                    this.on('item-selected')(List[selectedIndex], selectedIndex);
+                });
+                this.rerender();
+            };
+            const _onItemClick = (Box, _List, Index, Event) => {
+                if (Event.detail === 2) {
+                    this.on('double-click')(Event, Index);
                 }
-                let SelectionChanged = false;
-                let IndicesToSelect, IndicesToDeselect;
-                if (Event.shiftKey || Event.metaKey || Event.ctrlKey) {
-                    SelectionChanged = true;
-                    if (ItemIsSelected(Index)) {
-                        IndicesToDeselect = [Index];
-                        selectedIndices = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
-                    }
-                    else {
-                        if (selectedIndices.length >= effectiveSelectionLimit) {
-                            IndicesToDeselect = [selectedIndices.shift()];
-                        }
-                        IndicesToSelect = [Index];
-                        selectedIndices.push(Index);
-                    }
+                this.on('click')(Event, Index);
+            }; // *C* JCL has no double-click hook - "Event.detail" serves here
+            const registeredMoveCallback = this.on('item-move');
+            const _onItemMove = (sortedBoxedList, movedBoxes, _TargetBox, _Direction) => {
+                const selectedBoxes = (this._selectedIndices || []).map((Index) => boxedList[Index]);
+                const sortedItems = sortedBoxedList.map((Box) => Box.Value);
+                this._boxedList = sortedBoxedList.slice();
+                this._shownList = sortedItems.slice();
+                if (this._List == null) { // persist rearranged "Value" content
+                    this.Value = sortedItems;
                 }
                 else {
-                    const ItemWasSelected = ItemIsSelected(Index);
-                    IndicesToDeselect = selectedIndices.filter((selectedIndex) => (selectedIndex !== Index));
-                    SelectionChanged = !ItemWasSelected || (IndicesToDeselect.length > 0);
-                    IndicesToSelect = (ItemWasSelected ? [] : [Index]);
-                    selectedIndices = [Index];
+                    this._List = sortedItems.slice();
                 }
-                this._selectedIndices = selectedIndices;
-                if (SelectionChanged) {
-                    this.on('selection-change')(selectedIndices.slice());
-                    // *C* pass a copy - callbacks must not mutate the internal array
-                }
-                // @ts-ignore TS2454 let's check IF variables were assigned
-                if (IndicesToDeselect != null) {
-                    IndicesToDeselect.forEach((deselectedIndex) => {
-                        this.on('item-deselected')(List[deselectedIndex], deselectedIndex);
-                    });
-                }
-                // @ts-ignore TS2454 let's check IF variables were assigned
-                if (IndicesToSelect != null) {
-                    IndicesToSelect.forEach((selectedIndex) => {
-                        this.on('item-selected')(List[selectedIndex], selectedIndex);
-                    });
-                }
+                this._selectedIndices = selectedBoxes.map((Box) => this._boxedList.indexOf(Box)).filter((Index) => (Index >= 0));
+                registeredMoveCallback(sortedItems.slice(), movedBoxes.map((Box) => Box.Value));
                 this.rerender();
-                this.on('click')(Event, Index);
             };
-            /**** _onDblClick ****/
-            const _onDblClick = (Event, Index) => {
-                this.on('double-click')(Event, Index);
+            const _onItemsDropped = (Effect, draggedBoxes, _List) => {
+                this.on('items-dropped')(Effect, draggedBoxes.map((Box) => Box.Value));
             };
-            /**** ItemIsSelected ****/
-            function ItemIsSelected(Index) {
-                return (Index in selectedIndexSet);
-            }
             /**** actual rendering ****/
             const registeredRenderer = this.on('render-item');
-            const ItemRenderer = (registeredRenderer === noCallback
-                ? ((Item) => Item + '')
-                : registeredRenderer);
+            const ItemRenderer = (Box, _List, Index, isSelected) => {
+                var _a;
+                return html `<div class="default" dangerouslySetInnerHTML=${{
+                    __html: '' + (registeredRenderer === noCallback
+                        ? Box.Value
+                        : ((_a = registeredRenderer(Box.Value, Index, isSelected)) !== null && _a !== void 0 ? _a : ''))
+                }}/>`;
+            };
             // *C* SECURITY: list items are rendered as raw HTML without sanitization (XSS risk!)
-            return html `<div class="WAT Content ${List.length === 0 ? 'empty' : ''} FlatListView">
-        ${List.length === 0
-                ? html `<div class="Placeholder"><div>${Placeholder}</></>`
-                : List.map((Item, Index) => {
-                    var _a;
-                    return html `<div
-              class="ListItem ${ItemIsSelected(Index) ? 'selected' : ''}"
-              dangerouslySetInnerHTML=${{
-                        __html: ((_a = ItemRenderer(Item, Index, ItemIsSelected(Index))) !== null && _a !== void 0 ? _a : '')
-                    }}
-              onClick=${(Event) => _onClick(Event, Index)}
-              onDblClick=${(Event) => _onDblClick(Event, Index)}
-            />`;
-                })}
-      </>`;
+            return html `<${JCL_legacy.FlatListView} Class="WAT Content FlatListView"
+        List=${boxedList} Placeholder=${Placeholder}
+        ListItemRenderer=${ItemRenderer}
+        selectedItems=${selectedIndices.map((Index) => boxedList[Index])}
+        SelectionLimit=${SelectionLimit == null ? undefined : SelectionLimit}
+        DragMIMEType=${(DragMIMEType !== null && DragMIMEType !== void 0 ? DragMIMEType : '').trim() === '' ? undefined : DragMIMEType}
+        DragEffect=${DragEffect}
+        SerializeListItems=${(Boxes) => JSON.stringify(Boxes.map((Box) => Box.Value))}
+        onListItemClick=${_onItemClick}
+        onSelectionChange=${_onSelectionChange}
+        onListItemMove=${registeredMoveCallback === noCallback ? undefined : _onItemMove}
+        onListItemsDropped=${_onItemsDropped}
+      />`;
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.FlatListView', WAT_FlatListView);
-    registerIntrinsicBehavior(// *C* legacy alias - "traditional_controls" was renamed to "other_controls"
-    Applet, 'widget', 'traditional_controls.FlatListView', WAT_FlatListView);
+    /**** NestedListView ****/
+    // a thin WAT wrapper around the "legacy.NestedListView" component from the
+    // "javascript-code-library" (JCL) - expansion handling, nesting-aware
+    // selection and drag-and-drop sorting all come from JCL, this behavior only
+    // contributes widget geometry, a default structure convention and the WAT
+    // property and callback interface
+    //
+    // from a WAT script, use
+    //   me.Value = '[ { "Label":"...", "Content":[...] }, ... ]'
+    //     // persisted "designer" content - a JSON array of plain objects,
+    //     // nested via their "Content" (as in JCL's "ContentOfListItem")
+    //   me.List = [...]           // volatile script data - overrides "me.Value"
+    //     // (plain objects, nested via "Content", "undefined" clears it again)
+    //   me.selectedItems / me.expandedItems          // lists of item references
+    //     // (also configurable as JSON in the designer - entries are matched
+    //     // against the shown items by reference, deep equality or Label/Name)
+    //   me.DragMIMEType / me.DragEffect       // enable dragging items *out* of
+    //                                         // this list (payload: JSON)
+    //   me.on('selection-change',(selectedItems) => {...})
+    //   me.on('expansion-change',(expandedItems) => {...})
+    //   me.on('item-click',(Item,Event) => {...})
+    //   me.on('item-move', (ItemsToMove,TargetItem,Direction) => {...})
+    //     // registering "item-move" makes the list drag-sortable; with the
+    //     // default "Content" convention, moves are applied automatically
+    //     // (and persisted when "me.Value" is being shown)
+    //   me.on('items-dropped',(Effect,draggedItems) => {...})
+    //     // reports items dragged out of this list after a successful drop
+    //   me.on('render-item',(Item,isSelected,isPlain,isExpanded) => {...})
+    //   me.on('content-of-item',  (Item) => {...})     // replace the "Content"...
+    //   me.on('container-of-item',(Item) => {...})     // ...convention - if wanted,
+    //                                      // register both *before* setting "List"
+    //
+    // by default, items display their "Label" (or "Name") property
+    //
+    // n.b.: "List", "selectedItems" and "expandedItems" are deliberately kept
+    // volatile (in contrast to "me.Value") - list views usually show projections
+    // of script-managed state and should be filled in an "onReady" callback
+    const WAT_NestedListView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 200x240 ****/
+        installStylesheet(`
+      .WAT.Widget > .WAT.NestedListView {
+        left:0px; top:0px; width:100%; height:100%;
+      }
+    `); // geometry only - the look itself comes from JCL
+        /**** custom Properties ****/
+        my.configurableProperties = [
+            { Name: 'Value', Placeholder: '(JSON, nested via "Content")',
+                EditorType: 'json-input', AccessorsFor: 'memoized', withCallback: true },
+            { Name: 'Placeholder', Default: '(empty)',
+                EditorType: 'textline-input', AccessorsFor: 'memoized' },
+            { Name: 'SelectionLimit', Label: 'Selection Limit',
+                EditorType: 'integer-input', AccessorsFor: 'memoized',
+                minValue: 0, Stepping: 1 }, // *C* SelectionLimit == null means "unlimited"
+            { Name: 'selectedItems', Label: 'selected Items',
+                EditorType: 'json-input', AccessorsFor: 'none' }, // volatile!
+            { Name: 'expandedItems', Label: 'expanded Items',
+                EditorType: 'json-input', AccessorsFor: 'none' }, // volatile!
+            { Name: 'DragMIMEType', Label: 'Drag MIME Type',
+                EditorType: 'textline-input', AccessorsFor: 'memoized',
+                Placeholder: '(setting a MIME type enables dragging out)' },
+            { Name: 'DragEffect', Label: 'Drag Effect',
+                EditorType: 'drop-down', AccessorsFor: 'memoized',
+                ValueList: ['none', 'copy', 'copyLink', 'copyMove', 'link', 'linkMove', 'move', 'all'] },
+        ];
+        /**** structure handling (by default, items nest via their "Content") ****/
+        const ParentMap = new WeakMap();
+        let knownItems = new Set();
+        function ContentOfItem(Item) {
+            const customCallback = me.on('content-of-item');
+            if (customCallback !== noCallback) {
+                return customCallback(Item);
+            }
+            return (ValueIsList(Item.Content) ? Item.Content : undefined);
+        }
+        function ContainerOfItem(Item) {
+            const customCallback = me.on('container-of-item');
+            if (customCallback !== noCallback) {
+                return customCallback(Item);
+            }
+            return ParentMap.get(Item);
+        }
+        function usesCustomStructure() {
+            return ((me.on('content-of-item') !== noCallback) ||
+                (me.on('container-of-item') !== noCallback));
+        }
+        function updateStructureMapsFor(List) {
+            knownItems = new Set();
+            function scan(List, Container) {
+                List.forEach((Item) => {
+                    if (Container == null) {
+                        ParentMap.delete(Item);
+                    }
+                    else {
+                        ParentMap.set(Item, Container);
+                    }
+                    knownItems.add(Item);
+                    const innerList = ContentOfItem(Item);
+                    if (innerList != null) {
+                        scan(innerList, Item);
+                    }
+                });
+            }
+            scan(List);
+        }
+        /**** shownListOf - the volatile "List" or the parsed, persisted "Value" ****/
+        function shownListOf(Visual) {
+            if (Visual._List != null) {
+                return Visual._List;
+            }
+            const ValueString = Visual.Value;
+            if ((ValueString == null) || (ValueString.trim() === '')) {
+                return [];
+            }
+            if (Visual._parsedValueSource !== ValueString) {
+                let parsedValue = undefined;
+                try {
+                    parsedValue = JSON.parse(ValueString);
+                }
+                catch (Signal) {
+                    parsedValue = undefined;
+                }
+                Visual._parsedValueSource = ValueString;
+                Visual._parsedValue = (ValueIsListSatisfying(parsedValue, ValueIsPlainObject) ? parsedValue : []);
+                updateStructureMapsFor(Visual._parsedValue);
+            }
+            return Visual._parsedValue;
+        }
+        /**** resolvedItemsFrom - resolves designer/script input to references ****/
+        function resolvedItemsFrom(Visual, Candidate, Description) {
+            shownListOf(Visual); // refreshes the structure maps
+            if (ValueIsString(Candidate)) { // e.g. from the designer
+                try {
+                    Candidate = JSON.parse(Candidate);
+                }
+                catch (Signal) {
+                    throwError(`InvalidArgument: invalid JSON given as ${Description}`);
+                }
+            }
+            expectListSatisfying(Description, Candidate, ValueIsPlainObject);
+            const ItemList = [];
+            Candidate.forEach((Entry) => {
+                const Item = (knownItems.has(Entry) ? Entry : knownItemMatching(Entry));
+                if (Item != null) {
+                    ItemList.push(Item);
+                }
+            });
+            return ItemList;
+        }
+        /**** knownItemMatching - by deep equality or by "Label"/"Name" ****/
+        function knownItemMatching(Entry) {
+            var _a, _b;
+            for (const Item of knownItems) {
+                if (ValuesAreEqual(Item, Entry)) {
+                    return Item;
+                }
+            }
+            const EntryLabel = (_a = Entry.Label) !== null && _a !== void 0 ? _a : Entry.Name;
+            if (EntryLabel != null) {
+                for (const Item of knownItems) {
+                    if (((_b = Item.Label) !== null && _b !== void 0 ? _b : Item.Name) === EntryLabel) {
+                        return Item;
+                    }
+                }
+            }
+            return undefined;
+        }
+        /**** applyMoveTo - applies a drag-and-drop move to a "Content" tree ****/
+        function applyMoveTo(RootList, ItemsToMove, TargetItem, Direction) {
+            const ListHolding = (Item) => {
+                const Container = ParentMap.get(Item);
+                return (Container == null ? RootList : Container.Content);
+            };
+            ItemsToMove.forEach((Item) => {
+                const ItemList = ListHolding(Item);
+                const ItemIndex = ItemList.indexOf(Item);
+                if (ItemIndex >= 0) {
+                    ItemList.splice(ItemIndex, 1);
+                }
+            });
+            const TargetList = ListHolding(TargetItem);
+            let TargetIndex = TargetList.indexOf(TargetItem);
+            if (Direction === 'after') {
+                TargetIndex += 1;
+            }
+            TargetList.splice(TargetIndex, 0, ...ItemsToMove);
+            updateStructureMapsFor(RootList);
+        }
+        Object_assign(me, {
+            /**** List - volatile script data, overriding the persisted "Value" ****/
+            get List() {
+                return shownListOf(this).slice();
+            },
+            set List(newList) {
+                allowListSatisfying('list', newList, ValueIsPlainObject);
+                if (ValuesDiffer(this._List, newList)) {
+                    this._List = (newList == null ? undefined : newList.slice());
+                    if (this._List == null) {
+                        this._parsedValueSource = undefined; // forces re-mapping of...
+                    }
+                    else { // ...the "Value" contents
+                        updateStructureMapsFor(this._List);
+                    }
+                    shownListOf(this); // refreshes the structure maps
+                    this._selectedItems = (this._selectedItems || []).filter((Item) => knownItems.has(Item));
+                    this._expandedItems = (this._expandedItems || []).filter((Item) => knownItems.has(Item));
+                    this.rerender();
+                }
+            },
+            /**** selectedItems - a list of item references, not copies ****/
+            get selectedItems() {
+                return (this._selectedItems || []).slice();
+            },
+            set selectedItems(newItems) {
+                const ItemList = resolvedItemsFrom(this, newItems, 'list of selected items');
+                if (ValuesDiffer(this._selectedItems, ItemList)) {
+                    this._selectedItems = ItemList;
+                    // JCL removes duplicates and nested selections
+                    this.rerender();
+                }
+            },
+            /**** expandedItems - a list of item references, not copies ****/
+            get expandedItems() {
+                return (this._expandedItems || []).slice();
+            },
+            set expandedItems(newItems) {
+                const ItemList = resolvedItemsFrom(this, newItems, 'list of expanded items');
+                if (ValuesDiffer(this._expandedItems, ItemList)) {
+                    this._expandedItems = ItemList; // JCL removes duplicates
+                    this.rerender();
+                }
+            },
+        });
+        /**** Renderer ****/
+        onRender(function () {
+            const { Placeholder, SelectionLimit, DragMIMEType, DragEffect } = this;
+            const List = shownListOf(this);
+            const selectedItems = this._selectedItems || [];
+            const expandedItems = this._expandedItems || [];
+            const _onSelectionChange = (newSelection) => {
+                this._selectedItems = newSelection.slice();
+                this.on('selection-change')(newSelection.slice());
+                // *C* pass a copy - callbacks must not mutate the internal array
+                this.rerender();
+            };
+            const _onExpansionChange = (newExpansion) => {
+                this._expandedItems = newExpansion.slice();
+                this.on('expansion-change')(newExpansion.slice());
+                // *C* pass a copy - callbacks must not mutate the internal array
+                this.rerender();
+            };
+            const _onItemClick = (Item, Event) => {
+                this.on('item-click')(Item, Event);
+            };
+            const registeredMoveCallback = this.on('item-move');
+            const _onItemMove = (ItemsToMove, TargetItem, Direction) => {
+                if (!usesCustomStructure()) { // auto-apply with default convention...
+                    applyMoveTo(List, ItemsToMove, TargetItem, Direction);
+                    if (this._List == null) { // persist rearranged "Value" content
+                        this._parsedValueSource = JSON.stringify(List, null, 2);
+                        this.Value = this._parsedValueSource;
+                    } // keeps "_parsedValue" (and item identities)
+                } // ...for custom structures, the callback has to do that
+                registeredMoveCallback(ItemsToMove, TargetItem, Direction);
+                this.rerender();
+            };
+            const _onItemsDropped = (Effect, draggedItems, _List) => {
+                this.on('items-dropped')(Effect, draggedItems.slice());
+            };
+            const registeredRenderer = this.on('render-item');
+            const ItemRenderer = (Item, isSelected, isPlain, isExpanded, InsertionDirection) => {
+                var _a, _b, _c;
+                return html `<div class="default" dangerouslySetInnerHTML=${{
+                    __html: '' + (registeredRenderer === noCallback
+                        ? ((_b = (_a = Item.Label) !== null && _a !== void 0 ? _a : Item.Name) !== null && _b !== void 0 ? _b : Item)
+                        : ((_c = registeredRenderer(Item, isSelected, isPlain, isExpanded)) !== null && _c !== void 0 ? _c : ''))
+                }}/>`;
+            };
+            // *C* SECURITY: custom items are rendered as raw HTML without sanitization (XSS risk!)
+            return html `<${JCL_legacy.NestedListView} Class="WAT Content NestedListView"
+        List=${List} Placeholder=${Placeholder}
+        ContentOfListItem=${ContentOfItem} ContainerOfListItem=${ContainerOfItem}
+        ListItemRenderer=${ItemRenderer}
+        selectedItems=${selectedItems}
+        SelectionLimit=${SelectionLimit == null ? undefined : SelectionLimit}
+        expandedItems=${expandedItems}
+        DragMIMEType=${(DragMIMEType !== null && DragMIMEType !== void 0 ? DragMIMEType : '').trim() === '' ? undefined : DragMIMEType}
+        DragEffect=${DragEffect}
+        onListItemClick=${_onItemClick}
+        onSelectionChange=${_onSelectionChange}
+        onExpansionChange=${_onExpansionChange}
+        onListItemMove=${registeredMoveCallback === noCallback ? undefined : _onItemMove}
+        onListItemsDropped=${_onItemsDropped}
+      />`;
+        });
+    };
+    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.NestedListView', WAT_NestedListView);
     /**** TextlineTab ****/
     const WAT_TextlineTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 100x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.TextlineTab {
         font-weight:bold; color:black;
@@ -10225,6 +10597,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     Applet, 'widget', 'traditional_controls.TextlineTab', WAT_TextlineTab);
     /**** IconTab ****/
     const WAT_IconTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 30x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.IconTab        { border:solid 2px transparent; border-radius:0px }
       .WAT.Widget > .WAT.active.IconTab { border-bottom:solid 2px black }
@@ -10297,6 +10670,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // import map of the hosting page)
     const WAT_QRCodeECCLevels = ['L', 'M', 'Q', 'H'];
     const WAT_QRCodeView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 120x120 ****/
         const legacyQRCodeView = JCL_legacy.QRCodeView;
         installStylesheet(`
       .WAT.Widget > .WAT.QRCodeView {
@@ -10344,14 +10718,20 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // callback interface
     //
     // from a WAT script, use
-    //   me.Messages = [...]                 // strings or { Type,Text } objects
+    //   me.Value = [...]                    // strings or { Type,Text } objects
+    //     // (also configurable as JSON in the designer; "annotation" entries
+    //     // with "Renderer" functions remain script-only)
+    //   me.Messages                                  // an alias for "me.Value"
     //   me.addMessage('Hi!','assistant')            // appends a single message
     //   me.on('submit',(Text,Event) => {...})   // reports submitted user input
+    //   onValueChange(() => {...})            // reports any change of the list
     //
-    // n.b.: "Messages" is kept in "me.memoized" and therefore persisted as long
-    // as it contains strings and plain objects only - "annotation" entries (with
-    // "Renderer" functions) still render but are skipped upon serialization
+    // n.b.: the message list is kept in "me.memoized" and therefore persisted
+    // as long as it contains strings and plain objects only - "annotation"
+    // entries (with "Renderer" functions) still render but are skipped upon
+    // serialization
     const WAT_ChatView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 240x320 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.ChatView {
         left:0px; top:0px; width:100%; height:100%;
@@ -10359,6 +10739,9 @@ function registerIntrinsicBehaviorsIn(Applet) {
     `); // geometry only - the look itself comes from JCL
         /**** custom Properties ****/
         my.configurableProperties = [
+            { Name: 'Value', // the message list as JSON,...
+                EditorType: 'json-input', AccessorsFor: 'none' },
+            // ...persisted via the accessor below
             { Name: 'HelloMessage', Label: 'Hello Message',
                 EditorType: 'text-input', AccessorsFor: 'memoized' },
             { Name: 'Placeholder', Default: 'type a message...',
@@ -10369,30 +10752,42 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
         ];
         Object_assign(me, {
-            /**** Messages ****/
-            get Messages() {
+            /**** Value - the message list itself ****/
+            get Value() {
                 const Candidate = acceptableValue(this.memoized.Messages, ValueIsList, []);
                 return (Candidate == null ? [] : Candidate.slice());
             },
-            set Messages(newMessages) {
+            set Value(newMessages) {
+                if (ValueIsString(newMessages)) { // e.g. from the designer
+                    try {
+                        newMessages = JSON.parse(newMessages);
+                    }
+                    catch (Signal) {
+                        throwError('InvalidArgument: invalid JSON given as message list');
+                    }
+                }
                 expectList('message list', newMessages);
                 if (ValuesDiffer(this.memoized.Messages, newMessages)) {
                     this.memoized.Messages = newMessages.slice();
+                    this.on('Value')(this.Value);
                     this.rerender();
                 }
             },
+            /**** Messages - a mere alias for "Value" ****/
+            get Messages() { return this.Value; },
+            set Messages(newMessages) { this.Value = newMessages; },
             /**** addMessage ****/
             addMessage: function (Text, Type) {
                 expectText('message text', Text);
                 allowOneOf('message type', Type, ['user', 'assistant']);
-                this.Messages = [
-                    ...this.Messages, (Type == null ? Text : { Type, Text })
+                this.Value = [
+                    ...this.Value, (Type == null ? Text : { Type, Text })
                 ];
             },
         });
         /**** Renderer ****/
         onRender(function () {
-            const { Enabling, HelloMessage, Messages, Placeholder, Rows, SubmitLabel } = this;
+            const { Enabling, HelloMessage, Value, Placeholder, Rows, SubmitLabel } = this;
             const _onSubmit = (Text, Event) => {
                 if (this.Enabling == false) {
                     return;
@@ -10401,7 +10796,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
             };
             return html `<${JCL_legacy.ChatView} Class="WAT Content ChatView"
         HelloMessage=${(HelloMessage !== null && HelloMessage !== void 0 ? HelloMessage : '').trim() === '' ? undefined : HelloMessage}
-        Messages=${Messages} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : 'type a message...'}
+        Messages=${Value} Placeholder=${Placeholder !== null && Placeholder !== void 0 ? Placeholder : 'type a message...'}
         Rows=${Rows !== null && Rows !== void 0 ? Rows : 3}
         SubmitLabel=${(SubmitLabel !== null && SubmitLabel !== void 0 ? SubmitLabel : '').trim() === '' ? undefined : SubmitLabel}
         disabled=${Enabling === false}
@@ -10417,21 +10812,31 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // renderers and drag-and-drop, this behavior adds widget geometry, board
     // data management and the WAT property and callback interface
     //
-    // "Columns" is a list of plain { Id,Title,... } objects, "Tasks" a flat list
-    // of plain { Id,Title,Description,ColumnId,... } objects - both are kept in
-    // "me.memoized" and therefore persisted. task moves (by drag-and-drop) are
-    // applied to "Tasks" automatically. from a WAT script, use
+    // the canonical "Value" holds the columns *with* their tasks embedded:
+    //   me.Value = [ { Id:'todo', Title:'To Do', Tasks:[
+    //                  { Id:'t1', Title:'...', Description:'...' }, ...
+    //                ] }, ... ]
+    //     // (also configurable as JSON in the designer)
+    // internally, the board keeps plain "Columns" ({ Id,Title,... }) and a flat
+    // "Tasks" list ({ Id,Title,Description,ColumnId,... }) - both remain
+    // available as script-level accessors, both are kept in "me.memoized" and
+    // therefore persisted. task moves (by drag-and-drop) are applied to "Tasks"
+    // automatically. from a WAT script, use
     //   me.on('task-move',   (Task,FromColumn,ToColumn,ToIndex) => {...})
     //   me.on('task-click',  (Task,Column,Event) => {...})
     //   me.on('column-click',(Column,Event) => {...})
+    //   onValueChange(() => {...})           // reports any change of the board
     // and, optionally, override the default renderers with
     //   me.on('render-task',(Task,List,Index,isSelected,InsertionDirection) => ...)
     //   me.on('render-column-header',(Column,TaskList) => ...)
+    //
+    // n.b.: tasks whose "ColumnId" matches no column are not part of "Value"
     const WAT_KanbanBoardColumns = [
         { Id: 'todo', Title: 'To Do' }, { Id: 'doing', Title: 'Doing' },
         { Id: 'done', Title: 'Done' },
     ]; // sensible defaults for new widgets
     const WAT_KanbanBoard = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 480x320 ****/
         const ValueIsObjectList = (Value) => (ValueIsListSatisfying(Value, ValueIsPlainObject));
         installStylesheet(`
       .WAT.Widget > .WAT.KanbanBoard {
@@ -10441,8 +10846,24 @@ function registerIntrinsicBehaviorsIn(Applet) {
         opacity:0.6; pointer-events:none;
       }
     `); // geometry and disabling only - the look itself comes from JCL
+        /**** parsedObjectList - accepts JSON strings, e.g. from the designer ****/
+        function parsedObjectList(Candidate, Description) {
+            if (ValueIsString(Candidate)) {
+                try {
+                    Candidate = JSON.parse(Candidate);
+                }
+                catch (Signal) {
+                    throwError(`InvalidArgument: invalid JSON given as ${Description}`);
+                }
+            }
+            expectListSatisfying(Description, Candidate, ValueIsPlainObject);
+            return Candidate;
+        }
         /**** custom Properties ****/
         my.configurableProperties = [
+            { Name: 'Value', // columns with their tasks as JSON:...
+                EditorType: 'json-input', AccessorsFor: 'none' },
+            // ...[ { Id,Title,..., Tasks:[...] }, ... ] - persisted
             { Name: 'Placeholder', Default: '(empty)',
                 EditorType: 'textline-input', AccessorsFor: 'memoized' },
             { Name: 'SelectionLimit', Label: 'Selection Limit', Default: 1,
@@ -10453,6 +10874,35 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
         ];
         Object_assign(me, {
+            /**** Value - the columns with their tasks embedded ****/
+            get Value() {
+                const Tasks = this.Tasks;
+                return this.Columns.map((Column) => (Object.assign(Object.assign({}, Column), { Tasks: Tasks.filter((Task) => (Task.ColumnId === Column.Id)) })));
+            },
+            set Value(newValue) {
+                newValue = parsedObjectList(newValue, 'kanban board contents');
+                const newColumns = [], newTasks = [];
+                newValue.forEach((Entry) => {
+                    const { Tasks } = Entry, Column = __rest(Entry, ["Tasks"]);
+                    if (Column.Id == null)
+                        throwError('InvalidArgument: kanban board columns require an "Id"');
+                    newColumns.push(Column);
+                    if (Tasks != null) {
+                        expectListSatisfying('column task list', Tasks, ValueIsPlainObject);
+                        Tasks.forEach((Task) => {
+                            newTasks.push(Object.assign(Object.assign({}, Task), { ColumnId: Column.Id }));
+                        });
+                    }
+                });
+                if (ValuesDiffer(this.memoized.Columns, newColumns) ||
+                    ValuesDiffer(this.memoized.Tasks, newTasks)) {
+                    this.memoized.Columns = newColumns;
+                    this.memoized.Tasks = newTasks;
+                    this._normalizedColumns = undefined; // *C* invalidates the memo
+                    this.on('Value')(this.Value);
+                    this.rerender();
+                }
+            },
             /**** Columns ****/
             get Columns() {
                 if (this._normalizedColumns == null) {
@@ -10466,10 +10916,11 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return this._normalizedColumns;
             },
             set Columns(newColumns) {
-                expectListSatisfying('column list', newColumns, ValueIsPlainObject);
+                newColumns = parsedObjectList(newColumns, 'column list');
                 if (ValuesDiffer(this.memoized.Columns, newColumns)) {
                     this.memoized.Columns = newColumns.slice();
                     this._normalizedColumns = undefined; // *C* invalidates the memo
+                    this.on('Value')(this.Value);
                     this.rerender();
                 }
             },
@@ -10479,9 +10930,10 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return (Candidate == null ? [] : Candidate.slice());
             },
             set Tasks(newTasks) {
-                expectListSatisfying('task list', newTasks, ValueIsPlainObject);
+                newTasks = parsedObjectList(newTasks, 'task list');
                 if (ValuesDiffer(this.memoized.Tasks, newTasks)) {
                     this.memoized.Tasks = newTasks.slice();
+                    this.on('Value')(this.Value);
                     this.rerender();
                 }
             },
@@ -10507,6 +10959,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 newTasks.splice(InsertionIndex, 0, movedTask);
                 this.memoized.Tasks = newTasks; // deliberately bypasses the setter -...
                 this.rerender(); // ..."movedTask" was already mutated in place
+                this.on('Value')(this.Value);
                 this.on('task-move')(movedTask, FromColumn, ToColumn, ToIndex);
             };
             const TaskRenderer = this.on('render-task');
@@ -10544,6 +10997,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         'python', 'xml', 'java', 'yaml'
     ];
     const WAT_CodeEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 320x240 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.CodeEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10616,6 +11070,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     //   me.EditorHandle     // toggleBold/setLink/insertImage/... (once mounted)
     // e.g. in order to implement a custom toolbar with other WAT widgets
     const WAT_RichTextEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 320x240 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.RichTextEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10673,20 +11128,39 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // update "Value" silently, whereas assignments to "Value" reload the sheet.
     // "Columns" optionally takes a list of jspreadsheet column descriptors
     // (plain { type,title,width,... } objects) but is only applied upon
-    // mounting. from a WAT script, use
+    // mounting. both are also configurable as JSON in the designer. from a
+    // WAT script, use
     //   me.Value = [ [1,2],[3,4] ]              // replaces the sheet contents
     //   me.on('input',(Data) => {...})          // reports any contents change
     //   me.on('cell-change',(x,y,newValue) => {...})
     //   me.EditorHandle          // getCell/setCell/getData/... (once mounted)
     const WAT_Spreadsheet = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 400x240 ****/
         const ValueIsRowList = (Value) => (ValueIsListSatisfying(Value, ValueIsList));
         installStylesheet(`
       .WAT.Widget > .WAT.Spreadsheet {
         left:0px; top:0px; width:100%; height:100%;
       }
     `); // geometry only - the look itself comes from JCL
+        /**** parsedJSON - accepts JSON strings, e.g. from the designer ****/
+        function parsedJSON(Candidate, Description) {
+            if (ValueIsString(Candidate)) {
+                try {
+                    return JSON.parse(Candidate);
+                }
+                catch (Signal) {
+                    throwError(`InvalidArgument: invalid JSON given as ${Description}`);
+                }
+            }
+            return Candidate;
+        }
         /**** custom Properties ****/
         my.configurableProperties = [
+            { Name: 'Value', // a JSON list of row lists,...
+                EditorType: 'json-input', AccessorsFor: 'none' },
+            // ...persisted via the accessor below
+            { Name: 'Columns', // jspreadsheet column descriptors (JSON)
+                EditorType: 'json-input', AccessorsFor: 'none' },
             { Name: 'minRows', Label: 'min. Rows', Default: 5,
                 EditorType: 'integer-input', AccessorsFor: 'memoized', minValue: 0 },
             { Name: 'minColumns', Label: 'min. Columns',
@@ -10701,6 +11175,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return (Candidate == null ? [[]] : Candidate.slice());
             },
             set Value(newData) {
+                newData = parsedJSON(newData, 'spreadsheet contents');
                 expectListSatisfying('spreadsheet contents', newData, ValueIsList);
                 this.memoized.Value = newData.slice();
                 this._renderedData = this.memoized.Value; // a new reference reloads...
@@ -10712,6 +11187,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
                 return acceptableValue(this.memoized.Columns, (Value) => ValueIsListSatisfying(Value, ValueIsPlainObject));
             },
             set Columns(newColumns) {
+                newColumns = parsedJSON(newColumns, 'column descriptors');
                 allowListSatisfying('column descriptors', newColumns, ValueIsPlainObject);
                 if (ValuesDiffer(this.memoized.Columns, newColumns)) {
                     this.memoized.Columns = newColumns === null || newColumns === void 0 ? void 0 : newColumns.slice();
@@ -10782,6 +11258,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         'rect', 'ellipse', 'line', 'polyline', 'bezier', 'freehand', 'text'
     ];
     const WAT_DrawingEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 400x300 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.DrawingEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10906,6 +11383,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
         'text', 'fill', 'eyeDropper', 'pan', 'select'
     ];
     const WAT_BitmapEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 400x300 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.BitmapEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -11182,6 +11660,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "BackgroundColor" is additionally applied to the note's frame (not just
     // its content area) so that the whole note changes colour
     const WAT_stickyTextNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 160x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.stickyTextNote {
         left:0px; top:0px; width:100%; height:100%;
@@ -11305,6 +11784,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "BackgroundColor" is additionally applied to the note's frame (not just
     // its content area) so that the whole note changes colour
     const WAT_stickyHTMLNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 160x120 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.stickyHTMLNote {
         left:0px; top:0px; width:100%; height:100%;
@@ -11456,6 +11936,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "style" below makes DialogBase itself fill the widget (also keeping
     // "BaseRef" correctly positioned for the edit dialog's anchor)
     const WAT_stickyMarkdownNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
+        /**** DefaultSize 160x120 ****/
         installStylesheet(`
       .WAT.Widget .WAT.stickyMarkdownNote {
         left:0px; top:0px; width:100%; height:100%;
