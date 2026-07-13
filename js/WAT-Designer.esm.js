@@ -4280,6 +4280,12 @@ class WAD_MCPConnector {
             writable: true,
             value: undefined
         });
+        Object.defineProperty(this, "_lastError", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: undefined
+        });
         /**** _handle - routes an incoming request to its handler ****/
         Object.defineProperty(this, "_HandlerForMethod", {
             enumerable: true,
@@ -4342,13 +4348,14 @@ class WAD_MCPConnector {
         this._Token = Token;
         this._keepToken = keepToken;
     }
-    /**** URL, Token, TokenIsKept, isConnected ****/
+    /**** URL, Token, TokenIsKept, isConnected, lastError ****/
     get URL() { return this._URL; }
     get Token() { return this._Token; }
     get TokenIsKept() { return this._keepToken; }
     get isConnected() {
         return (this._Socket != null) && (this._Socket.readyState === WebSocket.OPEN);
     }
+    get lastError() { return this._lastError; }
     /**** configure - applies and persists new settings, then reconnects ****/
     configure(URL, Token, TokenShallBeKept) {
         this._URL = URL;
@@ -4391,6 +4398,7 @@ class WAD_MCPConnector {
             this._Socket.close();
             this._Socket = undefined;
         }
+        this._lastError = undefined;
         WAT_rerender();
     }
     /**** _openSocket - establishes the WebSocket and wires all handlers ****/
@@ -4410,7 +4418,7 @@ class WAD_MCPConnector {
             WAT_rerender(); // updates an open "SettingsDialog"
         };
         Socket.onmessage = async ({ data }) => {
-            var _a, _b;
+            var _a, _b, _c;
             let Request;
             try {
                 Request = JSON.parse(data);
@@ -4418,13 +4426,23 @@ class WAD_MCPConnector {
             catch (Signal) {
                 return;
             }
+            if (Request.type === 'welcome') { // handshake accepted:
+                this._lastError = undefined; // clear any earlier error
+                WAT_rerender();
+                return;
+            }
+            if (Request.type === 'error') { // handshake rejected by
+                this._lastError = (_a = Request.reason) !== null && _a !== void 0 ? _a : 'unknown error'; // the broker -
+                WAT_rerender(); // report why
+                return;
+            }
             let result = null;
             let error = null;
             try {
-                result = await this._handle(Request.method, (_a = Request.params) !== null && _a !== void 0 ? _a : {});
+                result = await this._handle(Request.method, (_b = Request.params) !== null && _b !== void 0 ? _b : {});
             }
             catch (Signal) {
-                error = String((_b = Signal === null || Signal === void 0 ? void 0 : Signal.message) !== null && _b !== void 0 ? _b : Signal);
+                error = String((_c = Signal === null || Signal === void 0 ? void 0 : Signal.message) !== null && _c !== void 0 ? _c : Signal);
             }
             Socket.send(JSON.stringify({ id: Request.id, result, error }));
         };
@@ -6926,9 +6944,9 @@ function WAD_SettingsDialog() {
     const doDisconnect = useCallback(() => {
         MCPConnector.disconnect(); // also stops any auto-reconnection loop
     });
-    const ConnectionState = (MCPConnector.isConnected
-        ? 'connected'
-        : MCPConnector.URL === '' ? 'not configured' : 'disconnected');
+    const ConnectionState = (MCPConnector.isConnected ? 'connected' :
+        MCPConnector.lastError != null ? `error: ${MCPConnector.lastError}` :
+            MCPConnector.URL === '' ? 'not configured' : 'disconnected');
     return html `<${WAD_Dialog} Name="SettingsDialog" resizable=${true}
       onClose=${onClose}
     >
