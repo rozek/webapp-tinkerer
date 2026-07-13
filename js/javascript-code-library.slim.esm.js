@@ -2471,7 +2471,14 @@ function Oa(e, t, n = !1) {
     return;
   const o = "Stylesheet-for-" + Rt(e);
   let a = document.head.querySelector('style[id="' + o + '"]');
-  a == null ? (a = document.createElement("style"), a.id = o, a.textContent = t, document.head.append(a), eo[e] = t) : n ? (a.textContent = t, eo[e] = t) : console.warn('multiple definitions for stylesheet "' + e + '"');
+  if (a == null) {
+    a = document.createElement("style"), a.id = o, a.textContent = t;
+    const r = document.head.querySelectorAll(
+      'style[id^="Stylesheet-for-"]'
+    ), i = r.length > 0 ? r[r.length - 1] : document.getElementById("JCL-Stylesheet");
+    i == null ? document.head.prepend(a) : i.after(a), eo[e] = t;
+  } else
+    n ? (a.textContent = t, eo[e] = t) : console.warn('multiple definitions for stylesheet "' + e + '"');
 }
 function rd(e) {
   if (hi("stylesheet name", e), typeof document > "u")
