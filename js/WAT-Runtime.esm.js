@@ -783,9 +783,11 @@ if (WATStyleElement == null) {
     user-select: none;
   }
 
-  .disabled, [disabled] { opacity:0.3 }
-  .readonly             { background:none }
-  .no-pointer-events    { pointer-events:none }
+  :is(:disabled, .disabled, [disabled]):not(
+    :is(:disabled, .disabled, [disabled]) *
+  ) { opacity:0.3 }
+  .readonly          { background:none }
+  .no-pointer-events { pointer-events:none }
 
   .textured { background-repeat:repeat }
 

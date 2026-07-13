@@ -7363,11 +7363,11 @@ function WAD_SearchInputPane() {
         WAT_rerender();
     }
     return html `<${WAD_vertically} style="width:100%; height:100%; padding:4px; overflow-y:auto">
-      <${JCL_ui.tabular} Columns=${2} ColGap=${6}
+      <${JCL_ui.tabular} Columns=${2} ColGap=${6} RowGap=${0}
         ColumnClasses="shrinking expanding" Style="width:100%"
       >
         <${WAD_Label} style="margin:2px 0px">for:</>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_TextlineInput} Type="search" style="flex:1 0 auto"
             Placeholder="search phrase" Value=${Criteria.SearchPhrase}
             onInput=${(Event) => set('SearchPhrase', Event.target.value)}
@@ -7375,7 +7375,7 @@ function WAD_SearchInputPane() {
         </>
 
         <${WAD_Label} style="margin:2px 0px">matching:</>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_DropDown} style="flex:1 0 auto"
             Value=${Criteria.MatchMode}
             Options=${['whole phrase', 'all words', 'any word', 'regular expression']}
@@ -7384,7 +7384,7 @@ function WAD_SearchInputPane() {
         </>
 
         <${WAD_Label} style="margin:2px 0px">case:</>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_DropDown} style="flex:1 0 auto"
             Value=${Criteria.CaseMode} Options=${['sensitively', 'insensitively']}
             onInput=${(Event) => set('CaseMode', Event.target.value)}
@@ -7392,7 +7392,7 @@ function WAD_SearchInputPane() {
         </>
 
         <${WAD_Label} style="margin:2px 0px; padding-top:6px">in:</>
-        <${WAD_horizontally} style="padding-top:6px">
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Checkbox} Value=${Criteria.NameIsChecked}
             onInput=${(Event) => set('NameIsChecked', Event.target.checked)}
           />
@@ -7404,7 +7404,7 @@ function WAD_SearchInputPane() {
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Checkbox} Value=${Criteria.SynopsisIsChecked}
             onInput=${(Event) => set('SynopsisIsChecked', Event.target.checked)}
           />
@@ -7416,7 +7416,7 @@ function WAD_SearchInputPane() {
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Checkbox} Value=${Criteria.PropertyIsChecked}
             onInput=${(Event) => set('PropertyIsChecked', Event.target.checked)}
           />
@@ -7424,11 +7424,17 @@ function WAD_SearchInputPane() {
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
+          <div style="width:30px"/>
           <${WAD_Radiobutton} enabled=${Criteria.PropertyIsChecked}
             Value=${Criteria.PropertyScope === 'all'} onInput=${() => set('PropertyScope', 'all')}
           />
           <${WAD_Label}>all</>
+        </>
+
+        <div/>
+        <${WAD_horizontally} style="margin:0px">
+          <div style="width:30px"/>
           <${WAD_Radiobutton} enabled=${Criteria.PropertyIsChecked}
             Value=${Criteria.PropertyScope === 'given'} onInput=${() => set('PropertyScope', 'given')}
           />
@@ -7440,19 +7446,19 @@ function WAD_SearchInputPane() {
         </>
 
         <${WAD_Label} style="margin:2px 0px; padding-top:6px">within:</>
-        <${WAD_horizontally} style="padding-top:6px">
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Radiobutton} Value=${Criteria.Scope === 'applet'} onInput=${() => set('Scope', 'applet')}/>
           <${WAD_Label}>whole applet</>
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Radiobutton} Value=${Criteria.Scope === 'parts'} onInput=${() => set('Scope', 'parts')}/>
           <${WAD_Label}>these parts of an applet</>
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Checkbox}
             enabled=${Criteria.Scope === 'parts'} Value=${Criteria.BehaviorIsChecked}
             onInput=${(Event) => set('BehaviorIsChecked', Event.target.checked)}
@@ -7467,7 +7473,7 @@ function WAD_SearchInputPane() {
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Checkbox}
             enabled=${Criteria.Scope === 'parts'} Value=${Criteria.PageIsChecked}
             onInput=${(Event) => set('PageIsChecked', Event.target.checked)}
@@ -7482,7 +7488,7 @@ function WAD_SearchInputPane() {
         </>
 
         <div/>
-        <${WAD_horizontally}>
+        <${WAD_horizontally} style="margin:0px">
           <${WAD_Checkbox}
             enabled=${Criteria.Scope === 'parts'} Value=${Criteria.WidgetIsChecked}
             onInput=${(Event) => set('WidgetIsChecked', Event.target.checked)}

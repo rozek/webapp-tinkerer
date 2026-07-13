@@ -2451,9 +2451,11 @@ function ad() {
 
 /**** some common settings ****/
 
-  .disabled, [disabled] { opacity:0.4 }
-  .readonly             { background:none }
-  .pointer-unaware      { pointer-events:none }
+  :is(:disabled, .disabled, [disabled]):not(
+    :is(:disabled, .disabled, [disabled]) *
+  ) { opacity:0.4 }
+  .readonly        { background:none }
+  .pointer-unaware { pointer-events:none }
 
 /**** some special settings ****/
 
@@ -6099,8 +6101,9 @@ const hp = /* @__PURE__ */ Z("jcl-component.flatlistview", `
     }
 
     .jcl-component.flatlistview.placeholder {
-      display:flex; flex-flow:column nowrap; align-items:center; justify-content:center;
-      flex:1 0 auto; overflow:hidden;
+      display:flex; flex-flow:column nowrap;
+      align-items:center !important; justify-content:center;
+      flex:1 0 auto; width:100%; height:100%; overflow:hidden;
       background-color:#EEEEEE;
     }
     .jcl-component.flatlistview.placeholder > * {
@@ -6483,7 +6486,7 @@ const bp = /* @__PURE__ */ Z("jcl-component.nestedlistview", `
 
     .jcl-component.nestedlistview.placeholder {
       display:flex; flex-flow:column nowrap; align-items:center; justify-content:center;
-      flex:1 0 auto; overflow:hidden;
+      flex:1 0 auto; width:100%; height:100%; overflow:hidden;
       background-color:#EEEEEE;
     }
     .jcl-component.nestedlistview.placeholder > * {
