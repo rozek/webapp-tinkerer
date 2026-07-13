@@ -135,13 +135,11 @@
 var _a, _b;
 /**** acceptableBoolean ****/
 function acceptableBoolean(Value, Default) {
-    switch (Value) {
-        case '': return true; // bare URL parameters are considered true
-        case 'true': return true;
-        case 'false': return false;
-        default: return Default;
+    if ((Value === '') || (Value === 'true')) {
+        return true;
     }
-}
+    return (Value === 'false' ? false : Default);
+} // bare URL parameters are considered true
 /**** ValueIsOrdinal ****/
 function ValueIsOrdinal(Value) {
     return Number.isInteger(Value) && (Value >= 0);
@@ -161,41 +159,14 @@ function acceptableOrdinal(Value, Default, ErrorMessage) {
         }
     }
     const Candidate = Number(Value);
-    if (ValueIsOrdinal(Candidate)) {
-        return Candidate;
-    }
-    else {
+    if (!ValueIsOrdinal(Candidate)) {
         exitWith(ErrorMessage);
     }
-}
-/**** acceptableOptionalOrdinal ****/
-function acceptableOptionalOrdinal(Value, ErrorMessage) {
-    if (Value == null) {
-        return undefined;
-    }
-    if (typeof Value === 'string') {
-        if (Value.trim() === '') {
-            return undefined;
-        }
-        if (!WAT_OrdinalPattern.test(Value)) {
-            exitWith(ErrorMessage);
-        }
-    }
-    const Candidate = Number(Value);
-    if (ValueIsOrdinal(Candidate)) {
-        return Candidate;
-    }
-    else {
-        exitWith(ErrorMessage);
-    }
-}
-/**** ValueIsOneOf ****/
-function ValueIsOneOf(Value, allowedItems) {
-    return (allowedItems.indexOf(Value) >= 0);
+    return Candidate;
 }
 /**** acceptableOneOf ****/
 function acceptableOneOf(Value, allowedItems, Default) {
-    return (ValueIsOneOf(Value, allowedItems) ? Value : Default);
+    return (allowedItems.indexOf(Value) >= 0 ? Value : Default);
 }
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F "<>/#][^\x00-\x1F\x7F"<>/]*$/;
@@ -203,7 +174,7 @@ const WAT_NamePattern = /^[^\x00-\x1F\x7F "<>/#][^\x00-\x1F\x7F"<>/]*$/;
 function ValueIsName(Value) {
     return ((typeof Value === 'string') && WAT_NamePattern.test(Value) &&
         (Value.trim() === Value) &&
-        (Value.trim() !== '.') && (Value.trim() !== '..'));
+        (Value !== '.') && (Value !== '..'));
 }
 /**** exitWith ****/
 function exitWith(Message) {
@@ -222,15 +193,15 @@ const ViewportHeight = window.innerHeight;
 let Width = acceptableOrdinal(URLParameters.get('width'), ViewportWidth, 'Invalid applet width given');
 let Height = acceptableOrdinal(URLParameters.get('height'), ViewportHeight, 'Invalid applet height given');
 let minWidth = acceptableOrdinal(URLParameters.get('min-width'), 0, 'Invalid minimal applet width given');
-let maxWidth = acceptableOptionalOrdinal(URLParameters.get('max-width'), 'Invalid maximal applet width given');
+let maxWidth = acceptableOrdinal(URLParameters.get('max-width'), undefined, 'Invalid maximal applet width given');
 let minHeight = acceptableOrdinal(URLParameters.get('min-height'), 0, 'Invalid minimal applet height given');
-let maxHeight = acceptableOptionalOrdinal(URLParameters.get('max-height'), 'Invalid maximal applet height given');
+let maxHeight = acceptableOrdinal(URLParameters.get('max-height'), undefined, 'Invalid maximal applet height given');
 if ((maxWidth != null) && (maxWidth < minWidth))
     exitWith('Invalid applet width range given');
 if ((maxHeight != null) && (maxHeight < minHeight))
     exitWith('Invalid applet height range given');
-let initialMaxWidth = acceptableOptionalOrdinal(URLParameters.get('initial-max-width'), 'Invalid initial maximal applet width given');
-let initialMaxHeight = acceptableOptionalOrdinal(URLParameters.get('initial-max-height'), 'Invalid initial maximal applet height given');
+let initialMaxWidth = acceptableOrdinal(URLParameters.get('initial-max-width'), undefined, 'Invalid initial maximal applet width given');
+let initialMaxHeight = acceptableOrdinal(URLParameters.get('initial-max-height'), undefined, 'Invalid initial maximal applet height given');
 const toBeCentered = acceptableBoolean(URLParameters.get('center'), false);
 const toBeOffset = acceptableBoolean(URLParameters.get('offset'), false);
 const expectedOrientation = acceptableOneOf(URLParameters.get('expected-orientation'), ['any', 'portrait', 'landscape'], 'any'); // not yet evaluated, however

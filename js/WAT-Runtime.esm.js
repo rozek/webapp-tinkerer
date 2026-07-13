@@ -162,9 +162,11 @@ export function throwError(Message) {
 export function throwReadOnlyError(Name) {
     throwError('ReadOnlyProperty: property ' + quoted(Name) + ' must not be set');
 }
-//------------------------------------------------------------------------------
-//--                 Classification and Validation Functions                  --
-//------------------------------------------------------------------------------
+function validatorQuadrupleFor(Classifier, Description, expectDescription = Description) {
+    const Allower = ValidatorForClassifier(Classifier, acceptNil, Description);
+    const Expecter = ValidatorForClassifier(Classifier, rejectNil, expectDescription);
+    return [Allower, Allower, Expecter, Expecter];
+}
 /**** ValueIsName ****/
 const WAT_NamePattern = /^[^\x00-\x1F\x7F /#][^\x00-\x1F\x7F/]*$/;
 // no ctrl.char.s, no "/", no leading " " or "#"
@@ -174,8 +176,7 @@ export function ValueIsName(Value) {
         (Value.trim() !== '.') && (Value.trim() !== '..'));
 }
 /**** allow/expect[ed]Name ****/
-export const allowName = ValidatorForClassifier(ValueIsName, acceptNil, 'WAT name'), allowedName = allowName;
-export const expectName = ValidatorForClassifier(ValueIsName, rejectNil, 'WAT name'), expectedName = expectName;
+export const [allowName, allowedName, expectName, expectedName] = validatorQuadrupleFor(ValueIsName, 'WAT name');
 /**** ValueIsPath ****/
 export function ValueIsPath(Value) {
     return (ValueIsString(Value) &&
@@ -186,15 +187,13 @@ export function StringIsPathItem(Value) {
         /^#\d+$/.test(Value) || ValueIsName(Value)));
 }
 /**** allow/expect[ed]Path ****/
-export const allowPath = ValidatorForClassifier(ValueIsPath, acceptNil, 'WAT path'), allowedPath = allowPath;
-export const expectPath = ValidatorForClassifier(ValueIsPath, rejectNil, 'WAT path'), expectedPath = expectPath;
+export const [allowPath, allowedPath, expectPath, expectedPath] = validatorQuadrupleFor(ValueIsPath, 'WAT path');
 /**** ValueIsCategory ****/
 export function ValueIsCategory(Value) {
     return ValueIsOneOf(Value, WAT_Categories);
 }
 /**** allow/expect[ed]Category ****/
-export const allowCategory = ValidatorForClassifier(ValueIsCategory, acceptNil, 'WAT behavior category'), allowedCategory = allowCategory;
-export const expectCategory = ValidatorForClassifier(ValueIsCategory, rejectNil, 'WAT behavior category'), expectedCategory = expectCategory;
+export const [allowCategory, allowedCategory, expectCategory, expectedCategory] = validatorQuadrupleFor(ValueIsCategory, 'WAT behavior category');
 /**** ValueIsBehavior ****/
 const WAT_BehaviorPattern = /^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i;
 export function ValueIsBehavior(Value) {
@@ -202,43 +201,37 @@ export function ValueIsBehavior(Value) {
         (Value.trim() === Value));
 }
 /**** allow/expect[ed]Behavior ****/
-export const allowBehavior = ValidatorForClassifier(ValueIsBehavior, acceptNil, 'WAT behavior name'), allowedBehavior = allowBehavior;
-export const expectBehavior = ValidatorForClassifier(ValueIsBehavior, rejectNil, 'WAT behavior name'), expectedBehavior = expectBehavior;
+export const [allowBehavior, allowedBehavior, expectBehavior, expectedBehavior] = validatorQuadrupleFor(ValueIsBehavior, 'WAT behavior name');
 /**** ValueIsVisual ****/
 export function ValueIsVisual(Value) {
     return (Value instanceof WAT_Visual);
 }
 /**** allow/expect[ed]Visual ****/
-export const allowVisual = ValidatorForClassifier(ValueIsVisual, acceptNil, 'WAT visual'), allowedVisual = allowVisual;
-export const expectVisual = ValidatorForClassifier(ValueIsVisual, rejectNil, 'WAT visual'), expectedVisual = expectVisual;
+export const [allowVisual, allowedVisual, expectVisual, expectedVisual] = validatorQuadrupleFor(ValueIsVisual, 'WAT visual');
 /**** ValueIsApplet ****/
 export function ValueIsApplet(Value) {
     return (Value instanceof WAT_Applet);
 }
 /**** allow/expect[ed]Applet ****/
-export const allowApplet = ValidatorForClassifier(ValueIsApplet, acceptNil, 'WAT applet'), allowedApplet = allowApplet;
-export const expectApplet = ValidatorForClassifier(ValueIsApplet, rejectNil, 'WAT applet'), expectedApplet = expectApplet;
+export const [allowApplet, allowedApplet, expectApplet, expectedApplet] = validatorQuadrupleFor(ValueIsApplet, 'WAT applet');
 /**** ValueIsPage ****/
 export function ValueIsPage(Value) {
     return (Value instanceof WAT_Page);
 }
 /**** allow/expect[ed]Page ****/
-export const allowPage = ValidatorForClassifier(ValueIsPage, acceptNil, 'WAT page'), allowedPage = allowPage;
-export const expectPage = ValidatorForClassifier(ValueIsPage, rejectNil, 'WAT page'), expectedPage = expectPage;
+export const [allowPage, allowedPage, expectPage, expectedPage] = validatorQuadrupleFor(ValueIsPage, 'WAT page');
 /**** ValueIsWidget ****/
 export function ValueIsWidget(Value) {
     return (Value instanceof WAT_Widget);
 }
 /**** allow/expect[ed]Widget ****/
-export const allowWidget = ValidatorForClassifier(ValueIsWidget, acceptNil, 'WAT widget'), allowedWidget = allowWidget;
-export const expectWidget = ValidatorForClassifier(ValueIsWidget, rejectNil, 'WAT widget'), expectedWidget = expectWidget;
+export const [allowWidget, allowedWidget, expectWidget, expectedWidget] = validatorQuadrupleFor(ValueIsWidget, 'WAT widget');
 /**** ValueIsLocation ****/
 export function ValueIsLocation(Value) {
     return ValueIsFiniteNumber(Value);
 }
 /**** allow/expect[ed]Location ****/
-export const allowLocation = ValidatorForClassifier(ValueIsLocation, acceptNil, 'WAT coordinate'), allowedLocation = allowLocation;
-export const expectLocation = ValidatorForClassifier(ValueIsLocation, rejectNil, 'WAT coordinate'), expectedLocation = expectLocation;
+export const [allowLocation, allowedLocation, expectLocation, expectedLocation] = validatorQuadrupleFor(ValueIsLocation, 'WAT coordinate');
 /**** ValueIsIncompleteGeometry ****/
 function ValueIsIncompleteGeometry(Value) {
     if (!ValueIsPlainObject(Value)) {
@@ -267,8 +260,7 @@ function ValueIsIncompleteGeometry(Value) {
     return true;
 }
 /**** allow/expect[ed]IncompleteGeometry ****/
-const allowIncompleteGeometry = ValidatorForClassifier(ValueIsIncompleteGeometry, acceptNil, 'WAT geometry'), allowedIncompleteGeometry = allowIncompleteGeometry;
-const expectIncompleteGeometry = ValidatorForClassifier(ValueIsIncompleteGeometry, rejectNil, 'WAT geometry'), expectedIncompleteGeometry = expectIncompleteGeometry;
+const [allowIncompleteGeometry, allowedIncompleteGeometry, expectIncompleteGeometry, expectedIncompleteGeometry] = validatorQuadrupleFor(ValueIsIncompleteGeometry, 'WAT geometry');
 /**** ValueIsTextDecoration ****/
 export function ValueIsTextDecoration(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
@@ -279,8 +271,7 @@ export function ValueIsTextDecoration(Value) {
         ((Value.Thickness == null) || ValueIsDimension(Value.Thickness)));
 }
 /**** allow/expect[ed]TextDecoration ****/
-export const allowTextDecoration = ValidatorForClassifier(ValueIsTextDecoration, acceptNil, 'a text decoration'), allowedTextDecoration = allowTextDecoration;
-export const expectTextDecoration = ValidatorForClassifier(ValueIsTextDecoration, rejectNil, 'a text decoration'), expectedTextDecoration = expectTextDecoration;
+export const [allowTextDecoration, allowedTextDecoration, expectTextDecoration, expectedTextDecoration] = validatorQuadrupleFor(ValueIsTextDecoration, 'a text decoration');
 /**** ValueIsTextShadow ****/
 export function ValueIsTextShadow(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
@@ -289,8 +280,7 @@ export function ValueIsTextShadow(Value) {
         ValueIsDimension(Value.BlurRadius) && ValueIsColor(Value.Color));
 }
 /**** allow/expect[ed]TextShadow ****/
-export const allowTextShadow = ValidatorForClassifier(ValueIsTextShadow, acceptNil, 'widget text shadow specification'), allowedTextShadow = allowTextShadow;
-export const expectTextShadow = ValidatorForClassifier(ValueIsTextShadow, rejectNil, 'a text shadow specification'), expectedTextShadow = expectTextShadow;
+export const [allowTextShadow, allowedTextShadow, expectTextShadow, expectedTextShadow] = validatorQuadrupleFor(ValueIsTextShadow, 'widget text shadow specification', 'a text shadow specification');
 /**** ValueIsBackgroundTexture ****/
 export function ValueIsBackgroundTexture(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
@@ -300,8 +290,7 @@ export function ValueIsBackgroundTexture(Value) {
         ValueIsLocation(Value.xOffset) && ValueIsLocation(Value.yOffset));
 }
 /**** allow/expect[ed]BackgroundTexture ****/
-export const allowBackgroundTexture = ValidatorForClassifier(ValueIsBackgroundTexture, acceptNil, 'widget background texture'), allowedBackgroundTexture = allowBackgroundTexture;
-export const expectBackgroundTexture = ValidatorForClassifier(ValueIsBackgroundTexture, rejectNil, 'widget background texture'), expectedBackgroundTexture = expectBackgroundTexture;
+export const [allowBackgroundTexture, allowedBackgroundTexture, expectBackgroundTexture, expectedBackgroundTexture] = validatorQuadrupleFor(ValueIsBackgroundTexture, 'widget background texture');
 /**** ValueIsBoxShadow ****/
 export function ValueIsBoxShadow(Value) {
     return (Value === 'none') || (ValueIsObject(Value) &&
@@ -311,8 +300,7 @@ export function ValueIsBoxShadow(Value) {
         ValueIsColor(Value.Color));
 }
 /**** allow/expect[ed]BoxShadow ****/
-export const allowBoxShadow = ValidatorForClassifier(ValueIsBoxShadow, acceptNil, 'widget box shadow specification'), allowedBoxShadow = allowBoxShadow;
-export const expectBoxShadow = ValidatorForClassifier(ValueIsBoxShadow, rejectNil, 'widget box shadow specification'), expectedBoxShadow = expectBoxShadow;
+export const [allowBoxShadow, allowedBoxShadow, expectBoxShadow, expectedBoxShadow] = validatorQuadrupleFor(ValueIsBoxShadow, 'widget box shadow specification');
 /**** ValueIsErrorReport ****/
 export function ValueIsErrorReport(Value) {
     return (ValueIsPlainObject(Value) &&
@@ -320,8 +308,7 @@ export function ValueIsErrorReport(Value) {
         ValueIsText(Value.Message));
 }
 /**** allow/expect[ed]ErrorReport ****/
-export const allowErrorReport = ValidatorForClassifier(ValueIsErrorReport, acceptNil, 'WAT error report'), allowedErrorReport = allowErrorReport;
-export const expectErrorReport = ValidatorForClassifier(ValueIsErrorReport, rejectNil, 'WAT error report'), expectedErrorReport = expectErrorReport;
+export const [allowErrorReport, allowedErrorReport, expectErrorReport, expectedErrorReport] = validatorQuadrupleFor(ValueIsErrorReport, 'WAT error report');
 /**** ValueIsLineList ****/
 export function ValueIsLineList(Value, Pattern) {
     const Validator = (Pattern == null
@@ -546,7 +533,7 @@ if (WATStyleElement == null) {
 
   .hljs {
     display:block;
-    overflow-x:auto;
+    overflow-x:auto; overscroll-behavior-x:contain;
     padding:0.5em;
     background:#f0f0f0;
     color:#444444;
@@ -662,7 +649,7 @@ if (WATStyleElement == null) {
   }
 
   .WAT.Dialog > .ContentPane {
-    display:block; position:absolute; overflow:auto;
+    display:block; position:absolute; overflow:auto; overscroll-behavior:contain;
     left:0px; top:0px; right:0px; bottom:0px;
     border:none;
   }
@@ -814,9 +801,9 @@ if (WATStyleElement == null) {
     display:flex; align-items:center;
   }
 
-  .scrollable   { overflow:scroll }
-  .scrollable-x { overflow-x:scroll; overflow-y:hidden }
-  .scrollable-y { overflow-x:hidden; overflow-y:scroll }
+  .scrollable   { overflow:scroll; overscroll-behavior:contain }
+  .scrollable-x { overflow-x:scroll; overflow-y:hidden; overscroll-behavior-x:contain }
+  .scrollable-y { overflow-x:hidden; overflow-y:scroll; overscroll-behavior-y:contain }
 
 `.trimLeft();
     document.head.appendChild(WATStyleElement);
@@ -905,6 +892,14 @@ function DefaultSizeOfScript(Script) {
         ? undefined
         : { Width: parseInt(Match[1], 10), Height: parseInt(Match[2], 10) });
 }
+/**** compiledBehaviorFunction - compiles a behavior or visual script ****/
+const WAT_ScriptParameterList = ('me,my, html,reactively, ' +
+    'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
+    'installStylesheet,BehaviorIsNew');
+function compiledBehaviorFunction(Script) {
+    // @ts-ignore TS2351 AsyncFunction *is* constructible
+    return new AsyncFunction(WAT_ScriptParameterList, Script);
+}
 /**** registerIntrinsicBehavior ****/
 function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
     expectApplet('applet', Applet);
@@ -925,7 +920,46 @@ function registerIntrinsicBehavior(Applet, Category, Name, compiledScript) {
     };
     IntrinsicBehaviors.add(normalizedName);
 }
-/**** brokenBehavior ****/
+/**** compiledBehaviorFunctionWith - compiles a script with extra bindings ****/
+// like "compiledBehaviorFunction", but additionally exposes the given
+// module bindings to the compiled script: "AsyncFunction" compiles in
+// global scope, i.e., scripts built as source text (see
+// "registerIntrinsicBehaviorFromSource") could otherwise never reach
+// module-internal values such as JCL components or WAT's gesture handles
+function compiledBehaviorFunctionWith(Script, Closures) {
+    const ClosureNames = Object.keys(Closures);
+    if (ClosureNames.length === 0) {
+        return compiledBehaviorFunction(Script);
+    }
+    const FunctionFactory = new Function(...ClosureNames, `return async function (${WAT_ScriptParameterList}) {\n${Script}\n}`);
+    return FunctionFactory(...ClosureNames.map((Name) => Closures[Name]));
+}
+/**** registerIntrinsicBehaviorFromSource ****/
+// registers an intrinsic behaviour whose "activeScript" is given as source
+// text (e.g., built by one of the script template generators used for
+// closely related behaviour families) rather than as an already compiled
+// function - the visible, user-copyable script therefore remains a
+// self-contained, readable source text per behaviour (including its
+// "DefaultSize" pragma). module bindings the script needs are passed as
+// "Closures" (see "compiledBehaviorFunctionWith")
+function registerIntrinsicBehaviorFromSource(Applet, Category, Name, ScriptSource, Closures = {}) {
+    expectApplet('applet', Applet);
+    expectCategory('behavior category', Category);
+    expectBehavior('behavior', Name);
+    expectText('behavior script', ScriptSource);
+    const normalizedName = Name.toLowerCase();
+    // @ts-ignore TS7053 allow indexing
+    if (Applet._BehaviorPool[Category][normalizedName] != null)
+        throwError(`InvalidArgument:a behaviour for ${Category}s with the name ${Name} has already been registered`);
+    const activeScript = ScriptSource.trim();
+    const compiledScript = compiledBehaviorFunctionWith(activeScript, Closures);
+    // @ts-ignore TS7053 allow indexing
+    Applet._BehaviorPool[Category][normalizedName] = {
+        Category, Name, activeScript, compiledScript, isNew: true,
+        DefaultSize: DefaultSizeOfScript(activeScript)
+    };
+    IntrinsicBehaviors.add(normalizedName);
+} /**** brokenBehavior ****/
 async function brokenBehavior(Visual) {
     const Applet = Visual.Applet;
     const Category = Visual.Category;
@@ -989,6 +1023,148 @@ function PatternIsCompilable(Pattern) {
         return false;
     }
 }
+let EditorTypeRegistry;
+function EditorTypeDescriptorFor(EditorType) {
+    EditorTypeRegistry !== null && EditorTypeRegistry !== void 0 ? EditorTypeRegistry : (EditorTypeRegistry = builtEditorTypeRegistry());
+    return EditorTypeRegistry[EditorType];
+}
+function builtEditorTypeRegistry() {
+    /**** shared option validation helpers ****/
+    const OptionIsPattern = (Value) => ((Value instanceof RegExp) ||
+        ValueIsTextline(Value) && PatternIsCompilable(Value));
+    const OptionIsStepping = (Value) => (ValueIsNumberInRange(Value, 0, Infinity, false) || (Value === 'any'));
+    const OptionIsResizability = (Value) => (ValueIsOneOf(Value, ['none', 'horizontal', 'vertical', 'both']));
+    /**** shared option descriptors ****/
+    const PlaceholderOption = { Name: 'Placeholder', accepts: ValueIsTextline };
+    const minLengthOption = { Name: 'minLength', accepts: ValueIsOrdinal };
+    const maxLengthOption = { Name: 'maxLength', accepts: ValueIsOrdinal };
+    const minValueOption = { Name: 'minValue', accepts: ValueIsFiniteNumber };
+    const maxValueOption = { Name: 'maxValue', accepts: ValueIsFiniteNumber };
+    const SteppingOption = { Name: 'Stepping', accepts: OptionIsStepping };
+    const SpellCheckOption = { Name: 'SpellChecking', accepts: ValueIsBoolean };
+    const PatternOption = { Name: 'Pattern', accepts: OptionIsPattern };
+    const ResizabilityOption = { Name: 'Resizability', accepts: OptionIsResizability };
+    const LineWrappingOption = { Name: 'LineWrapping', accepts: ValueIsBoolean };
+    function SuggestionsOptionFor(ItemValidator) {
+        return {
+            Name: 'Suggestions', wantsCopy: true,
+            accepts: (Value) => ValueIsListSatisfying(Value, ItemValidator)
+        };
+    }
+    /**** option sets shared by several editor types ****/
+    const TextualInputOptions = [
+        PlaceholderOption, minLengthOption, maxLengthOption,
+        { Name: 'multiple', accepts: ValueIsBoolean }, SpellCheckOption,
+        PatternOption, SuggestionsOptionFor(ValueIsTextline)
+    ];
+    const NumericInputOptions = [
+        PlaceholderOption, minValueOption, maxValueOption, SteppingOption,
+        SuggestionsOptionFor(ValueIsFiniteNumber)
+    ];
+    const TextInputOptions = [
+        PlaceholderOption, minLengthOption, maxLengthOption, SpellCheckOption,
+        ResizabilityOption, LineWrappingOption
+    ];
+    const CodeInputOptions = [
+        PlaceholderOption, minLengthOption, maxLengthOption,
+        ResizabilityOption, LineWrappingOption
+    ];
+    /**** default value validator factories used more than once ****/
+    const BooleanValidatorFor = () => ValueIsBoolean;
+    const TextlineValidatorFor = (Descriptor, RegEx) => (RegEx == null
+        ? ValueIsTextline
+        : (Value) => ( // a pattern must not overrule the basic...
+        ValueIsTextline(Value) && // ..."textline" constraint
+            ValueIsStringMatching(Value, RegEx)));
+    const NumberValidatorFor = (Descriptor) => {
+        const { minValue, maxValue, withMin, withMax } = Descriptor;
+        return ((minValue == null) && (maxValue == null)
+            ? ValueIsFiniteNumber // reject NaN and Infinity
+            : (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax));
+    };
+    const IntegerValidatorFor = (Descriptor) => {
+        const { minValue, maxValue } = Descriptor;
+        return ((minValue == null) && (maxValue == null)
+            ? ValueIsInteger
+            : (Value) => ValueIsIntegerInRange(Value, minValue, maxValue));
+    };
+    /**** the five temporal editor types only differ in RegExp and matcher ****/
+    function TemporalEditorTypeFor(RegEx, Matcher) {
+        return {
+            Options: [
+                { Name: 'minValue', accepts: (Value) => ValueIsStringMatching(Value, RegEx) },
+                { Name: 'maxValue', accepts: (Value) => ValueIsStringMatching(Value, RegEx) },
+                SuggestionsOptionFor(Matcher)
+            ],
+            ValidatorFor: () => (Value) => ValueIsStringMatching(Value, RegEx)
+        };
+    }
+    /**** the registry itself ****/
+    return {
+        'checkbox': { Options: [], ValidatorFor: BooleanValidatorFor },
+        'choice': {
+            Options: [
+                { Name: 'FalseValue', isRequired: true, accepts: ValueIsTextline },
+                { Name: 'TrueValue', isRequired: true, accepts: ValueIsTextline }
+            ],
+            ValidatorFor: BooleanValidatorFor
+        },
+        'textline-input': { Options: TextualInputOptions, ValidatorFor: TextlineValidatorFor },
+        'password-input': { Options: TextualInputOptions, ValidatorFor: TextlineValidatorFor },
+        'email-address-input': { Options: TextualInputOptions, ValidatorFor: () => ValueIsEMailAddress },
+        'phone-number-input': { Options: TextualInputOptions, ValidatorFor: () => ValueIsPhoneNumber },
+        'url-input': { Options: TextualInputOptions, ValidatorFor: () => ValueIsURL },
+        'search-input': { Options: TextualInputOptions, ValidatorFor: () => ValueIsTextline },
+        'number-input': { Options: NumericInputOptions, ValidatorFor: NumberValidatorFor },
+        'integer-input': { Options: NumericInputOptions, ValidatorFor: IntegerValidatorFor },
+        'time-input': TemporalEditorTypeFor(WAT_TimeRegExp, WAT_TimeMatcher),
+        'date-time-input': TemporalEditorTypeFor(WAT_DateTimeRegExp, WAT_DateTimeMatcher),
+        'date-input': TemporalEditorTypeFor(WAT_DateRegExp, WAT_DateMatcher),
+        'month-input': TemporalEditorTypeFor(WAT_MonthRegExp, WAT_MonthMatcher),
+        'week-input': TemporalEditorTypeFor(WAT_WeekRegExp, WAT_WeekMatcher),
+        'color-input': { Options: [], ValidatorFor: () => ValueIsColor },
+        'drop-down': {
+            Options: [{
+                    Name: 'ValueList', isRequired: true, wantsCopy: true,
+                    accepts: (Value) => ValueIsListSatisfying(Value, ValueIsTextline)
+                }],
+            ValidatorFor: (Descriptor) => ((Value) => ValueIsOneOf(Value, Descriptor.ValueList))
+        },
+        'slider': {
+            Options: [
+                minValueOption, maxValueOption, SteppingOption,
+                { Name: 'Hashmarks', wantsCopy: true,
+                    accepts: (Value) => ValueIsListSatisfying(Value, HashmarkMatcher) }
+            ],
+            ValidatorFor: NumberValidatorFor
+        },
+        'text-input': { Options: TextInputOptions, ValidatorFor: () => ValueIsText },
+        'html-input': { Options: CodeInputOptions, ValidatorFor: () => ValueIsText },
+        'css-input': { Options: CodeInputOptions, ValidatorFor: () => ValueIsText },
+        'javascript-input': { Options: CodeInputOptions, ValidatorFor: () => ValueIsText },
+        'json-input': { Options: CodeInputOptions, ValidatorFor: () => ValueIsJSONString },
+        'linelist-input': {
+            Options: [...CodeInputOptions, PatternOption],
+            ValidatorFor: (Descriptor, RegEx) => ((Value) => ValueIsLineList(Value, RegEx))
+        },
+        'numberlist-input': {
+            Options: [...CodeInputOptions, minValueOption, maxValueOption],
+            ValidatorFor: (Descriptor) => {
+                const { minValue, maxValue, withMin, withMax } = Descriptor;
+                return (Value) => (ValueIsNumberList(Value, minValue, maxValue, withMin, withMax) &&
+                    Value.every(ValueIsFiniteNumber) // reject NaN and Infinity
+                );
+            }
+        },
+        'integerlist-input': {
+            Options: [...CodeInputOptions, minValueOption, maxValueOption],
+            ValidatorFor: (Descriptor) => {
+                const { minValue, maxValue } = Descriptor;
+                return (Value) => ValueIsIntegerList(Value, minValue, maxValue);
+            }
+        },
+    };
+}
 /**** ValueIsPropertyDescriptor ****/
 function ValueIsPropertyDescriptor(Value) {
     if (!ValueIsPlainObject(Value) ||
@@ -1008,134 +1184,20 @@ function ValueIsPropertyDescriptor(Value) {
         return false;
     }
     /**** validate editor-specific settings ****/
-    const { EditorType, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
-    switch (EditorType) {
-        case 'checkbox':
-            break;
-        case 'choice': // drop-down for boolean properties
-            if (!ValueIsTextline(FalseValue) || !ValueIsTextline(TrueValue)) {
-                return false;
-            }
-            break;
-        case 'textline-input':
-        case 'password-input':
-        case 'email-address-input':
-        case 'phone-number-input':
-        case 'url-input':
-        case 'search-input':
-            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
-                (minLength != null) && !ValueIsOrdinal(minLength) ||
-                (maxLength != null) && !ValueIsOrdinal(maxLength) ||
-                (multiple != null) && !ValueIsBoolean(multiple) ||
-                (SpellChecking != null) && !ValueIsBoolean(SpellChecking) ||
-                (Pattern != null) && !((Pattern instanceof RegExp) || ValueIsTextline(Pattern) && PatternIsCompilable(Pattern)) ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsTextline)) {
-                return false;
-            }
-            break;
-        case 'number-input':
-        case 'integer-input':
-            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
-                (minValue != null) && !ValueIsFiniteNumber(minValue) ||
-                (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
-                (Stepping != null) && !ValueIsNumberInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, ValueIsFiniteNumber)) {
-                return false;
-            }
-            break;
-        case 'time-input':
-            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_TimeRegExp) ||
-                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_TimeRegExp) ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_TimeMatcher)) {
-                return false;
-            }
-            break;
-        case 'date-time-input':
-            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_DateTimeRegExp) ||
-                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_DateTimeRegExp) ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_DateTimeMatcher)) {
-                return false;
-            }
-            break;
-        case 'date-input':
-            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_DateRegExp) ||
-                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_DateRegExp) ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_DateMatcher)) {
-                return false;
-            }
-            break;
-        case 'month-input':
-            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_MonthRegExp) ||
-                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_MonthRegExp) ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_MonthMatcher)) {
-                return false;
-            }
-            break;
-        case 'week-input':
-            if ((minValue != null) && !ValueIsStringMatching(minValue, WAT_WeekRegExp) ||
-                (maxValue != null) && !ValueIsStringMatching(maxValue, WAT_WeekRegExp) ||
-                (Suggestions != null) && !ValueIsListSatisfying(Suggestions, WAT_WeekMatcher)) {
-                return false;
-            }
-            break;
-        case 'color-input':
-            break;
-        case 'drop-down':
-            if (!ValueIsListSatisfying(ValueList, ValueIsTextline)) {
-                return false;
-            }
-            break;
-        case 'slider':
-            if ((minValue != null) && !ValueIsFiniteNumber(minValue) ||
-                (maxValue != null) && !ValueIsFiniteNumber(maxValue) ||
-                (Stepping != null) && !ValueIsNumberInRange(Stepping, 0, Infinity, false) && (Stepping !== 'any') ||
-                (Hashmarks != null) && !ValueIsListSatisfying(Hashmarks, HashmarkMatcher)) {
-                return false;
-            }
-            break;
-        case 'text-input':
-            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
-                (minLength != null) && !ValueIsOrdinal(minLength) ||
-                (maxLength != null) && !ValueIsOrdinal(maxLength) ||
-                (SpellChecking != null) && !ValueIsBoolean(SpellChecking) ||
-                (Resizability != null) && !ValueIsOneOf(Resizability, ['none', 'horizontal', 'vertical', 'both']) ||
-                (LineWrapping != null) && !ValueIsBoolean(LineWrapping)) {
-                return false;
-            }
-            break;
-        case 'html-input':
-        case 'css-input':
-        case 'javascript-input':
-        case 'json-input':
-        case 'linelist-input':
-        case 'numberlist-input':
-        case 'integerlist-input':
-            if ((Placeholder != null) && !ValueIsTextline(Placeholder) ||
-                (minLength != null) && !ValueIsOrdinal(minLength) ||
-                (maxLength != null) && !ValueIsOrdinal(maxLength) ||
-                (Resizability != null) && !ValueIsOneOf(Resizability, ['none', 'horizontal', 'vertical', 'both']) ||
-                (LineWrapping != null) && !ValueIsBoolean(LineWrapping)) {
-                return false;
-            }
-            if ((EditorType === 'linelist-input') &&
-                (Pattern != null) && !((Pattern instanceof RegExp) || ValueIsTextline(Pattern) && PatternIsCompilable(Pattern))) {
-                return false;
-            }
-            if ((EditorType === 'numberlist-input') || (EditorType === 'integerlist-input')) {
-                if ((minValue != null) && !ValueIsFiniteNumber(minValue) ||
-                    (maxValue != null) && !ValueIsFiniteNumber(maxValue)) {
-                    return false;
-                }
-            }
-            break;
-    }
-    return true;
+    const { Options } = EditorTypeDescriptorFor(Value.EditorType);
+    return Options.every((Option) => {
+        const Setting = Value[Option.Name];
+        return (Option.isRequired || (Setting != null) ? Option.accepts(Setting) : true);
+    });
 }
 /**** normalizedPropertyDescriptor ****/
+// normalizes a given (already validated) property descriptor: general
+// settings are copied explicitly, editor-specific options are copied in
+// the order given by the shared editor type registry (see above)
 function normalizedPropertyDescriptor(Value) {
     if (!ValueIsPropertyDescriptor(Value))
         throwError(`InvalidArgument: invalid property ${(Value === null || Value === void 0 ? void 0 : Value.Name) == null ? '' : quoted('' + (Value === null || Value === void 0 ? void 0 : Value.Name))}`);
-    let { Name, Label, EditorType, readonly, Validator, Default, AccessorsFor, withCallback, Placeholder, FalseValue, TrueValue, minLength, maxLength, multiple, Pattern, minValue, maxValue, withMin, withMax, Stepping, Resizability, LineWrapping, SpellChecking, ValueList, Hashmarks, Suggestions } = Value;
+    let { Name, Label, EditorType, readonly, Validator, Default, AccessorsFor, withCallback, withMin, withMax } = Value;
     if (Label == null) {
         Label = Name;
     }
@@ -1168,155 +1230,23 @@ function normalizedPropertyDescriptor(Value) {
             Descriptor.AccessorsFor = AccessorsFor;
         }
     }
-    switch (Value.EditorType) {
-        case 'checkbox':
-            break;
-        case 'choice': // drop-down for boolean properties
-            Descriptor.FalseValue = FalseValue;
-            Descriptor.TrueValue = TrueValue;
-            break;
-        case 'textline-input':
-        case 'password-input':
-        case 'email-address-input':
-        case 'phone-number-input':
-        case 'url-input':
-        case 'search-input':
-            if (Placeholder != null) {
-                Descriptor.Placeholder = Placeholder;
-            }
-            if (minLength != null) {
-                Descriptor.minLength = minLength;
-            }
-            if (maxLength != null) {
-                Descriptor.maxLength = maxLength;
-            }
-            if (multiple != null) {
-                Descriptor.multiple = multiple;
-            }
-            if (SpellChecking != null) {
-                Descriptor.SpellChecking = SpellChecking;
-            }
-            if (Pattern != null) {
-                Descriptor.Pattern = Pattern;
-            }
-            if (Suggestions != null) {
-                Descriptor.Suggestions = Suggestions.slice();
-            }
-            break;
-        case 'number-input':
-        case 'integer-input':
-            if (Placeholder != null) {
-                Descriptor.Placeholder = Placeholder;
-            }
-            if (minValue != null) {
-                Descriptor.minValue = minValue;
-            }
-            if (maxValue != null) {
-                Descriptor.maxValue = maxValue;
-            }
-            if (Stepping != null) {
-                Descriptor.Stepping = Stepping;
-            }
-            if (Suggestions != null) {
-                Descriptor.Suggestions = Suggestions.slice();
-            }
-            break;
-        case 'time-input':
-        case 'date-time-input':
-        case 'date-input':
-        case 'month-input':
-        case 'week-input':
-            if (minValue != null) {
-                Descriptor.minValue = minValue;
-            }
-            if (maxValue != null) {
-                Descriptor.maxValue = maxValue;
-            }
-            if (Suggestions != null) {
-                Descriptor.Suggestions = Suggestions.slice();
-            }
-            break;
-        case 'color-input':
-            break;
-        case 'drop-down':
-            Descriptor.ValueList = ValueList.slice();
-            break;
-        case 'slider':
-            if (minValue != null) {
-                Descriptor.minValue = minValue;
-            }
-            if (maxValue != null) {
-                Descriptor.maxValue = maxValue;
-            }
-            if (Stepping != null) {
-                Descriptor.Stepping = Stepping;
-            }
-            if (Hashmarks != null) {
-                Descriptor.Hashmarks = Hashmarks.slice();
-            }
-            break;
-        case 'text-input':
-            if (Placeholder != null) {
-                Descriptor.Placeholder = Placeholder;
-            }
-            if (minLength != null) {
-                Descriptor.minLength = minLength;
-            }
-            if (maxLength != null) {
-                Descriptor.maxLength = maxLength;
-            }
-            if (SpellChecking != null) {
-                Descriptor.SpellChecking = SpellChecking;
-            }
-            if (Resizability != null) {
-                Descriptor.Resizability = Resizability;
-            }
-            if (LineWrapping != null) {
-                Descriptor.LineWrapping = LineWrapping;
-            }
-            break;
-        case 'html-input':
-        case 'css-input':
-        case 'javascript-input':
-        case 'json-input':
-        case 'linelist-input':
-        case 'numberlist-input':
-        case 'integerlist-input':
-            if (Placeholder != null) {
-                Descriptor.Placeholder = Placeholder;
-            }
-            if (minLength != null) {
-                Descriptor.minLength = minLength;
-            }
-            if (maxLength != null) {
-                Descriptor.maxLength = maxLength;
-            }
-            if (Resizability != null) {
-                Descriptor.Resizability = Resizability;
-            }
-            if (LineWrapping != null) {
-                Descriptor.LineWrapping = LineWrapping;
-            }
-            if (EditorType === 'linelist-input') {
-                if (Pattern != null) {
-                    Descriptor.Pattern = Pattern;
-                }
-            }
-            if ((EditorType === 'numberlist-input') || (EditorType === 'integerlist-input')) {
-                if (minValue != null) {
-                    Descriptor.minValue = minValue;
-                }
-                if (maxValue != null) {
-                    Descriptor.maxValue = maxValue;
-                }
-            }
-            break;
-    }
+    const { Options } = EditorTypeDescriptorFor(EditorType);
+    Options.forEach((Option) => {
+        const Setting = Value[Option.Name];
+        if (Option.isRequired || (Setting != null)) {
+            ;
+            Descriptor[Option.Name] = (Option.wantsCopy ? Setting.slice() : Setting // lists aren't shared
+            );
+        }
+    });
     return Descriptor;
 }
 /**** installAccessorFor ****/
+// installs a get/set accessor pair for a configurable property: custom
+// validators are safeguarded, default validators come from the shared
+// editor type registry (see above)
 function installAccessorFor(Visual, Descriptor) {
-    const { minValue, maxValue, withMin, withMax, Pattern, ValueList } = Descriptor;
+    const { Pattern } = Descriptor;
     const RegEx = (Pattern == null
         ? undefined
         : Pattern instanceof RegExp // anchor given RegExp as well
@@ -1339,97 +1269,8 @@ function installAccessorFor(Visual, Descriptor) {
         };
     }
     else {
-        switch (Descriptor.EditorType) {
-            case 'checkbox':
-            case 'choice':
-                Validator = ValueIsBoolean;
-                break;
-            case 'textline-input':
-            case 'password-input':
-                Validator = (Pattern == null
-                    ? ValueIsTextline
-                    : (Value) => ( // a pattern must not overrule the basic...
-                    ValueIsTextline(Value) && // ..."textline" constraint
-                        ValueIsStringMatching(Value, RegEx)));
-                break;
-            case 'email-address-input':
-                Validator = ValueIsEMailAddress;
-                break;
-            case 'phone-number-input':
-                Validator = ValueIsPhoneNumber;
-                break;
-            case 'url-input':
-                Validator = ValueIsURL;
-                break;
-            case 'search-input':
-                Validator = ValueIsTextline;
-                break;
-            case 'number-input':
-                if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
-                    Validator = ValueIsFiniteNumber; // reject NaN and Infinity
-                }
-                else {
-                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax);
-                }
-                break;
-            case 'integer-input':
-                if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
-                    Validator = ValueIsInteger;
-                }
-                else {
-                    Validator = (Value) => ValueIsIntegerInRange(Value, minValue, maxValue);
-                }
-                break;
-            case 'time-input':
-                Validator = (Value) => ValueIsStringMatching(Value, WAT_TimeRegExp);
-                break;
-            case 'date-time-input':
-                Validator = (Value) => ValueIsStringMatching(Value, WAT_DateTimeRegExp);
-                break;
-            case 'date-input':
-                Validator = (Value) => ValueIsStringMatching(Value, WAT_DateRegExp);
-                break;
-            case 'month-input':
-                Validator = (Value) => ValueIsStringMatching(Value, WAT_MonthRegExp);
-                break;
-            case 'week-input':
-                Validator = (Value) => ValueIsStringMatching(Value, WAT_WeekRegExp);
-                break;
-            case 'color-input':
-                Validator = ValueIsColor;
-                break;
-            case 'drop-down':
-                Validator = (Value) => ValueIsOneOf(Value, ValueList);
-                break;
-            case 'slider':
-                if ((Descriptor.minValue == null) && (Descriptor.maxValue == null)) {
-                    Validator = ValueIsFiniteNumber; // reject NaN and Infinity
-                }
-                else {
-                    Validator = (Value) => ValueIsNumberInRange(Value, minValue, maxValue, withMin, withMax);
-                }
-                break;
-            case 'text-input':
-            case 'html-input':
-            case 'css-input':
-            case 'javascript-input':
-                Validator = ValueIsText;
-                break;
-            case 'json-input':
-                Validator = ValueIsJSONString;
-                break;
-            case 'linelist-input':
-                Validator = (Value) => ValueIsLineList(Value, RegEx);
-                break;
-            case 'numberlist-input':
-                Validator = (Value) => (ValueIsNumberList(Value, minValue, maxValue, withMin, withMax) &&
-                    Value.every(ValueIsFiniteNumber) // reject NaN and Infinity
-                );
-                break;
-            case 'integerlist-input':
-                Validator = (Value) => ValueIsIntegerList(Value, minValue, maxValue);
-                break;
-        }
+        const { ValidatorFor } = EditorTypeDescriptorFor(Descriptor.EditorType);
+        Validator = ValidatorFor(Descriptor, RegEx);
     }
     const Container = Descriptor.AccessorsFor, Default = Descriptor.Default;
     Object.defineProperty(Visual, Descriptor.Name, {
@@ -1972,147 +1813,108 @@ export function GestureRecognizer(OptionSet) {
         }
     }
 }
-/**** WAT_Mover ****/
-export function WAT_Mover(PropSet) {
-    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onMoveStart, onMove } = PropSet;
+/**** GestureHandleView - shared implementation of WAT_Mover/WAT_Resizer ****/
+// "WAT_Mover" and "WAT_Resizer" are structurally identical Preact
+// components (PropsRef/DragInfoRef/GestureRecognizer wiring plus a plain
+// handle <div>) - they only differ in their CSS class, the callbacks they
+// serve ("onMoveStart"/"onMove" vs. "onResizeStart"/"onResize"), the
+// geometry values a drag starts from (widget position vs. widget size) and
+// the minimum clamping applied by the Resizer only. both exported
+// components therefore delegate to this shared implementation. the start
+// callback is invoked FIRST, before the start geometry is read: this lets
+// users with a throttled commit flush any pending value so that the
+// widget's geometry is up-to-date when the drag begins. on drag
+// cancellation the original geometry is restored
+const WAT_MoverOptions = {
+    HandleClass: 'Mover', StartHandlerName: 'onMoveStart', HandlerName: 'onMove',
+    withMinima: false,
+    StartValuesOf: (Widget) => (Widget == null ? [0, 0] : [Widget.x, Widget.y])
+};
+const WAT_ResizerOptions = {
+    HandleClass: 'Resizer', StartHandlerName: 'onResizeStart', HandlerName: 'onResize',
+    withMinima: true,
+    StartValuesOf: (Widget) => (Widget == null ? [0, 0] : [Widget.Width, Widget.Height])
+};
+function GestureHandleView(PropSet, Options) {
+    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, } = PropSet;
+    const { HandleClass, StartHandlerName, HandlerName, withMinima, StartValuesOf } = Options;
     const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
     const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
+    const minA = (withMinima ? acceptableValue(PropSet.minWidth, ValueIsOrdinal, 0) : -Infinity);
+    const minB = (withMinima ? acceptableValue(PropSet.minHeight, ValueIsOrdinal, 0) : -Infinity);
     const PropsRef = useRef(null);
     PropsRef.current = {
         Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
-        onMoveStart, onMove, GridWidth, GridHeight
+        StartHandler: PropSet[StartHandlerName], Handler: PropSet[HandlerName],
+        GridWidth, GridHeight, minA, minB
     };
     const DragInfoRef = useRef(null);
     const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
-    function handleMove(dx, dy) {
-        const { onMove, GridWidth, GridHeight } = PropsRef.current;
-        if (typeof onMove !== 'function') {
+    function handleChange(dx, dy) {
+        const { Handler, GridWidth, GridHeight, minA, minB } = PropsRef.current;
+        if (typeof Handler !== 'function') {
             return;
         }
-        let x = GridWidth * Math.round((DragInfo.StartX + dx) / GridWidth);
-        let y = GridHeight * Math.round((DragInfo.StartY + dy) / GridHeight);
-        onMove(x - DragInfo.StartX, y - DragInfo.StartY, x, y);
+        let A = Math.max(minA, GridWidth * Math.round((DragInfo.StartA + dx) / GridWidth));
+        let B = Math.max(minB, GridHeight * Math.round((DragInfo.StartB + dy) / GridHeight));
+        Handler(A - DragInfo.StartA, B - DragInfo.StartB, A, B);
     }
     const RecognizerRef = useRef(null);
     const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
-        onlyFrom: '.WAT.Mover',
+        onlyFrom: '.WAT.' + HandleClass,
         ClickRadius: 0,
         onDragStart: (dx, dy, x, y, Event) => {
-            const { Widget, onDragStart, onMoveStart } = PropsRef.current;
-            if (typeof onMoveStart === 'function') {
-                onMoveStart();
+            const { Widget, onDragStart, StartHandler } = PropsRef.current;
+            if (typeof StartHandler === 'function') {
+                StartHandler();
             }
-            // invoked FIRST, before the start geometry is read below: lets
-            // users with a throttled commit flush any pending value so that
-            // "Widget.x"/"Widget.y" are up-to-date when the drag begins
-            DragInfo.StartX = (Widget == null ? 0 : Widget.x);
-            DragInfo.StartY = (Widget == null ? 0 : Widget.y);
+            // invoked FIRST, before the start geometry is read below (s. above)
+            const StartValues = StartValuesOf(Widget);
+            DragInfo.StartA = StartValues[0];
+            DragInfo.StartB = StartValues[1];
             if (typeof onDragStart === 'function') {
                 onDragStart(dx, dy, x, y, Event);
             }
-            handleMove(dx, dy);
+            handleChange(dx, dy);
         },
         onDragContinuation: (dx, dy, x, y, Event) => {
             const { onDragContinuation } = PropsRef.current;
             if (typeof onDragContinuation === 'function') {
                 onDragContinuation(dx, dy, x, y, Event);
             }
-            handleMove(dx, dy);
+            handleChange(dx, dy);
         },
         onDragFinish: (dx, dy, x, y, Event) => {
             const { onDragFinish } = PropsRef.current;
             if (typeof onDragFinish === 'function') {
                 onDragFinish(dx, dy, x, y, Event);
             }
-            handleMove(dx, dy);
+            handleChange(dx, dy);
         },
         onDragCancellation: (dx, dy, x, y, Event) => {
-            const { onDragCancellation, onMove } = PropsRef.current;
+            const { onDragCancellation, Handler } = PropsRef.current;
             if (typeof onDragCancellation === 'function') {
                 onDragCancellation(dx, dy, x, y, Event);
             }
-            if (typeof onMove === 'function') { // restore original geometry
-                onMove(0, 0, DragInfo.StartX, DragInfo.StartY);
+            if (typeof Handler === 'function') { // restore original geometry
+                Handler(0, 0, DragInfo.StartA, DragInfo.StartB);
             }
         },
     }));
-    return html `<div class="WAT Mover" style="${style || ''}"
+    return html `<div class="WAT ${HandleClass}" style="${style || ''}"
       onPointerDown=${Recognizer} onPointerUp=${Recognizer}
       onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
     />`;
 }
+/**** WAT_Mover ****/
+export function WAT_Mover(PropSet) {
+    return GestureHandleView(PropSet, WAT_MoverOptions);
+}
 /**** WAT_Resizer ****/
+// see "GestureHandleView" above - the Resizer additionally clamps its
+// results to the given "minWidth"/"minHeight"
 export function WAT_Resizer(PropSet) {
-    const { Widget, style, onDragStart, onDragContinuation, onDragFinish, onDragCancellation, onResizeStart, onResize } = PropSet;
-    const GridWidth = acceptableValue(PropSet.GridWidth, ValueIsCardinal, 1);
-    const GridHeight = acceptableValue(PropSet.GridHeight, ValueIsCardinal, 1);
-    const minWidth = acceptableValue(PropSet.minWidth, ValueIsOrdinal, 0);
-    const minHeight = acceptableValue(PropSet.minHeight, ValueIsOrdinal, 0);
-    const PropsRef = useRef(null);
-    PropsRef.current = {
-        Widget, onDragStart, onDragContinuation, onDragFinish, onDragCancellation,
-        onResizeStart, onResize, GridWidth, GridHeight, minWidth, minHeight
-    };
-    const DragInfoRef = useRef(null);
-    const DragInfo = DragInfoRef.current || (DragInfoRef.current = {});
-    function handleResize(dx, dy) {
-        const { onResize, GridWidth, GridHeight, minWidth, minHeight } = PropsRef.current;
-        if (typeof onResize !== 'function') {
-            return;
-        }
-        let Width = GridWidth * Math.round((DragInfo.StartWidth + dx) / GridWidth);
-        let Height = GridHeight * Math.round((DragInfo.StartHeight + dy) / GridHeight);
-        Width = Math.max(minWidth, Width);
-        Height = Math.max(minHeight, Height);
-        onResize(Width - DragInfo.StartWidth, Height - DragInfo.StartHeight, Width, Height);
-    }
-    const RecognizerRef = useRef(null);
-    const Recognizer = RecognizerRef.current || (RecognizerRef.current = GestureRecognizer({
-        onlyFrom: '.WAT.Resizer',
-        ClickRadius: 0,
-        onDragStart: (dx, dy, x, y, Event) => {
-            const { Widget, onDragStart, onResizeStart } = PropsRef.current;
-            if (typeof onResizeStart === 'function') {
-                onResizeStart();
-            }
-            // invoked FIRST, before the start geometry is read below: lets
-            // users with a throttled commit flush any pending value so that
-            // "Widget.Width"/"Widget.Height" are up-to-date when the drag begins
-            DragInfo.StartWidth = (Widget == null ? 0 : Widget.Width);
-            DragInfo.StartHeight = (Widget == null ? 0 : Widget.Height);
-            if (typeof onDragStart === 'function') {
-                onDragStart(dx, dy, x, y, Event);
-            }
-            handleResize(dx, dy);
-        },
-        onDragContinuation: (dx, dy, x, y, Event) => {
-            const { onDragContinuation } = PropsRef.current;
-            if (typeof onDragContinuation === 'function') {
-                onDragContinuation(dx, dy, x, y, Event);
-            }
-            handleResize(dx, dy);
-        },
-        onDragFinish: (dx, dy, x, y, Event) => {
-            const { onDragFinish } = PropsRef.current;
-            if (typeof onDragFinish === 'function') {
-                onDragFinish(dx, dy, x, y, Event);
-            }
-            handleResize(dx, dy);
-        },
-        onDragCancellation: (dx, dy, x, y, Event) => {
-            const { onDragCancellation, onResize } = PropsRef.current;
-            if (typeof onDragCancellation === 'function') {
-                onDragCancellation(dx, dy, x, y, Event);
-            }
-            if (typeof onResize === 'function') { // restore original geometry
-                onResize(0, 0, DragInfo.StartWidth, DragInfo.StartHeight);
-            }
-        },
-    }));
-    return html `<div class="WAT Resizer" style="${style || ''}"
-      onPointerDown=${Recognizer} onPointerUp=${Recognizer}
-      onPointerMove=${Recognizer} onPointerCancel=${Recognizer}
-    />`;
+    return GestureHandleView(PropSet, WAT_ResizerOptions);
 }
 /**** WAT_Shaper ****/
 export function WAT_Shaper(PropSet) {
@@ -2722,10 +2524,7 @@ export class WAT_Visual {
             }
         }
         allowName('WAT name', newName);
-        if (this._Name !== newName) {
-            this._Name = newName;
-            this.rerender();
-        }
+        this._propertyChanged('_Name', newName);
     }
     /**** normalizedName ****/
     get normalizedName() {
@@ -2750,10 +2549,7 @@ export class WAT_Visual {
         if ((newSynopsis != null) && (newSynopsis.trim() === '')) {
             newSynopsis = undefined;
         }
-        if (this._Synopsis !== newSynopsis) {
-            this._Synopsis = newSynopsis;
-            this.rerender();
-        }
+        this._propertyChanged('_Synopsis', newSynopsis);
     }
     get isReady() { return this._isReady; }
     set isReady(_) { throwReadOnlyError('isReady'); }
@@ -2818,56 +2614,56 @@ export class WAT_Visual {
             }
         }
     }
+    /**** _propertyChanged - sets an internal property, rerenders on change ****/
+    _propertyChanged(Name, newValue, useDeepCompare = false) {
+        const InternalValue = this[Name];
+        const hasChanged = (useDeepCompare
+            ? ValuesDiffer(InternalValue, newValue)
+            : InternalValue !== newValue);
+        if (hasChanged) {
+            this[Name] = newValue;
+            this.rerender();
+        }
+    }
+    /**** _inheritedValue - own internal value or the container's public one ****/
+    _inheritedValue(Name) {
+        const InternalValue = this[Name];
+        return (InternalValue == null
+            ? this._Container == null
+                ? undefined
+                : this._Container[Name.slice(1)]
+            : InternalValue);
+    }
     get FontFamily() {
-        return (this._FontFamily == null
-            ? this._Container == null ? undefined : this._Container.FontFamily
-            : this._FontFamily);
+        return this._inheritedValue('_FontFamily');
     }
     set FontFamily(newFontFamily) {
         allowTextline('font family', newFontFamily);
         if ((newFontFamily || '').trim() === '') {
             newFontFamily = undefined;
         }
-        if (this._FontFamily !== newFontFamily) {
-            this._FontFamily = newFontFamily;
-            this.rerender();
-        }
+        this._propertyChanged('_FontFamily', newFontFamily);
     }
     get FontSize() {
-        return (this._FontSize == null
-            ? this._Container == null ? undefined : this._Container.FontSize
-            : this._FontSize);
+        return this._inheritedValue('_FontSize');
     }
     set FontSize(newFontSize) {
         allowOrdinal('font size', newFontSize);
-        if (this._FontSize !== newFontSize) {
-            this._FontSize = newFontSize;
-            this.rerender();
-        }
+        this._propertyChanged('_FontSize', newFontSize);
     }
     get FontWeight() {
-        return (this._FontWeight == null
-            ? this._Container == null ? undefined : this._Container.FontWeight
-            : this._FontWeight);
+        return this._inheritedValue('_FontWeight');
     }
     set FontWeight(newFontWeight) {
         allowOneOf('font weight', newFontWeight, WAT_FontWeights);
-        if (this._FontWeight !== newFontWeight) {
-            this._FontWeight = newFontWeight;
-            this.rerender();
-        }
+        this._propertyChanged('_FontWeight', newFontWeight);
     }
     get FontStyle() {
-        return (this._FontStyle == null
-            ? this._Container == null ? undefined : this._Container.FontStyle
-            : this._FontStyle);
+        return this._inheritedValue('_FontStyle');
     }
     set FontStyle(newFontStyle) {
         allowOneOf('font style', newFontStyle, WAT_FontStyles);
-        if (this._FontStyle !== newFontStyle) {
-            this._FontStyle = newFontStyle;
-            this.rerender();
-        }
+        this._propertyChanged('_FontStyle', newFontStyle);
     }
     get TextDecoration() {
         return (this._TextDecoration == null ? undefined : Object.assign({}, this._TextDecoration));
@@ -2912,55 +2708,35 @@ export class WAT_Visual {
         }
     }
     get TextAlignment() {
-        return (this._TextAlignment == null
-            ? this._Container == null ? undefined : this._Container.TextAlignment
-            : this._TextAlignment);
+        return this._inheritedValue('_TextAlignment');
     }
     set TextAlignment(newTextAlignment) {
         allowOneOf('text alignment', newTextAlignment, WAT_TextAlignments);
-        if (this._TextAlignment !== newTextAlignment) {
-            this._TextAlignment = newTextAlignment;
-            this.rerender();
-        }
+        this._propertyChanged('_TextAlignment', newTextAlignment);
     }
     get LineHeight() {
-        return (this._LineHeight == null
-            ? this._Container == null ? undefined : this._Container.LineHeight
-            : this._LineHeight);
+        return this._inheritedValue('_LineHeight');
     }
     set LineHeight(newLineHeight) {
         allowOrdinal('line height', newLineHeight);
-        if (this._LineHeight !== newLineHeight) {
-            this._LineHeight = newLineHeight;
-            this.rerender();
-        }
+        this._propertyChanged('_LineHeight', newLineHeight);
     }
     get ForegroundColor() {
-        return (this._ForegroundColor == null
-            ? this._Container == null ? undefined : this._Container.ForegroundColor
-            : this._ForegroundColor);
+        return this._inheritedValue('_ForegroundColor');
     }
     set ForegroundColor(newForegroundColor) {
         allowColor('foreground color', newForegroundColor);
-        if (this._ForegroundColor !== newForegroundColor) {
-            this._ForegroundColor = newForegroundColor;
-            this.rerender();
-        }
+        this._propertyChanged('_ForegroundColor', newForegroundColor);
     }
     /**** Color - synonym for "ForegroundColor" ****/
     get Color() { return this.ForegroundColor; }
     set Color(newColor) { this.ForegroundColor = newColor; }
     get BackgroundColor() {
-        return (this._BackgroundColor == null
-            ? this._Container == null ? undefined : this._Container.BackgroundColor
-            : this._BackgroundColor);
+        return this._inheritedValue('_BackgroundColor');
     }
     set BackgroundColor(newColor) {
         allowColor('background color', newColor);
-        if (this._BackgroundColor !== newColor) {
-            this._BackgroundColor = newColor;
-            this.rerender();
-        }
+        this._propertyChanged('_BackgroundColor', newColor);
     }
     get BackgroundTexture() {
         return (this._BackgroundTexture == null
@@ -2987,35 +2763,24 @@ export class WAT_Visual {
     get hasBackground() { return this._hasBackground; }
     set hasBackground(newSetting) {
         expectBoolean('background setting', newSetting);
-        if (this._hasBackground !== newSetting) {
-            this._hasBackground = newSetting;
-            this.rerender();
-        }
+        this._propertyChanged('_hasBackground', newSetting);
     }
     get Opacity() {
         return this._Opacity;
     }
     set Opacity(newOpacity) {
         allowIntegerInRange('opacity', newOpacity, 0, 100);
-        if (this._Opacity !== newOpacity) {
-            this._Opacity = newOpacity;
-            this.rerender();
-        }
+        this._propertyChanged('_Opacity', newOpacity);
     }
     get Cursor() {
-        return (this._Cursor == null
-            ? this._Container == null ? undefined : this._Container.Cursor
-            : this._Cursor);
+        return this._inheritedValue('_Cursor');
     }
     set Cursor(newCursor) {
         if ((newCursor || '').trim() === '') {
             newCursor = undefined;
         }
         allowOneOf('cursor name', newCursor, WAT_Cursors);
-        if (this._Cursor !== newCursor) {
-            this._Cursor = newCursor;
-            this.rerender();
-        }
+        this._propertyChanged('_Cursor', newCursor);
     }
     /**** Overflows ****/
     // @ts-ignore TS2378 this getter throws
@@ -3055,10 +2820,7 @@ export class WAT_Visual {
     get pendingScript() { return this._pendingScript; }
     set pendingScript(newScript) {
         allowText('script', newScript);
-        if (this._pendingScript !== newScript) {
-            this._pendingScript = newScript;
-            this.rerender();
-        }
+        this._propertyChanged('_pendingScript', newScript);
     }
     async activateScript(Mode = 'catch-exception') {
         const activationToken = ++this._activationToken;
@@ -3083,11 +2845,7 @@ export class WAT_Visual {
                             console.warn('started  tracking asynchronous reactive function');
                         }
                         Result.catch((Signal) => {
-                            console.warn(`asynchronous reactive function failed`, Signal);
-                            setErrorReport(this, {
-                                Type: 'Reactivity Failure',
-                                Sufferer: this, Message: '' + Signal, Cause: Signal
-                            });
+                            this._reportFailure('asynchronous reactive function failed', 'Reactivity Failure', Signal);
                         }).then(() => {
                             if (WAT_DebugTracking) {
                                 console.warn('finished tracking asynchronous reactive function');
@@ -3096,11 +2854,7 @@ export class WAT_Visual {
                     }
                 }
                 catch (Signal) {
-                    console.warn('execution error in reactive function', Signal);
-                    setErrorReport(this, {
-                        Type: 'Reactivity Failure',
-                        Sufferer: this, Message: '' + Signal, Cause: Signal
-                    });
+                    this._reportFailure('execution error in reactive function', 'Reactivity Failure', Signal);
                 }
             }));
         };
@@ -3157,11 +2911,7 @@ export class WAT_Visual {
                     if (activationToken !== this._activationToken) {
                         return;
                     }
-                    console.warn('Behavior Execution Failure', Signal);
-                    setErrorReport(this, {
-                        Type: 'Behaviour Execution Failure',
-                        Sufferer: this, Message: '' + Signal, Cause: Signal
-                    });
+                    this._reportFailure('Behavior Execution Failure', 'Behaviour Execution Failure', Signal);
                     if (Mode === 'rethrow-exception') {
                         throw Signal;
                     }
@@ -3176,17 +2926,10 @@ export class WAT_Visual {
         this._ScriptError = undefined; // only to be set by "applyPendingScript"
         let compiledScript;
         try {
-            // @ts-ignore TS2351 AsyncFunction *is* constructible
-            compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
-                'installStylesheet,BehaviorIsNew', activeScript);
+            compiledScript = compiledBehaviorFunction(activeScript);
         }
         catch (Signal) {
-            console.warn('Script Compilation Failure', Signal);
-            setErrorReport(this, {
-                Type: 'Script Compilation Failure',
-                Sufferer: this, Message: '' + Signal, Cause: Signal
-            });
+            this._reportFailure('Script Compilation Failure', 'Script Compilation Failure', Signal);
             if (Mode === 'rethrow-exception') {
                 throw Signal;
             }
@@ -3207,16 +2950,19 @@ export class WAT_Visual {
             if (activationToken !== this._activationToken) {
                 return;
             }
-            console.warn('Script Execution Failure', Signal);
-            setErrorReport(this, {
-                Type: 'Script Execution Failure',
-                Sufferer: this, Message: '' + Signal, Cause: Signal
-            });
+            this._reportFailure('Script Execution Failure', 'Script Execution Failure', Signal);
             if (Mode === 'rethrow-exception') {
                 throw Signal;
             }
         }
         this.rerender();
+    }
+    /**** _reportFailure - warns on the console and sets an error report ****/
+    _reportFailure(Label, Type, Signal) {
+        console.warn(Label, Signal);
+        setErrorReport(this, {
+            Type, Sufferer: this, Message: '' + Signal, Cause: Signal
+        });
     }
     /**** applyPendingScript - but only if it can be compiled ****/
     async applyPendingScript() {
@@ -3237,10 +2983,7 @@ export class WAT_Visual {
         if (pendingScript.trim() !== '') {
             let compiledScript; // try compiling pending script first
             try {
-                // @ts-ignore TS2351 AsyncFunction *is* constructible
-                compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                    'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
-                    'installStylesheet,BehaviorIsNew', pendingScript);
+                compiledScript = compiledBehaviorFunction(pendingScript);
             }
             catch (Signal) {
                 setScriptError(this, {
@@ -3336,22 +3079,14 @@ export class WAT_Visual {
                     }
                     return Value;
                 }, (Signal) => {
-                    console.warn(`asynchronous callback ${quoted(CallbackName)} failed`, Signal);
-                    setErrorReport(this, {
-                        Type: 'Callback Failure',
-                        Sufferer: this, Message: '' + Signal, Cause: Signal
-                    });
+                    this._reportFailure(`asynchronous callback ${quoted(CallbackName)} failed`, 'Callback Failure', Signal);
                     return undefined;
                 });
             }
             return Result;
         }
         catch (Signal) {
-            console.warn(`callback ${quoted(CallbackName)} failed`, Signal);
-            setErrorReport(this, {
-                Type: 'Callback Failure',
-                Sufferer: this, Message: '' + Signal, Cause: Signal
-            });
+            this._reportFailure(`callback ${quoted(CallbackName)} failed`, 'Callback Failure', Signal);
         }
     }
     /**** Renderer ****/
@@ -3457,6 +3192,7 @@ export class WAT_Visual {
     /**** isMounted ****/
     get isMounted() { return (this._View != null); }
     set isMounted(_) { throwReadOnlyError('isMounted'); }
+    // ...but must not be deserialized like others
     /**** _serializeConfigurationInto ****/
     _serializeConfigurationInto(Serialization) {
         let serializableMemoized = undefined;
@@ -3479,16 +3215,7 @@ export class WAT_Visual {
             }
         }
         /**** then perform the actual serialization ****/
-        ;
-        [
-            'Behavior', 'Name', 'Synopsis',
-            'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
-            'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
-            'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
-            'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
-            'Opacity', 'Overflows', 'Cursor',
-            'activeScript', 'pendingScript',
-        ].forEach((Name) => this._serializePropertyInto(Name, Serialization));
+        WAT_Visual._configurationPropertyNames.forEach((Name) => this._serializePropertyInto(Name, Serialization));
         if (serializableMemoized != null) {
             Serialization.memoized = structuredClone(serializableMemoized);
         }
@@ -3507,15 +3234,9 @@ export class WAT_Visual {
                 }
             }
         };
-        [
-            /*'Behavior', */ 'Name', 'Synopsis',
-            'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
-            'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
-            'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
-            'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
-            'Opacity', 'Overflows', 'Cursor',
-            /*'activeScript',*/ 'pendingScript',
-        ].forEach((Name) => deserializeProperty(Name));
+        WAT_Visual._configurationPropertyNames.filter(// "Behavior" and...
+        (Name) => (Name !== 'Behavior') && (Name !== 'activeScript')).forEach((Name) => deserializeProperty(Name));
+        // ..."activeScript" require special treatment (see below/others)
         /**** migrate legacy "OverflowVisibility" serializations ****/
         if ((Serialization.Overflows == null) &&
             ('OverflowVisibility' in Serialization)) {
@@ -3551,6 +3272,21 @@ export class WAT_Visual {
         }
     }
 }
+/**** _configurationPropertyNames - all directly serializable properties ****/
+Object.defineProperty(WAT_Visual, "_configurationPropertyNames", {
+    enumerable: true,
+    configurable: true,
+    writable: true,
+    value: [
+        'Behavior', 'Name', 'Synopsis',
+        'FontFamily', 'FontSize', 'FontWeight', 'FontStyle',
+        'TextDecoration', 'TextShadow', 'TextAlignment', 'LineHeight',
+        'ForegroundColor', 'hasBackground', 'BackgroundColor', 'BackgroundTexture',
+        'BorderWidths', 'BorderStyles', 'BorderColors', 'BorderRadii', 'BoxShadow',
+        'Opacity', 'Overflows', 'Cursor',
+        'activeScript', 'pendingScript',
+    ]
+}); // "Behavior" and "activeScript" are serialized...
 //------------------------------------------------------------------------------
 //--                                WAT_Applet                                --
 //------------------------------------------------------------------------------
@@ -3727,10 +3463,7 @@ export class WAT_Applet extends WAT_Visual {
     // *C* "AssetsBase" is not serialized - a scripted setting does not survive a reload
     set AssetsBase(newURL) {
         allowURL('assets base URL', newURL);
-        if (this._AssetsBase !== newURL) {
-            this._AssetsBase = newURL;
-            this.rerender();
-        }
+        this._propertyChanged('_AssetsBase', newURL);
     }
     /**** AssetURL ****/
     AssetURL(relativeURL) {
@@ -3809,10 +3542,7 @@ export class WAT_Applet extends WAT_Visual {
         if (BehaviorIsIntrinsic(normalizedBehavior))
             throwError('InvalidArgument: intrinsic behaviors must not be overwritten');
         try {
-            // @ts-ignore TS2351 AsyncFunction *is* constructible
-            const compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
-                'installStylesheet,BehaviorIsNew', Script);
+            const compiledScript = compiledBehaviorFunction(Script);
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior] = {
                 Category, Name: Behavior, activeScript: Script, isNew: true,
@@ -3830,18 +3560,7 @@ export class WAT_Applet extends WAT_Visual {
             };
         }
         uninstallStylesheetForBehavior(this, Category, Behavior);
-        switch (Category) {
-            case 'applet':
-                if (this._normalizedBehavior === normalizedBehavior) {
-                    this.activateScript();
-                }
-                break;
-            case 'page':
-                this.PagesWithBehavior(Behavior).forEach((Page) => Page.activateScript());
-                break;
-            case 'widget':
-                this.WidgetsWithBehavior(Behavior).forEach((Widget) => Widget.activateScript());
-        }
+        this._forEachUserOfBehavior(Category, Behavior, (Visual) => Visual.activateScript());
     }
     /**** unregisterBehaviorOfCategory ****/
     unregisterBehaviorOfCategory(Category, Behavior) {
@@ -3858,18 +3577,7 @@ export class WAT_Applet extends WAT_Visual {
         uninstallStylesheetForBehavior(this, Category, Behavior);
         // @ts-ignore TS7053 allow indexing
         delete this._BehaviorPool[Category][normalizedBehavior];
-        switch (Category) {
-            case 'applet':
-                if (this._normalizedBehavior === normalizedBehavior) {
-                    this.activateScript();
-                }
-                break;
-            case 'page':
-                this.PagesWithBehavior(Behavior).forEach((Page) => Page.activateScript());
-                break;
-            case 'widget':
-                this.WidgetsWithBehavior(Behavior).forEach((Widget) => Widget.activateScript());
-        }
+        this._forEachUserOfBehavior(Category, Behavior, (Visual) => Visual.activateScript());
     }
     /**** renameBehaviorOfCategory ****/
     renameBehaviorOfCategory(Category, oldName, newName) {
@@ -3889,22 +3597,9 @@ export class WAT_Applet extends WAT_Visual {
         if (normalizedNewName === normalizedOldName) { // just a change in casing
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedOldName].Name = newName;
-            switch (Category) { // adjust the "_Behavior" of users as well,
-                case 'applet': // but without script reactivation
-                    if (this._normalizedBehavior === normalizedOldName) {
-                        this._Behavior = newName;
-                    }
-                    break;
-                case 'page':
-                    this.PagesWithBehavior(oldName).forEach((Page) => {
-                        Page['_Behavior'] = newName;
-                    });
-                    break;
-                case 'widget':
-                    this.WidgetsWithBehavior(oldName).forEach((Widget) => {
-                        Widget['_Behavior'] = newName;
-                    });
-            }
+            this._forEachUserOfBehavior(// adjust the "_Behavior" of users as...
+            Category, oldName, // ...well, but without reactivation
+            (Visual) => { Visual['_Behavior'] = newName; });
             this.rerender();
             return;
         }
@@ -3920,28 +3615,11 @@ export class WAT_Applet extends WAT_Visual {
         // @ts-ignore TS7053 allow indexing
         this._BehaviorPool[Category][normalizedNewName] = Registration;
         uninstallStylesheetForBehavior(this, Category, oldName);
-        switch (Category) {
-            case 'applet':
-                if (this._normalizedBehavior === normalizedOldName) {
-                    this._Behavior = newName;
-                    this._normalizedBehavior = normalizedNewName;
-                    this.activateScript();
-                }
-                break;
-            case 'page':
-                this.PagesWithBehavior(oldName).forEach((Page) => {
-                    Page['_Behavior'] = newName;
-                    Page['_normalizedBehavior'] = normalizedNewName;
-                    Page.activateScript();
-                });
-                break;
-            case 'widget':
-                this.WidgetsWithBehavior(oldName).forEach((Widget) => {
-                    Widget['_Behavior'] = newName;
-                    Widget['_normalizedBehavior'] = normalizedNewName;
-                    Widget.activateScript();
-                });
-        }
+        this._forEachUserOfBehavior(Category, oldName, (Visual) => {
+            Visual['_Behavior'] = newName;
+            Visual['_normalizedBehavior'] = normalizedNewName;
+            Visual.activateScript();
+        });
         this.rerender();
     }
     /**** prescriptBehaviorOfCategory ****/
@@ -3980,10 +3658,7 @@ export class WAT_Applet extends WAT_Visual {
         try {
             // @ts-ignore TS7053 allow indexing
             this._BehaviorPool[Category][normalizedBehavior].pendingError = undefined;
-            // @ts-ignore TS2351 AsyncFunction *is* constructible
-            const compiledScript = new AsyncFunction('me,my, html,reactively, ' +
-                'on, onReady,onRender, onMount,onUpdate,onUnmount, onValueChange, ' +
-                'installStylesheet,BehaviorIsNew', pendingScript);
+            const compiledScript = compiledBehaviorFunction(pendingScript);
         }
         catch (Signal) {
             console.warn(`Script Compilation Failure for ${Category} behavior ${Behavior}`, Signal);
@@ -4023,6 +3698,21 @@ export class WAT_Applet extends WAT_Visual {
         expectBehavior('behavior name', Behavior);
         const normalizedBehavior = Behavior.toLowerCase();
         return this._PageList.map((Page) => Page.WidgetList.filter((Widget) => (Widget.Behavior || '').toLowerCase() === normalizedBehavior)).flat();
+    }
+    /**** _forEachUserOfBehavior - applies a callback to all behavior users ****/
+    _forEachUserOfBehavior(Category, Behavior, Callback) {
+        switch (Category) {
+            case 'applet':
+                if (this._normalizedBehavior === Behavior.toLowerCase()) {
+                    Callback(this);
+                }
+                break;
+            case 'page':
+                this.PagesWithBehavior(Behavior).forEach((Page) => Callback(Page));
+                break;
+            case 'widget':
+                this.WidgetsWithBehavior(Behavior).forEach((Widget) => Callback(Widget));
+        }
     }
     /**** intrinsicBehaviorsOfCategory ****/
     intrinsicBehaviorsOfCategory(Category) {
@@ -4785,54 +4475,22 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** existingOverlayNamed ****/
     existingOverlayNamed(OverlayName) {
-        const OverlayIndex = this.IndexOfOverlay(OverlayName);
-        if (OverlayIndex < 0)
-            throwError(`NotFound: no overlay named ${quoted(OverlayName)} found`);
-        return this._OverlayList[OverlayIndex];
+        return existingOverlayIn(this._OverlayList, OverlayName);
     }
     /**** IndexOfOverlay ****/
     IndexOfOverlay(OverlayName) {
-        expectName('overlay name', OverlayName);
-        const normalizedName = OverlayName.toLowerCase();
-        return this._OverlayList.findIndex((Overlay) => Overlay.normalizedName === normalizedName);
+        return IndexOfOverlayIn(this._OverlayList, OverlayName);
     }
     /**** openOverlay ****/
     openOverlay(Descriptor) {
         expectPlainObject('overlay descriptor', Descriptor);
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
-        const Overlay = new WAT_AppletOverlay(this, Descriptor);
-        this._OverlayList.push(Overlay);
-        this.rerender();
-        if (Overlay.onOpen != null) {
-            try {
-                Overlay.onOpen(Overlay);
-            }
-            catch (Signal) {
-                console.warn('"onOpen" callback failure', Signal);
-            }
-        }
+        admitOverlayInto(this, this._OverlayList, new WAT_AppletOverlay(this, Descriptor));
     }
     /**** closeOverlay ****/
     closeOverlay(OverlayName) {
-        const OverlayIndex = this.IndexOfOverlay(OverlayName);
-        if (OverlayIndex < 0) {
-            return;
-        }
-        const [Overlay] = this._OverlayList.splice(OverlayIndex, 1);
-        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected members here
-        if (Overlay._View != null) {
-            Overlay._View._releaseWidgets();
-        }
-        this.rerender();
-        if (Overlay.onClose != null) {
-            try {
-                Overlay.onClose(Overlay);
-            }
-            catch (Signal) {
-                console.warn('"onClose" callback failure', Signal);
-            }
-        }
+        dismissOverlayFrom(this, this._OverlayList, OverlayName);
     }
     /**** closeAllOverlays ****/
     closeAllOverlays() {
@@ -4868,11 +4526,7 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** moveOverlayTo ****/
     moveOverlayTo(OverlayName, x, y) {
-        const Overlay = this.existingOverlayNamed(OverlayName);
-        expectLocation('x coordinate', x);
-        expectLocation('y coordinate', y);
-        Overlay.x = x;
-        Overlay.y = y;
+        moveOverlayInTo(this._OverlayList, OverlayName, x, y);
     }
     /**** sizeOverlayBy ****/
     sizeOverlayBy(OverlayName, dW, dH) {
@@ -4883,11 +4537,7 @@ export class WAT_Applet extends WAT_Visual {
     }
     /**** sizeOverlayTo ****/
     sizeOverlayTo(OverlayName, Width, Height) {
-        const Overlay = this.existingOverlayNamed(OverlayName);
-        expectDimension('Width', Width);
-        expectDimension('Height', Height);
-        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, (Overlay.maxWidth == null ? Infinity : Overlay.maxWidth)));
-        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, (Overlay.maxHeight == null ? Infinity : Overlay.maxHeight)));
+        sizeOverlayInTo(this._OverlayList, OverlayName, Width, Height);
     }
     /**** bringOverlayToFront ****/
     bringOverlayToFront(OverlayName) {
@@ -4903,17 +4553,7 @@ export class WAT_Applet extends WAT_Visual {
         expectPlainObject('overlay descriptor', Descriptor);
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
-        const Dialog = new WAT_Dialog(this, Descriptor);
-        this._OverlayList.push(Dialog);
-        this.rerender();
-        if (Dialog.onOpen != null) {
-            try {
-                Dialog.onOpen(Dialog);
-            }
-            catch (Signal) {
-                console.warn('"onOpen" callback failure', Signal);
-            }
-        }
+        admitOverlayInto(this, this._OverlayList, new WAT_Dialog(this, Descriptor));
     }
     /**** closeDialog ****/
     closeDialog(OverlayName) {
@@ -5264,6 +4904,10 @@ export class WAT_Applet extends WAT_Visual {
         this._withMobileFrame = false;
         this._expectedOrientation = 'any';
         this._AssetsBase = undefined;
+    } /**** search ****/
+    search(Criteria) {
+        expectPlainObject('search criteria', Criteria);
+        return searchMatchesFor(this, Criteria);
     }
 }
 //------------------------------------------------------------------------------
@@ -5406,10 +5050,7 @@ export class WAT_Page extends WAT_Visual {
     }
     set Overflows(newValue) {
         allowListSatisfying('overflow settings', newValue, (Value) => ValueIsOneOf(Value, ['hidden', 'scroll', 'auto']), undefined, 2, 2);
-        if (ValuesDiffer(this._Overflows, newValue)) {
-            this._Overflows = (newValue == null ? undefined : newValue.slice());
-            this.rerender();
-        }
+        this._propertyChanged('_Overflows', (newValue == null ? undefined : newValue.slice()), true);
     }
     /**** rerender ****/
     rerender() {
@@ -5901,10 +5542,7 @@ export class WAT_Widget extends WAT_Visual {
     get Lock() { return this._Lock; }
     set Lock(newLock) {
         expectBoolean('widget layout lock', newLock);
-        if (this._Lock !== newLock) {
-            this._Lock = newLock;
-            this.rerender();
-        }
+        this._propertyChanged('_Lock', newLock);
     }
     /**** lock/unlock ****/
     lock() { this.Lock = true; }
@@ -5917,10 +5555,7 @@ export class WAT_Widget extends WAT_Visual {
     }
     set Visibility(newVisibility) {
         expectBoolean('widget visibility', newVisibility);
-        if (this._Visibility !== newVisibility) {
-            this._Visibility = newVisibility;
-            this.rerender();
-        }
+        this._propertyChanged('_Visibility', newVisibility);
     }
     /**** show/hide ****/
     show() { this.Visibility = true; }
@@ -5933,10 +5568,7 @@ export class WAT_Widget extends WAT_Visual {
     }
     set Enabling(newEnabling) {
         expectBoolean('widget enabling', newEnabling);
-        if (this._Enabling !== newEnabling) {
-            this._Enabling = newEnabling;
-            this.rerender();
-        }
+        this._propertyChanged('_Enabling', newEnabling);
     }
     /**** enable/disable ****/
     enable() { this.Enabling = true; }
@@ -5951,173 +5583,52 @@ export class WAT_Widget extends WAT_Visual {
         return (this._BorderStyles == null ? undefined : this._BorderStyles.slice());
     }
     set BorderStyles(newBorderStyles) {
-        let newSettings = undefined;
+        const newSettings = this._expandedEdgeValues(newBorderStyles, (Value) => ValueIsOneOf(Value, WAT_BorderStyles), 'BorderStyles');
+        this._propertyChanged('_BorderStyles', newSettings, true);
+    }
+    /**** _expandedEdgeValues - expands single values or short lists to 4 ****/
+    // preserves the expansion cascade of the corresponding CSS shorthands
+    // (single value -> 4x, lists of 1/2/3/4 entries -> t,r,b,l resp. corners)
+    _expandedEdgeValues(newValue, ValueIsEntry, PropertyName) {
         switch (true) {
-            case (newBorderStyles == null):
-                break;
-            case ValueIsOneOf(newBorderStyles, WAT_BorderStyles):
-                newSettings = new Array(4).fill(newBorderStyles); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderStyles, (Value) => ValueIsOneOf(Value, WAT_BorderStyles)):
-                switch (newBorderStyles.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderStyles[0]);
-                        break;
-                    case 2: // t/b,l/r
-                        newSettings = [
-                            newBorderStyles[0], newBorderStyles[1],
-                            newBorderStyles[0], newBorderStyles[1],
-                        ];
-                        break;
-                    case 3: // t,l/r,b
-                        newSettings = [
-                            newBorderStyles[0], newBorderStyles[1],
-                            newBorderStyles[2], newBorderStyles[1],
-                        ];
-                        break;
-                    case 4: // t,r,b,l
-                        newSettings = newBorderStyles.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderStyles" list has an invalid length');
+            case (newValue == null):
+                return undefined;
+            case ValueIsEntry(newValue):
+                return new Array(4).fill(newValue);
+            case ValueIsListSatisfying(newValue, ValueIsEntry):
+                switch (newValue.length) {
+                    case 0: return undefined;
+                    case 1: return new Array(4).fill(newValue[0]);
+                    case 2: return [newValue[0], newValue[1], newValue[0], newValue[1]];
+                    case 3: return [newValue[0], newValue[1], newValue[2], newValue[1]];
+                    case 4: return newValue.slice();
+                    default: throwError('InvalidArgument: given "' + PropertyName + '" list has an invalid length');
                 }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderStyles" given');
-        }
-        if (ValuesDiffer(this._BorderStyles, newSettings)) {
-            this._BorderStyles = newSettings;
-            this.rerender();
+            default: throwError('InvalidArgument: invalid "' + PropertyName + '" given');
         }
     }
     get BorderWidths() {
         return (this._BorderWidths == null ? undefined : this._BorderWidths.slice());
     }
     set BorderWidths(newBorderWidths) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderWidths == null):
-                break;
-            case ValueIsDimension(newBorderWidths):
-                newSettings = new Array(4).fill(newBorderWidths); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderWidths, ValueIsDimension):
-                switch (newBorderWidths.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderWidths[0]);
-                        break;
-                    case 2: // t/b,l/r
-                        newSettings = [
-                            newBorderWidths[0], newBorderWidths[1],
-                            newBorderWidths[0], newBorderWidths[1],
-                        ];
-                        break;
-                    case 3: // t,l/r,b
-                        newSettings = [
-                            newBorderWidths[0], newBorderWidths[1],
-                            newBorderWidths[2], newBorderWidths[1],
-                        ];
-                        break;
-                    case 4: // t,r,b,l
-                        newSettings = newBorderWidths.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderWidths" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderWidths" given');
-        }
-        if (ValuesDiffer(this._BorderWidths, newSettings)) {
-            this._BorderWidths = newSettings;
-            this.rerender();
-        }
+        const newSettings = this._expandedEdgeValues(newBorderWidths, ValueIsDimension, 'BorderWidths');
+        this._propertyChanged('_BorderWidths', newSettings, true);
     }
     get BorderColors() {
         return (this._BorderColors == null ? undefined : this._BorderColors.slice());
     }
     set BorderColors(newBorderColors) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderColors == null):
-                break;
-            case ValueIsColor(newBorderColors):
-                newSettings = new Array(4).fill(newBorderColors); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderColors, ValueIsColor):
-                switch (newBorderColors.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderColors[0]);
-                        break;
-                    case 2: // t/b,l/r
-                        newSettings = [
-                            newBorderColors[0], newBorderColors[1],
-                            newBorderColors[0], newBorderColors[1],
-                        ];
-                        break;
-                    case 3: // t,l/r,b
-                        newSettings = [
-                            newBorderColors[0], newBorderColors[1],
-                            newBorderColors[2], newBorderColors[1],
-                        ];
-                        break;
-                    case 4: // t,r,b,l
-                        newSettings = newBorderColors.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderColors" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderColors" given');
-        }
-        if (ValuesDiffer(this._BorderColors, newSettings)) {
-            this._BorderColors = newSettings;
-            this.rerender();
-        }
+        const newSettings = this._expandedEdgeValues(newBorderColors, ValueIsColor, 'BorderColors');
+        this._propertyChanged('_BorderColors', newSettings, true);
     }
     get BorderRadii() {
         return (this._BorderRadii == null ? undefined : this._BorderRadii.slice());
     }
     set BorderRadii(newBorderRadii) {
-        let newSettings = undefined;
-        switch (true) {
-            case (newBorderRadii == null):
-                break;
-            case ValueIsDimension(newBorderRadii):
-                newSettings = new Array(4).fill(newBorderRadii); // satisfies TS
-                break;
-            case ValueIsListSatisfying(newBorderRadii, ValueIsDimension):
-                switch (newBorderRadii.length) { // "as any" satisfies TS
-                    case 0: break;
-                    case 1:
-                        newSettings = new Array(4).fill(newBorderRadii[0]);
-                        break;
-                    case 2: // tl/br,tr/bl
-                        newSettings = [
-                            newBorderRadii[0], newBorderRadii[1],
-                            newBorderRadii[0], newBorderRadii[1],
-                        ];
-                        break;
-                    case 3: // tl,tr/bl,br
-                        newSettings = [
-                            newBorderRadii[0], newBorderRadii[1],
-                            newBorderRadii[2], newBorderRadii[1],
-                        ];
-                        break;
-                    case 4: // tl,tr,br,bl
-                        newSettings = newBorderRadii.slice();
-                        break;
-                    default:
-                        throwError('InvalidArgument: given "BorderRadii" list has an invalid length');
-                }
-                break;
-            default: throwError('InvalidArgument: invalid "BorderRadii" given');
-        }
-        if (ValuesDiffer(this._BorderRadii, newSettings)) {
-            this._BorderRadii = newSettings;
-            this.rerender();
-        }
+        const newSettings = this._expandedEdgeValues(// 2/3 entries expand...
+        newBorderRadii, ValueIsDimension, 'BorderRadii' // ...to tl/br,tr/bl...
+        ); // ...resp. tl,tr/bl,br here
+        this._propertyChanged('_BorderRadii', newSettings, true);
     }
     get BoxShadow() {
         return (this._BoxShadow == null ? undefined : Object.assign({}, this._BoxShadow));
@@ -6250,10 +5761,7 @@ export class WAT_Widget extends WAT_Visual {
         if ((newMaxWidth != null) && (this._minWidth != null)) {
             newMaxWidth = Math.max(this._minWidth, newMaxWidth);
         }
-        if (this._maxWidth !== newMaxWidth) {
-            this._maxWidth = newMaxWidth;
-            this.rerender();
-        }
+        this._propertyChanged('_maxWidth', newMaxWidth);
     }
     get minHeight() {
         return (this._minHeight == null ? 0 : this._minHeight);
@@ -6283,10 +5791,7 @@ export class WAT_Widget extends WAT_Visual {
         if ((newMaxHeight != null) && (this._minHeight != null)) {
             newMaxHeight = Math.max(this._minHeight, newMaxHeight);
         }
-        if (this._maxHeight !== newMaxHeight) {
-            this._maxHeight = newMaxHeight;
-            this.rerender();
-        }
+        this._propertyChanged('_maxHeight', newMaxHeight);
     }
     /**** x/y ****/
     get x() { return this.Geometry.x; }
@@ -6620,10 +6125,7 @@ export class WAT_Widget extends WAT_Visual {
     }
     set Overflows(newValue) {
         allowListSatisfying('overflow settings', newValue, (Value) => ValueIsOneOf(Value, WAT_Overflows), undefined, 2, 2);
-        if (ValuesDiffer(this._Overflows, newValue)) {
-            this._Overflows = (newValue == null ? undefined : newValue.slice());
-            this.rerender();
-        }
+        this._propertyChanged('_Overflows', (newValue == null ? undefined : newValue.slice()), true);
     }
     /**** Overlay - which Overlay contains this widget? ****/
     get Overlay() {
@@ -6683,54 +6185,22 @@ export class WAT_Widget extends WAT_Visual {
     }
     /**** existingOverlayNamed ****/
     existingOverlayNamed(OverlayName) {
-        const OverlayIndex = this.IndexOfOverlay(OverlayName);
-        if (OverlayIndex < 0)
-            throwError(`NotFound: no overlay named ${quoted(OverlayName)} found`);
-        return this._OverlayList[OverlayIndex];
+        return existingOverlayIn(this._OverlayList, OverlayName);
     }
     /**** IndexOfOverlay ****/
     IndexOfOverlay(OverlayName) {
-        expectName('overlay name', OverlayName);
-        const normalizedName = OverlayName.toLowerCase();
-        return this._OverlayList.findIndex((Overlay) => Overlay.normalizedName === normalizedName);
+        return IndexOfOverlayIn(this._OverlayList, OverlayName);
     }
     /**** openOverlay ****/
     openOverlay(Descriptor) {
         expectPlainObject('overlay descriptor', Descriptor);
         if (this.OverlayIsOpen(Descriptor.Name))
             throwError(`AlreadyOpen: an overlay named ${quoted(Descriptor.Name)} is already open`);
-        const Overlay = new WAT_WidgetOverlay(this, Descriptor);
-        this._OverlayList.push(Overlay);
-        this.rerender();
-        if (Overlay.onOpen != null) {
-            try {
-                Overlay.onOpen(Overlay);
-            }
-            catch (Signal) {
-                console.warn('"onOpen" callback failure', Signal);
-            }
-        }
+        admitOverlayInto(this, this._OverlayList, new WAT_WidgetOverlay(this, Descriptor));
     }
     /**** closeOverlay ****/
     closeOverlay(OverlayName) {
-        const OverlayIndex = this.IndexOfOverlay(OverlayName);
-        if (OverlayIndex < 0) {
-            return;
-        }
-        const [Overlay] = this._OverlayList.splice(OverlayIndex, 1);
-        // @ts-ignore TS2445 I know, it's a hack, but allow access to protected members here
-        if (Overlay._View != null) {
-            Overlay._View._releaseWidgets();
-        }
-        this.rerender();
-        if (Overlay.onClose != null) {
-            try {
-                Overlay.onClose(Overlay);
-            }
-            catch (Signal) {
-                console.warn('"onClose" callback failure', Signal);
-            }
-        }
+        dismissOverlayFrom(this, this._OverlayList, OverlayName);
     }
     /**** closeAllOverlays ****/
     closeAllOverlays() {
@@ -6761,11 +6231,7 @@ export class WAT_Widget extends WAT_Visual {
     }
     /**** moveOverlayTo ****/
     moveOverlayTo(OverlayName, x, y) {
-        const Overlay = this.existingOverlayNamed(OverlayName);
-        expectLocation('x coordinate', x);
-        expectLocation('y coordinate', y);
-        Overlay.x = x;
-        Overlay.y = y;
+        moveOverlayInTo(this._OverlayList, OverlayName, x, y);
     }
     /**** sizeOverlayBy ****/
     sizeOverlayBy(OverlayName, dW, dH) {
@@ -6776,11 +6242,7 @@ export class WAT_Widget extends WAT_Visual {
     }
     /**** sizeOverlayTo ****/
     sizeOverlayTo(OverlayName, Width, Height) {
-        const Overlay = this.existingOverlayNamed(OverlayName);
-        expectDimension('Width', Width);
-        expectDimension('Height', Height);
-        Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, (Overlay.maxWidth == null ? Infinity : Overlay.maxWidth)));
-        Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, (Overlay.maxHeight == null ? Infinity : Overlay.maxHeight)));
+        sizeOverlayInTo(this._OverlayList, OverlayName, Width, Height);
     }
     /**** Serialization ****/
     get Serialization() {
@@ -6860,22 +6322,213 @@ export class WAT_Widget extends WAT_Visual {
     }
 }
 //------------------------------------------------------------------------------
-//--                            WAT_AppletOverlay                             --
+//--                       WAT_Applet search: matching                       --
 //------------------------------------------------------------------------------
-class WAT_AppletOverlay {
-    constructor(Applet, Descriptor) {
-        Object.defineProperty(this, "_Applet", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
+function searchMatcherFor(Criteria) {
+    const Phrase = (Criteria.SearchPhrase || '').trim();
+    if (Phrase === '') {
+        return () => false;
+    }
+    const caseSensitive = (Criteria.CaseMode === 'sensitively');
+    const normalized = (Value) => (caseSensitive ? Value : Value.toLowerCase());
+    const normalizedPhrase = normalized(Phrase);
+    const Words = normalizedPhrase.split(/\s+/).filter((Word) => Word !== '');
+    switch (Criteria.MatchMode) {
+        case 'all words':
+            return (Text) => Words.every((Word) => normalized(Text).includes(Word));
+        case 'any word':
+            return (Text) => Words.some((Word) => normalized(Text).includes(Word));
+        case 'regular expression':
+            let Pattern;
+            try {
+                Pattern = new RegExp(Phrase, caseSensitive ? '' : 'i');
+            }
+            catch (Signal) {
+                Pattern = undefined;
+            }
+            return (Text) => (Pattern != null) && Pattern.test(Text);
+        default: // 'whole phrase'
+            return (Text) => normalized(Text).includes(normalizedPhrase);
+    }
+}
+function selectionRangeFor(Text, Criteria) {
+    const Phrase = (Criteria.SearchPhrase || '').trim();
+    if (Phrase === '') {
+        return undefined;
+    }
+    const caseSensitive = (Criteria.CaseMode === 'sensitively');
+    const normalized = (Value) => (caseSensitive ? Value : Value.toLowerCase());
+    const normalizedText = normalized(Text);
+    switch (Criteria.MatchMode) {
+        case 'all words':
+        case 'any word':
+            const Words = normalized(Phrase).split(/\s+/).filter((Word) => Word !== '');
+            for (const Word of Words) {
+                const Index = normalizedText.indexOf(Word);
+                if (Index >= 0) {
+                    return { startIndex: Index, endIndex: Index + Word.length };
+                }
+            }
+            return undefined;
+        case 'regular expression':
+            try {
+                const Match = new RegExp(Phrase, caseSensitive ? '' : 'i').exec(Text);
+                return (Match == null ? undefined : { startIndex: Match.index, endIndex: Match.index + Match[0].length });
+            }
+            catch (Signal) {
+                return undefined;
+            }
+        default: // 'whole phrase'
+            const normalizedPhrase = normalized(Phrase);
+            const Index = normalizedText.indexOf(normalizedPhrase);
+            return (Index < 0 ? undefined : { startIndex: Index, endIndex: Index + normalizedPhrase.length });
+    }
+}
+//------------------------------------------------------------------------------
+//--                    WAT_Applet search: match collection                  --
+//------------------------------------------------------------------------------
+function pushMatch(Matches, Type, Path, Property, Text, matches, Criteria) {
+    if (Text == null) {
+        return;
+    }
+    const TextValue = String(Text);
+    if (!matches(TextValue)) {
+        return;
+    }
+    const Selection = selectionRangeFor(TextValue, Criteria);
+    if (Selection != null) {
+        Matches.push({ Type, Path, Property, Selection });
+    }
+}
+function pushVisualMatches(Matches, Type, Path, Visual, matches, Criteria) {
+    if (Criteria.NameIsChecked) {
+        pushMatch(Matches, Type, Path, 'Name', Visual.Name, matches, Criteria);
+    }
+    if (Criteria.BehaviorNameIsChecked) {
+        pushMatch(Matches, Type, Path, 'Behavior', Visual.Behavior, matches, Criteria);
+    }
+    if (Criteria.SynopsisIsChecked) {
+        pushMatch(Matches, Type, Path, 'Synopsis', Visual.Synopsis, matches, Criteria);
+    }
+    if (Criteria.ScriptIsChecked) {
+        pushMatch(Matches, Type, Path, 'Script', Visual.activeScript, matches, Criteria);
+        pushMatch(Matches, Type, Path, 'pendingScript', Visual.pendingScript, matches, Criteria);
+    }
+    if (Criteria.PropertyIsChecked) {
+        propertyNamesToSearch(Visual, Criteria).forEach((PropertyName) => {
+            pushMatch(Matches, Type, Path, PropertyName, Visual[PropertyName], matches, Criteria);
         });
-        Object.defineProperty(this, "_View", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
+    }
+}
+function propertyNamesToSearch(Visual, Criteria) {
+    if (Criteria.PropertyScope === 'given') {
+        return (Criteria.PropertyNames || '').split(/[,\s]+/).filter((Name) => Name !== '');
+    }
+    else {
+        return Visual.configurableProperties.map((Descriptor) => Descriptor.Name);
+    }
+}
+//------------------------------------------------------------------------------
+//--                    WAT_Applet search: match gathering                   --
+//------------------------------------------------------------------------------
+function pathOfPage(Page) {
+    return (Page.Name || ('#' + Page.Index));
+}
+function matchedBehaviors(Applet, Criteria, matches, wholeApplet) {
+    const BehaviorScope = (wholeApplet ? 'all' : Criteria.BehaviorScope);
+    let RegistrationList = [];
+    if (BehaviorScope === 'selected') {
+        if ((Criteria.SelectedBehaviorCategory != null) && (Criteria.SelectedBehaviorName != null)) {
+            // @ts-ignore TS7053 allow indexing
+            const Registration = Applet.BehaviorSet[Criteria.SelectedBehaviorCategory][Criteria.SelectedBehaviorName.toLowerCase()];
+            if (Registration != null) {
+                RegistrationList = [Registration];
+            }
+        }
+    }
+    else {
+        ;
+        ['applet', 'page', 'widget'].forEach((Category) => {
+            // @ts-ignore TS7053 allow indexing
+            RegistrationList.push(...Object.values(Applet.BehaviorSet[Category]));
         });
+    }
+    const Matches = [];
+    RegistrationList.forEach((Registration) => {
+        const Path = Registration.Name;
+        if (Criteria.NameIsChecked) {
+            pushMatch(Matches, 'behavior', Path, 'Name', Registration.Name, matches, Criteria);
+        }
+        if (Criteria.ScriptIsChecked) {
+            pushMatch(Matches, 'behavior', Path, 'Script', Registration.activeScript, matches, Criteria);
+        }
+    });
+    return Matches;
+}
+function matchedPages(Applet, Criteria, matches, wholeApplet) {
+    const PageScope = (wholeApplet ? 'all' : Criteria.PageScope);
+    let PageList;
+    switch (PageScope) {
+        case 'selected':
+            PageList = Criteria.SelectedPages || [];
+            break;
+        case 'active':
+            PageList = (Applet.visitedPage == null ? [] : [Applet.visitedPage]);
+            break;
+        default: PageList = Applet.PageList;
+    }
+    const Matches = [];
+    PageList.forEach((Page) => {
+        pushVisualMatches(Matches, 'page', pathOfPage(Page), Page, matches, Criteria);
+    });
+    return Matches;
+}
+function matchedWidgets(Applet, Criteria, matches, wholeApplet) {
+    var _a;
+    const WidgetScope = (wholeApplet ? 'all' : Criteria.WidgetScope);
+    const WidgetList = (WidgetScope === 'selected' ? (Criteria.SelectedWidgets || []) : (((_a = Applet.visitedPage) === null || _a === void 0 ? void 0 : _a.WidgetList) || []));
+    const Matches = [];
+    WidgetList.forEach((Widget) => {
+        const Path = pathOfPage(Widget.Page) + '/' + (Widget.Name || ('#' + Widget.Index));
+        pushVisualMatches(Matches, 'widget', Path, Widget, matches, Criteria);
+    });
+    return Matches;
+}
+function searchMatchesFor(Applet, Criteria) {
+    if ((Criteria.SearchPhrase || '').trim() === '') {
+        return [];
+    }
+    const matches = searchMatcherFor(Criteria);
+    const wholeApplet = (Criteria.Scope === 'applet');
+    const Matches = [];
+    if (wholeApplet || Criteria.BehaviorIsChecked) {
+        Matches.push(...matchedBehaviors(Applet, Criteria, matches, wholeApplet));
+    }
+    if (wholeApplet || Criteria.PageIsChecked) {
+        Matches.push(...matchedPages(Applet, Criteria, matches, wholeApplet));
+    }
+    if (wholeApplet || Criteria.WidgetIsChecked) {
+        Matches.push(...matchedWidgets(Applet, Criteria, matches, wholeApplet));
+    }
+    return Matches;
+}
+//------------------------------------------------------------------------------
+//--                        WAT_Overlay (abstract base)                       --
+//------------------------------------------------------------------------------
+// common base of "WAT_AppletOverlay" and "WAT_WidgetOverlay": both carry the
+// same field set, validate their descriptors identically and share all their
+// name, modality, callback and width/height accessors - they only differ in
+// their owner (applet vs. widget, see "_rerender" and "close"), in the
+// applet-only "Anchoring" and in their handling of still undefined "x"/"y"
+// values (which make an *applet* overlay center itself when shown, while
+// *widget* overlays default to 0/0) - the "x"/"y" accessors therefore remain
+// in the concrete subclasses
+class WAT_Overlay {
+    /**** constructor - shared descriptor validation and initialization ****/
+    // "Applet" resolves source widget paths (widget overlays pass their
+    // widget's applet - which may still be undefined), "SourceWidgetGuard"
+    // lets subclasses add their own checks for explicitly given source widgets
+    constructor(Descriptor, Applet, SourceWidgetGuard) {
         Object.defineProperty(this, "_Name", {
             enumerable: true,
             configurable: true,
@@ -6889,12 +6542,6 @@ class WAT_AppletOverlay {
             value: void 0
         });
         Object.defineProperty(this, "_isModal", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_Anchoring", {
             enumerable: true,
             configurable: true,
             writable: true,
@@ -6924,7 +6571,6 @@ class WAT_AppletOverlay {
             writable: true,
             value: void 0
         });
-        // "undefined" x/y make the overlay view center this overlay when shown
         Object.defineProperty(this, "_minWidth", {
             enumerable: true,
             configurable: true,
@@ -6967,12 +6613,9 @@ class WAT_AppletOverlay {
             writable: true,
             value: void 0
         });
-        expectApplet('overlay applet', Applet);
-        this._Applet = Applet;
         expectPlainObject('overlay descriptor', Descriptor);
         expectName('overlay name', Descriptor.Name);
         allowBoolean('overlay modality', Descriptor.isModal);
-        allowList('anchoring', Descriptor.Anchoring);
         allowLocation('overlay x coordinate', Descriptor.x);
         allowLocation('overlay y coordinate', Descriptor.y);
         allowDimension('overlay width', Descriptor.Width);
@@ -6983,15 +6626,10 @@ class WAT_AppletOverlay {
         allowDimension('maximal overlay height', Descriptor.maxHeight);
         allowFunction('"onOpen" callback', Descriptor.onOpen);
         allowFunction('"onClose" callback', Descriptor.onClose);
-        let { Name, isModal, Anchoring, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
-        if (Anchoring != null) {
-            expectOneOf('horizontal anchoring', Anchoring[0], ['left', 'right']);
-            expectOneOf('vertical anchoring', Anchoring[1], ['top', 'bottom']);
-        }
+        let { Name, isModal, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
         this._Name = Name;
         this._normalizedName = Name.toLowerCase();
         this._isModal = (isModal || false);
-        this._Anchoring = (Anchoring == null ? ['left', 'top'] : Anchoring.slice(0, 2));
         this._minWidth = Math.max(0, minWidth || 0);
         this._maxWidth = maxWidth;
         this._minHeight = Math.max(0, minHeight || 0);
@@ -7006,14 +6644,15 @@ class WAT_AppletOverlay {
                 throwError('MissingArgument: no source widget path given');
             case ValueIsPath(Descriptor.SourceWidget):
                 SourceWidgetPath = Descriptor.SourceWidget;
-                SourceWidget = Applet.WidgetAtPath(SourceWidgetPath);
+                SourceWidget = Applet === null || Applet === void 0 ? void 0 : Applet.WidgetAtPath(SourceWidgetPath);
                 if (SourceWidget == null)
                     throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
                 break;
             case ValueIsWidget(Descriptor.SourceWidget):
                 SourceWidget = Descriptor.SourceWidget;
-                if (SourceWidget.Applet !== Applet)
-                    throwError('InvalidArgument: the given source widget belongs to a different applet');
+                if (SourceWidgetGuard != null) {
+                    SourceWidgetGuard(SourceWidget);
+                }
                 SourceWidgetPath = SourceWidget.Path;
                 break;
             default:
@@ -7033,9 +6672,6 @@ class WAT_AppletOverlay {
         this._Width = Math.max(this._minWidth, Math.min(Width, (maxWidth == null ? Infinity : maxWidth)));
         this._Height = Math.max(this._minHeight, Math.min(Height, (maxHeight == null ? Infinity : maxHeight)));
     }
-    /**** Applet ****/
-    get Applet() { return this._Applet; }
-    set Applet(_) { throwReadOnlyError('Applet'); }
     /**** Name ****/
     get Name() { return this._Name; }
     set Name(_) { throwReadOnlyError('Name'); }
@@ -7045,9 +6681,6 @@ class WAT_AppletOverlay {
     /**** isModal ****/
     get isModal() { return this._isModal; }
     set isModal(_) { throwReadOnlyError('isModal'); }
-    /**** Anchoring ****/
-    get Anchoring() { return this._Anchoring.slice(); }
-    set Anchoring(_) { throwReadOnlyError('Anchoring'); }
     /**** SourceWidgetPath ****/
     get SourceWidgetPath() { return this._SourceWidgetPath; }
     set SourceWidgetPath(_) { throwReadOnlyError('SourceWidgetPath'); }
@@ -7057,24 +6690,6 @@ class WAT_AppletOverlay {
     /**** onClose ****/
     get onClose() { return this._onClose; }
     set onClose(_) { throwReadOnlyError('onClose'); }
-    /**** x ****/
-    get x() { return this._x; }
-    set x(newX) {
-        allowLocation('overlay x position', newX);
-        if (this._x !== newX) {
-            this._x = newX;
-            this._Applet.rerender();
-        }
-    }
-    /**** y ****/
-    get y() { return this._y; }
-    set y(newY) {
-        allowLocation('overlay y position', newY);
-        if (this._y !== newY) {
-            this._y = newY;
-            this._Applet.rerender();
-        }
-    }
     /**** Width ****/
     get Width() { return this._Width; }
     set Width(newWidth) {
@@ -7082,7 +6697,7 @@ class WAT_AppletOverlay {
         newWidth = Math.max(this._minWidth, Math.min(newWidth, (this._maxWidth == null ? Infinity : this._maxWidth)));
         if (this._Width !== newWidth) {
             this._Width = newWidth;
-            this._Applet.rerender();
+            this._rerender();
         }
     }
     /**** Height ****/
@@ -7092,7 +6707,7 @@ class WAT_AppletOverlay {
         newHeight = Math.max(this._minHeight, Math.min(newHeight, (this._maxHeight == null ? Infinity : this._maxHeight)));
         if (this._Height !== newHeight) {
             this._Height = newHeight;
-            this._Applet.rerender();
+            this._rerender();
         }
     }
     /**** minWidth ****/
@@ -7107,7 +6722,7 @@ class WAT_AppletOverlay {
             if (this._Width < this._minWidth) {
                 this._Width = this._minWidth;
             }
-            this._Applet.rerender();
+            this._rerender();
         }
     }
     /**** maxWidth ****/
@@ -7122,7 +6737,7 @@ class WAT_AppletOverlay {
             if ((newValue != null) && (this._Width > newValue)) {
                 this._Width = newValue;
             }
-            this._Applet.rerender();
+            this._rerender();
         }
     }
     /**** minHeight ****/
@@ -7137,7 +6752,7 @@ class WAT_AppletOverlay {
             if (this._Height < this._minHeight) {
                 this._Height = this._minHeight;
             }
-            this._Applet.rerender();
+            this._rerender();
         }
     }
     /**** maxHeight ****/
@@ -7152,9 +6767,143 @@ class WAT_AppletOverlay {
             if ((newValue != null) && (this._Height > newValue)) {
                 this._Height = newValue;
             }
-            this._Applet.rerender();
+            this._rerender();
         }
     }
+}
+/**** shared overlay list management (used by WAT_Applet and WAT_Widget) ****/
+// module-internal helpers around the private "_OverlayList" of both
+// "WAT_Applet" and "WAT_Widget" - the public overlay methods of these two
+// classes delegate here so that their behaviour and error messages remain
+// exactly identical. function hoisting makes the helpers usable in
+// "WAT_Applet" and "WAT_Widget" even though they are defined only here
+function IndexOfOverlayIn(OverlayList, OverlayName) {
+    expectName('overlay name', OverlayName);
+    const normalizedName = OverlayName.toLowerCase();
+    return OverlayList.findIndex((Overlay) => Overlay.normalizedName === normalizedName);
+}
+function existingOverlayIn(OverlayList, OverlayName) {
+    const OverlayIndex = IndexOfOverlayIn(OverlayList, OverlayName);
+    if (OverlayIndex < 0)
+        throwError(`NotFound: no overlay named ${quoted(OverlayName)} found`);
+    return OverlayList[OverlayIndex];
+}
+function admitOverlayInto(Owner, OverlayList, Overlay) {
+    OverlayList.push(Overlay);
+    Owner.rerender();
+    if (Overlay.onOpen != null) {
+        try {
+            Overlay.onOpen(Overlay);
+        }
+        catch (Signal) {
+            console.warn('"onOpen" callback failure', Signal);
+        }
+    }
+}
+function dismissOverlayFrom(Owner, OverlayList, OverlayName) {
+    const OverlayIndex = IndexOfOverlayIn(OverlayList, OverlayName);
+    if (OverlayIndex < 0) {
+        return;
+    }
+    const [Overlay] = OverlayList.splice(OverlayIndex, 1);
+    if (Overlay._View != null) {
+        Overlay._View._releaseWidgets();
+    }
+    Owner.rerender();
+    if (Overlay.onClose != null) {
+        try {
+            Overlay.onClose(Overlay);
+        }
+        catch (Signal) {
+            console.warn('"onClose" callback failure', Signal);
+        }
+    }
+}
+function moveOverlayInTo(OverlayList, OverlayName, x, y) {
+    const Overlay = existingOverlayIn(OverlayList, OverlayName);
+    expectLocation('x coordinate', x);
+    expectLocation('y coordinate', y);
+    Overlay.x = x;
+    Overlay.y = y;
+}
+function sizeOverlayInTo(OverlayList, OverlayName, Width, Height) {
+    const Overlay = existingOverlayIn(OverlayList, OverlayName);
+    expectDimension('Width', Width);
+    expectDimension('Height', Height);
+    Overlay.Width = Math.max(Overlay.minWidth || 0, Math.min(Width, (Overlay.maxWidth == null ? Infinity : Overlay.maxWidth)));
+    Overlay.Height = Math.max(Overlay.minHeight || 0, Math.min(Height, (Overlay.maxHeight == null ? Infinity : Overlay.maxHeight)));
+}
+//------------------------------------------------------------------------------
+//--                            WAT_AppletOverlay                             --
+//------------------------------------------------------------------------------
+class WAT_AppletOverlay extends WAT_Overlay {
+    // n.b.: "undefined" _x/_y make the overlay view center this overlay
+    // when shown (see "WAT_Overlay")
+    constructor(Applet, Descriptor) {
+        expectApplet('overlay applet', Applet);
+        super(Descriptor, Applet, (SourceWidget) => {
+            if (SourceWidget.Applet !== Applet)
+                throwError('InvalidArgument: the given source widget belongs to a different applet');
+        });
+        Object.defineProperty(this, "_Applet", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_View", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        Object.defineProperty(this, "_Anchoring", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: void 0
+        });
+        this._Applet = Applet;
+        allowList('anchoring', Descriptor.Anchoring);
+        const { Anchoring } = Descriptor;
+        if (Anchoring != null) {
+            expectOneOf('horizontal anchoring', Anchoring[0], ['left', 'right']);
+            expectOneOf('vertical anchoring', Anchoring[1], ['top', 'bottom']);
+        }
+        this._Anchoring = (Anchoring == null ? ['left', 'top'] : Anchoring.slice(0, 2));
+    }
+    /**** _rerender ****/
+    _rerender() { this._Applet.rerender(); }
+    /**** Applet ****/
+    get Applet() { return this._Applet; }
+    set Applet(_) { throwReadOnlyError('Applet'); }
+    /**** Name, normalizedName, isModal, SourceWidgetPath, onOpen/onClose ****/
+    // all inherited from "WAT_Overlay" (see above)
+    /**** Anchoring ****/
+    get Anchoring() { return this._Anchoring.slice(); }
+    set Anchoring(_) { throwReadOnlyError('Anchoring'); }
+    /**** x ****/
+    get x() { return this._x; }
+    set x(newX) {
+        allowLocation('overlay x position', newX);
+        if (this._x !== newX) {
+            this._x = newX;
+            this._rerender();
+        }
+    }
+    /**** y ****/
+    get y() { return this._y; }
+    set y(newY) {
+        allowLocation('overlay y position', newY);
+        if (this._y !== newY) {
+            this._y = newY;
+            this._rerender();
+        }
+    }
+    /**** Width, Height ****/
+    // inherited from "WAT_Overlay" (see above)
+    /**** minWidth, maxWidth, minHeight, maxHeight ****/
+    // inherited from "WAT_Overlay" (see above)
     /**** close ****/
     close() {
         this._Applet.closeOverlay(this._Name);
@@ -7246,9 +6995,10 @@ class WAT_Dialog extends WAT_AppletOverlay {
 //------------------------------------------------------------------------------
 //--                            WAT_WidgetOverlay                             --
 //------------------------------------------------------------------------------
-class WAT_WidgetOverlay {
+class WAT_WidgetOverlay extends WAT_Overlay {
     constructor(Widget, Descriptor) {
-        var _a;
+        expectWidget('overlay widget', Widget);
+        super(Descriptor, Widget.Applet);
         Object.defineProperty(this, "_Widget", {
             enumerable: true,
             configurable: true,
@@ -7261,176 +7011,24 @@ class WAT_WidgetOverlay {
             writable: true,
             value: void 0
         });
-        Object.defineProperty(this, "_Name", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_normalizedName", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_isModal", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_x", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_Width", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_y", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_Height", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_minWidth", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_maxWidth", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_minHeight", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_maxHeight", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_SourceWidgetPath", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_onOpen", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        Object.defineProperty(this, "_onClose", {
-            enumerable: true,
-            configurable: true,
-            writable: true,
-            value: void 0
-        });
-        expectWidget('overlay widget', Widget);
         this._Widget = Widget;
-        expectPlainObject('overlay descriptor', Descriptor);
-        expectName('overlay name', Descriptor.Name);
-        allowBoolean('overlay modality', Descriptor.isModal);
-        allowLocation('overlay x coordinate', Descriptor.x);
-        allowLocation('overlay y coordinate', Descriptor.y);
-        allowDimension('overlay width', Descriptor.Width);
-        allowDimension('overlay height', Descriptor.Height);
-        allowDimension('minimal overlay width', Descriptor.minWidth);
-        allowDimension('maximal overlay width', Descriptor.maxWidth);
-        allowDimension('minimal overlay height', Descriptor.minHeight);
-        allowDimension('maximal overlay height', Descriptor.maxHeight);
-        allowFunction('"onOpen" callback', Descriptor.onOpen);
-        allowFunction('"onClose" callback', Descriptor.onClose);
-        let { Name, isModal, x, y, Width, Height, minWidth, maxWidth, minHeight, maxHeight, onOpen, onClose } = Descriptor;
-        this._Name = Name;
-        this._normalizedName = Name.toLowerCase();
-        this._isModal = (isModal || false);
-        this._minWidth = Math.max(0, minWidth || 0);
-        this._maxWidth = maxWidth;
-        this._minHeight = Math.max(0, minHeight || 0);
-        this._maxHeight = maxHeight;
-        this._x = (x || 0);
-        this._onOpen = onOpen;
-        this._y = (y || 0);
-        this._onClose = onClose;
-        let SourceWidget, SourceWidgetPath;
-        switch (true) {
-            case Descriptor.SourceWidget == null:
-                throwError('MissingArgument: no source widget path given');
-            case ValueIsPath(Descriptor.SourceWidget):
-                SourceWidgetPath = Descriptor.SourceWidget;
-                SourceWidget = (_a = Widget.Applet) === null || _a === void 0 ? void 0 : _a.WidgetAtPath(SourceWidgetPath);
-                if (SourceWidget == null)
-                    throwError(`NoSuchWidget: no widget at path ${quoted(Descriptor.SourceWidget)} found`);
-                break;
-            case ValueIsWidget(Descriptor.SourceWidget):
-                SourceWidget = Descriptor.SourceWidget;
-                SourceWidgetPath = SourceWidget.Path;
-                break;
-            default:
-                throwError('InvalidArgument: the given source widget is neither a widget ' +
-                    'nor a widget path');
-        }
-        this._SourceWidgetPath = SourceWidgetPath;
-        if ((Width == null) || (Height == null)) {
-            let SourceGeometry = SourceWidget.Geometry;
-            if (Width == null) {
-                Width = SourceGeometry.Width;
-            }
-            if (Height == null) {
-                Height = SourceGeometry.Height;
-            }
-        }
-        this._Width = Math.max(this._minWidth, Math.min(Width, (maxWidth == null ? Infinity : maxWidth)));
-        this._Height = Math.max(this._minHeight, Math.min(Height, (maxHeight == null ? Infinity : maxHeight)));
+        this._x = (this._x || 0); // unlike applet overlays, widget overlays do
+        this._y = (this._y || 0); // not center - they default to x/y = 0/0
     }
+    /**** _rerender ****/
+    _rerender() { this._Widget.rerender(); }
     /**** Widget ****/
     get Widget() { return this._Widget; }
     set Widget(_) { throwReadOnlyError('Widget'); }
-    /**** Name ****/
-    get Name() { return this._Name; }
-    set Name(_) { throwReadOnlyError('Name'); }
-    /**** normalizedName ****/
-    get normalizedName() { return this._normalizedName; }
-    set normalizedName(_) { throwReadOnlyError('normalizedName'); }
-    /**** isModal ****/
-    get isModal() { return this._isModal; }
-    set isModal(_) { throwReadOnlyError('isModal'); }
-    /**** SourceWidgetPath ****/
-    get SourceWidgetPath() { return this._SourceWidgetPath; }
-    set SourceWidgetPath(_) { throwReadOnlyError('SourceWidgetPath'); }
-    /**** onOpen ****/
-    get onOpen() { return this._onOpen; }
-    set onOpen(_) { throwReadOnlyError('onOpen'); }
-    /**** onClose ****/
-    get onClose() { return this._onClose; }
-    set onClose(_) { throwReadOnlyError('onClose'); }
+    /**** Name, normalizedName, isModal, SourceWidgetPath, onOpen/onClose ****/
+    // all inherited from "WAT_Overlay" (see above)
     /**** x ****/
     get x() { return this._x; }
     set x(newX) {
         expectLocation('overlay x position', newX);
         if (this._x !== newX) {
             this._x = newX;
-            this._Widget.rerender();
+            this._rerender();
         }
     }
     /**** y ****/
@@ -7439,89 +7037,13 @@ class WAT_WidgetOverlay {
         expectLocation('overlay y position', newY);
         if (this._y !== newY) {
             this._y = newY;
-            this._Widget.rerender();
+            this._rerender();
         }
     }
-    /**** Width ****/
-    get Width() { return this._Width; }
-    set Width(newWidth) {
-        expectDimension('overlay width', newWidth);
-        newWidth = Math.max(this._minWidth, Math.min(newWidth, (this._maxWidth == null ? Infinity : this._maxWidth)));
-        if (this._Width !== newWidth) {
-            this._Width = newWidth;
-            this._Widget.rerender();
-        }
-    }
-    /**** Height ****/
-    get Height() { return this._Height; }
-    set Height(newHeight) {
-        expectDimension('overlay height', newHeight);
-        newHeight = Math.max(this._minHeight, Math.min(newHeight, (this._maxHeight == null ? Infinity : this._maxHeight)));
-        if (this._Height !== newHeight) {
-            this._Height = newHeight;
-            this._Widget.rerender();
-        }
-    }
-    /**** minWidth ****/
-    get minWidth() { return this._minWidth; }
-    set minWidth(newValue) {
-        expectDimension('minimal overlay width', newValue);
-        if (this._minWidth !== newValue) {
-            this._minWidth = newValue;
-            if ((this._maxWidth != null) && (this._maxWidth < this._minWidth)) {
-                this._maxWidth = this._minWidth;
-            }
-            if (this._Width < this._minWidth) {
-                this._Width = this._minWidth;
-            }
-            this._Widget.rerender();
-        }
-    }
-    /**** maxWidth ****/
-    get maxWidth() { return this._maxWidth; }
-    set maxWidth(newValue) {
-        allowDimension('maximal overlay width', newValue);
-        if (newValue != null) {
-            newValue = Math.max(this._minWidth, newValue);
-        }
-        if (this._maxWidth !== newValue) {
-            this._maxWidth = newValue;
-            if ((newValue != null) && (this._Width > newValue)) {
-                this._Width = newValue;
-            }
-            this._Widget.rerender();
-        }
-    }
-    /**** minHeight ****/
-    get minHeight() { return this._minHeight; }
-    set minHeight(newValue) {
-        expectDimension('minimal overlay height', newValue);
-        if (this._minHeight !== newValue) {
-            this._minHeight = newValue;
-            if ((this._maxHeight != null) && (this._maxHeight < this._minHeight)) {
-                this._maxHeight = this._minHeight;
-            }
-            if (this._Height < this._minHeight) {
-                this._Height = this._minHeight;
-            }
-            this._Widget.rerender();
-        }
-    }
-    /**** maxHeight ****/
-    get maxHeight() { return this._maxHeight; }
-    set maxHeight(newValue) {
-        allowDimension('maximal overlay height', newValue);
-        if (newValue != null) {
-            newValue = Math.max(this._minHeight, newValue);
-        }
-        if (this._maxHeight !== newValue) {
-            this._maxHeight = newValue;
-            if ((newValue != null) && (this._Height > newValue)) {
-                this._Height = newValue;
-            }
-            this._Widget.rerender();
-        }
-    }
+    /**** Width, Height ****/
+    // inherited from "WAT_Overlay" (see above)
+    /**** minWidth, maxWidth, minHeight, maxHeight ****/
+    // inherited from "WAT_Overlay" (see above)
     /**** close ****/
     close() {
         this._Widget.closeOverlay(this._Name);
@@ -7550,36 +7072,29 @@ const HashmarkPattern = /^\s*([+-]?(\d+([.]\d+)?|[.]\d+)([eE][+-]?\d+)?|\d+[.]\d
 function HashmarkMatcher(Value) {
     return ValueIsStringMatching(Value, HashmarkPattern) || ValueIsNumber(Value);
 }
-/**** for TimeInput ****/
+/**** for Time/DateTime/Date/Week/MonthInput ****/
+// patterns, regular expressions and matchers all follow the same schema
+function TemporalRegExpFor(Pattern) {
+    return new RegExp('^' + Pattern + '$');
+}
+function TemporalMatcherFor(Expression) {
+    return (Value) => ValueIsStringMatching(Value, Expression);
+}
 export const WAT_TimePattern = '\\d{2}:\\d{2}(?::\\d{2})?';
-export const WAT_TimeRegExp = /^\d{2}:\d{2}(?::\d{2})?$/;
-export function WAT_TimeMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_TimeRegExp);
-}
-/**** for DateTimeInput ****/
+export const WAT_TimeRegExp = TemporalRegExpFor(WAT_TimePattern);
+export const WAT_TimeMatcher = TemporalMatcherFor(WAT_TimeRegExp);
 export const WAT_DateTimePattern = '\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}(?::\\d{2})?';
-export const WAT_DateTimeRegExp = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2})?$/;
-export function WAT_DateTimeMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_DateTimeRegExp);
-}
-/**** for DateInput ****/
+export const WAT_DateTimeRegExp = TemporalRegExpFor(WAT_DateTimePattern);
+export const WAT_DateTimeMatcher = TemporalMatcherFor(WAT_DateTimeRegExp);
 export const WAT_DatePattern = '\\d{4}-\\d{2}-\\d{2}';
-export const WAT_DateRegExp = /^\d{4}-\d{2}-\d{2}$/;
-export function WAT_DateMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_DateRegExp);
-}
-/**** for WeekInput ****/
+export const WAT_DateRegExp = TemporalRegExpFor(WAT_DatePattern);
+export const WAT_DateMatcher = TemporalMatcherFor(WAT_DateRegExp);
 export const WAT_WeekPattern = '\\d{4}-W\\d{2}';
-export const WAT_WeekRegExp = /^\d{4}-W\d{2}$/;
-export function WAT_WeekMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_WeekRegExp);
-}
-/**** for MonthInput ****/
+export const WAT_WeekRegExp = TemporalRegExpFor(WAT_WeekPattern);
+export const WAT_WeekMatcher = TemporalMatcherFor(WAT_WeekRegExp);
 export const WAT_MonthPattern = '\\d{4}-\\d{2}';
-export const WAT_MonthRegExp = /^\d{4}-\d{2}$/;
-export function WAT_MonthMatcher(Value) {
-    return ValueIsStringMatching(Value, WAT_MonthRegExp);
-}
+export const WAT_MonthRegExp = TemporalRegExpFor(WAT_MonthPattern);
+export const WAT_MonthMatcher = TemporalMatcherFor(WAT_MonthRegExp);
 /**** for MarkdownView ****/
 // "Marked" is still needed by "MarkdownAsText"/"MarkdownAsHTML" - the
 // Markdown rendering of the MarkdownView widget itself now comes from JCL
@@ -8290,104 +7805,76 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.WebView', WAT_WebView);
-    /**** TitleView ****/
-    // a thin WAT wrapper around the "ui.Title" component from the
-    // "javascript-code-library" (JCL) - this behavior deliberately keeps WAT's
-    // own typography rules: applets must render identically in every WAT
-    // instance, regardless of any changes to JCL's own styling
-    // (nota bene: JCL's Title/Subtitle/Label/Fineprint read "PropSet.class"
-    //  literally before merging - the "class" prop is therefore lowercase here)
-    const WAT_TitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x32 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.TitleView {
-        left:0px; top:0px; width:100%; height:100%;
-        font-size:22px; font-weight:bold; line-height:32px;
-        overflow:hidden; text-overflow:ellipsis;
-      }
-    `); // WAT's original geometry and typography rules
-        my.configurableProperties = [
-            { Name: 'Value', Placeholder: '(enter title)',
-                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
-        ];
-        onRender(function () {
-            return html `<${JCL_ui.Title} class="WAT Content TitleView"
-        Value=${my.Value}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.TitleView', WAT_TitleView);
-    /**** SubtitleView ****/
-    // a thin WAT wrapper around the "ui.Subtitle" component from the
-    // "javascript-code-library" (JCL) - see WAT_TitleView for details
-    const WAT_SubtitleView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x26 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.SubtitleView {
-        left:0px; top:2px; width:100%; height:100%;
-        font-size:18px; font-weight:bold; line-height:27px;
-        overflow:hidden; text-overflow:ellipsis;
-      }
-    `); // WAT's original geometry and typography rules
-        my.configurableProperties = [
-            { Name: 'Value', Placeholder: '(enter subtitle)',
-                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
-        ];
-        onRender(function () {
-            return html `<${JCL_ui.Subtitle} class="WAT Content SubtitleView"
-        Value=${my.Value}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.SubtitleView', WAT_SubtitleView);
-    /**** LabelView ****/
-    // a thin WAT wrapper around the "ui.Label" component from the
-    // "javascript-code-library" (JCL) - see WAT_TitleView for details
-    const WAT_LabelView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 120x20 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.LabelView {
-        left:0px; top:4px; width:100%; height:100%;
-        font-size:14px; font-weight:bold; line-height:21px;
-        overflow:hidden; text-overflow:ellipsis;
-      }
-    `); // WAT's original geometry and typography rules
-        my.configurableProperties = [
-            { Name: 'Value', Placeholder: '(enter label)',
-                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true, },
-        ];
-        function _onClick(Event) { my.on('click')(Event); }
-        onRender(function () {
-            return html `<${JCL_ui.Label} class="WAT Content LabelView"
-        Value=${my.Value} onClick=${_onClick}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.LabelView', WAT_LabelView);
-    /**** FineprintView ****/
-    // a thin WAT wrapper around the "ui.Fineprint" component from the
-    // "javascript-code-library" (JCL) - see WAT_TitleView for details
-    const WAT_FineprintView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 120x16 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.FineprintView {
-        left:0px; top:0px; width:100%; height:100%;
-        font-size:12px; font-weight:normal; line-height:18px;
-        overflow:visible; text-overflow:ellipsis;
-      }
-    `); // WAT's original geometry and typography rules (fineprints may be
-        // multi-line - JCL's Fineprint would clip them via overflow:hidden)
-        my.configurableProperties = [
-            { Name: 'Value', Placeholder: '(enter fineprint)',
-                EditorType: 'text-input', AccessorsFor: 'memoized', withCallback: true, },
-        ];
-        onRender(function () {
-            return html `<${JCL_ui.Fineprint} class="WAT Content FineprintView"
-        Value=${my.Value}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.FineprintView', WAT_FineprintView);
+    /**** Title/Subtitle/Label/FineprintView ****/
+    // thin WAT wrappers around the "ui.Title"/"ui.Subtitle"/"ui.Label"/
+    // "ui.Fineprint" components from the "javascript-code-library" (JCL) -
+    // these behaviours deliberately keep WAT's own typography rules: applets
+    // must render identically in every WAT instance, regardless of any changes
+    // to JCL's own styling. the four scripts only differ in JCL component,
+    // typography, placeholder, editor type and default size and are therefore
+    // generated from a single template and registered via
+    // "registerIntrinsicBehaviorFromSource" (the generated source text is
+    // exactly what users see - and may copy - as the behaviour's
+    // "activeScript")
+    //
+    // nota bene: JCL's Title/Subtitle/Label/Fineprint read "PropSet.class"
+    // literally before merging - the "class" prop is therefore lowercase in
+    // the template. "FineprintView" keeps "overflow:visible" (fineprints may
+    // be multi-line - JCL's Fineprint would clip them via overflow:hidden),
+    // and "LabelView" additionally forwards clicks to its "click" callback
+    function TextViewScriptFor(Descriptor) {
+        const { ViewClass, JCLComponent, DefaultSize, TopOffset, TypographyRules, Overflow, Placeholder, EditorType, isClickable } = Descriptor;
+        const ClickHandler = (!isClickable ? '' : `
+function _onClick (Event) { my.on('click')(Event) }
+`);
+        const ClickBinding = (!isClickable ? '' : ' onClick=\${_onClick}');
+        return `/**** DefaultSize ${DefaultSize} ****/
+
+installStylesheet(\`
+  .WAT.Widget > .WAT.${ViewClass} {
+    left:0px; top:${TopOffset}px; width:100%; height:100%;
+    ${TypographyRules}
+    overflow:${Overflow}; text-overflow:ellipsis;
+  }
+\`)
+
+my.configurableProperties = [
+  { Name:'Value', Placeholder:'${Placeholder}',
+    EditorType:'${EditorType}', AccessorsFor:'memoized', withCallback:true, },
+]
+${ClickHandler}
+onRender(function () {
+  return html\`<\${JCL_ui.${JCLComponent}} class="WAT Content ${ViewClass}"
+    Value=\${my.Value}${ClickBinding}
+  />\`
+})
+`;
+    }
+    const TextViewClosures = { JCL_ui };
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.TitleView', TextViewScriptFor({
+        ViewClass: 'TitleView', JCLComponent: 'Title', DefaultSize: '200x32',
+        TopOffset: 0, TypographyRules: 'font-size:22px; font-weight:bold; line-height:32px;',
+        Overflow: 'hidden', Placeholder: '(enter title)',
+        EditorType: 'textline-input', isClickable: false
+    }), TextViewClosures);
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.SubtitleView', TextViewScriptFor({
+        ViewClass: 'SubtitleView', JCLComponent: 'Subtitle', DefaultSize: '200x30',
+        TopOffset: 2, TypographyRules: 'font-size:18px; font-weight:bold; line-height:27px;',
+        Overflow: 'hidden', Placeholder: '(enter subtitle)',
+        EditorType: 'textline-input', isClickable: false
+    }), TextViewClosures);
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.LabelView', TextViewScriptFor({
+        ViewClass: 'LabelView', JCLComponent: 'Label', DefaultSize: '120x30',
+        TopOffset: 4, TypographyRules: 'font-size:14px; font-weight:bold; line-height:21px;',
+        Overflow: 'hidden', Placeholder: '(enter label)',
+        EditorType: 'textline-input', isClickable: true
+    }), TextViewClosures);
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.FineprintView', TextViewScriptFor({
+        ViewClass: 'FineprintView', JCLComponent: 'Fineprint', DefaultSize: '120x16',
+        TopOffset: 0, TypographyRules: 'font-size:12px; font-weight:normal; line-height:18px;',
+        Overflow: 'visible', Placeholder: '(enter fineprint)',
+        EditorType: 'text-input', isClickable: false
+    }), TextViewClosures);
     /**** Icon ****/
     // a thin WAT wrapper around the "ui.Icon" component from the
     // "javascript-code-library" (JCL) - the actual appearance now comes from
@@ -8443,6 +7930,36 @@ function registerIntrinsicBehaviorsIn(Applet) {
         });
     };
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Icon', WAT_Icon);
+    /**** horizontal/verticalSeparator ****/
+    // thin WAT wrappers around the "ui.horizontalSeparator"/
+    // "ui.verticalSeparator" components from the "javascript-code-library"
+    // (JCL) - the actual appearance comes from JCL, the behaviours only
+    // contribute widget geometry. both scripts are generated from a single
+    // template (parameterised by orientation only) and registered via
+    // "registerIntrinsicBehaviorFromSource" (the generated source text is
+    // exactly what users see - and may copy - as the behaviour's
+    // "activeScript")
+    function SeparatorScriptFor(Orientation) {
+        const SeparatorClass = Orientation + 'Separator';
+        const DefaultSize = (Orientation === 'horizontal' ? '120x8' : '8x120');
+        return `/**** DefaultSize ${DefaultSize} ****/
+
+installStylesheet(\`
+  .WAT.Widget > .WAT.${SeparatorClass} {
+    left:0px; top:0px; width:100%; height:100%;
+  }
+\`)                        // geometry only - the look itself comes from JCL
+
+onRender(function () {
+  return html\`<\${JCL_ui.${SeparatorClass}} Class="WAT Content ${SeparatorClass}"/>\`
+})
+`;
+    }
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.horizontalSeparator', SeparatorScriptFor('horizontal'), { JCL_ui });
+    /**** verticalSeparator ****/
+    // see "horizontal/verticalSeparator" above - same template, other
+    // orientation
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.verticalSeparator', SeparatorScriptFor('vertical'), { JCL_ui });
     /**** value lists for straight and curved Arrows ****/
     const WAT_ArrowDirections = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w'];
     const WAT_ArrowRotations = ['cw', 'ccw'];
@@ -8685,82 +8202,71 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Button', WAT_Button);
     /**** Checkbox ****/
     // a thin WAT wrapper around the "native.Checkbox" component from the
-    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
+    // "javascript-code-library" (JCL) - the actual appearance comes from JCL,
     // this behavior only contributes widget geometry and the WAT property
-    // interface
-    const WAT_Checkbox = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 20x20 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.Checkbox {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'checkbox', AccessorsFor: 'memoized', withCallback: true },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling == false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('click')(Event);
-                this.on('input')(Event);
-            };
-            return html `<${JCL_native.Checkbox} Class="WAT Content Checkbox"
-        Value=${Value} disabled=${Enabling == false}
-        onValueInput=${_onValueInput}
-      />`; // a null "Value" shows an "indeterminate" checkbox
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Checkbox', WAT_Checkbox);
+    // interface. "Checkbox" and "Radiobutton" (see below) share the same
+    // script apart from their JCL component and two explanatory remarks - both
+    // scripts are therefore generated from this template and registered via
+    // "registerIntrinsicBehaviorFromSource" (the generated source text is
+    // exactly what users see - and may copy - as the behaviour's
+    // "activeScript")
+    function ToggleScriptFor(Descriptor) {
+        const { ControlClass, LeadingRemark, TrailingRemark } = Descriptor;
+        return `/**** DefaultSize 20x30 ****/
+
+installStylesheet(\`
+  .WAT.Widget > .WAT.${ControlClass} {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
+  }
+\`)                        // geometry only - the look itself comes from JCL
+
+/**** custom Properties ****/
+
+my.configurableProperties = [
+  { Name:'Value',
+    EditorType:'checkbox', AccessorsFor:'memoized', withCallback:true },
+]
+
+/**** Renderer ****/
+
+onRender(function () {${LeadingRemark}
+  const { Value, Enabling } = this
+
+  const _onValueInput = (newValue, Event) => {
+    if (Enabling == false) { return }
+
+    this.Value = newValue
+    this.on('click')(Event)
+    this.on('input')(Event)
+  }
+
+  return html\`<\${JCL_native.${ControlClass}} Class="WAT Content ${ControlClass}"
+    Value=\${Value} disabled=\${Enabling == false}
+    onValueInput=\${_onValueInput}
+  />\`${TrailingRemark}
+})
+`;
+    }
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.Checkbox', ToggleScriptFor({
+        ControlClass: 'Checkbox', LeadingRemark: '',
+        TrailingRemark: '             // a null "Value" shows an "indeterminate" checkbox'
+    }), { JCL_native });
     /**** Radiobutton ****/
     // a thin WAT wrapper around the "native.Radiobutton" component from the
-    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
-    // this behavior only contributes widget geometry and the WAT property
-    // interface
-    const WAT_Radiobutton = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 20x20 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.Radiobutton {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'checkbox', AccessorsFor: 'memoized', withCallback: true },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            // *C* radiobuttons lack a grouping mechanism ("name" attribute) - group behavior must be scripted manually
-            const { Value, Enabling } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling == false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('click')(Event);
-                this.on('input')(Event);
-            };
-            return html `<${JCL_native.Radiobutton} Class="WAT Content Radiobutton"
-        Value=${Value} disabled=${Enabling == false}
-        onValueInput=${_onValueInput}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.Radiobutton', WAT_Radiobutton);
+    // "javascript-code-library" (JCL) - see "Checkbox" above: both scripts
+    // come from the shared "ToggleScriptFor" template
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.Radiobutton', ToggleScriptFor({
+        ControlClass: 'Radiobutton',
+        LeadingRemark: '\n  // *C* radiobuttons lack a grouping mechanism ("name" attribute) - group behavior must be scripted manually',
+        TrailingRemark: ''
+    }), { JCL_native });
     /**** Gauge ****/
     // a thin WAT wrapper around the "native.Gauge" component from the
     // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Gauge = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 120x20 ****/
+        /**** DefaultSize 120x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Gauge {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8802,7 +8308,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // this behavior only contributes widget geometry, the WAT progress color
     // and the WAT property interface
     const WAT_Progressbar = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 120x20 ****/
+        /**** DefaultSize 120x30 ****/
         installStylesheet(`
       .WAT.Widget > .WAT.Progressbar {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8893,598 +8399,276 @@ function registerIntrinsicBehaviorsIn(Applet) {
     /**** TextlineInput ****/
     // a thin WAT wrapper around the "native.TextlineInput" component from the
     // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_TextlineInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.TextlineInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'minLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'maxLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized',
-                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
-            { Name: 'SpellChecking',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions',
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.TextlineInput} Class="WAT Content TextlineInput"
-        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
-        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
-        Pattern=${Pattern} SpellCheck=${SpellChecking}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
+    // of local input against external changes come from JCL, these behaviours
+    // only contribute widget geometry and the WAT property interface. all
+    // thirteen "native input" behaviours share the same script frame (geometry
+    // stylesheet, property descriptor table, "onRender" with "_onValueInput"/
+    // "_onBlur" and the JCL component tag) - their scripts are therefore built
+    // with the "NativeInputScriptFor" template below and registered via
+    // "registerIntrinsicBehaviorFromSource" (the generated source text is
+    // exactly what users see - and may copy - as the behaviour's
+    // "activeScript"). the multi-line descriptor parts ("PropertyLines",
+    // "BindingLines", "AttributeLines" and "SpecialSection") are source text
+    // snippets which start and end with a newline
+    function NativeInputScriptFor(Descriptor) {
+        const { ControlClass, DefaultSize, withLineHeight, withBlurHandler, PropertyLines, SpecialSection, BindingLines, AttributeLines, TagRemark, RendererRemark } = Descriptor;
+        const LineHeightRule = (withLineHeight == false ? '' : '\n    line-height:normal;');
+        const BlurHandler = (withBlurHandler == false ? '' : `
+  const _onBlur = (Event) => {
+    this.on('blur')(Event)
+  }
+`);
+        return `/**** DefaultSize ${DefaultSize} ****/
+
+installStylesheet(\`
+  .WAT.Widget > .WAT.${ControlClass} {
+    left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;${LineHeightRule}
+  }
+\`)                      // geometry only - the look itself comes from JCL
+
+/**** custom Properties ****/
+
+my.configurableProperties = [${PropertyLines}]
+${SpecialSection !== null && SpecialSection !== void 0 ? SpecialSection : ''}
+/**** Renderer ****/
+
+onRender(function () {
+  const {${BindingLines}} = this
+
+  const _onValueInput = (newValue, Event) => {
+    if (Enabling === false) { return }
+
+    this.Value = newValue
+    this.on('input')(Event)
+  }
+${BlurHandler}
+  return html\`<\${JCL_native.${ControlClass}} Class="WAT Content ${ControlClass}"${AttributeLines}  />\`${TagRemark !== null && TagRemark !== void 0 ? TagRemark : ''}
+})${RendererRemark !== null && RendererRemark !== void 0 ? RendererRemark : ''}
+`;
+    }
+    /**** TextualInputScriptFor ****/
+    // builds the scripts for the six "textual" input behaviours (textline,
+    // password, phone number, e-mail address, URL and search inputs): they only
+    // differ in their "Value" editor type, the casing of their spellcheck
+    // attribute (JCL expects "SpellCheck", plain "spellcheck" merely reaches
+    // the <input> via JCL "RestProps" - and passwords get neither spellchecking
+    // nor suggestions at all) and a few remarks
+    function TextualInputScriptFor(Descriptor) {
+        const { ControlClass, ValueEditorType, SpellCheckAttribute, ValueRemark, RendererRemark } = Descriptor;
+        const withSuggestions = (SpellCheckAttribute != null);
+        const SuggestionProperties = (!withSuggestions ? '' : `
+  { Name:'SpellChecking',
+    EditorType:'checkbox',       AccessorsFor:'memoized' },
+  { Name:'Suggestions',
+    EditorType:'linelist-input', AccessorsFor:'memoized' },`);
+        const SuggestionBindings = (!withSuggestions ? '' : ',\n    SpellChecking, Suggestions');
+        const TrailingAttributes = (!withSuggestions
+            ? `
+    Pattern=\${Pattern} disabled=\${Enabling === false}`
+            : `
+    Pattern=\${Pattern} ${SpellCheckAttribute}=\${SpellChecking}
+    Suggestions=\${Suggestions} disabled=\${Enabling === false}`);
+        return NativeInputScriptFor({
+            ControlClass, DefaultSize: '200x30', RendererRemark,
+            PropertyLines: `${ValueRemark !== null && ValueRemark !== void 0 ? ValueRemark : ''}
+  { Name:'Value',
+    EditorType:'${ValueEditorType}', AccessorsFor:'memoized', withCallback:true },
+  { Name:'Placeholder',
+    EditorType:'textline-input', AccessorsFor:'memoized' },
+  { Name:'readonly',
+    EditorType:'checkbox',       AccessorsFor:'memoized' },
+  { Name:'minLength',            minValue:0, Stepping:1,
+    EditorType:'integer-input',  AccessorsFor:'memoized' },
+  { Name:'maxLength',            minValue:0, Stepping:1,
+    EditorType:'integer-input',  AccessorsFor:'memoized' },
+  { Name:'Pattern',
+    EditorType:'textline-input', AccessorsFor:'memoized',
+    Validator:(Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },${SuggestionProperties}
+`,
+            BindingLines: `
+    Value, Enabling, Placeholder, readonly, minLength,maxLength, Pattern${SuggestionBindings}
+  `,
+            AttributeLines: `
+    Value=\${Value == null ? '' : ''+Value} Placeholder=\${Placeholder}
+    readonly=\${readonly} minLength=\${minLength} maxLength=\${maxLength}${TrailingAttributes}
+    onValueInput=\${_onValueInput} onBlur=\${_onBlur}
+`
         });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TextlineInput', WAT_TextlineInput);
+    }
+    const NativeInputClosures = { JCL_native, ValueIsTextline, PatternIsCompilable };
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.TextlineInput', TextualInputScriptFor({
+        ControlClass: 'TextlineInput', ValueEditorType: 'textline-input',
+        SpellCheckAttribute: 'SpellCheck'
+    }), NativeInputClosures);
     /**** PasswordInput ****/
     // a thin WAT wrapper around the "native.PasswordInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_PasswordInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.PasswordInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'password-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'minLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'maxLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized',
-                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.PasswordInput} Class="WAT Content PasswordInput"
-        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
-        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
-        Pattern=${Pattern} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PasswordInput', WAT_PasswordInput);
+    // "javascript-code-library" (JCL) - see "TextlineInput" above: this script
+    // comes from the shared "TextualInputScriptFor" template (passwords get
+    // neither spellchecking nor suggestions)
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.PasswordInput', TextualInputScriptFor({
+        ControlClass: 'PasswordInput', ValueEditorType: 'password-input'
+    }), NativeInputClosures);
     /**** NumberInput ****/
     // a thin WAT wrapper around the "native.NumberInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_NumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 120x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.NumberInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'number-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum',
-                EditorType: 'number-input', AccessorsFor: 'memoized' },
-            { Name: 'Stepping',
-                EditorType: 'number-input', AccessorsFor: 'memoized', minValue: 0, withMin: false },
-            { Name: 'Maximum',
-                EditorType: 'number-input', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions',
-                EditorType: 'numberlist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, Minimum, Stepping, Maximum, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.NumberInput} Class="WAT Content NumberInput"
-        Value=${Value == null ? undefined : parseFloat(Value)}
-        Placeholder=${Placeholder} readonly=${readonly}
-        Minimum=${Minimum} Maximum=${Maximum} Step=${Stepping}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.NumberInput', WAT_NumberInput);
+    // "javascript-code-library" (JCL) - see "TextlineInput" above: this script
+    // comes from the shared "NativeInputScriptFor" frame template, with an
+    // explicit property table and attribute list for its "Minimum"/"Stepping"/
+    // "Maximum" specialities
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.NumberInput', NativeInputScriptFor({
+        ControlClass: 'NumberInput', DefaultSize: '120x30',
+        PropertyLines: `
+  { Name:'Value',
+    EditorType:'number-input',   AccessorsFor:'memoized', withCallback:true },
+  { Name:'Placeholder',
+    EditorType:'textline-input', AccessorsFor:'memoized' },
+  { Name:'readonly',
+    EditorType:'checkbox',       AccessorsFor:'memoized' },
+  { Name:'Minimum',
+    EditorType:'number-input',   AccessorsFor:'memoized' },
+  { Name:'Stepping',
+    EditorType:'number-input',   AccessorsFor:'memoized', minValue:0, withMin:false },
+  { Name:'Maximum',
+    EditorType:'number-input',   AccessorsFor:'memoized' },
+  { Name:'Suggestions',
+    EditorType:'numberlist-input', AccessorsFor:'memoized' },
+`,
+        BindingLines: `
+    Value, Enabling, Placeholder, readonly, Minimum,Stepping,Maximum,
+    Suggestions
+  `,
+        AttributeLines: `
+    Value=\${Value == null ? undefined : parseFloat(Value)}
+    Placeholder=\${Placeholder} readonly=\${readonly}
+    Minimum=\${Minimum} Maximum=\${Maximum} Step=\${Stepping}
+    Suggestions=\${Suggestions} disabled=\${Enabling === false}
+    onValueInput=\${_onValueInput} onBlur=\${_onBlur}
+`
+    }), { JCL_native });
     /**** PhoneNumberInput ****/
-    // a thin WAT wrapper around the "native.PhoneNumberInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_PhoneNumberInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.PhoneNumberInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            // *C* NOTE: "ValueIsPhoneNumber" is strict now - previously persisted free-form values will read as undefined
-            { Name: 'Value',
-                EditorType: 'phone-number-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'minLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'maxLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized',
-                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
-            { Name: 'SpellChecking',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions',
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.PhoneNumberInput} Class="WAT Content PhoneNumberInput"
-        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
-        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
-        Pattern=${Pattern} spellcheck=${SpellChecking}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        }); // "spellcheck" reaches the <input> via JCL "RestProps"
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.PhoneNumberInput', WAT_PhoneNumberInput);
+    // a thin WAT wrapper around the "native.PhoneNumberInput" component from
+    // the "javascript-code-library" (JCL) - see "TextlineInput" above: this
+    // script comes from the shared "TextualInputScriptFor" template
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.PhoneNumberInput', TextualInputScriptFor({
+        ControlClass: 'PhoneNumberInput', ValueEditorType: 'phone-number-input',
+        SpellCheckAttribute: 'spellcheck',
+        ValueRemark: `
+  // *C* NOTE: "ValueIsPhoneNumber" is strict now - previously persisted free-form values will read as undefined`,
+        RendererRemark: '                  // "spellcheck" reaches the <input> via JCL "RestProps"'
+    }), NativeInputClosures);
     /**** EMailAddressInput ****/
-    // a thin WAT wrapper around the "native.EMailAddressInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_EMailAddressInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.EMailAddressInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'email-address-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'minLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'maxLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized',
-                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
-            { Name: 'SpellChecking',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions',
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.EMailAddressInput} Class="WAT Content EMailAddressInput"
-        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
-        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
-        Pattern=${Pattern} spellcheck=${SpellChecking}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        }); // "spellcheck" reaches the <input> via JCL "RestProps"
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.EMailAddressInput', WAT_EMailAddressInput);
+    // a thin WAT wrapper around the "native.EMailAddressInput" component from
+    // the "javascript-code-library" (JCL) - see "TextlineInput" above: this
+    // script comes from the shared "TextualInputScriptFor" template
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.EMailAddressInput', TextualInputScriptFor({
+        ControlClass: 'EMailAddressInput', ValueEditorType: 'email-address-input',
+        SpellCheckAttribute: 'spellcheck',
+        RendererRemark: '                  // "spellcheck" reaches the <input> via JCL "RestProps"'
+    }), NativeInputClosures);
     /**** URLInput ****/
     // a thin WAT wrapper around the "native.URLInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_URLInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.URLInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'url-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'minLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'maxLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized',
-                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
-            { Name: 'SpellChecking',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions',
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.URLInput} Class="WAT Content URLInput"
-        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
-        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
-        Pattern=${Pattern} spellcheck=${SpellChecking}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        }); // "spellcheck" reaches the <input> via JCL "RestProps"
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.URLInput', WAT_URLInput);
+    // "javascript-code-library" (JCL) - see "TextlineInput" above: this script
+    // comes from the shared "TextualInputScriptFor" template
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.URLInput', TextualInputScriptFor({
+        ControlClass: 'URLInput', ValueEditorType: 'url-input',
+        SpellCheckAttribute: 'spellcheck',
+        RendererRemark: '                  // "spellcheck" reaches the <input> via JCL "RestProps"'
+    }), NativeInputClosures);
     /**** TimeInput ****/
     // a thin WAT wrapper around the "native.TimeInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_TimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 120x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.TimeInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'time-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'withSeconds', Label: 'with Seconds',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum',
-                EditorType: 'time-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum',
-                EditorType: 'time-input', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions', Pattern: WAT_TimeRegExp,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.TimeInput} Class="WAT Content TimeInput"
-        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
-        withSeconds=${withSeconds} Minimum=${Minimum} Maximum=${Maximum}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
+    // "javascript-code-library" (JCL) - the five "temporal" input behaviours
+    // (time, date+time, date, week and month inputs) share the same script
+    // apart from their editor type, validation RegExp, default size, optional
+    // "withSeconds" property and a value migration step: all five are built
+    // with "TemporalInputScriptFor" on top of the shared frame template
+    // "NativeInputScriptFor" (see "TextlineInput" above). "RegExpName" names
+    // the module RegExp constant the generated script refers to - that
+    // constant must therefore also be passed as a closure upon registration
+    function TemporalInputScriptFor(Descriptor) {
+        const { ControlClass, DefaultSize, EditorType, RegExpName, withSeconds, MigrationActions } = Descriptor;
+        const SecondsProperty = (!withSeconds ? '' : `
+  { Name:'withSeconds', Label:'with Seconds',
+    EditorType:'checkbox', AccessorsFor:'memoized' },`);
+        const SecondsBinding = (!withSeconds ? '' : 'withSeconds, ');
+        const SecondsAttribute = (!withSeconds ? '' : 'withSeconds=${withSeconds} ');
+        const MigrationSection = (MigrationActions == null ? '' : `
+{ // *C* migrate pre-anchor datetime-local values
+  const memoized = me.memoized
+  const Value    = memoized?.Value
+  if (ValueIsString(Value) && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(Value)) {
+${MigrationActions}
+  }
+}
+`);
+        return NativeInputScriptFor({
+            ControlClass, DefaultSize, SpecialSection: MigrationSection,
+            PropertyLines: `
+  { Name:'Value',
+    EditorType:'${EditorType}', AccessorsFor:'memoized', withCallback:true },
+  { Name:'readonly',
+    EditorType:'checkbox', AccessorsFor:'memoized' },${SecondsProperty}
+  { Name:'Minimum',
+    EditorType:'${EditorType}', AccessorsFor:'memoized' },
+  { Name:'Maximum',
+    EditorType:'${EditorType}', AccessorsFor:'memoized' },
+  { Name:'Suggestions', Pattern:${RegExpName},
+    EditorType:'linelist-input', AccessorsFor:'memoized' },
+`,
+            BindingLines: `
+    Value, Enabling, readonly, ${SecondsBinding}Minimum,Maximum, Suggestions
+  `,
+            AttributeLines: `
+    Value=\${Value == null ? '' : ''+Value} readonly=\${readonly}
+    ${SecondsAttribute}Minimum=\${Minimum} Maximum=\${Maximum}
+    Suggestions=\${Suggestions} disabled=\${Enabling === false}
+    onValueInput=\${_onValueInput} onBlur=\${_onBlur}
+`
         });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.TimeInput', WAT_TimeInput);
+    }
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.TimeInput', TemporalInputScriptFor({
+        ControlClass: 'TimeInput', DefaultSize: '120x30',
+        EditorType: 'time-input', RegExpName: 'WAT_TimeRegExp', withSeconds: true
+    }), { JCL_native, WAT_TimeRegExp });
     /**** DateTimeInput ****/
     // a thin WAT wrapper around the "native.DateTimeInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_DateTimeInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.DateTimeInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'date-time-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'withSeconds', Label: 'with Seconds',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum',
-                EditorType: 'date-time-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum',
-                EditorType: 'date-time-input', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions', Pattern: WAT_DateTimeRegExp,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, readonly, withSeconds, Minimum, Maximum, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.DateTimeInput} Class="WAT Content DateTimeInput"
-        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
-        withSeconds=${withSeconds} Minimum=${Minimum} Maximum=${Maximum}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateTimeInput', WAT_DateTimeInput);
+    // "javascript-code-library" (JCL) - see "TimeInput" above: this script
+    // comes from the shared "TemporalInputScriptFor" template
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.DateTimeInput', TemporalInputScriptFor({
+        ControlClass: 'DateTimeInput', DefaultSize: '200x30',
+        EditorType: 'date-time-input', RegExpName: 'WAT_DateTimeRegExp',
+        withSeconds: true
+    }), { JCL_native, WAT_DateTimeRegExp });
     /**** DateInput ****/
     // a thin WAT wrapper around the "native.DateInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_DateInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 150x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.DateInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'date-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum',
-                EditorType: 'date-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum',
-                EditorType: 'date-input', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions', Pattern: WAT_DateRegExp,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        { // *C* migrate pre-anchor datetime-local values
-            const memoized = me.memoized;
-            const Value = memoized === null || memoized === void 0 ? void 0 : memoized.Value;
-            if (ValueIsString(Value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(Value)) {
-                memoized.Value = Value.slice(0, 10);
-            }
-        }
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, readonly, Minimum, Maximum, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.DateInput} Class="WAT Content DateInput"
-        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
-        Minimum=${Minimum} Maximum=${Maximum}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.DateInput', WAT_DateInput);
+    // "javascript-code-library" (JCL) - see "TimeInput" above: this script
+    // comes from the shared "TemporalInputScriptFor" template and truncates
+    // formerly persisted datetime-local values down to their date part
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.DateInput', TemporalInputScriptFor({
+        ControlClass: 'DateInput', DefaultSize: '150x30',
+        EditorType: 'date-input', RegExpName: 'WAT_DateRegExp',
+        MigrationActions: '    memoized.Value = Value.slice(0,10)'
+    }), { JCL_native, WAT_DateRegExp, ValueIsString });
     /**** WeekInput ****/
     // a thin WAT wrapper around the "native.WeekInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_WeekInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 150x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.WeekInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'week-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum',
-                EditorType: 'week-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum',
-                EditorType: 'week-input', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions', Pattern: WAT_WeekRegExp,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        { // *C* migrate pre-anchor datetime-local values
-            const memoized = me.memoized;
-            const Value = memoized === null || memoized === void 0 ? void 0 : memoized.Value;
-            if (ValueIsString(Value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(Value)) {
-                console.warn('WeekInput: discarding pre-anchor datetime-local value', Value);
-                delete memoized.Value;
-            }
-        }
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, readonly, Minimum, Maximum, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.WeekInput} Class="WAT Content WeekInput"
-        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
-        Minimum=${Minimum} Maximum=${Maximum}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.WeekInput', WAT_WeekInput);
+    // "javascript-code-library" (JCL) - see "TimeInput" above: this script
+    // comes from the shared "TemporalInputScriptFor" template and discards
+    // formerly persisted datetime-local values (they cannot be converted
+    // into calendar weeks without proper date arithmetics)
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.WeekInput', TemporalInputScriptFor({
+        ControlClass: 'WeekInput', DefaultSize: '150x30',
+        EditorType: 'week-input', RegExpName: 'WAT_WeekRegExp',
+        MigrationActions: `    console.warn('WeekInput: discarding pre-anchor datetime-local value',Value)
+    delete memoized.Value`
+    }), { JCL_native, WAT_WeekRegExp, ValueIsString });
     /**** MonthInput ****/
     // a thin WAT wrapper around the "native.MonthInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_MonthInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 150x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.MonthInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'month-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Minimum',
-                EditorType: 'month-input', AccessorsFor: 'memoized' },
-            { Name: 'Maximum',
-                EditorType: 'month-input', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions', Pattern: WAT_MonthRegExp,
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        { // *C* migrate pre-anchor datetime-local values
-            const memoized = me.memoized;
-            const Value = memoized === null || memoized === void 0 ? void 0 : memoized.Value;
-            if (ValueIsString(Value) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(Value)) {
-                memoized.Value = Value.slice(0, 7);
-            }
-        }
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, readonly, Minimum, Maximum, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.MonthInput} Class="WAT Content MonthInput"
-        Value=${Value == null ? '' : '' + Value} readonly=${readonly}
-        Minimum=${Minimum} Maximum=${Maximum}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.MonthInput', WAT_MonthInput);
+    // "javascript-code-library" (JCL) - see "TimeInput" above: this script
+    // comes from the shared "TemporalInputScriptFor" template and truncates
+    // formerly persisted datetime-local values down to their month part
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.MonthInput', TemporalInputScriptFor({
+        ControlClass: 'MonthInput', DefaultSize: '150x30',
+        EditorType: 'month-input', RegExpName: 'WAT_MonthRegExp',
+        MigrationActions: '    memoized.Value = Value.slice(0,7)'
+    }), { JCL_native, WAT_MonthRegExp, ValueIsString });
     /**** FileInput ****/
     const WAT_FileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
         /**** DefaultSize 200x30 ****/
@@ -9711,126 +8895,79 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'native_controls.FileDropArea', WAT_FileDropArea);
     /**** SearchInput ****/
     // a thin WAT wrapper around the "native.SearchInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance and the protection
-    // of local input against external changes now come from JCL, this behavior
-    // only contributes widget geometry and the WAT property interface
-    const WAT_SearchInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 200x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.SearchInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-        line-height:normal;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'textline-input', AccessorsFor: 'memoized', withCallback: true },
-            { Name: 'Placeholder',
-                EditorType: 'textline-input', AccessorsFor: 'memoized' },
-            { Name: 'readonly',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'minLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'maxLength', minValue: 0, Stepping: 1,
-                EditorType: 'integer-input', AccessorsFor: 'memoized' },
-            { Name: 'Pattern',
-                EditorType: 'textline-input', AccessorsFor: 'memoized',
-                Validator: (Value) => ValueIsTextline(Value) && PatternIsCompilable(Value) },
-            { Name: 'SpellChecking',
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-            { Name: 'Suggestions',
-                EditorType: 'linelist-input', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Placeholder, readonly, minLength, maxLength, Pattern, SpellChecking, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            const _onBlur = (Event) => {
-                this.on('blur')(Event);
-            };
-            return html `<${JCL_native.SearchInput} Class="WAT Content SearchInput"
-        Value=${Value == null ? '' : '' + Value} Placeholder=${Placeholder}
-        readonly=${readonly} minLength=${minLength} maxLength=${maxLength}
-        Pattern=${Pattern} SpellCheck=${SpellChecking}
-        Suggestions=${Suggestions} disabled=${Enabling === false}
-        onValueInput=${_onValueInput} onBlur=${_onBlur}
-      />`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.SearchInput', WAT_SearchInput);
+    // "javascript-code-library" (JCL) - see "TextlineInput" above: this script
+    // comes from the shared "TextualInputScriptFor" template
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.SearchInput', TextualInputScriptFor({
+        ControlClass: 'SearchInput', ValueEditorType: 'textline-input',
+        SpellCheckAttribute: 'SpellCheck'
+    }), NativeInputClosures);
     /**** ColorInput ****/
     // a thin WAT wrapper around the "native.ColorInput" component from the
-    // "javascript-code-library" (JCL) - the actual appearance now comes from JCL,
-    // this behavior only contributes widget geometry and the WAT property
-    // interface
-    const WAT_ColorInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 60x30 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.ColorInput {
-        left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
-      }
-    `); // geometry only - the look itself comes from JCL
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value',
-                EditorType: 'color-input', AccessorsFor: 'none' },
-            { Name: 'Suggestions',
-                EditorType: 'linelist-input', AccessorsFor: 'none',
-                Validator: (Value) => ValueIsListSatisfying(Value, ValueIsColor) },
-        ];
-        Object_assign(me, {
-            /**** Value ****/
-            get Value() {
-                return acceptableValue(this.memoized.Value, ValueIsColor, '#000000');
-            },
-            set Value(newValue) {
-                allowColor('value', newValue);
-                newValue = (newValue == null ? undefined : HexColor(newValue).slice(0, 7));
-                // "HexColor" returns #rrggbbaa - <input type="color"> needs #rrggbb
-                if (this.memoized.Value !== newValue) {
-                    this.memoized.Value = newValue;
-                    this.on('Value')(newValue);
-                    this.rerender();
-                }
-            },
-            /**** Suggestions ****/
-            get Suggestions() {
-                const Candidate = acceptableValue(this.memoized.Suggestions, (Value) => ValueIsListSatisfying(Value, ValueIsColor));
-                return (Candidate == null ? undefined : Candidate.slice());
-            },
-            set Suggestions(newValue) {
-                allowListSatisfying('suggestion list', newValue, ValueIsColor);
-                if (ValuesDiffer(this.memoized.Suggestions, newValue)) {
-                    this.memoized.Suggestions = (newValue == null ? undefined : newValue.slice());
-                    this.rerender();
-                }
-            },
-        });
-        /**** Renderer ****/
-        onRender(function () {
-            const { Value, Enabling, Suggestions } = this;
-            const _onValueInput = (newValue, Event) => {
-                if (Enabling === false) {
-                    return;
-                }
-                this.Value = newValue;
-                this.on('input')(Event);
-            };
-            /**** actual rendering ****/
-            return html `<${JCL_native.ColorInput} Class="WAT Content ColorInput"
-        Value=${Value} Suggestions=${Suggestions} minWidth=${0}
-        disabled=${Enabling == false} onValueInput=${_onValueInput}
-      />`; // "minWidth=0" keeps the former WAT geometry behavior
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'native_controls.ColorInput', WAT_ColorInput);
+    // "javascript-code-library" (JCL) - built with the shared
+    // "NativeInputScriptFor" frame template (see "TextlineInput" above), but
+    // with explicit custom accessors (normalizing colours to #rrggbb, embedded
+    // from the child notes below) instead of generated ones, and without any
+    // "blur" callback
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.ColorInput', NativeInputScriptFor({
+        ControlClass: 'ColorInput', DefaultSize: '60x30',
+        withLineHeight: false, withBlurHandler: false,
+        PropertyLines: `
+  { Name:'Value',
+    EditorType:'color-input',    AccessorsFor:'none' },
+  { Name:'Suggestions',
+    EditorType:'linelist-input', AccessorsFor:'none',
+    Validator:(Value) => ValueIsListSatisfying(Value,ValueIsColor) },
+`,
+        SpecialSection: `
+Object_assign(me,{
+/**** Value ****/
+
+  get Value () {
+    return acceptableValue(this.memoized.Value,ValueIsColor,'#000000')
+  },
+
+  set Value (newValue) {
+    allowColor('value',newValue)
+    newValue = (newValue == null ? undefined : HexColor(newValue).slice(0,7))
+      // "HexColor" returns #rrggbbaa - <input type="color"> needs #rrggbb
+
+    if (this.memoized.Value !== newValue) {
+      this.memoized.Value = newValue
+      this.on('Value')(newValue)
+      this.rerender()
+    }
+  },
+
+/**** Suggestions ****/
+
+  get Suggestions () {
+    const Candidate = acceptableValue(
+      this.memoized.Suggestions,(Value) => ValueIsListSatisfying(Value,ValueIsColor)
+    )
+    return (Candidate == null ? undefined : Candidate.slice())
+  },
+
+  set Suggestions (newValue) {
+    allowListSatisfying('suggestion list',newValue,ValueIsColor)
+    if (ValuesDiffer(this.memoized.Suggestions,newValue)) {
+      this.memoized.Suggestions = (
+        newValue == null ? undefined : newValue.slice()
+      )
+      this.rerender()
+    }
+  },
+})
+`,
+        BindingLines: ' Value, Enabling, Suggestions ',
+        AttributeLines: `
+    Value=\${Value} Suggestions=\${Suggestions} minWidth=\${0}
+    disabled=\${Enabling == false} onValueInput=\${_onValueInput}
+`,
+        TagRemark: '          // "minWidth=0" keeps the former WAT geometry behavior'
+    }), {
+        JCL_native, Object_assign, acceptableValue, ValueIsColor, allowColor,
+        HexColor, ValueIsListSatisfying, allowListSatisfying, ValuesDiffer
+    });
     /**** DropDown ****/
     // a thin WAT wrapper around the "native.DropDown" component from the
     // "javascript-code-library" (JCL) - missing or unmatched "Value" settings
@@ -11604,310 +10741,222 @@ function registerIntrinsicBehaviorsIn(Applet) {
             },
         };
     }
+    /**** StickyNoteScriptFor ****/
+    // builds the behaviour scripts for the three sticky note widgets
+    // ("stickyTextNote", "stickyHTMLNote" and "stickyMarkdownNote") below -
+    // they only differ in their JCL component, their "Value" editor type, a
+    // few content-area style declarations and (for "stickyMarkdownNote") an
+    // additional JCL "DialogBase" wrapper for the edit dialog. everything
+    // else - stylesheet skeleton (Mover bar, content area, Resizer with JCL's
+    // "NoteBoard" resize-handle icon), rAF-throttled "changeGeometryTo"
+    // wiring (see "throttledGeometryHandlersFor" above) and render frame - is
+    // shared and therefore generated from this template. the scripts are
+    // registered via "registerIntrinsicBehaviorFromSource", i.e., the
+    // generated source text is exactly what users see (and may copy) as the
+    // behaviour's "activeScript":
+    //
+    // * unlike other legacy components, JCL's sticky notes come with no
+    //   geometry, chrome or move/resize behaviour of their own (they were
+    //   designed to be hosted inside a "legacy.NoteBoard") - "WAT_Mover"/
+    //   "WAT_Resizer" (WAT's own gesture support, otherwise only used by the
+    //   Designer's Layouter) provide a title bar and a resize handle, wired
+    //   directly into the widget's own "changeGeometryTo": dragging/resizing
+    //   therefore works even without the Designer being attached at all. the
+    //   Designer's own "WAD_Cover"/"WAD_ShapeHandle" (z-index 1000000/1000001,
+    //   rendered as a whole separate layer above the applet, see
+    //   "WAT_combinedView" and "WAD_LayouterLayer and its Parts") sit on top
+    //   of this and remain the authoritative move/resize mechanism while the
+    //   Designer is attached
+    // * ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
+    //   shared stylesheet - they are positioned via absolute offsets (like
+    //   the Designer does for its own handles), not via flexbox. the
+    //   resize-handle icon is the same one JCL's own "NoteBoard" uses (see
+    //   its "resize-handle" rule) - without it, ".WAT.Resizer" has no
+    //   background of its own and stays invisible even though it is present
+    //   and clickable
+    // * "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
+    //   the default validator of its editor type ("ValueIsText"), which
+    //   treats tabs as forbidden control characters and would silently reject
+    //   any tab-containing content - defeating tab persistence and, for
+    //   "stickyTextNote", JCL's own tab-size styling (only applied once
+    //   "Content" already contains a tab, see "stickyTextNote" in JCL)
+    // * "changeGeometryTo" is rAF-throttled during drag/resize via the shared
+    //   "throttledGeometryHandlersFor" helper (see above) - mainly to bound
+    //   the number of re-renders per second. "onMoveStart"/"onResizeStart"
+    //   flush a still pending commit synchronously before a new drag reads
+    //   the widget's geometry (avoiding a frame race on quick follow-up
+    //   drags), and "onUnmount" cancels any pending commit outright.
+    //   "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
+    //   rather than recreates them
+    // * while "Enabling" is false or the widget is locked ("Lock", see
+    //   "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
+    //   "WAT_Resizer" are then not rendered at all (rather than rendered
+    //   inertly), as their absence is the clearest signal that moving/
+    //   resizing is currently unavailable; the content area keeps its
+    //   position (the 16px strip normally covered by the Mover simply
+    //   remains empty)
+    // * "readonly" (like "Enabling === false") suppresses "onContentChange" -
+    //   JCL treats a missing "onContentChange" as "read-only". font and
+    //   colour settings ("FontFamily", "FontSize", "FontWeight", "LineHeight",
+    //   "ForegroundColor", "BackgroundColor") are passed through to JCL
+    //   (evaluated by its "StickyNoteStyleFrom") - unset (undefined) values
+    //   contribute nothing and keep JCL's own defaults. JCL renders
+    //   "LineHeight" without a unit while WAT measures it in px - hence the
+    //   "px" suffix added in the template. a configured "BackgroundColor" is
+    //   additionally applied to the note's frame (not just its content area)
+    //   so that the whole note changes colour
+    //
+    // markdown-specific remarks (edit dialog, "DialogBase" wrapper, collapsed
+    // height work-around) sit at the "stickyMarkdownNote" registration below
+    const StickyNoteResizeHandleIcon = ('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAA' +
+        'AbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88' +
+        '/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQ' +
+        'A0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==');
+    function StickyNoteScriptFor(Descriptor) {
+        const { NoteClass, EditorType, ContentRules, withEditDialog } = Descriptor;
+        const FrameCombinator = (withEditDialog ? '' : '> ');
+        // the markdown note sits inside a JCL "DialogBase", i.e., its content
+        // is no longer a *direct* child of ".WAT.Widget"
+        const ExtraRules = (!withEditDialog ? '' : `
+  .sticky-markdown-editor {            /* lives in a dialog, not the widget */
+    display:block; width:100%; height:100%;
+    min-width:240px; min-height:180px;
+    resize:none;
+  }`);
+        const DialogAPIBinding = (!withEditDialog ? '' : '\n' +
+            'const DialogBaseAPI = { current:null }             // s. "APIRef" below');
+        const UnmountExtra = (!withEditDialog ? '' : `
+  if (DialogBaseAPI.current != null) {     // close a still open edit dialog
+    DialogBaseAPI.current.closeAllDialogs()
+  }`);
+        const SecurityRemark = (!withEditDialog ? '' : `
+  // *C* SECURITY: "JCL_legacy.stickyMarkdownNote" below renders its
+  // Markdown content as raw HTML without sanitization (XSS risk!) - via
+  // JCL's "MarkdownView" and "dangerouslySetInnerHTML" (see the
+  // equivalent marker in "MarkdownView", same security level)`);
+        const ReturnStatement = (withEditDialog
+            ? '  return html\`<\${JCL_ui.DialogBase} APIRef=\${DialogBaseAPI}\n' +
+                '    style="position:absolute; left:0px; top:0px; width:100%; height:100%;"\n' +
+                '  >\${NoteView}</>\`'
+            : '  return NoteView');
+        return `/**** DefaultSize 160x120 ****/
+
+installStylesheet(\`
+  .WAT.Widget ${FrameCombinator}.WAT.${NoteClass} {
+    left:0px; top:0px; width:100%; height:100%;
+    background:#FFFFA8; color:black;
+    border:solid 1px #888888; border-radius:4px;
+    box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
+  }
+  .WAT.${NoteClass} > .WAT.Mover {
+    left:0px; top:0px; right:0px; height:16px;
+    cursor:grab; user-select:none;
+    background:rgba(0,0,0,0.06);
+    border-bottom:solid 1px rgba(0,0,0,0.15);
+    border-radius:3px 3px 0px 0px;
+  }
+  .WAT.${NoteClass} > .content-area {
+    position:absolute; left:0px; top:16px; right:0px; bottom:0px;
+    display:flex; flex-flow:column nowrap; align-items:stretch;
+    overflow:hidden;
+    border-radius:0px 0px 3px 3px;
+  }
+  .WAT.${NoteClass} > .content-area > .sticky-note-content {
+    flex:1 1 auto; width:100%; min-height:0px;
+    ${ContentRules}
+  }
+  .WAT.${NoteClass} > .WAT.Resizer {
+    right:0px; bottom:0px; width:16px; height:16px;
+    cursor:nwse-resize;
+    background:url("${StickyNoteResizeHandleIcon}");
+    background-repeat:no-repeat;
+    background-size:contain; background-position:center;
+  }${ExtraRules}
+\`)
+
+/**** custom Properties ****/
+
+my.configurableProperties = [
+  { Name:'Value', EditorType:'${EditorType}',
+    AccessorsFor:'memoized', withCallback:true,
+    Validator:ValueIsTextWithTabs },
+  { Name:'readonly', Default:false,
+    EditorType:'checkbox', AccessorsFor:'memoized' },
+]
+
+/**** Renderer ****/
+
+const GeometryHandlers = throttledGeometryHandlersFor(me)${DialogAPIBinding}
+
+onUnmount(function () {
+  GeometryHandlers.cancel()${UnmountExtra}
+})
+
+onRender(function () {
+  const {
+    Value, Enabling,readonly, Lock,
+    FontFamily,FontSize,FontWeight,LineHeight, ForegroundColor,BackgroundColor
+  } = this
+
+  const mayBeRearranged = (Enabling !== false) && ! Lock
+
+  const _onValueChange = (newValue) => {
+    this.Value = newValue                // also fires the "Value" callback
+    this.on('input')(newValue)
+  }
+${SecurityRemark}
+  const NoteView = html\`<div class="WAT Content ${NoteClass}"
+    style=\${BackgroundColor == null ? undefined : \`background:\${BackgroundColor}\`}
+  >
+    \${mayBeRearranged && html\`<\${WAT_Mover} key="mover" Widget=\${this}
+      onMoveStart=\${GeometryHandlers.onMoveStart} onMove=\${GeometryHandlers.onMove}/>\`}
+    <div class="content-area" key="content">
+      <\${JCL_legacy.${NoteClass}}
+        Content=\${Value ?? ''}
+        FontFamily=\${FontFamily} FontSize=\${FontSize} FontWeight=\${FontWeight}
+        LineHeight=\${LineHeight == null ? undefined : LineHeight+'px'}
+        ForegroundColor=\${ForegroundColor} BackgroundColor=\${BackgroundColor}
+        onContentChange=\${readonly || (Enabling === false) ? undefined : _onValueChange}
+      />
+    </div>
+    \${mayBeRearranged && html\`<\${WAT_Resizer} key="resizer" Widget=\${this}
+      onResizeStart=\${GeometryHandlers.onResizeStart} onResize=\${GeometryHandlers.onResize}
+      minWidth=\${80} minHeight=\${50}/>\`}
+  </div>\`
+${ReturnStatement}
+})
+`;
+    }
+    /**** StickyNoteClosures - module bindings for the generated scripts ****/
+    const StickyNoteClosures = {
+        WAT_Mover, WAT_Resizer, throttledGeometryHandlersFor,
+        ValueIsTextWithTabs, JCL_legacy, JCL_ui
+    };
     /**** stickyTextNote ****/
     // a thin WAT wrapper around the "legacy.stickyTextNote" component from the
-    // "javascript-code-library" (JCL). unlike other legacy components, this one
-    // comes with no geometry, chrome or move/resize behavior of its own - it was
-    // designed to be hosted inside a "legacy.NoteBoard". "WAT_Mover"/
-    // "WAT_Resizer" (WAT's own Gesture Support, otherwise only used by the
-    // Designer's Layouter) give it a title bar and a resize handle here, wired
-    // directly into the widget's own "changeGeometryTo" - dragging/resizing
-    // therefore works even without the Designer being attached at all. the
-    // Designer's own "WAD_Cover"/"WAD_ShapeHandle" (z-index 1000000/1000001,
-    // rendered as a whole separate layer above the applet, see "WAT_combinedView"
-    // and "WAD_LayouterLayer and its Parts") sit on top of this and remain the
-    // authoritative move/resize mechanism while the Designer is attached
-    //
-    // n.b.: ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
-    // shared stylesheet - they are positioned here via absolute offsets (like
-    // the Designer itself does for its own handles), not via flexbox. the
-    // resize-handle icon is the same one JCL's own "NoteBoard" uses (see its
-    // "resize-handle" rule) - without it, ".WAT.Resizer" has no background of
-    // its own and stays invisible even though it is present and clickable
-    //
-    // n.b.: "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
-    // the "text-input" editor type's default validator ("ValueIsText"), which
-    // treats tabs as forbidden control characters and would silently reject any
-    // value entered via "TabKeyHandler" - defeating both tab persistence and,
-    // since "Content" would then never contain a tab, JCL's own tab-size styling
-    // (only applied once "Content" already contains one, see "stickyTextNote"
-    // in JCL)
-    //
-    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize via the
-    // shared "throttledGeometryHandlersFor" helper (see above) - mainly to
-    // bound the number of re-renders per second. its "onMoveStart"/
-    // "onResizeStart" flush a still pending commit synchronously before a new
-    // drag reads the widget's geometry (avoiding a frame race on quick
-    // follow-up drags), and "onUnmount" cancels any pending commit outright.
-    // "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
-    // rather than recreates them
-    //
-    // n.b.: while "Enabling" is false or the widget is locked ("Lock", see
-    // "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
-    // "WAT_Resizer" are then not rendered at all (rather than rendered inertly),
-    // as their absence is the clearest signal that moving/resizing is currently
-    // unavailable; the content area keeps its position (the 16px strip normally
-    // covered by the Mover simply remains empty)
-    //
-    // n.b.: "readonly" (like "Enabling === false") suppresses "onContentChange"
-    // - JCL treats a missing "onContentChange" as "read-only" (see
-    // "stickyTextNote" in JCL). font and colour settings ("FontFamily",
-    // "FontSize", "FontWeight", "LineHeight", "ForegroundColor",
-    // "BackgroundColor") are passed through to JCL (evaluated by its
-    // "StickyNoteStyleFrom") - unset (undefined) values contribute nothing and
-    // keep JCL's own defaults. JCL renders "LineHeight" without a unit while
-    // WAT measures it in px - hence the "px" suffix added below. a configured
-    // "BackgroundColor" is additionally applied to the note's frame (not just
-    // its content area) so that the whole note changes colour
-    const WAT_stickyTextNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 160x120 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.stickyTextNote {
-        left:0px; top:0px; width:100%; height:100%;
-        background:#FFFFA8; color:black;
-        border:solid 1px #888888; border-radius:4px;
-        box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
-      }
-      .WAT.stickyTextNote > .WAT.Mover {
-        left:0px; top:0px; right:0px; height:16px;
-        cursor:grab; user-select:none;
-        background:rgba(0,0,0,0.06);
-        border-bottom:solid 1px rgba(0,0,0,0.15);
-        border-radius:3px 3px 0px 0px;
-      }
-      .WAT.stickyTextNote > .content-area {
-        position:absolute; left:0px; top:16px; right:0px; bottom:0px;
-        display:flex; flex-flow:column nowrap; align-items:stretch;
-        overflow:hidden;
-        border-radius:0px 0px 3px 3px;
-      }
-      .WAT.stickyTextNote > .content-area > .sticky-note-content {
-        flex:1 1 auto; width:100%; min-height:0px;
-        border:none; border-radius:0px; background:transparent; padding:4px;
-      }
-      .WAT.stickyTextNote > .WAT.Resizer {
-        right:0px; bottom:0px; width:16px; height:16px;
-        cursor:nwse-resize;
-        background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQA0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==");
-        background-repeat:no-repeat;
-        background-size:contain; background-position:center;
-      }
-    `);
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input',
-                AccessorsFor: 'memoized', withCallback: true,
-                Validator: ValueIsTextWithTabs },
-            { Name: 'readonly', Default: false,
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        const GeometryHandlers = throttledGeometryHandlersFor(me);
-        onUnmount(function () {
-            GeometryHandlers.cancel();
-        });
-        onRender(function () {
-            const { Value, Enabling, readonly, Lock, FontFamily, FontSize, FontWeight, LineHeight, ForegroundColor, BackgroundColor } = this;
-            const mayBeRearranged = (Enabling !== false) && !Lock;
-            const _onValueChange = (newValue) => {
-                this.Value = newValue; // also fires the "Value" callback
-                this.on('input')(newValue);
-            };
-            return html `<div class="WAT Content stickyTextNote"
-        style=${BackgroundColor == null ? undefined : `background:${BackgroundColor}`}
-      >
-        ${mayBeRearranged && html `<${WAT_Mover} key="mover" Widget=${this}
-          onMoveStart=${GeometryHandlers.onMoveStart} onMove=${GeometryHandlers.onMove}/>`}
-        <div class="content-area" key="content">
-          <${JCL_legacy.stickyTextNote}
-            Content=${Value !== null && Value !== void 0 ? Value : ''}
-            FontFamily=${FontFamily} FontSize=${FontSize} FontWeight=${FontWeight}
-            LineHeight=${LineHeight == null ? undefined : LineHeight + 'px'}
-            ForegroundColor=${ForegroundColor} BackgroundColor=${BackgroundColor}
-            onContentChange=${readonly || (Enabling === false) ? undefined : _onValueChange}
-          />
-        </div>
-        ${mayBeRearranged && html `<${WAT_Resizer} key="resizer" Widget=${this}
-          onResizeStart=${GeometryHandlers.onResizeStart} onResize=${GeometryHandlers.onResize}
-          minWidth=${80} minHeight=${50}/>`}
-      </div>`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.stickyTextNote', WAT_stickyTextNote);
+    // "javascript-code-library" (JCL) - its script is generated by the shared
+    // "StickyNoteScriptFor" template (see above) which also documents the
+    // common design decisions of all three sticky notes
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'other_controls.stickyTextNote', StickyNoteScriptFor({
+        NoteClass: 'stickyTextNote', EditorType: 'text-input',
+        ContentRules: 'border:none; border-radius:0px; background:transparent; padding:4px;',
+        withEditDialog: false
+    }), StickyNoteClosures);
     /**** stickyHTMLNote ****/
     // a thin WAT wrapper around the "legacy.stickyHTMLNote" component from the
-    // "javascript-code-library" (JCL). like "stickyTextNote", it comes with no
-    // chrome or geometry of its own - "WAT_Mover"/"WAT_Resizer" give it a title
-    // bar and a resize handle, wired directly into the widget's own
-    // "changeGeometryTo" - dragging/resizing works even without the Designer
-    // being attached. the Designer's own "WAD_Cover"/"WAD_ShapeHandle"
-    // (z-index 1000000/1000001, a whole separate layer above the applet) sit on
-    // top of this and remain the authoritative move/resize mechanism while the
-    // Designer is attached
-    //
-    // n.b.: ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
-    // shared stylesheet - they are positioned here via absolute offsets, not
-    // via flexbox. the resize-handle icon is the same one JCL's own
-    // "NoteBoard" uses (see its "resize-handle" rule) - without it,
-    // ".WAT.Resizer" has no background of its own and stays invisible even
-    // though it is present and clickable
-    //
-    // n.b.: "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
-    // the "html-input" editor type's default validator ("ValueIsText"), which
-    // treats tabs as forbidden control characters and would silently reject
-    // e.g. pretty-printed HTML containing tabs
-    //
-    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize via the
-    // shared "throttledGeometryHandlersFor" helper (see above) - mainly to
-    // bound the number of re-renders per second. its "onMoveStart"/
-    // "onResizeStart" flush a still pending commit synchronously before a new
-    // drag reads the widget's geometry (avoiding a frame race on quick
-    // follow-up drags), and "onUnmount" cancels any pending commit outright.
-    // "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
-    // rather than recreates them
-    //
-    // n.b.: while "Enabling" is false or the widget is locked ("Lock", see
-    // "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
-    // "WAT_Resizer" are then not rendered at all (rather than rendered inertly),
-    // as their absence is the clearest signal that moving/resizing is currently
-    // unavailable; the content area keeps its position (the 16px strip normally
-    // covered by the Mover simply remains empty)
-    //
-    // n.b.: "readonly" (like "Enabling === false") suppresses "onContentChange"
-    // - JCL treats a missing "onContentChange" as "read-only" (see
-    // "stickyHTMLNote" in JCL). font and colour settings ("FontFamily",
-    // "FontSize", "FontWeight", "LineHeight", "ForegroundColor",
-    // "BackgroundColor") are passed through to JCL (evaluated by its
-    // "StickyNoteStyleFrom") - unset (undefined) values contribute nothing and
-    // keep JCL's own defaults. JCL renders "LineHeight" without a unit while
-    // WAT measures it in px - hence the "px" suffix added below. a configured
-    // "BackgroundColor" is additionally applied to the note's frame (not just
-    // its content area) so that the whole note changes colour
-    const WAT_stickyHTMLNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 160x120 ****/
-        installStylesheet(`
-      .WAT.Widget > .WAT.stickyHTMLNote {
-        left:0px; top:0px; width:100%; height:100%;
-        background:#FFFFA8; color:black;
-        border:solid 1px #888888; border-radius:4px;
-        box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
-      }
-      .WAT.stickyHTMLNote > .WAT.Mover {
-        left:0px; top:0px; right:0px; height:16px;
-        cursor:grab; user-select:none;
-        background:rgba(0,0,0,0.06);
-        border-bottom:solid 1px rgba(0,0,0,0.15);
-        border-radius:3px 3px 0px 0px;
-      }
-      .WAT.stickyHTMLNote > .content-area {
-        position:absolute; left:0px; top:16px; right:0px; bottom:0px;
-        display:flex; flex-flow:column nowrap; align-items:stretch;
-        overflow:hidden;
-        border-radius:0px 0px 3px 3px;
-      }
-      .WAT.stickyHTMLNote > .content-area > .sticky-note-content {
-        flex:1 1 auto; width:100%; min-height:0px;
-        border:none; background:transparent;
-      }
-      .WAT.stickyHTMLNote > .WAT.Resizer {
-        right:0px; bottom:0px; width:16px; height:16px;
-        cursor:nwse-resize;
-        background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQA0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==");
-        background-repeat:no-repeat;
-        background-size:contain; background-position:center;
-      }
-    `);
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value', EditorType: 'html-input',
-                AccessorsFor: 'memoized', withCallback: true,
-                Validator: ValueIsTextWithTabs },
-            { Name: 'readonly', Default: false,
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        const GeometryHandlers = throttledGeometryHandlersFor(me);
-        onUnmount(function () {
-            GeometryHandlers.cancel();
-        });
-        onRender(function () {
-            const { Value, Enabling, readonly, Lock, FontFamily, FontSize, FontWeight, LineHeight, ForegroundColor, BackgroundColor } = this;
-            const mayBeRearranged = (Enabling !== false) && !Lock;
-            const _onValueChange = (newValue) => {
-                this.Value = newValue;
-                this.on('input')(newValue);
-            };
-            return html `<div class="WAT Content stickyHTMLNote"
-        style=${BackgroundColor == null ? undefined : `background:${BackgroundColor}`}
-      >
-        ${mayBeRearranged && html `<${WAT_Mover} key="mover" Widget=${this}
-          onMoveStart=${GeometryHandlers.onMoveStart} onMove=${GeometryHandlers.onMove}/>`}
-        <div class="content-area" key="content">
-          <${JCL_legacy.stickyHTMLNote}
-            Content=${Value !== null && Value !== void 0 ? Value : ''}
-            FontFamily=${FontFamily} FontSize=${FontSize} FontWeight=${FontWeight}
-            LineHeight=${LineHeight == null ? undefined : LineHeight + 'px'}
-            ForegroundColor=${ForegroundColor} BackgroundColor=${BackgroundColor}
-            onContentChange=${readonly || (Enabling === false) ? undefined : _onValueChange}
-          />
-        </div>
-        ${mayBeRearranged && html `<${WAT_Resizer} key="resizer" Widget=${this}
-          onResizeStart=${GeometryHandlers.onResizeStart} onResize=${GeometryHandlers.onResize}
-          minWidth=${80} minHeight=${50}/>`}
-      </div>`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.stickyHTMLNote', WAT_stickyHTMLNote);
+    // "javascript-code-library" (JCL) - its script is generated by the shared
+    // "StickyNoteScriptFor" template (see above) which also documents the
+    // common design decisions of all three sticky notes
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'other_controls.stickyHTMLNote', StickyNoteScriptFor({
+        NoteClass: 'stickyHTMLNote', EditorType: 'html-input',
+        ContentRules: 'border:none; background:transparent;',
+        withEditDialog: false
+    }), StickyNoteClosures);
     /**** stickyMarkdownNote ****/
     // a thin WAT wrapper around the "legacy.stickyMarkdownNote" component from
-    // the "javascript-code-library" (JCL). like "stickyTextNote"/
-    // "stickyHTMLNote" it comes with no geometry/chrome of its own -
-    // "WAT_Mover"/"WAT_Resizer" provide a title bar and a resize handle, wired
-    // directly into the widget's own "changeGeometryTo" - dragging/resizing
-    // therefore works even without the Designer being attached. the Designer's
-    // own "WAD_Cover"/"WAD_ShapeHandle" (z-index 1000000/1000001, a whole
-    // separate layer above the applet) sit on top of this and remain the
-    // authoritative move/resize mechanism while the Designer is attached
-    //
-    // n.b.: ".WAT.Mover"/".WAT.Resizer" are "position:absolute" by WAT's own
-    // shared stylesheet - they are positioned here via absolute offsets, not
-    // via flexbox. the resize-handle icon is the same one JCL's own
-    // "NoteBoard" uses (see its "resize-handle" rule) - without it,
-    // ".WAT.Resizer" has no background of its own and stays invisible even
-    // though it is present and clickable
-    //
-    // n.b.: "Value" uses "ValueIsTextWithTabs" (imported from JCL) rather than
-    // the "text-input" editor type's default validator ("ValueIsText"), which
-    // treats tabs as forbidden control characters and would silently reject
-    // Markdown content containing tabs
-    //
-    // n.b.: "changeGeometryTo" is rAF-throttled during drag/resize via the
-    // shared "throttledGeometryHandlersFor" helper (see above) - mainly to
-    // bound the number of re-renders per second. its "onMoveStart"/
-    // "onResizeStart" flush a still pending commit synchronously before a new
-    // drag reads the widget's geometry (avoiding a frame race on quick
-    // follow-up drags), and "onUnmount" cancels any pending commit outright.
-    // "WAT_Mover"/"WAT_Resizer" carry explicit "key"s so Preact reconciles
-    // rather than recreates them
-    //
-    // n.b.: while "Enabling" is false or the widget is locked ("Lock", see
-    // "WAT_Widget") the widget must not be rearranged - "WAT_Mover"/
-    // "WAT_Resizer" are then not rendered at all (rather than rendered inertly),
-    // as their absence is the clearest signal that moving/resizing is currently
-    // unavailable; the content area keeps its position (the 16px strip normally
-    // covered by the Mover simply remains empty)
-    //
-    // n.b.: "readonly" (like "Enabling === false") suppresses "onContentChange"
-    // - JCL treats a missing "onContentChange" as "read-only" and then also
-    // refuses to open the edit dialog (see "stickyMarkdownNote" in JCL). font
-    // and colour settings ("FontFamily", "FontSize", "FontWeight",
-    // "LineHeight", "ForegroundColor", "BackgroundColor") are passed through
-    // to JCL (evaluated by its "StickyNoteStyleFrom") - unset (undefined)
-    // values contribute nothing and keep JCL's own defaults. JCL renders
-    // "LineHeight" without a unit while WAT measures it in px - hence the "px"
-    // suffix added below. a configured "BackgroundColor" is additionally
-    // applied to the note's frame (not just its content area) so that the
-    // whole note changes colour
+    // the "javascript-code-library" (JCL) - its script is generated by the
+    // shared "StickyNoteScriptFor" template (see above) which also documents
+    // the common design decisions of all three sticky notes
     //
     // unlike the other two sticky notes, this one opens an edit dialog on
     // double-click via JCL's own "useDialogContext()/openDialog" (see
@@ -11918,8 +10967,8 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "Stylesheet|DialogView"), so they are never clipped by this wrapper - it
     // only serves as the coordinate anchor the edit dialog opens next to (via
     // its "BaseRef"). n.b.: because of this wrapper, the widget's own content
-    // is no longer a *direct* child of ".WAT.Widget" - the stylesheet below
-    // therefore uses a descendant (not child) selector
+    // is no longer a *direct* child of ".WAT.Widget" - the generated
+    // stylesheet therefore uses a descendant (not child) selector
     //
     // n.b.: a still open edit dialog is closed in "onUnmount" through the
     // "DialogBase"'s published API ("APIRef"/"closeAllDialogs") - the JCL
@@ -11933,130 +10982,36 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // positioned ".WAT.Content" div, which contributes nothing to normal-flow
     // height) and therefore collapses to 0px height - which in turn made our
     // "100%"-sized content (and the Resizer inside it) collapse too. explicit
-    // "style" below makes DialogBase itself fill the widget (also keeping
-    // "BaseRef" correctly positioned for the edit dialog's anchor)
-    const WAT_stickyMarkdownNote = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** DefaultSize 160x120 ****/
-        installStylesheet(`
-      .WAT.Widget .WAT.stickyMarkdownNote {
-        left:0px; top:0px; width:100%; height:100%;
-        background:#FFFFA8; color:black;
-        border:solid 1px #888888; border-radius:4px;
-        box-shadow:0px 2px 6px 0px rgba(0,0,0,0.25);
-      }
-      .WAT.stickyMarkdownNote > .WAT.Mover {
-        left:0px; top:0px; right:0px; height:16px;
-        cursor:grab; user-select:none;
-        background:rgba(0,0,0,0.06);
-        border-bottom:solid 1px rgba(0,0,0,0.15);
-        border-radius:3px 3px 0px 0px;
-      }
-      .WAT.stickyMarkdownNote > .content-area {
-        position:absolute; left:0px; top:16px; right:0px; bottom:0px;
-        display:flex; flex-flow:column nowrap; align-items:stretch;
-        overflow:hidden;
-        border-radius:0px 0px 3px 3px;
-      }
-      .WAT.stickyMarkdownNote > .content-area > .sticky-note-content {
-        flex:1 1 auto; width:100%; min-height:0px;
-        padding:4px; cursor:default;
-      }
-      .WAT.stickyMarkdownNote > .WAT.Resizer {
-        right:0px; bottom:0px; width:16px; height:16px;
-        cursor:nwse-resize;
-        background:url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAAbUlEQVRIS9WTwQ0AIAgDZV0GYl2NP2KMEWmjOkAvPawU8hNGvpnVnquq8ifAW6E0gAO88/GmkAZ0wOonQhrAASslHZbeAR0QWf8bN4goOdoBHRBxftQADsgo2doBHZBRcucGSCXTBnQA0vmY1QDfJWAZ8ODrpQAAAABJRU5ErkJggg==");
-        background-repeat:no-repeat;
-        background-size:contain; background-position:center;
-      }
-      .sticky-markdown-editor {          /* lives in a dialog, not the widget */
-        display:block; width:100%; height:100%;
-        min-width:240px; min-height:180px;
-        resize:none;
-      }
-    `);
-        /**** custom Properties ****/
-        my.configurableProperties = [
-            { Name: 'Value', EditorType: 'text-input',
-                AccessorsFor: 'memoized', withCallback: true,
-                Validator: ValueIsTextWithTabs },
-            { Name: 'readonly', Default: false,
-                EditorType: 'checkbox', AccessorsFor: 'memoized' },
-        ];
-        /**** Renderer ****/
-        const GeometryHandlers = throttledGeometryHandlersFor(me);
-        const DialogBaseAPI = { current: null }; // s. "APIRef" below
-        onUnmount(function () {
-            GeometryHandlers.cancel();
-            if (DialogBaseAPI.current != null) { // close a still open edit dialog
-                DialogBaseAPI.current.closeAllDialogs();
-            }
-        });
-        onRender(function () {
-            const { Value, Enabling, readonly, Lock, FontFamily, FontSize, FontWeight, LineHeight, ForegroundColor, BackgroundColor } = this;
-            const mayBeRearranged = (Enabling !== false) && !Lock;
-            const _onValueChange = (newValue) => {
-                this.Value = newValue;
-                this.on('input')(newValue);
-            };
-            // *C* SECURITY: "JCL_legacy.stickyMarkdownNote" below renders its
-            // Markdown content as raw HTML without sanitization (XSS risk!) - via
-            // JCL's "MarkdownView" and "dangerouslySetInnerHTML" (see the
-            // equivalent marker in "MarkdownView", same security level)
-            return html `<${JCL_ui.DialogBase} APIRef=${DialogBaseAPI}
-        style="position:absolute; left:0px; top:0px; width:100%; height:100%;"
-      >
-        <div class="WAT Content stickyMarkdownNote"
-          style=${BackgroundColor == null ? undefined : `background:${BackgroundColor}`}
-        >
-          ${mayBeRearranged && html `<${WAT_Mover} key="mover" Widget=${this}
-            onMoveStart=${GeometryHandlers.onMoveStart} onMove=${GeometryHandlers.onMove}/>`}
-          <div class="content-area" key="content">
-            <${JCL_legacy.stickyMarkdownNote}
-              Content=${Value !== null && Value !== void 0 ? Value : ''}
-              FontFamily=${FontFamily} FontSize=${FontSize} FontWeight=${FontWeight}
-              LineHeight=${LineHeight == null ? undefined : LineHeight + 'px'}
-              ForegroundColor=${ForegroundColor} BackgroundColor=${BackgroundColor}
-              onContentChange=${readonly || (Enabling === false) ? undefined : _onValueChange}
-            />
-          </div>
-          ${mayBeRearranged && html `<${WAT_Resizer} key="resizer" Widget=${this}
-            onResizeStart=${GeometryHandlers.onResizeStart} onResize=${GeometryHandlers.onResize}
-            minWidth=${80} minHeight=${50}/>`}
-        </div>
-      </>`;
-        });
-    };
-    registerIntrinsicBehavior(Applet, 'widget', 'other_controls.stickyMarkdownNote', WAT_stickyMarkdownNote);
+    // "style" makes DialogBase itself fill the widget (also keeping "BaseRef"
+    // correctly positioned for the edit dialog's anchor)
+    registerIntrinsicBehaviorFromSource(Applet, 'widget', 'other_controls.stickyMarkdownNote', StickyNoteScriptFor({
+        NoteClass: 'stickyMarkdownNote', EditorType: 'text-input',
+        ContentRules: 'padding:4px; cursor:default;',
+        withEditDialog: true
+    }), StickyNoteClosures);
+}
+/**** readFileVia - shared FileReader handling for the readers below ****/
+function readFileVia(File, MethodName) {
+    return new Promise((resolve, reject) => {
+        const Reader = new FileReader();
+        Reader.onload = (Event) => resolve(Event.target.result);
+        Reader.onerror = (Event) => reject(Event.target.error);
+        Reader.onabort = (Event) => reject(new Error('Loading was aborted'));
+        // @ts-ignore TS7053 allow indexing
+        Reader[MethodName](File);
+    });
 }
 /**** readTextFile ****/
 async function readTextFile(File) {
-    return new Promise((resolve, reject) => {
-        const Reader = new FileReader();
-        Reader.onload = (Event) => resolve(Event.target.result);
-        Reader.onerror = (Event) => reject(Event.target.error);
-        Reader.onabort = (Event) => reject(new Error('Loading was aborted'));
-        Reader.readAsText(File);
-    });
+    return readFileVia(File, 'readAsText');
 }
 /**** readBinaryFile ****/
 async function readBinaryFile(File) {
-    return new Promise((resolve, reject) => {
-        const Reader = new FileReader();
-        Reader.onload = (Event) => resolve(Event.target.result);
-        Reader.onerror = (Event) => reject(Event.target.error);
-        Reader.onabort = (Event) => reject(new Error('Loading was aborted'));
-        Reader.readAsArrayBuffer(File);
-    });
+    return readFileVia(File, 'readAsArrayBuffer');
 }
 /**** readDataURLFile ****/
 async function readDataURLFile(File) {
-    return new Promise((resolve, reject) => {
-        const Reader = new FileReader();
-        Reader.onload = (Event) => resolve(Event.target.result);
-        Reader.onerror = (Event) => reject(Event.target.error);
-        Reader.onabort = (Event) => reject(new Error('Loading was aborted'));
-        Reader.readAsDataURL(File);
-    });
+    return readFileVia(File, 'readAsDataURL');
 }
 /**** FileReadAsText ****/
 async function FileReadAsText(File, FileType) {
@@ -13200,30 +12155,35 @@ export function useDesigner(newDesigner) {
     DesignerLayer = newDesigner;
     rerender();
 }
+/**** VisualForDOMValue - resolves events or DOM elements into visuals ****/
+const WAT_VisualSelectors = ('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
+    '.WAT.AppletOverlay,.WAT.Dialog,' +
+    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
+const WAT_WidgetSelectors = ('.WAT.Widget,' +
+    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
+function VisualForDOMValue(Value, Selectors) {
+    var _a, _b;
+    if (Value instanceof Event) {
+        Value = (Value.target instanceof Element
+            ? Value.target.closest(Selectors)
+            : undefined);
+    }
+    if (Value instanceof Element) {
+        const { _Applet, _Page, _Widget } = Value;
+        return (_b = (_a = _Applet !== null && _Applet !== void 0 ? _Applet : _Page) !== null && _a !== void 0 ? _a : _Widget) !== null && _b !== void 0 ? _b : undefined;
+    }
+    return undefined;
+}
 /**** AppletFor ****/
 export function AppletFor(Value) {
     switch (true) {
         case ValueIsApplet(Value): return Value;
         case ValueIsPage(Value): return Value.Applet;
         case ValueIsWidget(Value): return Value.Applet;
-        case (Value instanceof Event):
-            if (Value.target instanceof Element) {
-                Value = Value.target.closest('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
-                    '.WAT.AppletOverlay,.WAT.Dialog,' +
-                    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
-                if (Value == null) {
-                    break;
-                }
-            }
-            else {
-                break;
-            }
-        case (Value instanceof Element):
-            switch (true) {
-                case (Value === null || Value === void 0 ? void 0 : Value._Applet) != null: return Value._Applet;
-                case (Value === null || Value === void 0 ? void 0 : Value._Page) != null: return Value._Page.Applet;
-                case (Value === null || Value === void 0 ? void 0 : Value._Widget) != null: return Value._Widget.Applet;
-            }
+    }
+    const Visual = VisualForDOMValue(Value, WAT_VisualSelectors);
+    if (Visual != null) {
+        return AppletFor(Visual);
     }
     window.alert('could not find any visual for this DOM element');
     return undefined;
@@ -13234,47 +12194,22 @@ export function PageFor(Value) {
         case ValueIsApplet(Value): return Value.visitedPage;
         case ValueIsPage(Value): return Value;
         case ValueIsWidget(Value): return Value.Page;
-        case (Value instanceof Event):
-            if (Value.target instanceof Element) {
-                Value = Value.target.closest('.WAT.Applet,.WAT.Page,.WAT.Widget,' +
-                    '.WAT.AppletOverlay,.WAT.Dialog,' +
-                    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
-                if (Value == null) {
-                    break;
-                }
-            }
-            else {
-                break;
-            }
-        case (Value instanceof Element):
-            switch (true) {
-                case (Value === null || Value === void 0 ? void 0 : Value._Applet) != null: return Value._Applet.visitedPage;
-                case (Value === null || Value === void 0 ? void 0 : Value._Page) != null: return Value._Page;
-                case (Value === null || Value === void 0 ? void 0 : Value._Widget) != null: return Value._Widget.Page;
-            }
+    }
+    const Visual = VisualForDOMValue(Value, WAT_VisualSelectors);
+    if (Visual != null) {
+        return PageFor(Visual);
     }
     window.alert('could not find any visual for this DOM element');
     return undefined;
 }
 /**** WidgetFor ****/
 export function WidgetFor(Value) {
-    switch (true) {
-        case ValueIsWidget(Value): return Value;
-        case (Value instanceof Event):
-            if (Value.target instanceof Element) {
-                Value = Value.target.closest('.WAT.Widget,' +
-                    '.WAT.WidgetOverlay,.WAT.WidgetUnderlay');
-                if (Value == null) {
-                    break;
-                }
-            }
-            else {
-                break;
-            }
-        case (Value instanceof Element):
-            if ((Value === null || Value === void 0 ? void 0 : Value._Widget) != null) {
-                return Value._Widget;
-            }
+    if (ValueIsWidget(Value)) {
+        return Value;
+    }
+    const Visual = VisualForDOMValue(Value, WAT_WidgetSelectors);
+    if (ValueIsWidget(Visual)) {
+        return Visual;
     }
     window.alert('could not find any widget for this DOM element');
     return undefined;

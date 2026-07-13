@@ -1,44 +1,42 @@
-const Fr = globalThis;
-function je(e, t) {
-  return e == null || // let this method crash like its original
-  "hasOwnProperty" in e && typeof e.hasOwnProperty == "function" ? e.hasOwnProperty(t) : Object.prototype.hasOwnProperty.call(e, t);
+const Ur = globalThis;
+function E(e) {
+  return C(function(t, ...n) {
+    return t == null || // let these methods crash like their originals
+    e in t && typeof t[e] == "function" ? t[e](...n) : Object.prototype[e].apply(t, n);
+  }, "Object_" + e);
 }
-function Be(e, t) {
+const Xe = /* @__PURE__ */ E(
+  "hasOwnProperty"
+), Ve = /* @__PURE__ */ E(
+  "isPrototypeOf"
+), Br = /* @__PURE__ */ E(
+  "propertyIsEnumerable"
+), et = /* @__PURE__ */ E(
+  "toString"
+);
+function Jr(e) {
   return e == null || // let this method crash like its original
-  "isPrototypeOf" in e && typeof e.isPrototypeOf == "function" ? e.isPrototypeOf(t) : Object.prototype.isPrototypeOf.call(e, t);
+  "toLocaleString" in e && typeof e.toLocaleString == "function" ? e.toLocaleString() : et(e);
 }
-function Pr(e, t) {
-  return e == null || // let this method crash like its original
-  "propertyIsEnumerable" in e && typeof e.propertyIsEnumerable == "function" ? e.propertyIsEnumerable(t) : Object.prototype.propertyIsEnumerable.call(e, t);
-}
-function Re(e) {
-  return e == null || // let this method crash like its original
-  "toString" in e && typeof e.toString == "function" ? e.toString() : Object.prototype.toString.call(e);
-}
-function $r(e) {
-  return e == null || // let this method crash like its original
-  "toLocaleString" in e && typeof e.toLocaleString == "function" ? e.toLocaleString() : Re(e);
-}
-function Er(e) {
-  return e == null || // let this method crash like its original
-  "valueOf" in e && typeof e.valueOf == "function" ? e.valueOf() : Object.prototype.valueOf.call(e);
-}
-function jr(e, ...t) {
-  for (let n = 0, r = t.length; n < r; n++) {
-    let i = t[n];
-    if (i != null)
-      if (typeof i == "object") {
-        const o = Object.getOwnPropertyDescriptors(i);
-        for (const I of Reflect.ownKeys(o)) {
-          const x = o[I];
-          x.enumerable && Object.defineProperty(e, I, x);
+const Tr = /* @__PURE__ */ E(
+  "valueOf"
+);
+function Cr(e, ...t) {
+  for (let n = 0, a = t.length; n < a; n++) {
+    let l = t[n];
+    if (l != null)
+      if (typeof l == "object") {
+        const c = Object.getOwnPropertyDescriptors(l);
+        for (const p of Reflect.ownKeys(c)) {
+          const I = c[p];
+          I.enumerable && Object.defineProperty(e, p, I);
         }
       } else
-        f("InvalidArgument: argument #" + (n + 1) + " is not an object");
+        g("InvalidArgument: argument #" + (n + 1) + " is not an object");
   }
   return e;
 }
-function f(e) {
+function g(e) {
   let t = /^([$a-zA-Z][$a-zA-Z0-9]*):\s*(\S.+)\s*$/.exec(e);
   if (t == null)
     throw new Error(e);
@@ -47,247 +45,252 @@ function f(e) {
     throw n.name = t[1], n;
   }
 }
-function Br(e) {
+function S(e) {
+  g(`MissingArgument: no ${f(e)} given`);
+}
+function Mr(e) {
   return e != null;
 }
-function Rr(e) {
+function Dr(e) {
   return e == null;
 }
-function P(e) {
+function z(e) {
   return typeof e == "boolean" || e instanceof Boolean;
 }
-function $(e) {
+function O(e) {
   return typeof e == "number" || e instanceof Number;
 }
-function y(e) {
-  return (typeof e == "number" || e instanceof Number) && isFinite(e.valueOf());
+function v(e) {
+  return O(e) && isFinite(e.valueOf());
 }
-function z(e) {
-  return (typeof e == "number" || e instanceof Number) && isNaN(e.valueOf());
+function Z(e) {
+  return O(e) && isNaN(e.valueOf());
 }
-function kr(e, t, n, r = !0, i = !0) {
-  if (!$(e))
+function qr(e, t, n, a = !0, l = !0) {
+  if (!O(e))
     return !1;
-  const o = e.valueOf();
-  if (isNaN(o))
-    return !1;
-  if (y(t)) {
-    if (y(n)) {
-      if (o < t || !r && o === t || o > n || !i && o === n)
-        return !1;
-    } else if (o < t || !r && o === t)
-      return !1;
-  } else if (y(n) && (o > n || !i && o === n))
-    return !1;
-  return !0;
+  const c = e.valueOf();
+  return isNaN(c) ? !1 : !// "ValueIsFiniteNumber" is more robust than "isFinite"
+  (v(t) && (c < t || !a && c === t) || v(n) && (c > n || !l && c === n));
 }
-function E(e) {
-  if (typeof e != "number" && !(e instanceof Number))
+function F(e) {
+  if (!O(e))
     return !1;
   const t = e.valueOf();
   return isFinite(t) && Math.round(t) === t;
 }
-function ke(e, t, n) {
-  if (!E(e) || isNaN(e))
+function tt(e, t, n) {
+  if (!F(e))
     return !1;
-  if (y(t)) {
-    if (y(n)) {
-      if (e < t || e > n)
-        return !1;
-    } else if (e < t)
-      return !1;
-  } else if (y(n) && e > n)
-    return !1;
-  return !0;
+  const a = e.valueOf();
+  return !// "ValueIsFiniteNumber" is more robust than "isFinite"
+  (v(t) && a < t || v(n) && a > n);
 }
-function J(e) {
-  if (typeof e != "number" && !(e instanceof Number))
-    return !1;
-  const t = e.valueOf();
-  return isFinite(t) && Math.round(t) === t && t >= 0;
-}
-function T(e) {
-  if (typeof e != "number" && !(e instanceof Number))
-    return !1;
-  const t = e.valueOf();
-  return isFinite(t) && Math.round(t) === t && t >= 1;
-}
-function v(e) {
-  return typeof e == "string" || e instanceof String;
-}
-const A = /^\s*$/;
-function zr(e) {
-  return (typeof e == "string" || e instanceof String) && A.test(e.valueOf());
-}
-function M(e) {
-  return (typeof e == "string" || e instanceof String) && !A.test(e.valueOf());
-}
-function p(e, t) {
-  return (typeof e == "string" || e instanceof String) && t.test(e.valueOf());
-}
-const ze = /^[^\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
-function D(e) {
-  return p(e, ze);
-}
-const Je = /^[^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
-function L(e) {
-  return p(e, Je);
-}
-function U(e) {
-  return typeof e == "function";
-}
-function C(e) {
-  return typeof e == "function" && (e.name == null || e.name === "");
-}
-function H(e) {
-  return typeof e == "function" && e.name != null && e.name !== "";
-}
-const Te = /^function\s*[^(]*\(\)\s*\{\s*\[native code\]\s*\}\s*$/;
-function j(e) {
-  return typeof e == "function" && Te.test(e.toString()) && !e.name.startsWith("bound ");
-}
-function q(e) {
-  return typeof e == "function" && !j(e);
-}
-function _(e) {
-  return e != null && typeof e == "object";
-}
-function N(e) {
-  return e != null && typeof e == "object" && Object.getPrototypeOf(e) === Object.prototype;
+function W(e) {
+  return F(e) && e.valueOf() >= 0;
 }
 function G(e) {
-  return e != null && typeof e == "object" && !(e instanceof Object);
+  return F(e) && e.valueOf() >= 1;
 }
-const B = Array.isArray;
-function W(e, t, n) {
-  if (B(e)) {
-    for (let r = 0, i = e.length; r < i; r++)
-      if (e[r] === void 0)
-        return !1;
-    return !(t != null && e.length < t || n != null && e.length > n);
-  }
-  return !1;
+function y(e) {
+  return typeof e == "string" || e instanceof String;
 }
-function F(e, t, n, r) {
-  if (B(e))
-    try {
-      for (let i = 0, o = e.length; i < o; i++)
-        if (!t(e[i]))
-          return !1;
-      return !(n != null && e.length < n || r != null && e.length > r);
-    } catch {
-    }
-  return !1;
-}
-function Jr(e, t) {
-  return F(e, (n) => R(n, t));
-}
-function Tr(e, t) {
-  return e instanceof t;
-}
-function Ar(e, t) {
-  return Be(t, e);
-}
-function Z(e) {
-  return e instanceof Date;
-}
-function K(e) {
-  return e instanceof Error;
-}
-function Y(e) {
-  return e != null && typeof e.then == "function";
+const K = /^\s*$/;
+function Hr(e) {
+  return w(e, K);
 }
 function Q(e) {
-  return e instanceof RegExp;
+  return y(e) && !K.test(e.valueOf());
 }
-function R(e, t) {
-  return t.indexOf(e) >= 0;
+function w(e, t) {
+  return (typeof e == "string" || e instanceof String) && t.test(e.valueOf());
 }
+const nt = /^[^\x00-\x09\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
+function Y(e) {
+  return w(e, nt);
+}
+const rt = /^[^\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
 function X(e) {
-  if (!v(e))
-    return !1;
-  let t = e.valueOf().toLowerCase();
-  return O.hasOwnProperty(t) || /^#[a-fA-F0-9]{6}$/.test(t) || /^#[a-fA-F0-9]{8}$/.test(t) || /^rgb\([0-9]+,\s*[0-9]+,\s*[0-9]+\)$/.test(t) || // not perfect
-  /^rgba\([0-9]+,\s*[0-9]+,\s*[0-9]+,\s*([01]|[01]?[.][0-9]+)\)$/.test(t);
+  return w(e, rt);
 }
-const Ae = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
 function V(e) {
-  return p(e, Ae);
+  return typeof e == "function";
 }
-const Me = /^[^\s\x00-\x1F\x7F-\x9F\u2028\u2029\uFFF9-\uFFFB]*$/;
+function U(e) {
+  return typeof e == "function" && (e.name ?? "") === "";
+}
 function ee(e) {
-  if (!p(e, Me) || e === "")
+  return typeof e == "function" && !U(e);
+}
+const at = /^function\s*[^(]*\(\)\s*\{\s*\[native code\]\s*\}\s*$/;
+function B(e) {
+  return typeof e == "function" && at.test(e.toString()) && !e.name.startsWith("bound ");
+}
+function te(e) {
+  return typeof e == "function" && !B(e);
+}
+function ne(e) {
+  return e != null && typeof e == "object";
+}
+function L(e) {
+  return e != null && typeof e == "object" && Object.getPrototypeOf(e) === Object.prototype;
+}
+function re(e) {
+  return e != null && typeof e == "object" && !(e instanceof Object);
+}
+const ae = Array.isArray;
+function oe(e, t, n) {
+  return k(
+    e,
+    (a) => a !== void 0,
+    t,
+    n
+  );
+}
+function k(e, t, n, a) {
+  if (!ae(e))
     return !1;
   try {
-    return new URL(e, "file://"), !0;
+    for (let l = 0, c = e.length; l < c; l++)
+      if (!t(e[l]))
+        return !1;
+    return !(n != null && e.length < n || a != null && e.length > a);
   } catch {
     return !1;
   }
 }
-const De = /^\+?[0-9(][0-9 \-.\/()]*[0-9)]$/;
-function te(e) {
-  if (!v(e))
+function ot(e, t) {
+  return k(e, (n) => ue(n, t));
+}
+function _r(e, t) {
+  return e instanceof t;
+}
+function Zr(e, t) {
+  return Ve(t, e);
+}
+function ie(e) {
+  return e instanceof Date;
+}
+function le(e) {
+  return e instanceof Error;
+}
+function ce(e) {
+  return e != null && typeof e.then == "function";
+}
+function se(e) {
+  return e instanceof RegExp;
+}
+function ue(e, t) {
+  return t.indexOf(e) >= 0;
+}
+function fe(e) {
+  if (!y(e))
+    return !1;
+  let t = e.valueOf().toLowerCase();
+  return P.hasOwnProperty(t) || M.test(t) || D.test(t) || q.test(t) || H.test(t);
+}
+const it = /^(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\.){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])$/i;
+function ge(e) {
+  return w(e, it);
+}
+const lt = (
+  // URL characters after RFC 3986
+  /^[A-Za-z0-9\-._~:\/?#\[\]@!$&'()*+,;=%]+$/
+), ct = /%(?![0-9A-Fa-f]{2})/;
+function J(e) {
+  if (!y(e))
+    return !1;
+  const t = e.valueOf();
+  if (!lt.test(t) || // also rejects '' + whitespace
+  ct.test(t))
+    return !1;
+  try {
+    return new URL(t, "file://"), !0;
+  } catch {
+    return !1;
+  }
+}
+function st(e) {
+  return e.toLowerCase().replace(/:?$/, ":");
+}
+function ut(e, t) {
+  if (!J(e))
+    return !1;
+  let n;
+  try {
+    n = new URL(e.valueOf());
+  } catch {
+    return !1;
+  }
+  return t == null ? !0 : t.some(
+    // "parsedURL.protocol" already
+    (a) => st(a) === n.protocol
+  );
+}
+const ft = /^\+?[0-9(][0-9 \-.\/()]*[0-9)]$/;
+function be(e) {
+  if (!y(e))
     return !1;
   let t = e.valueOf();
-  if (!De.test(t))
+  if (!ft.test(t))
     return !1;
   let n = t.replace(/[^0-9]/g, "");
   return t.charAt(0) === "+" ? /^[1-9][0-9]{6,14}$/.test(n) : n.length >= 3 && n.length <= 16;
 }
-const Le = /^\+[1-9][0-9]{6,14}$/;
-function ne(e) {
-  return p(e, Le);
+const gt = /^\+[1-9][0-9]{6,14}$/;
+function de(e) {
+  return w(e, gt);
 }
-function re(e) {
+function pe(e) {
   return typeof e == "bigint";
 }
-function ae(e) {
+function we(e) {
   return typeof e == "symbol";
 }
-function ie(e) {
+function xe(e) {
   return e instanceof Map;
 }
-function oe(e) {
+function Ie(e) {
   return e instanceof Set;
 }
-function ce(e) {
+function Se(e) {
   return ArrayBuffer.isView(e) && !(e instanceof DataView);
 }
-function le(e) {
+function ye(e) {
   return e instanceof ArrayBuffer;
 }
-const Ue = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-function se(e) {
-  return p(e, Ue);
+const bt = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+function me(e) {
+  return w(e, bt);
 }
-const Ce = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
-function ue(e) {
-  if (!v(e))
+const dt = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
+function ve(e) {
+  if (!y(e))
     return !1;
-  const t = Ce.exec(e.valueOf());
+  const t = dt.exec(e.valueOf());
   if (t == null)
     return !1;
-  const [n, r, i] = [t[1], t[2], t[3]].map(Number), o = new Date(Date.UTC(n, r - 1, i));
+  const [n, a, l] = [t[1], t[2], t[3]].map(Number), c = new Date(Date.UTC(n, a - 1, l));
   return (
     // detects overflows like 02-31
-    o.getUTCFullYear() === n && o.getUTCMonth() === r - 1 && o.getUTCDate() === i
+    c.getUTCFullYear() === n && c.getUTCMonth() === a - 1 && c.getUTCDate() === l
   );
 }
-const He = new RegExp(
+const pt = new RegExp(
   "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}(:[0-9]{2}([.][0-9]+)?)?(Z|[+-][0-9]{2}:[0-9]{2})?$"
 );
-function fe(e) {
-  return p(e, He) && !isNaN(Date.parse(e.valueOf()));
+function Oe(e) {
+  return w(e, pt) && !isNaN(Date.parse(e.valueOf()));
 }
-const qe = new RegExp(
+const wt = new RegExp(
   "^((25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])[.]){3}(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9]?[0-9])$"
 );
-function ge(e) {
-  return p(e, qe);
+function he(e) {
+  return w(e, wt);
 }
-const _e = /^[0-9a-fA-F:.]+$/;
-function be(e) {
-  if (!v(e) || !_e.test(e.valueOf()))
+const xt = /^[0-9a-fA-F:.]+$/;
+function Ne(e) {
+  if (!y(e) || !xt.test(e.valueOf()))
     return !1;
   try {
     return new URL("http://[" + e.valueOf() + "]/"), !0;
@@ -295,44 +298,44 @@ function be(e) {
     return !1;
   }
 }
-const Ge = new RegExp(
+const It = new RegExp(
   "^(?=.{1,253}$)[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$",
   "i"
 );
-function de(e) {
-  return p(e, Ge);
+function Pe(e) {
+  return w(e, It);
 }
-function pe(e) {
-  return ke(e, 1, 65535);
+function Ee(e) {
+  return tt(e, 1, 65535);
 }
-function m(e, t = /* @__PURE__ */ new WeakSet()) {
+function N(e, t = /* @__PURE__ */ new WeakSet()) {
   switch (!0) {
     case e == null:
     // deliberately also allows undefined
-    case P(e):
-    case y(e):
-    // NaN/Infinity are not serializable
+    case z(e):
     case v(e):
+    // NaN/Infinity are not serializable
+    case y(e):
       return !0;
-    case W(e):
+    case oe(e):
       if (t.has(e))
         return !1;
       t.add(e);
       try {
-        return F(
+        return k(
           e,
-          (n) => n === void 0 ? !1 : m(n, t)
+          (n) => n === void 0 ? !1 : N(n, t)
         );
       } finally {
         t.delete(e);
       }
-    case N(e):
+    case L(e):
       if (t.has(e))
         return !1;
       t.add(e);
       try {
         for (let n in e)
-          if (e.hasOwnProperty(n) && !m(e[n], t))
+          if (e.hasOwnProperty(n) && !N(e[n], t))
             return !1;
         return !0;
       } finally {
@@ -341,17 +344,11 @@ function m(e, t = /* @__PURE__ */ new WeakSet()) {
   }
   return !1;
 }
-function xe(e) {
-  if (N(e)) {
-    for (let t in e)
-      if (e.hasOwnProperty(t) && !m(e[t]))
-        return !1;
-    return !0;
-  } else
-    return !1;
+function Fe(e) {
+  return L(e) && N(e);
 }
-function we(e) {
-  if (!v(e))
+function $e(e) {
+  if (!y(e))
     return !1;
   try {
     return JSON.parse(e.valueOf()), !0;
@@ -359,733 +356,658 @@ function we(e) {
     return !1;
   }
 }
-const We = new RegExp(
+const St = new RegExp(
   "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
 );
-function ye(e) {
-  return p(e, We);
+function Re(e) {
+  return w(e, St);
 }
-const Ze = /^[0-9a-fA-F]+$/;
-function Ie(e) {
-  return p(e, Ze);
+const yt = /^[0-9a-fA-F]+$/;
+function je(e) {
+  return w(e, yt);
 }
-const Ke = /^[\p{ID_Start}_$][\p{ID_Continue}_$\u200C\u200D]*$/u;
-function ve(e) {
-  return p(e, Ke);
+const mt = /^[\p{ID_Start}_$][\p{ID_Continue}_$\u200C\u200D]*$/u;
+function Ae(e) {
+  return w(e, mt);
 }
-const c = !1, l = !0;
-function Ye(e, t, n, r, i) {
+const o = !1, i = !0;
+function T(e) {
+  return (
+    // "valueOf" may return other values for
+    e instanceof Boolean || // other objects (e.g. Dates)
+    e instanceof Number || e instanceof String ? e.valueOf() : e
+  );
+}
+function vt(e, t, n, a, l) {
   if (t == null) {
-    if (r)
+    if (a)
       return t;
-    f(`MissingArgument: no ${s(e)} given`);
-  } else if (n(t))
-    switch (!0) {
-      case t instanceof Boolean:
-      case t instanceof Number:
-      case t instanceof String:
-        return t.valueOf();
-      // unboxes any primitives
-      default:
-        return t;
-    }
-  else
-    f(
-      `InvalidArgument: the given ${s(e)} is no valid ${s(i)}`
-    );
+    S(e);
+  }
+  if (n(t))
+    return T(t);
+  g(
+    `InvalidArgument: the given ${f(e)} is no valid ${f(l)}`
+  );
 }
-function a(e, t, n) {
-  let r = function(o, I) {
-    return Ye(
-      o,
-      I,
+function r(e, t, n) {
+  let a = function(c, p) {
+    return vt(
+      c,
+      p,
       e,
       t,
       n
     );
-  }, i = e.name;
-  if (i != null && /^ValueIs/.test(i)) {
-    let o = i.replace(
+  }, l = e.name;
+  if (l != null && /^ValueIs/.test(l)) {
+    let c = l.replace(
       // derive name from validator
       /^ValueIs/,
       t ? "allow" : "expect"
     );
-    return Qe(r, o);
+    return C(a, c);
   } else
-    return r;
+    return a;
 }
-function Qe(e, t) {
-  return e == null && f("MissingArgument: no function given"), typeof e != "function" && f("InvalidArgument: the given 1st Argument is not a JavaScript function"), t == null && f("MissingArgument: no desired name given"), typeof t != "string" && !(t instanceof String) && f("InvalidArgument: the given desired name is not a string"), e.name === t || Object.defineProperty(e, "name", {
+function C(e, t) {
+  return e == null && g("MissingArgument: no function given"), typeof e != "function" && g("InvalidArgument: the given 1st Argument is not a JavaScript function"), t == null && g("MissingArgument: no desired name given"), typeof t != "string" && !(t instanceof String) && g("InvalidArgument: the given desired name is not a string"), e.name === t || Object.defineProperty(e, "name", {
     value: t.valueOf()
   }), e;
 }
-function Xe(e, t, n) {
-  return t == null ? void 0 : et(e, t, n);
+function x(e, t) {
+  return C(
+    (n, a, ...l) => a == null ? a : e(n, a, ...l),
+    t
+  );
 }
-const Mr = Xe;
-function Ve(e, t, n) {
-  t == null && f(`MissingArgument: no ${s(e)} given`);
-  let r;
-  switch (!0) {
-    // unboxes primitives - but nothing else, as
-    case t instanceof Boolean:
-    // "valueOf" may return other values
-    case t instanceof Number:
-    // for other objects (e.g. Dates)
-    case t instanceof String:
-      r = t.valueOf();
-      break;
-    default:
-      r = t;
-  }
-  if (n == null || n(r) === !0)
-    return r;
-  f(`InvalidArgument: the given ${s(e)} is invalid`);
-}
-const et = Ve, tt = /* @__PURE__ */ a(
-  P,
-  l,
-  "boolean value"
-), Dr = tt, nt = /* @__PURE__ */ a(
-  P,
-  c,
-  "boolean value"
-), Lr = nt, rt = /* @__PURE__ */ a(
-  $,
-  l,
-  "numeric value"
-), Ur = rt, Se = /* @__PURE__ */ a(
-  $,
-  c,
-  "numeric value"
-), Cr = Se, at = /* @__PURE__ */ a(
-  y,
-  l,
-  "finite numeric value"
-), Hr = at, it = /* @__PURE__ */ a(
-  y,
-  c,
-  "finite numeric value"
-), qr = it, ot = /* @__PURE__ */ a(
-  z,
-  l,
-  "NaN value"
-), _r = ot, ct = /* @__PURE__ */ a(
-  z,
-  c,
-  "NaN value"
-), Gr = ct;
-function lt(e, t, n, r, i, o) {
-  return t == null ? t : ut(e, t, n, r, i, o);
-}
-const Wr = lt;
-function st(e, t, n, r, i, o) {
-  if (Se(e, t), isNaN(t) && f(
-    `InvalidArgument: the given ${s(e)} is not-a-number`
-  ), i == null && (i = !0), o == null && (o = !0), n != null && isFinite(n)) {
-    if (r != null && isFinite(r)) {
-      if (t < n || !i && t === n || t > r || !o && t === r)
-        throw new RangeError(
-          `the given ${s(e)} (${t}) is outside the allowed range (${n}...${r})`
-        );
-    } else if (t < n || !i && t === n)
-      throw new RangeError(
-        `the given ${s(e)} is below the allowed minimum (${t} ${i ? "<" : "<="} ${n})`
-      );
-  } else if (r != null && isFinite(r) && (t > r || !o && t === r))
-    throw new RangeError(
-      `the given ${s(e)} exceeds the allowed maximum (${t} ${o ? ">" : ">="} ${r})`
-    );
-  return t.valueOf();
-}
-const ut = st, ft = /* @__PURE__ */ a(
-  E,
-  l,
-  "integral numeric value"
-), Zr = ft, me = /* @__PURE__ */ a(
-  E,
-  c,
-  "integral numeric value"
-), Kr = me;
-function gt(e, t, n, r) {
-  return t == null ? t : dt(e, t, n, r);
-}
-const Yr = gt;
-function bt(e, t, n, r) {
-  if (me(e, t), isNaN(t) && f(
-    `InvalidArgument: the given ${s(e)} is not-a-number`
-  ), n != null && isFinite(n)) {
-    if (r != null && isFinite(r)) {
-      if (t < n || t > r)
-        throw new RangeError(
-          `the given ${s(e)} (${t}) is outside the allowed range (${n}...${r})`
-        );
-    } else if (t < n)
-      throw new RangeError(
-        `the given ${s(e)} is below the allowed minimum (${t} < ${n})`
-      );
-  } else if (r != null && isFinite(r) && t > r)
-    throw new RangeError(
-      `the given ${s(e)} exceeds the allowed maximum (${t} > ${r})`
-    );
-  return t.valueOf();
-}
-const dt = bt, pt = /* @__PURE__ */ a(
-  J,
-  l,
-  "ordinal number"
-), Qr = pt, xt = /* @__PURE__ */ a(
-  J,
-  c,
-  "ordinal number"
-), Xr = xt, wt = /* @__PURE__ */ a(
-  T,
-  l,
-  "cardinal number"
-), Vr = wt, yt = /* @__PURE__ */ a(
-  T,
-  c,
-  "cardinal number"
-), ea = yt, It = /* @__PURE__ */ a(
-  v,
-  l,
-  "literal string"
-), ta = It, Oe = /* @__PURE__ */ a(
-  v,
-  c,
-  "literal string"
-), na = Oe, vt = /* @__PURE__ */ a(
-  M,
-  l,
-  "non-empty literal string"
-), ra = vt, St = /* @__PURE__ */ a(
-  M,
-  c,
-  "non-empty literal string"
-), aa = St;
-function mt(e, t, n) {
-  return t == null ? t : ht(e, t, n);
-}
-const ia = mt;
 function Ot(e, t, n) {
-  if (Oe(e, t), n.test(t))
-    return t.valueOf();
-  f(
-    `InvalidArgument: the given ${s(e)} does not match the specified pattern`
-  );
+  return t == null ? void 0 : Nt(e, t, n);
 }
-const ht = Ot, Nt = /* @__PURE__ */ a(
-  D,
-  l,
-  "literal text"
-), oa = Nt, Ft = /* @__PURE__ */ a(
-  D,
-  c,
-  "literal text"
-), ca = Ft, Pt = /* @__PURE__ */ a(
-  L,
-  l,
-  "single line of text"
-), la = Pt, $t = /* @__PURE__ */ a(
-  L,
-  c,
-  "single line of text"
-), sa = $t, Et = /* @__PURE__ */ a(
-  U,
-  l,
-  "JavaScript function"
-), ua = Et, jt = /* @__PURE__ */ a(
-  U,
-  c,
-  "JavaScript function"
-), fa = jt, Bt = /* @__PURE__ */ a(
-  C,
-  l,
-  "anonymous JavaScript function"
-), ga = Bt, Rt = /* @__PURE__ */ a(
-  C,
-  c,
-  "anonymous JavaScript function"
-), ba = Rt, kt = /* @__PURE__ */ a(
-  H,
-  l,
-  "named JavaScript function"
-), da = kt, zt = /* @__PURE__ */ a(
-  H,
-  c,
-  "named JavaScript function"
-), pa = zt, Jt = /* @__PURE__ */ a(
-  j,
-  l,
-  "native JavaScript function"
-), xa = Jt, Tt = /* @__PURE__ */ a(
-  j,
-  c,
-  "native JavaScript function"
-), wa = Tt, At = /* @__PURE__ */ a(
-  q,
-  l,
-  "scripted JavaScript function"
-), ya = At, Mt = /* @__PURE__ */ a(
-  q,
-  c,
-  "scripted JavaScript function"
-), Ia = Mt, Dt = /* @__PURE__ */ a(
-  _,
-  l,
-  "JavaScript object"
-), va = Dt, he = /* @__PURE__ */ a(
-  _,
-  c,
-  "JavaScript object"
-), Sa = he, Lt = /* @__PURE__ */ a(
-  N,
-  l,
-  '"plain" JavaScript object'
-), ma = Lt, Ut = /* @__PURE__ */ a(
-  N,
-  c,
-  '"plain" JavaScript object'
-), Oa = Ut, Ct = /* @__PURE__ */ a(
-  G,
-  l,
-  '"vanilla" JavaScript object'
-), ha = Ct, Ht = /* @__PURE__ */ a(
-  G,
-  c,
-  '"vanilla" JavaScript object'
-), Na = Ht;
-function qt(e, t) {
-  return t == null ? t : Gt(e, t);
+const Wr = Ot;
+function ht(e, t, n) {
+  t == null && S(e);
+  const a = T(t);
+  if (n == null || n(a) === !0)
+    return a;
+  g(`InvalidArgument: the given ${f(e)} is invalid`);
 }
-const Fa = qt;
-function _t(e, t) {
-  if (t == null && f(`MissingArgument: no ${s(e)} given`), B(t))
-    return t;
-  f(
-    `InvalidArgument: the given ${s(e)} is no JavaScript array`
-  );
-}
-const Gt = _t;
-function Wt(e, t, n, r, i) {
-  return t == null ? t : Kt(e, t, n, r, i);
-}
-const Pa = Wt;
-function Zt(e, t, n, r, i) {
-  if (t == null && f(`MissingArgument: no ${s(e)} given`), W(t, r, i))
-    return t;
-  f(
-    `InvalidArgument: the given ${s(e)} is ` + (n == null ? "either not a list or contains an invalid number of elements" : "no " + s(n))
-  );
-}
-const Kt = Zt;
-function Yt(e, t, n, r, i, o) {
-  return t == null ? t : Xt(
-    e,
-    t,
-    n,
-    r,
-    i,
-    o
-  );
-}
-const $a = Yt;
-function Qt(e, t, n, r, i, o) {
-  if (t == null && f(`MissingArgument: no ${s(e)} given`), F(t, n, i, o))
-    return t;
-  f(
-    `InvalidArgument: the given ${s(e)} is ` + (r == null ? "either not a list or contains invalid elements" : "no " + s(r))
-  );
-}
-const Xt = Qt;
-function Vt(e, t, n) {
-  return t == null ? t : tn(e, t, n);
-}
-const Ea = Vt;
-function en(e, t, n) {
-  if (t == null)
-    f(`MissingArgument: no ${s(e)} given`);
-  else {
-    if (F(t, (r) => R(r, n)))
-      return t;
-    f(`InvalidArgument: the given value is no ${s(e)}`);
+const Nt = ht, Pt = /* @__PURE__ */ r(
+  z,
+  i,
+  "boolean value"
+), Gr = Pt, Et = /* @__PURE__ */ r(
+  z,
+  o,
+  "boolean value"
+), Kr = Et, Ft = /* @__PURE__ */ r(
+  O,
+  i,
+  "numeric value"
+), Qr = Ft, Le = /* @__PURE__ */ r(
+  O,
+  o,
+  "numeric value"
+), Yr = Le, $t = /* @__PURE__ */ r(
+  v,
+  i,
+  "finite numeric value"
+), Xr = $t, Rt = /* @__PURE__ */ r(
+  v,
+  o,
+  "finite numeric value"
+), Vr = Rt, jt = /* @__PURE__ */ r(
+  Z,
+  i,
+  "NaN value"
+), ea = jt, At = /* @__PURE__ */ r(
+  Z,
+  o,
+  "NaN value"
+), ta = At, Lt = /* @__PURE__ */ x(
+  ke,
+  "allowNumberInRange"
+), na = Lt;
+function ke(e, t, n, a, l, c) {
+  Le(e, t), isNaN(t) && g(
+    `InvalidArgument: the given ${f(e)} is not-a-number`
+  ), l ?? (l = !0), c ?? (c = !0);
+  const p = n != null && isFinite(n), I = a != null && isFinite(a), R = p && (t < n || !l && t === n), j = I && (t > a || !c && t === a);
+  switch (!0) {
+    case (R && I || j && p):
+      throw new RangeError(
+        `the given ${f(e)} (${t}) is outside the allowed range (${n}...${a})`
+      );
+    case R:
+      throw new RangeError(
+        `the given ${f(e)} is below the allowed minimum (${t} ${l ? "<" : "<="} ${n})`
+      );
+    case j:
+      throw new RangeError(
+        `the given ${f(e)} exceeds the allowed maximum (${t} ${c ? ">" : ">="} ${a})`
+      );
   }
+  return t.valueOf();
 }
-const tn = en;
-function nn(e, t, n, r) {
-  return t == null ? t : an(e, t, n, r);
+const ra = ke, kt = /* @__PURE__ */ r(
+  F,
+  i,
+  "integral numeric value"
+), aa = kt, ze = /* @__PURE__ */ r(
+  F,
+  o,
+  "integral numeric value"
+), oa = ze, zt = /* @__PURE__ */ x(
+  Ue,
+  "allowIntegerInRange"
+), ia = zt;
+function Ue(e, t, n, a) {
+  ze(e, t);
+  const l = n != null && isFinite(n), c = a != null && isFinite(a), p = l && t < n, I = c && t > a;
+  switch (!0) {
+    case (p && c || I && l):
+      throw new RangeError(
+        `the given ${f(e)} (${t}) is outside the allowed range (${n}...${a})`
+      );
+    case p:
+      throw new RangeError(
+        `the given ${f(e)} is below the allowed minimum (${t} < ${n})`
+      );
+    case I:
+      throw new RangeError(
+        `the given ${f(e)} exceeds the allowed maximum (${t} > ${a})`
+      );
+  }
+  return t.valueOf();
 }
-const ja = nn;
-function rn(e, t, n, r) {
-  return t == null && f(`MissingArgument: no ${s(e)} given`), t instanceof n || f(
-    `InvalidArgument: the given ${s(e)} is no ${s(r)}`
-  ), t;
-}
-const an = rn;
-function on(e, t, n, r) {
-  return t == null ? t : ln(e, t, n, r);
-}
-const Ba = on;
-function cn(e, t, n, r) {
-  if (t == null && f(`MissingArgument: no ${s(e)} given`), n.isPrototypeOf(t))
-    return t;
-  f(
-    `InvalidArgument: the given ${s(e)} is no ${s(r)}`
+const la = Ue, Ut = /* @__PURE__ */ r(
+  W,
+  i,
+  "ordinal number"
+), ca = Ut, Bt = /* @__PURE__ */ r(
+  W,
+  o,
+  "ordinal number"
+), sa = Bt, Jt = /* @__PURE__ */ r(
+  G,
+  i,
+  "cardinal number"
+), ua = Jt, Tt = /* @__PURE__ */ r(
+  G,
+  o,
+  "cardinal number"
+), fa = Tt, Ct = /* @__PURE__ */ r(
+  y,
+  i,
+  "literal string"
+), ga = Ct, Be = /* @__PURE__ */ r(
+  y,
+  o,
+  "literal string"
+), ba = Be, Mt = /* @__PURE__ */ r(
+  Q,
+  i,
+  "non-empty literal string"
+), da = Mt, Dt = /* @__PURE__ */ r(
+  Q,
+  o,
+  "non-empty literal string"
+), pa = Dt, qt = /* @__PURE__ */ x(
+  Je,
+  "allowStringMatching"
+), wa = qt;
+function Je(e, t, n) {
+  if (Be(e, t), n.test(t))
+    return t.valueOf();
+  g(
+    `InvalidArgument: the given ${f(e)} does not match the specified pattern`
   );
 }
-const ln = cn, sn = /* @__PURE__ */ a(
-  Z,
-  l,
-  "JavaScript Date object"
-), Ra = sn, un = /* @__PURE__ */ a(
-  Z,
-  c,
-  "JavaScript Date object"
-), ka = un, fn = /* @__PURE__ */ a(
-  K,
-  l,
-  "JavaScript Error object"
-), za = fn, gn = /* @__PURE__ */ a(
-  K,
-  c,
-  "JavaScript Error object"
-), Ja = gn, bn = /* @__PURE__ */ a(
+const xa = Je, Ht = /* @__PURE__ */ r(
   Y,
-  l,
-  'JavaScript Promise (or "Thenable") object'
-), Ta = bn, dn = /* @__PURE__ */ a(
+  i,
+  "literal text"
+), Ia = Ht, _t = /* @__PURE__ */ r(
   Y,
-  c,
+  o,
+  "literal text"
+), Sa = _t, Zt = /* @__PURE__ */ r(
+  X,
+  i,
+  "single line of text"
+), ya = Zt, Wt = /* @__PURE__ */ r(
+  X,
+  o,
+  "single line of text"
+), ma = Wt, Gt = /* @__PURE__ */ r(
+  V,
+  i,
+  "JavaScript function"
+), va = Gt, Kt = /* @__PURE__ */ r(
+  V,
+  o,
+  "JavaScript function"
+), Oa = Kt, Qt = /* @__PURE__ */ r(
+  U,
+  i,
+  "anonymous JavaScript function"
+), ha = Qt, Yt = /* @__PURE__ */ r(
+  U,
+  o,
+  "anonymous JavaScript function"
+), Na = Yt, Xt = /* @__PURE__ */ r(
+  ee,
+  i,
+  "named JavaScript function"
+), Pa = Xt, Vt = /* @__PURE__ */ r(
+  ee,
+  o,
+  "named JavaScript function"
+), Ea = Vt, en = /* @__PURE__ */ r(
+  B,
+  i,
+  "native JavaScript function"
+), Fa = en, tn = /* @__PURE__ */ r(
+  B,
+  o,
+  "native JavaScript function"
+), $a = tn, nn = /* @__PURE__ */ r(
+  te,
+  i,
+  "scripted JavaScript function"
+), Ra = nn, rn = /* @__PURE__ */ r(
+  te,
+  o,
+  "scripted JavaScript function"
+), ja = rn, an = /* @__PURE__ */ r(
+  ne,
+  i,
+  "JavaScript object"
+), Aa = an, Te = /* @__PURE__ */ r(
+  ne,
+  o,
+  "JavaScript object"
+), La = Te, on = /* @__PURE__ */ r(
+  L,
+  i,
+  '"plain" JavaScript object'
+), ka = on, ln = /* @__PURE__ */ r(
+  L,
+  o,
+  '"plain" JavaScript object'
+), za = ln, cn = /* @__PURE__ */ r(
+  re,
+  i,
+  '"vanilla" JavaScript object'
+), Ua = cn, sn = /* @__PURE__ */ r(
+  re,
+  o,
+  '"vanilla" JavaScript object'
+), Ba = sn, un = /* @__PURE__ */ x(
+  Ce,
+  "allowArray"
+), Ja = un;
+function Ce(e, t) {
+  if (t == null && S(e), ae(t))
+    return t;
+  g(
+    `InvalidArgument: the given ${f(e)} is no JavaScript array`
+  );
+}
+const Ta = Ce, fn = /* @__PURE__ */ x(
+  Me,
+  "allowList"
+), Ca = fn;
+function Me(e, t, n, a, l) {
+  if (t == null && S(e), oe(t, a, l))
+    return t;
+  g(
+    `InvalidArgument: the given ${f(e)} is ` + (n == null ? "either not a list or contains an invalid number of elements" : "no " + f(n))
+  );
+}
+const Ma = Me, gn = /* @__PURE__ */ x(
+  De,
+  "allowListSatisfying"
+), Da = gn;
+function De(e, t, n, a, l, c) {
+  if (t == null && S(e), k(t, n, l, c))
+    return t;
+  g(
+    `InvalidArgument: the given ${f(e)} is ` + (a == null ? "either not a list or contains invalid elements" : "no " + f(a))
+  );
+}
+const qa = De, bn = /* @__PURE__ */ x(
+  qe,
+  "allowListOf"
+), Ha = bn;
+function qe(e, t, n) {
+  if (t == null && S(e), ot(t, n))
+    return t;
+  g(`InvalidArgument: the given value is no ${f(e)}`);
+}
+const _a = qe, dn = /* @__PURE__ */ x(
+  He,
+  "allowInstanceOf"
+), Za = dn;
+function He(e, t, n, a) {
+  if (t == null && S(e), t instanceof n)
+    return t;
+  g(
+    `InvalidArgument: the given ${f(e)} is no ${f(a)}`
+  );
+}
+const Wa = He, pn = /* @__PURE__ */ x(
+  _e,
+  "allowValueInheritingFrom"
+), Ga = pn;
+function _e(e, t, n, a) {
+  if (t == null && S(e), n.isPrototypeOf(t))
+    return t;
+  g(
+    `InvalidArgument: the given ${f(e)} is no ${f(a)}`
+  );
+}
+const Ka = _e, wn = /* @__PURE__ */ r(
+  ie,
+  i,
+  "JavaScript Date object"
+), Qa = wn, xn = /* @__PURE__ */ r(
+  ie,
+  o,
+  "JavaScript Date object"
+), Ya = xn, In = /* @__PURE__ */ r(
+  le,
+  i,
+  "JavaScript Error object"
+), Xa = In, Sn = /* @__PURE__ */ r(
+  le,
+  o,
+  "JavaScript Error object"
+), Va = Sn, yn = /* @__PURE__ */ r(
+  ce,
+  i,
   'JavaScript Promise (or "Thenable") object'
-), Aa = dn, pn = /* @__PURE__ */ a(
-  Q,
-  l,
-  "JavaScript RegExp object"
-), Ma = pn, xn = /* @__PURE__ */ a(
-  Q,
-  c,
-  "JavaScript RegExp object"
-), Da = xn;
-function wn(e, t, n) {
-  return t == null ? t : In(e, t, n);
-}
-const La = wn;
-function yn(e, t, n) {
-  if (t == null && f(`MissingArgument: no ${s(e)} given`), R(t, n))
-    switch (!0) {
-      // unboxes primitives - but nothing else, as
-      case t instanceof Boolean:
-      // "valueOf" may return other values
-      case t instanceof Number:
-      // for other objects (e.g. Dates)
-      case t instanceof String:
-        return t.valueOf();
-      default:
-        return t;
-    }
-  else
-    f(
-      `InvalidArgument: the given ${s(e)} is not among the supported values`
-    );
-}
-const In = yn, vn = /* @__PURE__ */ a(
-  X,
-  l,
-  "CSS color specification"
-), Ua = vn, Sn = /* @__PURE__ */ a(
-  X,
-  c,
-  "CSS color specification"
-), Ca = Sn, mn = /* @__PURE__ */ a(
-  V,
-  l,
-  "EMail address"
-), Ha = mn, On = /* @__PURE__ */ a(
-  V,
-  c,
-  "EMail address"
-), qa = On, hn = /* @__PURE__ */ a(
-  ee,
-  l,
-  "URL"
-), _a = hn, Nn = /* @__PURE__ */ a(
-  ee,
-  c,
-  "URL"
-), Ga = Nn, Fn = /* @__PURE__ */ a(
-  te,
-  l,
-  "phone number"
-), Wa = Fn, Pn = /* @__PURE__ */ a(
-  te,
-  c,
-  "phone number"
-), Za = Pn, $n = /* @__PURE__ */ a(
-  ne,
-  l,
-  "phone number in E.164 format"
-), Ka = $n, En = /* @__PURE__ */ a(
-  ne,
-  c,
-  "phone number in E.164 format"
-), Ya = En, jn = /* @__PURE__ */ a(
-  re,
-  l,
-  "BigInt value"
-), Qa = jn, Bn = /* @__PURE__ */ a(
-  re,
-  c,
-  "BigInt value"
-), Xa = Bn, Rn = /* @__PURE__ */ a(
-  ae,
-  l,
-  "symbol"
-), Va = Rn, kn = /* @__PURE__ */ a(
-  ae,
-  c,
-  "symbol"
-), ei = kn, zn = /* @__PURE__ */ a(
-  ie,
-  l,
-  "JavaScript Map"
-), ti = zn, Jn = /* @__PURE__ */ a(
-  ie,
-  c,
-  "JavaScript Map"
-), ni = Jn, Tn = /* @__PURE__ */ a(
-  oe,
-  l,
-  "JavaScript Set"
-), ri = Tn, An = /* @__PURE__ */ a(
-  oe,
-  c,
-  "JavaScript Set"
-), ai = An, Mn = /* @__PURE__ */ a(
+), eo = yn, mn = /* @__PURE__ */ r(
   ce,
-  l,
-  "typed array"
-), ii = Mn, Dn = /* @__PURE__ */ a(
-  ce,
-  c,
-  "typed array"
-), oi = Dn, Ln = /* @__PURE__ */ a(
-  le,
-  l,
-  "ArrayBuffer"
-), ci = Ln, Un = /* @__PURE__ */ a(
-  le,
-  c,
-  "ArrayBuffer"
-), li = Un, Cn = /* @__PURE__ */ a(
+  o,
+  'JavaScript Promise (or "Thenable") object'
+), to = mn, vn = /* @__PURE__ */ r(
   se,
-  l,
-  "UUID"
-), si = Cn, Hn = /* @__PURE__ */ a(
+  i,
+  "JavaScript RegExp object"
+), no = vn, On = /* @__PURE__ */ r(
   se,
-  c,
+  o,
+  "JavaScript RegExp object"
+), ro = On, hn = /* @__PURE__ */ x(
+  Ze,
+  "allowOneOf"
+), ao = hn;
+function Ze(e, t, n) {
+  if (t == null && S(e), ue(t, n))
+    return T(t);
+  g(
+    `InvalidArgument: the given ${f(e)} is not among the supported values`
+  );
+}
+const oo = Ze, Nn = /* @__PURE__ */ r(
+  fe,
+  i,
+  "CSS color specification"
+), io = Nn, Pn = /* @__PURE__ */ r(
+  fe,
+  o,
+  "CSS color specification"
+), lo = Pn, En = /* @__PURE__ */ r(
+  ge,
+  i,
+  "EMail address"
+), co = En, Fn = /* @__PURE__ */ r(
+  ge,
+  o,
+  "EMail address"
+), so = Fn, $n = /* @__PURE__ */ r(
+  J,
+  i,
+  "URL"
+), uo = $n, Rn = /* @__PURE__ */ r(
+  J,
+  o,
+  "URL"
+), fo = Rn, jn = /* @__PURE__ */ x(
+  We,
+  "allowAbsoluteURL"
+), go = jn;
+function We(e, t, n) {
+  if (t == null && S(e), ut(t, n))
+    return t.valueOf();
+  g(
+    `InvalidArgument: the given ${f(e)} is no valid absolute URL`
+  );
+}
+const bo = We, An = /* @__PURE__ */ r(
+  be,
+  i,
+  "phone number"
+), po = An, Ln = /* @__PURE__ */ r(
+  be,
+  o,
+  "phone number"
+), wo = Ln, kn = /* @__PURE__ */ r(
+  de,
+  i,
+  "phone number in E.164 format"
+), xo = kn, zn = /* @__PURE__ */ r(
+  de,
+  o,
+  "phone number in E.164 format"
+), Io = zn, Un = /* @__PURE__ */ r(
+  pe,
+  i,
+  "BigInt value"
+), So = Un, Bn = /* @__PURE__ */ r(
+  pe,
+  o,
+  "BigInt value"
+), yo = Bn, Jn = /* @__PURE__ */ r(
+  we,
+  i,
+  "symbol"
+), mo = Jn, Tn = /* @__PURE__ */ r(
+  we,
+  o,
+  "symbol"
+), vo = Tn, Cn = /* @__PURE__ */ r(
+  xe,
+  i,
+  "JavaScript Map"
+), Oo = Cn, Mn = /* @__PURE__ */ r(
+  xe,
+  o,
+  "JavaScript Map"
+), ho = Mn, Dn = /* @__PURE__ */ r(
+  Ie,
+  i,
+  "JavaScript Set"
+), No = Dn, qn = /* @__PURE__ */ r(
+  Ie,
+  o,
+  "JavaScript Set"
+), Po = qn, Hn = /* @__PURE__ */ r(
+  Se,
+  i,
+  "typed array"
+), Eo = Hn, _n = /* @__PURE__ */ r(
+  Se,
+  o,
+  "typed array"
+), Fo = _n, Zn = /* @__PURE__ */ r(
+  ye,
+  i,
+  "ArrayBuffer"
+), $o = Zn, Wn = /* @__PURE__ */ r(
+  ye,
+  o,
+  "ArrayBuffer"
+), Ro = Wn, Gn = /* @__PURE__ */ r(
+  me,
+  i,
   "UUID"
-), ui = Hn, qn = /* @__PURE__ */ a(
-  ue,
-  l,
-  "ISO 8601 date"
-), fi = qn, _n = /* @__PURE__ */ a(
-  ue,
-  c,
-  "ISO 8601 date"
-), gi = _n, Gn = /* @__PURE__ */ a(
-  fe,
-  l,
-  "ISO 8601 timestamp"
-), bi = Gn, Wn = /* @__PURE__ */ a(
-  fe,
-  c,
-  "ISO 8601 timestamp"
-), di = Wn, Zn = /* @__PURE__ */ a(
-  ge,
-  l,
-  "IPv4 address"
-), pi = Zn, Kn = /* @__PURE__ */ a(
-  ge,
-  c,
-  "IPv4 address"
-), xi = Kn, Yn = /* @__PURE__ */ a(
-  be,
-  l,
-  "IPv6 address"
-), wi = Yn, Qn = /* @__PURE__ */ a(
-  be,
-  c,
-  "IPv6 address"
-), yi = Qn, Xn = /* @__PURE__ */ a(
-  de,
-  l,
-  "host name"
-), Ii = Xn, Vn = /* @__PURE__ */ a(
-  de,
-  c,
-  "host name"
-), vi = Vn, er = /* @__PURE__ */ a(
-  pe,
-  l,
-  "port number"
-), Si = er, tr = /* @__PURE__ */ a(
-  pe,
-  c,
-  "port number"
-), mi = tr, nr = /* @__PURE__ */ a(
-  m,
-  l,
-  "serializable value"
-), Oi = nr, rr = /* @__PURE__ */ a(
-  m,
-  c,
-  "serializable value"
-), hi = rr, ar = /* @__PURE__ */ a(
-  xe,
-  l,
-  "serializable object"
-), Ni = ar, ir = /* @__PURE__ */ a(
-  xe,
-  c,
-  "serializable object"
-), Fi = ir, or = /* @__PURE__ */ a(
-  we,
-  l,
-  "JSON string"
-), Pi = or, cr = /* @__PURE__ */ a(
-  we,
-  c,
-  "JSON string"
-), $i = cr, lr = /* @__PURE__ */ a(
-  ye,
-  l,
-  "Base64-encoded string"
-), Ei = lr, sr = /* @__PURE__ */ a(
-  ye,
-  c,
-  "Base64-encoded string"
-), ji = sr, ur = /* @__PURE__ */ a(
-  Ie,
-  l,
-  "hexadecimal string"
-), Bi = ur, fr = /* @__PURE__ */ a(
-  Ie,
-  c,
-  "hexadecimal string"
-), Ri = fr, gr = /* @__PURE__ */ a(
+), jo = Gn, Kn = /* @__PURE__ */ r(
+  me,
+  o,
+  "UUID"
+), Ao = Kn, Qn = /* @__PURE__ */ r(
   ve,
-  l,
-  "JavaScript identifier"
-), ki = gr, br = /* @__PURE__ */ a(
+  i,
+  "ISO 8601 date"
+), Lo = Qn, Yn = /* @__PURE__ */ r(
   ve,
-  c,
+  o,
+  "ISO 8601 date"
+), ko = Yn, Xn = /* @__PURE__ */ r(
+  Oe,
+  i,
+  "ISO 8601 timestamp"
+), zo = Xn, Vn = /* @__PURE__ */ r(
+  Oe,
+  o,
+  "ISO 8601 timestamp"
+), Uo = Vn, er = /* @__PURE__ */ r(
+  he,
+  i,
+  "IPv4 address"
+), Bo = er, tr = /* @__PURE__ */ r(
+  he,
+  o,
+  "IPv4 address"
+), Jo = tr, nr = /* @__PURE__ */ r(
+  Ne,
+  i,
+  "IPv6 address"
+), To = nr, rr = /* @__PURE__ */ r(
+  Ne,
+  o,
+  "IPv6 address"
+), Co = rr, ar = /* @__PURE__ */ r(
+  Pe,
+  i,
+  "host name"
+), Mo = ar, or = /* @__PURE__ */ r(
+  Pe,
+  o,
+  "host name"
+), Do = or, ir = /* @__PURE__ */ r(
+  Ee,
+  i,
+  "port number"
+), qo = ir, lr = /* @__PURE__ */ r(
+  Ee,
+  o,
+  "port number"
+), Ho = lr, cr = /* @__PURE__ */ r(
+  N,
+  i,
+  "serializable value"
+), _o = cr, sr = /* @__PURE__ */ r(
+  N,
+  o,
+  "serializable value"
+), Zo = sr, ur = /* @__PURE__ */ r(
+  Fe,
+  i,
+  "serializable object"
+), Wo = ur, fr = /* @__PURE__ */ r(
+  Fe,
+  o,
+  "serializable object"
+), Go = fr, gr = /* @__PURE__ */ r(
+  $e,
+  i,
+  "JSON string"
+), Ko = gr, br = /* @__PURE__ */ r(
+  $e,
+  o,
+  "JSON string"
+), Qo = br, dr = /* @__PURE__ */ r(
+  Re,
+  i,
+  "Base64-encoded string"
+), Yo = dr, pr = /* @__PURE__ */ r(
+  Re,
+  o,
+  "Base64-encoded string"
+), Xo = pr, wr = /* @__PURE__ */ r(
+  je,
+  i,
+  "hexadecimal string"
+), Vo = wr, xr = /* @__PURE__ */ r(
+  je,
+  o,
+  "hexadecimal string"
+), ei = xr, Ir = /* @__PURE__ */ r(
+  Ae,
+  i,
   "JavaScript identifier"
-), zi = br, dr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?/g, Ne = /[\x00-\x1f\x7f-\x9f]/g;
-function s(e) {
-  return e.replace(dr, (t) => t === "\\" ? "\\\\" : t).replace(Ne, (t) => {
-    switch (t) {
-      case "\0":
-        return "\\0";
-      case "\b":
-        return "\\b";
-      case "\f":
-        return "\\f";
-      case `
-`:
-        return "\\n";
-      case "\r":
-        return "\\r";
-      case "	":
-        return "\\t";
-      case "\v":
-        return "\\v";
-      default: {
-        const n = t.charCodeAt(0).toString(16);
-        return "\\x" + "00".slice(n.length) + n;
-      }
-    }
-  });
+), ti = Ir, Sr = /* @__PURE__ */ r(
+  Ae,
+  o,
+  "JavaScript identifier"
+), ni = Sr, $ = (
+  // core of several escaping patterns below
+  String.raw`\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|` + String.raw`\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]`
+), yr = new RegExp($ + "?", "g"), Ge = /[\x00-\x1f\x7f-\x9f]/g, mr = {
+  "\0": "\\0",
+  "\b": "\\b",
+  "\f": "\\f",
+  "\n": "\\n",
+  "\r": "\\r",
+  "	": "\\t",
+  "\v": "\\v"
+};
+function Ke(e) {
+  return mr[e] ?? "\\x" + e.charCodeAt(0).toString(16).padStart(2, "0");
 }
-const pr = /\\[0bfnrtv'"\\\/]|\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}/g;
-function Ji(e) {
-  return e.replace(pr, (t) => {
-    switch (t) {
-      case "\\0":
-        return "\0";
-      case "\\b":
-        return "\b";
-      case "\\f":
-        return "\f";
-      case "\\n":
-        return `
-`;
-      case "\\r":
-        return "\r";
-      case "\\t":
-        return "	";
-      case "\\v":
-        return "\v";
-      case "\\'":
-        return "'";
-      case '\\"':
-        return '"';
-      case "\\\\":
-        return "\\";
-      default: {
-        const n = t.charAt(2) === "{" ? parseInt(t.slice(3, -1), 16) : parseInt(t.slice(2), 16);
-        return n <= 1114111 ? String.fromCodePoint(n) : t;
-      }
-    }
-  });
+function f(e) {
+  return e.replace(yr, (t) => t === "\\" ? "\\\\" : t).replace(Ge, Ke);
 }
-const xr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|'/g, wr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|"/g, yr = /\\x[0-9a-fA-F]{2}|\\u[0-9a-fA-F]{4}|\\u\{[0-9a-fA-F]+\}|\\[0bfnrtv'"\\\/]?|`|\$\{/g;
-function Ir(e, t = '"') {
-  const n = t === "'" ? xr : t === "`" ? yr : wr;
-  return e.replace(n, (r) => {
-    switch (r) {
-      case "'":
-        return "\\'";
-      case '"':
-        return '\\"';
-      case "`":
-        return "\\`";
-      case "${":
-        return "\\${";
-      case "\\":
-        return "\\\\";
-      default:
-        return r;
-    }
-  }).replace(Ne, (r) => {
-    switch (r) {
-      case "\0":
-        return "\\0";
-      case "\b":
-        return "\\b";
-      case "\f":
-        return "\\f";
-      case `
-`:
-        return "\\n";
-      case "\r":
-        return "\\r";
-      case "	":
-        return "\\t";
-      case "\v":
-        return "\\v";
-      default: {
-        const i = r.charCodeAt(0).toString(16);
-        return "\\x" + "00".slice(i.length) + i;
-      }
-    }
-  });
+const vr = new RegExp($, "g"), Or = {
+  "\\0": "\0",
+  "\\b": "\b",
+  "\\f": "\f",
+  "\\n": `
+`,
+  "\\r": "\r",
+  "\\t": "	",
+  "\\v": "\v",
+  "\\'": "'",
+  '\\"': '"',
+  "\\\\": "\\"
+};
+function hr(e) {
+  const t = e.charAt(2) === "{" ? parseInt(e.slice(3, -1), 16) : parseInt(e.slice(2), 16);
+  return t <= 1114111 ? String.fromCodePoint(t) : e;
 }
-function Ti(e, t = '"') {
-  return t + Ir(e, t) + t;
+function ri(e) {
+  return e.replace(vr, (t) => Or[t] ?? hr(t));
 }
-const vr = /[&<>"'\x00-\x1F\x7F-\x9F\\]/g;
-function Sr(e, t) {
-  return t = (t || "").trim() || "<br/>", e.replace(vr, (n) => {
+const Nr = new RegExp($ + "?|'", "g"), Pr = new RegExp($ + '?|"', "g"), Er = new RegExp($ + "?|`|\\$\\{", "g"), Fr = {
+  "'": "\\'",
+  '"': '\\"',
+  "`": "\\`",
+  "${": "\\${",
+  "\\": "\\\\"
+};
+function $r(e, t = '"') {
+  const n = t === "'" ? Nr : t === "`" ? Er : Pr;
+  return e.replace(n, (a) => Fr[a] ?? a).replace(Ge, Ke);
+}
+function ai(e, t = '"') {
+  return t + $r(e, t) + t;
+}
+const Rr = /[&<>"'\x00-\x1F\x7F-\x9F\\]/g;
+function jr(e, t) {
+  return t = (t || "").trim() || "<br/>", e.replace(Rr, (n) => {
     switch (n) {
       case "&":
         return "&amp;";
@@ -1112,81 +1034,79 @@ function Sr(e, t) {
         return "&#92;v";
       case "\\":
         return "&#92;";
-      default: {
-        const r = n.charCodeAt(0).toString(16);
-        return "&#x0000".substring(0, 7 - r.length) + r + ";";
-      }
+      default:
+        return "&#x" + n.charCodeAt(0).toString(16).padStart(4, "0") + ";";
     }
   });
 }
-const mr = /[:`*_\[\]#|~]/g;
-function Ai(e, t) {
-  return Sr(e, t).replace(
-    mr,
+const Ar = /[:`*_\[\]#|~]/g;
+function oi(e, t) {
+  return jr(e, t).replace(
+    Ar,
     (n) => "&#" + n.charCodeAt(0) + ";"
   );
 }
-function h(e, t, n, r) {
+function A(e, t, n, a) {
   if (e === t)
     return !1;
-  let i, o;
-  n != null && typeof n == "object" ? (i = n.Mode, o = n.Tolerance) : i = n;
-  let I = typeof e;
-  if (I !== typeof t)
+  let l, c;
+  typeof n == "string" ? l = n : n != null && (l = n.Mode, c = n.Tolerance);
+  let p = typeof e;
+  if (p !== typeof t)
     return !0;
-  function x(g, u, d, w) {
-    if (!Array.isArray(u) || g.length !== u.length)
+  function I(u, s, d, m) {
+    if (!Array.isArray(s) || u.length !== s.length)
       return !0;
-    for (let b = 0, S = g.length; b < S; b++)
-      if (h(g[b], u[b], d, w))
+    for (let b = 0, h = u.length; b < h; b++)
+      if (A(u[b], s[b], d, m))
         return !0;
     return !1;
   }
-  function Fe(g, u, d, w) {
-    if (!(u instanceof Map) || g.size !== u.size)
+  function R(u, s, d, m) {
+    if (!(s instanceof Map) || u.size !== s.size)
       return !0;
     let b = !1;
-    return g.forEach(function(S, k) {
-      b || (b = !u.has(k) || h(S, u.get(k), d, w));
+    return u.forEach(function(h, _) {
+      b || (b = !s.has(_) || A(h, s.get(_), d, m));
     }), b;
   }
-  function Pe(g, u) {
-    if (!(u instanceof Set) || g.size !== u.size)
+  function j(u, s) {
+    if (!(s instanceof Set) || u.size !== s.size)
       return !0;
     let d = !1;
-    return g.forEach(function(w) {
-      !d && !u.has(w) && (d = !0);
+    return u.forEach(function(m) {
+      !d && !s.has(m) && (d = !0);
     }), d;
   }
-  function $e(g, u) {
-    if (Object.getPrototypeOf(g) !== Object.getPrototypeOf(u) || g.byteLength !== u.byteLength)
+  function Qe(u, s) {
+    if (Object.getPrototypeOf(u) !== Object.getPrototypeOf(s) || u.byteLength !== s.byteLength)
       return !0;
     let d = new Uint8Array(
-      g.buffer,
-      g.byteOffset,
-      g.byteLength
-    ), w = new Uint8Array(
       u.buffer,
       u.byteOffset,
       u.byteLength
+    ), m = new Uint8Array(
+      s.buffer,
+      s.byteOffset,
+      s.byteLength
     );
-    for (let b = 0, S = d.length; b < S; b++)
-      if (d[b] !== w[b])
+    for (let b = 0, h = d.length; b < h; b++)
+      if (d[b] !== m[b])
         return !0;
     return !1;
   }
-  function Ee(g, u, d, w) {
-    if (Object.getPrototypeOf(g) !== Object.getPrototypeOf(u))
+  function Ye(u, s, d, m) {
+    if (Object.getPrototypeOf(u) !== Object.getPrototypeOf(s))
       return !0;
-    for (let b in g)
-      if (!(b in u))
-        return !0;
     for (let b in u)
-      if (!(b in g) || h(g[b], u[b], d, w))
+      if (!(b in s))
+        return !0;
+    for (let b in s)
+      if (!(b in u) || A(u[b], s[b], d, m))
         return !0;
     return !1;
   }
-  switch (I) {
+  switch (p) {
     case "undefined":
     case "boolean":
     case "string":
@@ -1198,15 +1118,15 @@ function h(e, t, n, r) {
     case "number": {
       if (isNaN(e) !== isNaN(t))
         return !0;
-      if (o != null)
-        return Math.abs(e - t) > o;
-      const u = Number.EPSILON * Math.max(
+      if (c != null)
+        return Math.abs(e - t) > c;
+      const s = Number.EPSILON * Math.max(
         // default is relative!
         1,
         Math.abs(e),
         Math.abs(t)
       );
-      return Math.abs(e - t) > u;
+      return Math.abs(e - t) > s;
     }
     case "object":
       if (e == null || t == null)
@@ -1215,45 +1135,45 @@ function h(e, t, n, r) {
         // boxed primitives are compared by their values
         e instanceof Boolean || e instanceof Number || e instanceof String
       )
-        return i === "by-reference" ? !0 : Object.getPrototypeOf(e) !== Object.getPrototypeOf(t) || e.valueOf() !== t.valueOf();
+        return l === "by-reference" ? !0 : Object.getPrototypeOf(e) !== Object.getPrototypeOf(t) || e.valueOf() !== t.valueOf();
       if (e instanceof Date) {
-        if (i === "by-reference" || !(t instanceof Date))
+        if (l === "by-reference" || !(t instanceof Date))
           return !0;
-        let u = e.getTime(), d = t.getTime();
-        return u !== d && !(isNaN(u) && isNaN(d));
+        let s = e.getTime(), d = t.getTime();
+        return s !== d && !(isNaN(s) && isNaN(d));
       }
       if (e instanceof RegExp)
-        return i === "by-reference" ? !0 : !(t instanceof RegExp) || e.source !== t.source || e.flags !== t.flags;
-      r == null && (r = /* @__PURE__ */ new WeakMap());
-      let g = r.get(e);
-      return g == null && r.set(e, g = /* @__PURE__ */ new WeakSet()), g.has(t) ? !1 : (g.add(t), Array.isArray(e) ? x(e, t, n, r) : e instanceof Map ? i === "by-reference" ? !0 : Fe(e, t, n, r) : e instanceof Set ? i === "by-reference" ? !0 : Pe(e, t) : ArrayBuffer.isView(e) ? i === "by-reference" ? !0 : $e(e, t) : i === "by-reference" ? !0 : Ee(e, t, n, r));
+        return l === "by-reference" ? !0 : !(t instanceof RegExp) || e.source !== t.source || e.flags !== t.flags;
+      a == null && (a = /* @__PURE__ */ new WeakMap());
+      let u = a.get(e);
+      return u == null && a.set(e, u = /* @__PURE__ */ new WeakSet()), u.has(t) ? !1 : (u.add(t), Array.isArray(e) ? I(e, t, n, a) : e instanceof Map ? l === "by-reference" ? !0 : R(e, t, n, a) : e instanceof Set ? l === "by-reference" ? !0 : j(e, t) : ArrayBuffer.isView(e) ? l === "by-reference" ? !0 : Qe(e, t) : l === "by-reference" ? !0 : Ye(e, t, n, a));
     default:
       return !0;
   }
 }
-function Mi(e, t, n) {
-  return !h(e, t, n);
+function ii(e, t, n) {
+  return !A(e, t, n);
 }
-function Or(e) {
-  he("candidate", e);
+function Lr(e) {
+  Te("candidate", e);
   for (let t in e)
-    if (je(e, t))
+    if (Xe(e, t))
       return !1;
   return !0;
 }
-function Di(e) {
-  return !Or(e);
+function li(e) {
+  return !Lr(e);
 }
-function hr(e) {
+function kr(e) {
   return /^\s*$/.test(e);
 }
-function Li(e) {
-  return !hr(e);
+function ci(e) {
+  return !kr(e);
 }
-function Ui(e, t = -1 / 0, n = 1 / 0) {
+function si(e, t = -1 / 0, n = 1 / 0) {
   return Math.max(t, Math.min(e, n));
 }
-const O = /* @__PURE__ */ Object.freeze({
+const P = /* @__PURE__ */ Object.freeze({
   transparent: "rgba(0,0,0,0.0)",
   aliceblue: "rgba(240,248,255,1.0)",
   lightpink: "rgba(255,182,193,1.0)",
@@ -1402,365 +1322,374 @@ const O = /* @__PURE__ */ Object.freeze({
   lightgreen: "rgba(144,238,144,1.0)",
   yellowgreen: "rgba(154,205,50,1.0)",
   lightgrey: "rgba(211,211,211,1.0)"
-});
-function Nr(e) {
+}), M = /^#[a-fA-F0-9]{6}$/, D = /^#[a-fA-F0-9]{8}$/, q = (
+  // not perfect
+  /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i
+), H = (
+  // not perfect
+  /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i
+);
+function zr(e) {
   let t = e.toLowerCase();
-  if (O.hasOwnProperty(t) && (e = O[t]), /^#[a-fA-F0-9]{6}$/.test(e))
+  if (P.hasOwnProperty(t) && (e = P[t]), M.test(e))
     return e + "FF";
-  if (/^#[a-fA-F0-9]{8}$/.test(e))
+  if (D.test(e))
     return e;
-  const n = "0123456789ABCDEF";
-  function r(x) {
-    return x = Math.max(0, Math.min(255, Math.round(x))), n[Math.trunc(x / 16)] + n[x % 16];
+  function n(l) {
+    return l = Math.max(0, Math.min(255, Math.round(l))), l.toString(16).toUpperCase().padStart(2, "0");
   }
-  let o = /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i.exec(e);
-  if (o != null)
-    return "#" + r(parseInt(o[1], 10)) + r(parseInt(o[2], 10)) + r(parseInt(o[3], 10)) + "FF";
-  if (o = /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i.exec(e), o != null)
-    return "#" + r(parseInt(o[1], 10)) + r(parseInt(o[2], 10)) + r(parseInt(o[3], 10)) + r(parseFloat(o[4]) * 255);
-  f("InvalidArgument: the given Value is not a valid CSS Color specification");
+  let a = q.exec(e);
+  if (a != null)
+    return "#" + n(parseInt(a[1], 10)) + n(parseInt(a[2], 10)) + n(parseInt(a[3], 10)) + "FF";
+  if (a = H.exec(e), a != null)
+    return "#" + n(parseInt(a[1], 10)) + n(parseInt(a[2], 10)) + n(parseInt(a[3], 10)) + n(parseFloat(a[4]) * 255);
+  g("InvalidArgument: the given Value is not a valid CSS Color specification");
 }
-function Ci(e) {
+function ui(e) {
   let t = e.toLowerCase();
-  if (O.hasOwnProperty(t))
-    return O[t];
-  if (/^#[a-fA-F0-9]{6}$/.test(e))
+  if (P.hasOwnProperty(t))
+    return P[t];
+  if (M.test(e))
     return "rgba(" + parseInt(e.slice(1, 3), 16) + "," + parseInt(e.slice(3, 5), 16) + "," + parseInt(e.slice(5, 7), 16) + ",1)";
-  if (/^#[a-fA-F0-9]{8}$/.test(e))
+  if (D.test(e))
     return "rgba(" + parseInt(e.slice(1, 3), 16) + "," + parseInt(e.slice(3, 5), 16) + "," + parseInt(e.slice(5, 7), 16) + "," + parseInt(e.slice(7), 16) / 255 + ")";
-  let r = /^rgb\(([0-9]+),\s*([0-9]+),\s*([0-9]+)\)$/i.exec(e);
-  if (r != null)
+  if (q.test(e))
     return e.slice(0, e.length - 1) + ",1)";
-  if (r = /^rgba\(([0-9]+),\s*([0-9]+),\s*([0-9]+),\s*([01]?[.][0-9]+|[01])\)$/i.exec(e), r != null)
+  if (H.test(e))
     return e;
-  f("InvalidArgument: the given Value is not a valid CSS Color specification");
+  g("InvalidArgument: the given Value is not a valid CSS Color specification");
 }
-function Hi(e) {
-  return Nr(e).slice(0, 7);
+function fi(e) {
+  return zr(e).slice(0, 7);
 }
 export {
-  O as ColorSet,
-  Qe as FunctionWithName,
-  Sr as HTMLsafe,
-  Nr as HexColor,
-  Ai as MarkDownSafe,
-  Or as ObjectIsEmpty,
-  Di as ObjectIsNotEmpty,
-  jr as ObjectMergedWith,
-  je as Object_hasOwnProperty,
-  Be as Object_isPrototypeOf,
-  Pr as Object_propertyIsEnumerable,
-  $r as Object_toLocaleString,
-  Re as Object_toString,
-  Er as Object_valueOf,
-  Ci as RGBAColor,
-  hr as StringIsEmpty,
-  Li as StringIsNotEmpty,
-  a as ValidatorForClassifier,
-  Br as ValueExists,
-  Ar as ValueInheritsFrom,
-  C as ValueIsAnonymousFunction,
-  B as ValueIsArray,
-  le as ValueIsArrayBuffer,
-  ye as ValueIsBase64,
-  re as ValueIsBigInt,
-  P as ValueIsBoolean,
-  T as ValueIsCardinal,
-  X as ValueIsColor,
-  Z as ValueIsDate,
-  ne as ValueIsE164PhoneNumber,
-  V as ValueIsEMailAddress,
-  zr as ValueIsEmptyString,
-  K as ValueIsError,
-  y as ValueIsFiniteNumber,
-  U as ValueIsFunction,
-  Ie as ValueIsHexString,
-  de as ValueIsHostName,
-  ge as ValueIsIPv4Address,
-  be as ValueIsIPv6Address,
-  ue as ValueIsISODate,
-  fe as ValueIsISOTimestamp,
-  ve as ValueIsIdentifier,
-  Tr as ValueIsInstanceOf,
-  E as ValueIsInteger,
-  ke as ValueIsIntegerInRange,
-  we as ValueIsJSONString,
-  W as ValueIsList,
-  Jr as ValueIsListOf,
-  F as ValueIsListSatisfying,
-  ie as ValueIsMap,
-  Rr as ValueIsMissing,
-  z as ValueIsNaN,
-  H as ValueIsNamedFunction,
-  j as ValueIsNativeFunction,
-  M as ValueIsNonEmptyString,
-  $ as ValueIsNumber,
-  kr as ValueIsNumberInRange,
-  _ as ValueIsObject,
-  R as ValueIsOneOf,
-  J as ValueIsOrdinal,
-  te as ValueIsPhoneNumber,
-  N as ValueIsPlainObject,
-  pe as ValueIsPortNumber,
-  Y as ValueIsPromise,
-  Q as ValueIsRegExp,
-  q as ValueIsScriptedFunction,
-  xe as ValueIsSerializableObject,
-  m as ValueIsSerializableValue,
-  oe as ValueIsSet,
-  v as ValueIsString,
-  p as ValueIsStringMatching,
-  ae as ValueIsSymbol,
-  D as ValueIsText,
-  L as ValueIsTextline,
-  ce as ValueIsTypedArray,
-  ee as ValueIsURL,
-  se as ValueIsUUID,
-  G as ValueIsVanillaObject,
-  Mi as ValuesAreEqual,
-  h as ValuesDiffer,
-  l as acceptNil,
-  Bt as allowAnonymousFunction,
-  qt as allowArray,
-  Ln as allowArrayBuffer,
-  lr as allowBase64,
-  jn as allowBigInt,
-  tt as allowBoolean,
-  wt as allowCardinal,
-  vn as allowColor,
-  sn as allowDate,
-  $n as allowE164PhoneNumber,
-  mn as allowEMailAddress,
-  fn as allowError,
-  at as allowFiniteNumber,
-  Et as allowFunction,
-  ur as allowHexString,
-  Xn as allowHostName,
-  Zn as allowIPv4Address,
-  Yn as allowIPv6Address,
-  qn as allowISODate,
-  Gn as allowISOTimestamp,
-  gr as allowIdentifier,
-  nn as allowInstanceOf,
-  ft as allowInteger,
-  gt as allowIntegerInRange,
-  or as allowJSONString,
-  Wt as allowList,
-  Vt as allowListOf,
-  Yt as allowListSatisfying,
-  zn as allowMap,
-  ot as allowNaN,
-  kt as allowNamedFunction,
-  Jt as allowNativeFunction,
-  vt as allowNonEmptyString,
-  rt as allowNumber,
-  lt as allowNumberInRange,
-  Dt as allowObject,
-  wn as allowOneOf,
-  pt as allowOrdinal,
-  Fn as allowPhoneNumber,
-  Lt as allowPlainObject,
-  er as allowPortNumber,
-  bn as allowPromise,
-  pn as allowRegExp,
-  At as allowScriptedFunction,
-  ar as allowSerializableObject,
-  nr as allowSerializableValue,
-  Tn as allowSet,
-  It as allowString,
-  mt as allowStringMatching,
-  Rn as allowSymbol,
-  Nt as allowText,
-  Pt as allowTextline,
-  Mn as allowTypedArray,
-  hn as allowURL,
-  Cn as allowUUID,
-  Xe as allowValue,
-  on as allowValueInheritingFrom,
-  Ct as allowVanillaObject,
-  ga as allowedAnonymousFunction,
-  Fa as allowedArray,
-  ci as allowedArrayBuffer,
-  Ei as allowedBase64,
-  Qa as allowedBigInt,
-  Dr as allowedBoolean,
-  Vr as allowedCardinal,
-  Ua as allowedColor,
-  Ra as allowedDate,
-  Ka as allowedE164PhoneNumber,
-  Ha as allowedEMailAddress,
-  za as allowedError,
-  Hr as allowedFiniteNumber,
-  ua as allowedFunction,
-  Bi as allowedHexString,
-  Ii as allowedHostName,
-  pi as allowedIPv4Address,
-  wi as allowedIPv6Address,
-  fi as allowedISODate,
-  bi as allowedISOTimestamp,
-  ki as allowedIdentifier,
-  ja as allowedInstanceOf,
-  Zr as allowedInteger,
-  Yr as allowedIntegerInRange,
-  Pi as allowedJSONString,
-  Pa as allowedList,
-  Ea as allowedListOf,
-  $a as allowedListSatisfying,
-  ti as allowedMap,
-  _r as allowedNaN,
-  da as allowedNamedFunction,
-  xa as allowedNativeFunction,
-  ra as allowedNonEmptyString,
-  Ur as allowedNumber,
-  Wr as allowedNumberInRange,
-  va as allowedObject,
-  La as allowedOneOf,
-  Qr as allowedOrdinal,
-  Wa as allowedPhoneNumber,
-  ma as allowedPlainObject,
-  Si as allowedPortNumber,
-  Ta as allowedPromise,
-  Ma as allowedRegExp,
-  ya as allowedScriptedFunction,
-  Ni as allowedSerializableObject,
-  Oi as allowedSerializableValue,
-  ri as allowedSet,
-  ta as allowedString,
-  ia as allowedStringMatching,
-  Va as allowedSymbol,
-  oa as allowedText,
-  la as allowedTextline,
-  ii as allowedTypedArray,
-  _a as allowedURL,
-  si as allowedUUID,
-  Mr as allowedValue,
-  Ba as allowedValueInheritingFrom,
-  ha as allowedVanillaObject,
-  Ui as constrained,
-  s as escaped,
-  Rt as expectAnonymousFunction,
-  _t as expectArray,
-  Un as expectArrayBuffer,
-  sr as expectBase64,
+  P as ColorSet,
+  C as FunctionWithName,
+  jr as HTMLsafe,
+  zr as HexColor,
+  oi as MarkDownSafe,
+  Lr as ObjectIsEmpty,
+  li as ObjectIsNotEmpty,
+  Cr as ObjectMergedWith,
+  Xe as Object_hasOwnProperty,
+  Ve as Object_isPrototypeOf,
+  Br as Object_propertyIsEnumerable,
+  Jr as Object_toLocaleString,
+  et as Object_toString,
+  Tr as Object_valueOf,
+  ui as RGBAColor,
+  kr as StringIsEmpty,
+  ci as StringIsNotEmpty,
+  r as ValidatorForClassifier,
+  Mr as ValueExists,
+  Zr as ValueInheritsFrom,
+  ut as ValueIsAbsoluteURL,
+  U as ValueIsAnonymousFunction,
+  ae as ValueIsArray,
+  ye as ValueIsArrayBuffer,
+  Re as ValueIsBase64,
+  pe as ValueIsBigInt,
+  z as ValueIsBoolean,
+  G as ValueIsCardinal,
+  fe as ValueIsColor,
+  ie as ValueIsDate,
+  de as ValueIsE164PhoneNumber,
+  ge as ValueIsEMailAddress,
+  Hr as ValueIsEmptyString,
+  le as ValueIsError,
+  v as ValueIsFiniteNumber,
+  V as ValueIsFunction,
+  je as ValueIsHexString,
+  Pe as ValueIsHostName,
+  he as ValueIsIPv4Address,
+  Ne as ValueIsIPv6Address,
+  ve as ValueIsISODate,
+  Oe as ValueIsISOTimestamp,
+  Ae as ValueIsIdentifier,
+  _r as ValueIsInstanceOf,
+  F as ValueIsInteger,
+  tt as ValueIsIntegerInRange,
+  $e as ValueIsJSONString,
+  oe as ValueIsList,
+  ot as ValueIsListOf,
+  k as ValueIsListSatisfying,
+  xe as ValueIsMap,
+  Dr as ValueIsMissing,
+  Z as ValueIsNaN,
+  ee as ValueIsNamedFunction,
+  B as ValueIsNativeFunction,
+  Q as ValueIsNonEmptyString,
+  O as ValueIsNumber,
+  qr as ValueIsNumberInRange,
+  ne as ValueIsObject,
+  ue as ValueIsOneOf,
+  W as ValueIsOrdinal,
+  be as ValueIsPhoneNumber,
+  L as ValueIsPlainObject,
+  Ee as ValueIsPortNumber,
+  ce as ValueIsPromise,
+  se as ValueIsRegExp,
+  te as ValueIsScriptedFunction,
+  Fe as ValueIsSerializableObject,
+  N as ValueIsSerializableValue,
+  Ie as ValueIsSet,
+  y as ValueIsString,
+  w as ValueIsStringMatching,
+  we as ValueIsSymbol,
+  Y as ValueIsText,
+  X as ValueIsTextline,
+  Se as ValueIsTypedArray,
+  J as ValueIsURL,
+  me as ValueIsUUID,
+  re as ValueIsVanillaObject,
+  ii as ValuesAreEqual,
+  A as ValuesDiffer,
+  i as acceptNil,
+  jn as allowAbsoluteURL,
+  Qt as allowAnonymousFunction,
+  un as allowArray,
+  Zn as allowArrayBuffer,
+  dr as allowBase64,
+  Un as allowBigInt,
+  Pt as allowBoolean,
+  Jt as allowCardinal,
+  Nn as allowColor,
+  wn as allowDate,
+  kn as allowE164PhoneNumber,
+  En as allowEMailAddress,
+  In as allowError,
+  $t as allowFiniteNumber,
+  Gt as allowFunction,
+  wr as allowHexString,
+  ar as allowHostName,
+  er as allowIPv4Address,
+  nr as allowIPv6Address,
+  Qn as allowISODate,
+  Xn as allowISOTimestamp,
+  Ir as allowIdentifier,
+  dn as allowInstanceOf,
+  kt as allowInteger,
+  zt as allowIntegerInRange,
+  gr as allowJSONString,
+  fn as allowList,
+  bn as allowListOf,
+  gn as allowListSatisfying,
+  Cn as allowMap,
+  jt as allowNaN,
+  Xt as allowNamedFunction,
+  en as allowNativeFunction,
+  Mt as allowNonEmptyString,
+  Ft as allowNumber,
+  Lt as allowNumberInRange,
+  an as allowObject,
+  hn as allowOneOf,
+  Ut as allowOrdinal,
+  An as allowPhoneNumber,
+  on as allowPlainObject,
+  ir as allowPortNumber,
+  yn as allowPromise,
+  vn as allowRegExp,
+  nn as allowScriptedFunction,
+  ur as allowSerializableObject,
+  cr as allowSerializableValue,
+  Dn as allowSet,
+  Ct as allowString,
+  qt as allowStringMatching,
+  Jn as allowSymbol,
+  Ht as allowText,
+  Zt as allowTextline,
+  Hn as allowTypedArray,
+  $n as allowURL,
+  Gn as allowUUID,
+  Ot as allowValue,
+  pn as allowValueInheritingFrom,
+  cn as allowVanillaObject,
+  go as allowedAbsoluteURL,
+  ha as allowedAnonymousFunction,
+  Ja as allowedArray,
+  $o as allowedArrayBuffer,
+  Yo as allowedBase64,
+  So as allowedBigInt,
+  Gr as allowedBoolean,
+  ua as allowedCardinal,
+  io as allowedColor,
+  Qa as allowedDate,
+  xo as allowedE164PhoneNumber,
+  co as allowedEMailAddress,
+  Xa as allowedError,
+  Xr as allowedFiniteNumber,
+  va as allowedFunction,
+  Vo as allowedHexString,
+  Mo as allowedHostName,
+  Bo as allowedIPv4Address,
+  To as allowedIPv6Address,
+  Lo as allowedISODate,
+  zo as allowedISOTimestamp,
+  ti as allowedIdentifier,
+  Za as allowedInstanceOf,
+  aa as allowedInteger,
+  ia as allowedIntegerInRange,
+  Ko as allowedJSONString,
+  Ca as allowedList,
+  Ha as allowedListOf,
+  Da as allowedListSatisfying,
+  Oo as allowedMap,
+  ea as allowedNaN,
+  Pa as allowedNamedFunction,
+  Fa as allowedNativeFunction,
+  da as allowedNonEmptyString,
+  Qr as allowedNumber,
+  na as allowedNumberInRange,
+  Aa as allowedObject,
+  ao as allowedOneOf,
+  ca as allowedOrdinal,
+  po as allowedPhoneNumber,
+  ka as allowedPlainObject,
+  qo as allowedPortNumber,
+  eo as allowedPromise,
+  no as allowedRegExp,
+  Ra as allowedScriptedFunction,
+  Wo as allowedSerializableObject,
+  _o as allowedSerializableValue,
+  No as allowedSet,
+  ga as allowedString,
+  wa as allowedStringMatching,
+  mo as allowedSymbol,
+  Ia as allowedText,
+  ya as allowedTextline,
+  Eo as allowedTypedArray,
+  uo as allowedURL,
+  jo as allowedUUID,
+  Wr as allowedValue,
+  Ga as allowedValueInheritingFrom,
+  Ua as allowedVanillaObject,
+  si as constrained,
+  f as escaped,
+  We as expectAbsoluteURL,
+  Yt as expectAnonymousFunction,
+  Ce as expectArray,
+  Wn as expectArrayBuffer,
+  pr as expectBase64,
   Bn as expectBigInt,
-  nt as expectBoolean,
-  yt as expectCardinal,
-  Sn as expectColor,
-  un as expectDate,
-  En as expectE164PhoneNumber,
-  On as expectEMailAddress,
-  gn as expectError,
-  it as expectFiniteNumber,
-  jt as expectFunction,
-  fr as expectHexString,
-  Vn as expectHostName,
-  Kn as expectIPv4Address,
-  Qn as expectIPv6Address,
-  _n as expectISODate,
-  Wn as expectISOTimestamp,
-  br as expectIdentifier,
-  rn as expectInstanceOf,
-  me as expectInteger,
-  bt as expectIntegerInRange,
-  cr as expectJSONString,
-  Zt as expectList,
-  en as expectListOf,
-  Qt as expectListSatisfying,
-  Jn as expectMap,
-  ct as expectNaN,
-  zt as expectNamedFunction,
-  Tt as expectNativeFunction,
-  St as expectNonEmptyString,
-  Se as expectNumber,
-  st as expectNumberInRange,
-  he as expectObject,
-  yn as expectOneOf,
-  xt as expectOrdinal,
-  Pn as expectPhoneNumber,
-  Ut as expectPlainObject,
-  tr as expectPortNumber,
-  dn as expectPromise,
-  xn as expectRegExp,
-  Mt as expectScriptedFunction,
-  ir as expectSerializableObject,
-  rr as expectSerializableValue,
-  An as expectSet,
-  Oe as expectString,
-  Ot as expectStringMatching,
-  kn as expectSymbol,
-  Ft as expectText,
-  $t as expectTextline,
-  Dn as expectTypedArray,
-  Nn as expectURL,
-  Hn as expectUUID,
-  Ve as expectValue,
-  cn as expectValueInheritingFrom,
-  Ht as expectVanillaObject,
-  ba as expectedAnonymousFunction,
-  Gt as expectedArray,
-  li as expectedArrayBuffer,
-  ji as expectedBase64,
-  Xa as expectedBigInt,
-  Lr as expectedBoolean,
-  ea as expectedCardinal,
-  Ca as expectedColor,
-  ka as expectedDate,
-  Ya as expectedE164PhoneNumber,
-  qa as expectedEMailAddress,
-  Ja as expectedError,
-  qr as expectedFiniteNumber,
-  fa as expectedFunction,
-  Ri as expectedHexString,
-  vi as expectedHostName,
-  xi as expectedIPv4Address,
-  yi as expectedIPv6Address,
-  gi as expectedISODate,
-  di as expectedISOTimestamp,
-  zi as expectedIdentifier,
-  an as expectedInstanceOf,
-  Kr as expectedInteger,
-  dt as expectedIntegerInRange,
-  $i as expectedJSONString,
-  Kt as expectedList,
-  tn as expectedListOf,
-  Xt as expectedListSatisfying,
-  ni as expectedMap,
-  Gr as expectedNaN,
-  pa as expectedNamedFunction,
-  wa as expectedNativeFunction,
-  aa as expectedNonEmptyString,
-  Cr as expectedNumber,
-  ut as expectedNumberInRange,
-  Sa as expectedObject,
-  In as expectedOneOf,
-  Xr as expectedOrdinal,
-  Za as expectedPhoneNumber,
-  Oa as expectedPlainObject,
-  mi as expectedPortNumber,
-  Aa as expectedPromise,
-  Da as expectedRegExp,
-  Ia as expectedScriptedFunction,
-  Fi as expectedSerializableObject,
-  hi as expectedSerializableValue,
-  ai as expectedSet,
-  na as expectedString,
-  ht as expectedStringMatching,
-  ei as expectedSymbol,
-  ca as expectedText,
-  sa as expectedTextline,
-  oi as expectedTypedArray,
-  Ga as expectedURL,
-  ui as expectedUUID,
-  et as expectedValue,
-  ln as expectedValueInheritingFrom,
-  Na as expectedVanillaObject,
-  Fr as global,
-  Ir as quotable,
-  Ti as quoted,
-  c as rejectNil,
-  Hi as shortHexColor,
-  f as throwError,
-  Ji as unescaped,
-  Ye as validatedArgument
+  Et as expectBoolean,
+  Tt as expectCardinal,
+  Pn as expectColor,
+  xn as expectDate,
+  zn as expectE164PhoneNumber,
+  Fn as expectEMailAddress,
+  Sn as expectError,
+  Rt as expectFiniteNumber,
+  Kt as expectFunction,
+  xr as expectHexString,
+  or as expectHostName,
+  tr as expectIPv4Address,
+  rr as expectIPv6Address,
+  Yn as expectISODate,
+  Vn as expectISOTimestamp,
+  Sr as expectIdentifier,
+  He as expectInstanceOf,
+  ze as expectInteger,
+  Ue as expectIntegerInRange,
+  br as expectJSONString,
+  Me as expectList,
+  qe as expectListOf,
+  De as expectListSatisfying,
+  Mn as expectMap,
+  At as expectNaN,
+  Vt as expectNamedFunction,
+  tn as expectNativeFunction,
+  Dt as expectNonEmptyString,
+  Le as expectNumber,
+  ke as expectNumberInRange,
+  Te as expectObject,
+  Ze as expectOneOf,
+  Bt as expectOrdinal,
+  Ln as expectPhoneNumber,
+  ln as expectPlainObject,
+  lr as expectPortNumber,
+  mn as expectPromise,
+  On as expectRegExp,
+  rn as expectScriptedFunction,
+  fr as expectSerializableObject,
+  sr as expectSerializableValue,
+  qn as expectSet,
+  Be as expectString,
+  Je as expectStringMatching,
+  Tn as expectSymbol,
+  _t as expectText,
+  Wt as expectTextline,
+  _n as expectTypedArray,
+  Rn as expectURL,
+  Kn as expectUUID,
+  ht as expectValue,
+  _e as expectValueInheritingFrom,
+  sn as expectVanillaObject,
+  bo as expectedAbsoluteURL,
+  Na as expectedAnonymousFunction,
+  Ta as expectedArray,
+  Ro as expectedArrayBuffer,
+  Xo as expectedBase64,
+  yo as expectedBigInt,
+  Kr as expectedBoolean,
+  fa as expectedCardinal,
+  lo as expectedColor,
+  Ya as expectedDate,
+  Io as expectedE164PhoneNumber,
+  so as expectedEMailAddress,
+  Va as expectedError,
+  Vr as expectedFiniteNumber,
+  Oa as expectedFunction,
+  ei as expectedHexString,
+  Do as expectedHostName,
+  Jo as expectedIPv4Address,
+  Co as expectedIPv6Address,
+  ko as expectedISODate,
+  Uo as expectedISOTimestamp,
+  ni as expectedIdentifier,
+  Wa as expectedInstanceOf,
+  oa as expectedInteger,
+  la as expectedIntegerInRange,
+  Qo as expectedJSONString,
+  Ma as expectedList,
+  _a as expectedListOf,
+  qa as expectedListSatisfying,
+  ho as expectedMap,
+  ta as expectedNaN,
+  Ea as expectedNamedFunction,
+  $a as expectedNativeFunction,
+  pa as expectedNonEmptyString,
+  Yr as expectedNumber,
+  ra as expectedNumberInRange,
+  La as expectedObject,
+  oo as expectedOneOf,
+  sa as expectedOrdinal,
+  wo as expectedPhoneNumber,
+  za as expectedPlainObject,
+  Ho as expectedPortNumber,
+  to as expectedPromise,
+  ro as expectedRegExp,
+  ja as expectedScriptedFunction,
+  Go as expectedSerializableObject,
+  Zo as expectedSerializableValue,
+  Po as expectedSet,
+  ba as expectedString,
+  xa as expectedStringMatching,
+  vo as expectedSymbol,
+  Sa as expectedText,
+  ma as expectedTextline,
+  Fo as expectedTypedArray,
+  fo as expectedURL,
+  Ao as expectedUUID,
+  Nt as expectedValue,
+  Ka as expectedValueInheritingFrom,
+  Ba as expectedVanillaObject,
+  Ur as global,
+  $r as quotable,
+  ai as quoted,
+  o as rejectNil,
+  fi as shortHexColor,
+  g as throwError,
+  ri as unescaped,
+  vt as validatedArgument
 };
 //# sourceMappingURL=javascript-interface-library.esm.js.map

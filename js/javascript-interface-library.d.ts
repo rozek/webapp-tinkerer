@@ -1,9 +1,10 @@
 export declare const acceptNil = true;
 
+export declare const allowAbsoluteURL: (Description: string, Argument: any, allowedProtocols?: string[] | undefined) => string | null | undefined;
+
 export declare const allowAnonymousFunction: (Description: string, Argument: any) => Function | null | undefined;
 
-/**** allow[ed]Array ****/
-export declare function allowArray(Description: string, Argument: any): any[] | null | undefined;
+export declare const allowArray: (Description: string, Argument: any) => any[] | null | undefined;
 
 export declare const allowArrayBuffer: (Description: string, Argument: any) => ArrayBuffer | null | undefined;
 
@@ -21,9 +22,11 @@ export declare const allowDate: (Description: string, Argument: any) => Date | n
 
 export declare const allowE164PhoneNumber: (Description: string, Argument: any) => string | null | undefined;
 
+export declare const allowedAbsoluteURL: (Description: string, Argument: any, allowedProtocols?: string[] | undefined) => string | null | undefined;
+
 export declare const allowedAnonymousFunction: (Description: string, Argument: any) => Function | null | undefined;
 
-export declare const allowedArray: typeof allowArray;
+export declare const allowedArray: (Description: string, Argument: any) => any[] | null | undefined;
 
 export declare const allowedArrayBuffer: (Description: string, Argument: any) => ArrayBuffer | null | undefined;
 
@@ -55,11 +58,11 @@ export declare const allowedHostName: (Description: string, Argument: any) => st
 
 export declare const allowedIdentifier: (Description: string, Argument: any) => string | null | undefined;
 
-export declare const allowedInstanceOf: typeof allowInstanceOf;
+export declare const allowedInstanceOf: (Description: string, Argument: any, constructor: Function, Expectation: string) => any;
 
 export declare const allowedInteger: (Description: string, Argument: any) => number | null | undefined;
 
-export declare const allowedIntegerInRange: typeof allowIntegerInRange;
+export declare const allowedIntegerInRange: (Description: string, Argument: any, minValue?: number | undefined, maxValue?: number | undefined) => number | null | undefined;
 
 export declare const allowedIPv4Address: (Description: string, Argument: any) => string | null | undefined;
 
@@ -71,11 +74,11 @@ export declare const allowedISOTimestamp: (Description: string, Argument: any) =
 
 export declare const allowedJSONString: (Description: string, Argument: any) => string | null | undefined;
 
-export declare const allowedList: typeof allowList;
+export declare const allowedList: (Description: string, Argument: any, Expectation?: string | undefined, minLength?: number | undefined, maxLength?: number | undefined) => any[] | null | undefined;
 
-export declare const allowedListOf: typeof allowListOf;
+export declare const allowedListOf: (Description: string, Argument: any, ValueList: any[]) => any[] | null | undefined;
 
-export declare const allowedListSatisfying: typeof allowListSatisfying;
+export declare const allowedListSatisfying: (Description: string, Argument: any, Validator: (Value: any) => boolean, Expectation?: string | undefined, minLength?: number | undefined, maxLength?: number | undefined) => any[] | null | undefined;
 
 export declare const allowedMap: (Description: string, Argument: any) => Map<any, any> | null | undefined;
 
@@ -89,11 +92,11 @@ export declare const allowedNonEmptyString: (Description: string, Argument: any)
 
 export declare const allowedNumber: (Description: string, Argument: any) => number | null | undefined;
 
-export declare const allowedNumberInRange: typeof allowNumberInRange;
+export declare const allowedNumberInRange: (Description: string, Argument: any, minValue?: number | undefined, maxValue?: number | undefined, withMin?: boolean | undefined, withMax?: boolean | undefined) => number | null | undefined;
 
 export declare const allowedObject: (Description: string, Argument: any) => object | null | undefined;
 
-export declare const allowedOneOf: typeof allowOneOf;
+export declare const allowedOneOf: (Description: string, Argument: any, ValueList: any[]) => any;
 
 export declare const allowedOrdinal: (Description: string, Argument: any) => number | null | undefined;
 
@@ -117,7 +120,7 @@ export declare const allowedSet: (Description: string, Argument: any) => Set<any
 
 export declare const allowedString: (Description: string, Argument: any) => string | null | undefined;
 
-export declare const allowedStringMatching: typeof allowStringMatching;
+export declare const allowedStringMatching: (Description: string, Argument: any, Pattern: RegExp) => string | null | undefined;
 
 export declare const allowedSymbol: (Description: string, Argument: any) => symbol | null | undefined;
 
@@ -133,7 +136,7 @@ export declare const allowedUUID: (Description: string, Argument: any) => string
 
 export declare const allowedValue: typeof allowValue;
 
-export declare const allowedValueInheritingFrom: typeof allowValueInheritingFrom;
+export declare const allowedValueInheritingFrom: (Description: string, Argument: any, prototype: any, Expectation: string) => any;
 
 export declare const allowedVanillaObject: (Description: string, Argument: any) => object | null | undefined;
 
@@ -151,13 +154,11 @@ export declare const allowHostName: (Description: string, Argument: any) => stri
 
 export declare const allowIdentifier: (Description: string, Argument: any) => string | null | undefined;
 
-/**** allow[ed]InstanceOf ****/
-export declare function allowInstanceOf(Description: string, Argument: any, constructor: Function, Expectation: string): any | null | undefined;
+export declare const allowInstanceOf: (Description: string, Argument: any, constructor: Function, Expectation: string) => any;
 
 export declare const allowInteger: (Description: string, Argument: any) => number | null | undefined;
 
-/**** allow[ed]IntegerInRange ****/
-export declare function allowIntegerInRange(Description: string, Argument: any, minValue?: number, maxValue?: number): number | null | undefined;
+export declare const allowIntegerInRange: (Description: string, Argument: any, minValue?: number | undefined, maxValue?: number | undefined) => number | null | undefined;
 
 export declare const allowIPv4Address: (Description: string, Argument: any) => string | null | undefined;
 
@@ -169,14 +170,11 @@ export declare const allowISOTimestamp: (Description: string, Argument: any) => 
 
 export declare const allowJSONString: (Description: string, Argument: any) => string | null | undefined;
 
-/**** allow[ed]List ****/
-export declare function allowList(Description: string, Argument: any, Expectation?: string, minLength?: number, maxLength?: number): any[] | null | undefined;
+export declare const allowList: (Description: string, Argument: any, Expectation?: string | undefined, minLength?: number | undefined, maxLength?: number | undefined) => any[] | null | undefined;
 
-/**** allow/expect[ed]ListOf ****/
-export declare function allowListOf(Description: string, Argument: any, ValueList: any[]): any[] | null | undefined;
+export declare const allowListOf: (Description: string, Argument: any, ValueList: any[]) => any[] | null | undefined;
 
-/**** allow[ed]ListSatisfying ****/
-export declare function allowListSatisfying(Description: string, Argument: any, Validator: (Value: any) => boolean, Expectation?: string, minLength?: number, maxLength?: number): any[] | null | undefined;
+export declare const allowListSatisfying: (Description: string, Argument: any, Validator: (Value: any) => boolean, Expectation?: string | undefined, minLength?: number | undefined, maxLength?: number | undefined) => any[] | null | undefined;
 
 export declare const allowMap: (Description: string, Argument: any) => Map<any, any> | null | undefined;
 
@@ -190,13 +188,11 @@ export declare const allowNonEmptyString: (Description: string, Argument: any) =
 
 export declare const allowNumber: (Description: string, Argument: any) => number | null | undefined;
 
-/**** allow[ed]NumberInRange ****/
-export declare function allowNumberInRange(Description: string, Argument: any, minValue?: number, maxValue?: number, withMin?: boolean, withMax?: boolean): number | null | undefined;
+export declare const allowNumberInRange: (Description: string, Argument: any, minValue?: number | undefined, maxValue?: number | undefined, withMin?: boolean | undefined, withMax?: boolean | undefined) => number | null | undefined;
 
 export declare const allowObject: (Description: string, Argument: any) => object | null | undefined;
 
-/**** allow[ed]OneOf ****/
-export declare function allowOneOf(Description: string, Argument: any, ValueList: any[]): any | null | undefined;
+export declare const allowOneOf: (Description: string, Argument: any, ValueList: any[]) => any;
 
 export declare const allowOrdinal: (Description: string, Argument: any) => number | null | undefined;
 
@@ -220,8 +216,7 @@ export declare const allowSet: (Description: string, Argument: any) => Set<any> 
 
 export declare const allowString: (Description: string, Argument: any) => string | null | undefined;
 
-/**** allow[ed]StringMatching ****/
-export declare function allowStringMatching(Description: string, Argument: any, Pattern: RegExp): string | null | undefined;
+export declare const allowStringMatching: (Description: string, Argument: any, Pattern: RegExp) => string | null | undefined;
 
 export declare const allowSymbol: (Description: string, Argument: any) => symbol | null | undefined;
 
@@ -238,8 +233,7 @@ export declare const allowUUID: (Description: string, Argument: any) => string |
 /**** allow[ed]Value ****/
 export declare function allowValue(Description: string, Argument: any, Validator?: Function): any;
 
-/**** allow[ed]ValueInheritingFrom ****/
-export declare function allowValueInheritingFrom(Description: string, Argument: any, prototype: any, Expectation: string): any | null | undefined;
+export declare const allowValueInheritingFrom: (Description: string, Argument: any, prototype: any, Expectation: string) => any;
 
 export declare const allowVanillaObject: (Description: string, Argument: any) => object | null | undefined;
 
@@ -399,6 +393,9 @@ export declare function constrained(Value: number, Minimum?: number, Maximum?: n
 
 export declare function escaped(Text: string): string;
 
+/**** expect[ed]AbsoluteURL ****/
+export declare function expectAbsoluteURL(Description: string, Argument: any, allowedProtocols?: string[]): string;
+
 export declare const expectAnonymousFunction: (Description: string, Argument: any) => Function;
 
 /**** expect[ed]Array ****/
@@ -419,6 +416,8 @@ export declare const expectColor: (Description: string, Argument: any) => string
 export declare const expectDate: (Description: string, Argument: any) => Date;
 
 export declare const expectE164PhoneNumber: (Description: string, Argument: any) => string;
+
+export declare const expectedAbsoluteURL: typeof expectAbsoluteURL;
 
 export declare const expectedAnonymousFunction: (Description: string, Argument: any) => Function;
 
@@ -655,22 +654,22 @@ export declare function HTMLsafe(Argument: string, EOLReplacement?: string): str
 export declare function MarkDownSafe(Argument: string, EOLReplacement?: string): string;
 
 /**** Object_hasOwnProperty ****/
-export declare function Object_hasOwnProperty(Value: Object, PropertyName: string): boolean;
+export declare const Object_hasOwnProperty: (Value: Object, PropertyName: string) => boolean;
 
 /**** Object_isPrototypeOf ****/
-export declare function Object_isPrototypeOf(Value: Object, Candidate: any): boolean;
+export declare const Object_isPrototypeOf: (Value: Object, Candidate: any) => boolean;
 
 /**** Object_propertyIsEnumerable ****/
-export declare function Object_propertyIsEnumerable(Value: Object, PropertyName: string): boolean;
+export declare const Object_propertyIsEnumerable: (Value: Object, PropertyName: string) => boolean;
 
 /**** Object_toLocaleString ****/
 export declare function Object_toLocaleString(Value: Object): string;
 
 /**** Object_toString ****/
-export declare function Object_toString(Value: Object): string;
+export declare const Object_toString: (Value: Object) => string;
 
 /**** Object_valueOf ****/
-export declare function Object_valueOf(Value: Object): any;
+export declare const Object_valueOf: (Value: Object) => any;
 
 /**** ObjectIsEmpty ****/
 export declare function ObjectIsEmpty(Candidate: any): boolean;
@@ -732,6 +731,8 @@ export declare function ValueExists(Value: unknown): boolean;
 
 /**** ValueInheritsFrom ****/
 export declare function ValueInheritsFrom(Value: unknown, Prototype: object): boolean;
+
+export declare function ValueIsAbsoluteURL(Value: unknown, allowedProtocols?: string[]): Value is string;
 
 /**** ValueIsAnonymousFunction ****/
 export declare function ValueIsAnonymousFunction(Value: unknown): Value is Function;
