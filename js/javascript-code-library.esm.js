@@ -5614,7 +5614,9 @@ const Vh = Oo(async () => {
     breaks: !0,
     pedantic: !1
   }), In.use(mr({
-    throwOnError: !1
+    throwOnError: !1,
+    nonStandard: !1
+    // "$...$" needs a blank/punctuation around it
   })), In.use(ea({
     emptyLangClass: "hljs",
     langPrefix: "hljs language-",
@@ -20389,7 +20391,7 @@ ${En(this.parser.parseInline(o.tokens))}
 `;
         }
       }
-    }), n.use(mr({ nonStandard: !0 })), (await n.parse(e)).replace(/^\s+|\s+$/g, "").replace(/\n{3,}/g, `
+    }), n.use(mr({ nonStandard: !1 })), (await n.parse(e)).replace(/^\s+|\s+$/g, "").replace(/\n{3,}/g, `
 
 `);
   } catch (t) {
@@ -20414,7 +20416,7 @@ async function mi(e) {
     })), t.setOptions({
       gfm: !0,
       breaks: !0
-    }), t.use(mr({ nonStandard: !0 })), await t.parse(e);
+    }), t.use(mr({ nonStandard: !1 })), await t.parse(e);
   } catch (t) {
     ce("ConversionError: could not convert the given Markdown into HTML, reason: " + t);
   }

@@ -281,7 +281,7 @@ Behaviors are normally authored through the Behavior Editor (see [above](#buildi
 - [`javascript-interface-library`](https://github.com/rozek/javascript-interface-library) (JIL)
 - [`svelte-coordinate-conversion`](https://github.com/rozek/svelte-coordinate-conversion) / [`svelte-touch-to-mouse`](https://github.com/rozek/svelte-touch-to-mouse)
 - [`nanoid`](https://github.com/ai/nanoid)
-- [`marked`](https://github.com/markedjs/marked) + `marked-katex-extension` + `marked-highlight` + [`highlight.js`](https://highlightjs.org) + [KaTeX](https://katex.org) — for `MarkdownView`
+- [`marked`](https://github.com/markedjs/marked) + `marked-katex-extension` + `marked-highlight` + [`highlight.js`](https://highlightjs.org) + [KaTeX](https://katex.org) — for `MarkdownView` (math must be set off by whitespace/punctuation around `$...$`/`$$...$$`, otherwise it is left as plain text)
 - [`localForage`](https://github.com/localForage/localForage) — local persistence of your Applets
 - [`es-module-shims`](https://github.com/guybedford/es-module-shims) — import maps in older browsers
 

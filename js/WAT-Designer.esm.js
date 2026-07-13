@@ -4286,6 +4286,12 @@ class WAD_MCPConnector {
             writable: true,
             value: undefined
         });
+        Object.defineProperty(this, "_isConfirmed", {
+            enumerable: true,
+            configurable: true,
+            writable: true,
+            value: false
+        }); // 'welcome' received
         /**** _handle - routes an incoming request to its handler ****/
         Object.defineProperty(this, "_HandlerForMethod", {
             enumerable: true,
@@ -4348,12 +4354,17 @@ class WAD_MCPConnector {
         this._Token = Token;
         this._keepToken = keepToken;
     }
-    /**** URL, Token, TokenIsKept, isConnected, lastError ****/
+    /**** URL, Token, TokenIsKept, isConnected, isConnecting, lastError ****/
     get URL() { return this._URL; }
     get Token() { return this._Token; }
     get TokenIsKept() { return this._keepToken; }
     get isConnected() {
-        return (this._Socket != null) && (this._Socket.readyState === WebSocket.OPEN);
+        return this._isConfirmed; // true only once the broker sent 'welcome' -
+    } // being merely OPEN doesn't mean the broker accepted us
+    get isConnecting() {
+        return (((this._Socket != null) && !this._isConfirmed) || // socket opening or
+            (this._ReconnectionTimer != null) // waiting for a retry
+        );
     }
     get lastError() { return this._lastError; }
     /**** configure - applies and persists new settings, then reconnects ****/
@@ -4399,6 +4410,7 @@ class WAD_MCPConnector {
             this._Socket = undefined;
         }
         this._lastError = undefined;
+        this._isConfirmed = false;
         WAT_rerender();
     }
     /**** _openSocket - establishes the WebSocket and wires all handlers ****/
@@ -4427,8 +4439,9 @@ class WAD_MCPConnector {
                 return;
             }
             if (Request.type === 'welcome') { // handshake accepted:
-                this._lastError = undefined; // clear any earlier error
-                WAT_rerender();
+                this._isConfirmed = true; // only now are we really
+                this._lastError = undefined; // connected - clear any
+                WAT_rerender(); // earlier error
                 return;
             }
             if (Request.type === 'error') { // handshake rejected by
@@ -4448,6 +4461,7 @@ class WAD_MCPConnector {
         };
         Socket.onclose = () => {
             this._Socket = undefined;
+            this._isConfirmed = false;
             this._stopVisitWatcher();
             this._ReconnectionTimer = setTimeout(() => {
                 this._ReconnectionTimer = undefined;
@@ -6938,15 +6952,19 @@ function WAD_SettingsDialog() {
     const [BrokerURL, setBrokerURL] = useState(MCPConnector.URL);
     const [AccessToken, setAccessToken] = useState(MCPConnector.Token);
     const [TokenShallBeKept, setTokenShallBeKept] = useState(MCPConnector.TokenIsKept);
-    const doApply = useCallback(() => {
+    const doConnect = useCallback(() => {
         MCPConnector.configure(BrokerURL.trim(), AccessToken.trim(), TokenShallBeKept);
     });
     const doDisconnect = useCallback(() => {
         MCPConnector.disconnect(); // also stops any auto-reconnection loop
     });
-    const ConnectionState = (MCPConnector.isConnected ? 'connected' :
+    const isConnected = MCPConnector.isConnected;
+    const isConnecting = MCPConnector.isConnecting; // opening or awaiting a retry
+    const ButtonIsEnabled = (isConnected ? true : (!isConnecting) && (BrokerURL.trim() !== ''));
+    const ConnectionState = (isConnected ? 'connected' :
         MCPConnector.lastError != null ? `error: ${MCPConnector.lastError}` :
-            MCPConnector.URL === '' ? 'not configured' : 'disconnected');
+            isConnecting ? 'connecting…' :
+                MCPConnector.URL === '' ? 'not configured' : 'disconnected');
     return html `<${WAD_Dialog} Name="SettingsDialog" resizable=${true}
       onClose=${onClose}
     >
@@ -6977,14 +6995,18 @@ function WAD_SettingsDialog() {
        <${WAD_Gap}/>
 
        <${WAD_horizontally} style="gap:4px">
-         <${WAD_Label}>Status: ${ConnectionState}</>
          <${WAD_Gap}/>
          <${WAD_Button} style="width:100px"
-           enabled=${MCPConnector.isConnected}
-           onClick=${doDisconnect}
-         >Disconnect</>
-         <${WAD_Button} style="width:80px" onClick=${doApply}>Apply</>
+           enabled=${ButtonIsEnabled}
+           onClick=${isConnected ? doDisconnect : doConnect}
+         >${isConnected ? 'Disconnect' : 'Connect'}</>
        </>
+
+       <${WAD_horizontalSeparator}/>
+
+       <${WAD_Label} style="
+         display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+       ">${ConnectionState}</>
      </>
     </>`;
 }

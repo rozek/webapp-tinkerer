@@ -11101,7 +11101,7 @@ export async function MarkdownAsText(Markdown) {
             renderer: Renderer,
             gfm: true, breaks: true,
         });
-        //    marked.use(markedKatex({ nonStandard:true }))
+        //    marked.use(markedKatex({ nonStandard:false }))  // "$...$" needs a blank/punctuation around it
         return marked.parse(Markdown);
     }
     catch (Signal) {
@@ -11120,7 +11120,7 @@ export async function MarkdownAsHTML(Markdown) {
         marked.setOptions({
             gfm: true, breaks: true,
         });
-        //    marked.use(markedKatex({ nonStandard:true }))
+        //    marked.use(markedKatex({ nonStandard:false }))  // "$...$" needs a blank/punctuation around it
         return marked.parse(Markdown);
     }
     catch (Signal) {
