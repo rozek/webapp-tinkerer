@@ -3689,6 +3689,12 @@ function doCreateWidget(Behavior) {
             10, DefaultSize.Width, 10, DefaultSize.Height
         ];
     }
+    const DefaultValue = (Behavior === ''
+        ? undefined
+        : DesignerState.Applet.DefaultValueOfBehavior('widget', Behavior));
+    if (DefaultValue != null) { // gives otherwise invisible widgets
+        Serialization.Value = DefaultValue; // (e.g., TitleView) initial content
+    }
     doOperation(() => new WAD_WidgetDeserializationOperation([Serialization], visitedPage, 0));
 }
 /**** doDuplicateSelectedWidgets ****/
@@ -4842,6 +4848,12 @@ class WAD_MCPConnector {
                 Serialization.Offsets = [
                     10, DefaultSize.Width, 10, DefaultSize.Height
                 ];
+            }
+        }
+        if ((Serialization.Value == null) && (Params.behavior != null)) {
+            const DefaultValue = DesignerState.Applet.DefaultValueOfBehavior('widget', Params.behavior);
+            if (DefaultValue != null) { // gives otherwise invisible widgets
+                Serialization.Value = DefaultValue; // (e.g., TitleView) initial content
             }
         }
         this._perform(() => new WAD_WidgetDeserializationOperation([Serialization], Page, InsertionIndex));
