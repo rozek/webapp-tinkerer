@@ -3928,14 +3928,14 @@ const su = /* @__PURE__ */ Z("jcl-component.markdownview", `
     .jcl-component.markdownview > p { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
     .jcl-component.markdownview > p:not(:first-child) { margin-top:7px }
 
-    .jcl-component.markdownview > ul { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+    .jcl-component.markdownview > ul { font-size:14px; font-weight:normal; line-height:1.5; margin:0px; padding-left:20px }
     .jcl-component.markdownview > ul:not(:first-child) { margin-top:7px }
 
-    .jcl-component.markdownview > ol { font-size:14px; font-weight:normal; line-height:1.5; margin:0px }
+    .jcl-component.markdownview > ol { font-size:14px; font-weight:normal; line-height:1.5; margin:0px; padding-left:20px }
     .jcl-component.markdownview > ol:not(:first-child) { margin-top:7px }
 
-    .jcl-component.markdownview > li { margin-left:20px }
-    .jcl-component.markdownview > ul, .jcl-component.markdownview > ol { padding-left:0px }
+    .jcl-component.markdownview ul ul, .jcl-component.markdownview ul ol,
+    .jcl-component.markdownview ol ul, .jcl-component.markdownview ol ol { padding-left:20px }
 
     .jcl-component.markdownview > blockquote {
       margin:7px 0px 0px 10px;
@@ -3943,7 +3943,7 @@ const su = /* @__PURE__ */ Z("jcl-component.markdownview", `
       border:none; border-left:solid 4px lightgray;
     }
 
-    .jcl-component.markdownview > code {
+    .jcl-component.markdownview :not(pre) > code {
       font-family:Menlo,Courier,monospace;
       font-size:13px; font-weight:normal; line-height:1.5; margin:0px;
       padding:2px; background-color:#EEEEEE;
@@ -3952,6 +3952,23 @@ const su = /* @__PURE__ */ Z("jcl-component.markdownview", `
     .jcl-component.markdownview > pre { background-color:#EEEEEE; padding:2px 0px 2px 6px }
     .jcl-component.markdownview > pre:not(:first-child) { margin-top:7px }
     .jcl-component.markdownview > pre > code { padding:0px }
+
+    .jcl-component.markdownview > table {
+      font-size:14px; font-weight:normal; line-height:1.5; margin:0px;
+      border-collapse:collapse;
+    }
+    .jcl-component.markdownview > table:not(:first-child) { margin-top:7px }
+    .jcl-component.markdownview > table th, .jcl-component.markdownview > table td {
+      border:solid 1px lightgray; padding:4px 6px; text-align:left;
+    }
+    .jcl-component.markdownview > table th { background-color:#EEEEEE; font-weight:bold }
+
+    .jcl-component.markdownview > hr {
+      margin:7px 0px 0px 0px; height:0px;
+      border:none; border-top:solid 1px lightgray;
+    }
+
+    .jcl-component.markdownview img { max-width:100%; height:auto }
 
   /**** Syntax Highlighting ****/
 
