@@ -5178,7 +5178,7 @@ function Ct(e) {
         onBlur: $
       }), { SuggestionId: q, SuggestionList: J } = tn(j), P = l ? `jcl-component styled-input ${o} ${tt(y)}` : `jcl-component native-textual-input ${o}`;
       return b`<input type=${n} class="${P} ${u} ${f ? "invalid" : ""}" ref=${I}
-          value=${z} minlength=${m} maxlength=${C}
+          value=${z ?? ""} minlength=${m} maxlength=${C}
           multiple=${h} readOnly=${x} placeholder=${E}
           pattern=${k} spellcheck=${L}
           disabled=${X} list=${q}
@@ -5202,7 +5202,7 @@ function At(e) {
         onBlur: j
       }), { SuggestionId: D, SuggestionList: z } = tn(x), E = i ? `jcl-component styled-input ${o} ${tt(m)}` : `jcl-component native-temporal-input ${o}`;
       return b`<input type=${n} class="${E} ${d}" ref=${y}
-          value=${M} min=${f} max=${g}
+          value=${M ?? ""} min=${f} max=${g}
           step=${s ? h ? 1 : 60 : void 0} pattern=${r}
           readOnly=${p}
           disabled=${$} list=${D}
@@ -5275,7 +5275,7 @@ function Au(e) {
     }), { SuggestionId: M, SuggestionList: $ } = tn(u);
     return b`<input type="number" ref=${m}
         class="jcl-component native-textual-input native-number-input ${t} ${o ? "invalid" : ""}"
-        value=${L} min=${i} max=${l} step=${x}
+        value=${L ?? ""} min=${i} max=${l} step=${x}
         readOnly=${r} placeholder=${j}
         disabled=${y} list=${M}
         onInput=${w} onBlur=${F} ...${e.RestProps}
@@ -5507,7 +5507,7 @@ function Pa(e) {
     return b`<textarea class="jcl-component native-text-input ${t} ${a ? "invalid" : ""}"
         key=${F} ref=${x}
         style="${c == !0 ? "overflow-wrap:break-word; hyphens:auto;" : "white-space:pre;"} resize:${d ?? "none"}; ${n}"
-        value=${k} minlength=${s} maxlength=${l}
+        value=${k ?? ""} minlength=${s} maxlength=${l}
         readOnly=${i} placeholder=${L}
         spellcheck=${u} disabled=${j}
         onInput=${y} onBlur=${w} ...${e.RestProps}
@@ -14595,7 +14595,7 @@ function Fh(e) {
     }), { SuggestionId: $, SuggestionList: I } = tn(u), T = tt(p);
     return b`<input type="number" ref=${C}
         class="jcl-component styled-input styled-number-input ${T} ${t} ${o ? "invalid" : ""}"
-        value=${j} min=${i} max=${l} step=${m}
+        value=${j ?? ""} min=${i} max=${l} step=${m}
         readOnly=${r} placeholder=${y}
         disabled=${w} list=${$}
         aria-invalid=${o ? "true" : void 0}
@@ -14875,7 +14875,7 @@ function Jh(e) {
     return b`<textarea class="jcl-component styled-input styled-text-input ${t} ${a ? "invalid" : ""}"
         key=${F} ref=${x}
         style="${c == !0 ? "overflow-wrap:break-word; hyphens:auto;" : "white-space:pre;"} resize:${d ?? "none"}; ${n}"
-        value=${k} minlength=${s} maxlength=${l}
+        value=${k ?? ""} minlength=${s} maxlength=${l}
         readOnly=${i} placeholder=${L}
         spellcheck=${u} disabled=${j}
         aria-invalid=${a ? "true" : void 0}
