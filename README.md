@@ -224,6 +224,32 @@ reactively(() => {
 
 Anything read inside the callback that's a tracked/reactive value (such as another widget's `Value`) causes the callback to automatically run again on the next change — no manual subscribe/unsubscribe needed.
 
+### Private, reactive & persisted state
+
+Besides `Value` and the other built-in properties, every `me`/`my` offers three general-purpose stores for your own script state — they differ in whether writes are *reactive* (tracked by `reactively(fn)`) and whether they *survive* an Applet save/export/reload:
+
+| store | reactive | persisted |
+|---|---|---|
+| `me.unobserved.*` | no | no |
+| `me.observed.*` | yes | no |
+| `me.memoized.*` | no | yes (per-entry, see below) |
+
+```js
+me.unobserved.Cache = new Map()      // plain private state - never tracked, never saved
+me.observed.Count ??= 0              // shallow-reactive store - tracked, but gone after reload
+me.memoized.Result ??= expensive()   // cached, and saved along with the Applet
+
+reactively(() => {                   // re-runs whenever an *observed* value it read has changed
+  me.Value = me.observed.Count * 2   // (reading/writing "memoized" or "unobserved" does not trigger this)
+})
+```
+
+Use `unobserved` for things that must never be saved and never trigger a re-render (timers, DOM/library handles, mutable caches), `observed` for run-time UI state that should drive rendering but doesn't need to outlive the session, and `memoized` for derived/expensive values you *do* want to keep across reloads without redriving them through the designer-editable `Value` property (this is also how built-in Widgets persist parts of their own configuration internally).
+
+**`memoized` entries must be JSON-serializable.** Concretely, each value may only be `null`/`undefined`, a `boolean`, a finite `number` (no `NaN`/`Infinity`), a `string`, or a plain array/object built recursively from the same — not a `Date`, `Map`, `Set`, class instance, function, or an object containing a circular reference.
+
+Writing a non-serializable value to `me.memoized.X` doesn't throw and works fine for the rest of the session — the check only happens when the Applet is actually serialized (on `applet_save`, `applet_export`, or closing/leaving the Designer). At that point, every entry of `memoized` is tested *individually*: entries that fail are silently dropped from the saved/exported data (with a `console.warn('NotSerializable: cannot serialize entry "…" …')` in the browser console) while every other entry — and the rest of the widget's state — is saved normally. After the next reload/import, the offending key is simply gone from `me.memoized`; nothing throws and no other data is affected. Store a plain, serializable stand-in instead (e.g. `Date.now()`'s epoch-ms `number` rather than a `Date` object) if you need the value to actually survive a reload.
+
 ### Events & lifecycle
 
 `on(name)` / `on(name, fn)` is a single named callback slot per Applet/Page/Widget — not a multi-listener event bus. Calling `on(name, fn)` replaces whatever was registered under `name` before; calling `on(name)` with no second argument returns (and, where the runtime does so itself, invokes) whatever is currently registered.
