@@ -7194,7 +7194,7 @@ collectInternalNames(); // idempotent - may be called multiple times
 function registerIntrinsicBehaviorsIn(Applet) {
     /**** plain_Widget ****/
     const WAT_plainWidget = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 100x100 ****/
+        // @DefaultSize: 100x100
         my.configurableProperties = [
             { Name: 'visiblePattern', Label: 'visible Pattern', Default: true,
                 EditorType: 'checkbox', AccessorsFor: 'memoized' },
@@ -7206,7 +7206,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.plain_Widget', WAT_plainWidget);
     /**** Outline ****/
     const WAT_Outline = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x120 ****/
+        // @DefaultSize: 200x120
         installStylesheet(`
       .WAT.Widget > .WAT.Outline {
         outline:dotted 1px blue;
@@ -7246,7 +7246,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.Outline', WAT_Outline);
     /**** WidgetPane ****/
     const WAT_WidgetPane = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x120 ****/
+        // @DefaultSize: 200x120
         var _a, _b;
         installStylesheet(`
       .WAT.Widget > .WAT.WidgetPane {
@@ -7393,8 +7393,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // JCL, this behavior only contributes widget geometry, file dropping and
     // the WAT property interface
     const WAT_TextView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x80 ****/
-        /**** @DefaultValue "Text" ****/
+        // @DefaultSize: 200x80 @DefaultValue: "Text"
         installStylesheet(`
       .WAT.Widget > .WAT.TextView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7486,8 +7485,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // (JCL_ui.HTMLView renders raw HTML without sanitization - just like this
     //  behavior did before, i.e., the security level remains unchanged)
     const WAT_HTMLView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x120 ****/
-        /**** @DefaultValue "<p>HTML</p>" ****/
+        // @DefaultSize: 200x120 @DefaultValue: "<p>HTML</p>"
         installStylesheet(`
       .WAT.Widget > .WAT.HTMLView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7578,8 +7576,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // first use ("loadMarkdownLibraries"). This behavior only contributes
     // widget geometry, file dropping and the WAT property interface
     const WAT_MarkdownView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x120 ****/
-        /**** @DefaultValue "*Markdown*" ****/
+        // @DefaultSize: 200x120 @DefaultValue: "*Markdown*"
         installStylesheet(`
       .WAT.Widget > .WAT.MarkdownView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7687,7 +7684,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // the WAT property interface (WAT's "ImageScaling" and "ImageAlignment"
     // are mapped onto JCL's "Scaling" and "Alignment" props)
     const WAT_ImageView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 120x120 ****/
+        // @DefaultSize: 120x120
         installStylesheet(`
       .WAT.Widget > .WAT.ImageView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7805,7 +7802,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // interface (WAT's "ImageScaling" and "ImageAlignment" are mapped onto
     // JCL's "Scaling" and "Alignment" props)
     const WAT_SVGView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 120x120 ****/
+        // @DefaultSize: 120x120
         installStylesheet(`
       .WAT.Widget > .WAT.SVGView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7840,7 +7837,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // "SandboxPermissions" and "ReferrerPolicy" are mapped onto JCL's "allow",
     // "allowFullscreen", "Sandbox" and "ReferrerPolicy" props
     const WAT_WebView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 320x240 ****/
+        // @DefaultSize: 320x240
         installStylesheet(`
       .WAT.Widget > .WAT.WebView {
         left:0px; top:0px; width:100%; height:100%;
@@ -7900,7 +7897,7 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // these behaviours deliberately keep WAT's own typography rules: applets
     // must render identically in every WAT instance, regardless of any changes
     // to JCL's own styling. the four scripts only differ in JCL component,
-    // typography, placeholder, editor type, default size/value and are
+    // typography, placeholder, editor type and default size/value and are
     // therefore generated from a single template and registered via
     // "registerIntrinsicBehaviorFromSource" (the generated source text is
     // exactly what users see - and may copy - as the behaviour's
@@ -7909,19 +7906,17 @@ function registerIntrinsicBehaviorsIn(Applet) {
     // nota bene: JCL's Title/Subtitle/Label/Fineprint read "PropSet.class"
     // literally before merging - the "class" prop is therefore lowercase in
     // the template. "FineprintView" keeps "overflow:visible" (fineprints may
-    // be multi-line - JCL's Fineprint would clip them via overflow:hidden),
-    // and "LabelView" additionally forwards clicks to its "click" callback.
+    // be multi-line - JCL's Fineprint would clip them via overflow:hidden).
+    // all four are purely static text displays - none of them forwards clicks
+    // (an earlier "LabelView" click-forwarding capability was removed: it was
+    // never wired up anywhere, not even in WAT's own "WAT Applet Manager"
+    // example, where LabelView is used exclusively as plain field captions).
     // "@DefaultValue" gives each a non-empty starting text - without it, these
     // widgets would render nothing at all (their look comes entirely from
     // their "Value") and be all but invisible right after creation
     function TextViewScriptFor(Descriptor) {
-        const { ViewClass, JCLComponent, DefaultSize, DefaultValue, TopOffset, TypographyRules, Overflow, Placeholder, EditorType, isClickable } = Descriptor;
-        const ClickHandler = (!isClickable ? '' : `
-function _onClick (Event) { my.on('click')(Event) }
-`);
-        const ClickBinding = (!isClickable ? '' : ' onClick=\${_onClick}');
-        return `/**** @DefaultSize ${DefaultSize} ****/
-/**** @DefaultValue ${JSON.stringify(DefaultValue)} ****/
+        const { ViewClass, JCLComponent, DefaultSize, DefaultValue, TopOffset, TypographyRules, Overflow, Placeholder, EditorType } = Descriptor;
+        return `// @DefaultSize: ${DefaultSize} @DefaultValue: ${JSON.stringify(DefaultValue)}
 
 installStylesheet(\`
   .WAT.Widget > .WAT.${ViewClass} {
@@ -7935,10 +7930,10 @@ my.configurableProperties = [
   { Name:'Value', Placeholder:'${Placeholder}',
     EditorType:'${EditorType}', AccessorsFor:'memoized', withCallback:true, },
 ]
-${ClickHandler}
+
 onRender(function () {
   return html\`<\${JCL_ui.${JCLComponent}} class="WAT Content ${ViewClass}"
-    Value=\${my.Value}${ClickBinding}
+    Value=\${my.Value}
   />\`
 })
 `;
@@ -7949,28 +7944,28 @@ onRender(function () {
         DefaultValue: 'Title',
         TopOffset: 0, TypographyRules: 'font-size:22px; font-weight:bold; line-height:32px;',
         Overflow: 'hidden', Placeholder: '(enter title)',
-        EditorType: 'textline-input', isClickable: false
+        EditorType: 'textline-input'
     }), TextViewClosures);
     registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.SubtitleView', TextViewScriptFor({
         ViewClass: 'SubtitleView', JCLComponent: 'Subtitle', DefaultSize: '200x30',
         DefaultValue: 'Subtitle',
         TopOffset: 2, TypographyRules: 'font-size:18px; font-weight:bold; line-height:27px;',
         Overflow: 'hidden', Placeholder: '(enter subtitle)',
-        EditorType: 'textline-input', isClickable: false
+        EditorType: 'textline-input'
     }), TextViewClosures);
     registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.LabelView', TextViewScriptFor({
         ViewClass: 'LabelView', JCLComponent: 'Label', DefaultSize: '120x30',
         DefaultValue: 'Label',
         TopOffset: 4, TypographyRules: 'font-size:14px; font-weight:bold; line-height:21px;',
         Overflow: 'hidden', Placeholder: '(enter label)',
-        EditorType: 'textline-input', isClickable: true
+        EditorType: 'textline-input'
     }), TextViewClosures);
     registerIntrinsicBehaviorFromSource(Applet, 'widget', 'basic_controls.FineprintView', TextViewScriptFor({
         ViewClass: 'FineprintView', JCLComponent: 'Fineprint', DefaultSize: '120x16',
         DefaultValue: 'Fineprint',
         TopOffset: 0, TypographyRules: 'font-size:12px; font-weight:normal; line-height:18px;',
         Overflow: 'visible', Placeholder: '(enter fineprint)',
-        EditorType: 'text-input', isClickable: false
+        EditorType: 'text-input'
     }), TextViewClosures);
     /**** Icon ****/
     // a thin WAT wrapper around the "ui.Icon" component from the
@@ -7978,7 +7973,7 @@ onRender(function () {
     // JCL, this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Icon = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 24x24 ****/
+        // @DefaultSize: 30x30
         installStylesheet(`
       .WAT.Widget > .WAT.Icon {
         left:1px; top:1px; right:1px; bottom:1px;
@@ -8039,7 +8034,7 @@ onRender(function () {
     function SeparatorScriptFor(Orientation) {
         const SeparatorClass = Orientation + 'Separator';
         const DefaultSize = (Orientation === 'horizontal' ? '120x8' : '8x120');
-        return `/**** @DefaultSize ${DefaultSize} ****/
+        return `// @DefaultSize: ${DefaultSize}
 
 installStylesheet(\`
   .WAT.Widget > .WAT.${SeparatorClass} {
@@ -8064,7 +8059,7 @@ onRender(function () {
     const WAT_ArrowHeadPositions = ['none', 'start', 'end', 'both'];
     /**** StraightArrow ****/
     const WAT_StraightArrow = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 100x20 ****/
+        // @DefaultSize: 100x20
         installStylesheet(`
       .WAT.Widget > .WAT.StraightArrow {
         overflow:visible;
@@ -8164,7 +8159,7 @@ onRender(function () {
     registerIntrinsicBehavior(Applet, 'widget', 'basic_controls.StraightArrow', WAT_StraightArrow);
     /**** CurvedArrow ****/
     const WAT_CurvedArrow = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 100x100 ****/
+        // @DefaultSize: 100x100
         installStylesheet(`
       .WAT.Widget > .WAT.CurvedArrow {
         overflow:visible;
@@ -8244,7 +8239,7 @@ onRender(function () {
     // a small, single-line credit line reading "made with WebApp Tinkerer",
     // where "WebApp Tinkerer" links to the WAT GitHub repository
     const WAT_madeWithWAT = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 120x20 ****/
+        // @DefaultSize: 120x20
         installStylesheet(`
       .WAT.Widget > .WAT.madeWithWAT {
         left:0px; top:0px; width:100%; height:100%;
@@ -8270,7 +8265,7 @@ onRender(function () {
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Button = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 80x30 ****/
+        // @DefaultSize: 80x30
         installStylesheet(`
       .WAT.Widget > .WAT.Button {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8309,7 +8304,7 @@ onRender(function () {
     // "activeScript")
     function ToggleScriptFor(Descriptor) {
         const { ControlClass, LeadingRemark, TrailingRemark } = Descriptor;
-        return `/**** @DefaultSize 20x30 ****/
+        return `// @DefaultSize: 20x30
 
 installStylesheet(\`
   .WAT.Widget > .WAT.${ControlClass} {
@@ -8363,7 +8358,7 @@ onRender(function () {${LeadingRemark}
     // this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Gauge = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 120x30 ****/
+        // @DefaultSize: 120x30
         installStylesheet(`
       .WAT.Widget > .WAT.Gauge {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8405,7 +8400,7 @@ onRender(function () {${LeadingRemark}
     // this behavior only contributes widget geometry, the WAT progress color
     // and the WAT property interface
     const WAT_Progressbar = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 120x30 ****/
+        // @DefaultSize: 120x30
         installStylesheet(`
       .WAT.Widget > .WAT.Progressbar {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8450,7 +8445,7 @@ onRender(function () {${LeadingRemark}
     // JCL, this behavior only contributes widget geometry and the WAT property
     // interface
     const WAT_Slider = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 160x30 ****/
+        // @DefaultSize: 160x30
         installStylesheet(`
       .WAT.Widget > .WAT.Slider {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8515,7 +8510,7 @@ onRender(function () {${LeadingRemark}
     this.on('blur')(Event)
   }
 `);
-        return `/**** @DefaultSize ${DefaultSize} ****/
+        return `// @DefaultSize: ${DefaultSize}
 
 installStylesheet(\`
   .WAT.Widget > .WAT.${ControlClass} {
@@ -8648,8 +8643,7 @@ ${BlurHandler}
     registerIntrinsicBehaviorFromSource(Applet, 'widget', 'native_controls.PhoneNumberInput', TextualInputScriptFor({
         ControlClass: 'PhoneNumberInput', ValueEditorType: 'phone-number-input',
         SpellCheckAttribute: 'spellcheck',
-        ValueRemark: `
-  // *C* NOTE: "ValueIsPhoneNumber" is strict now - previously persisted free-form values will read as undefined`,
+        ValueRemark: '',
         RendererRemark: '                  // "spellcheck" reaches the <input> via JCL "RestProps"'
     }), NativeInputClosures);
     /**** EMailAddressInput ****/
@@ -8688,7 +8682,7 @@ ${BlurHandler}
         const SecondsBinding = (!withSeconds ? '' : 'withSeconds, ');
         const SecondsAttribute = (!withSeconds ? '' : 'withSeconds=${withSeconds} ');
         const MigrationSection = (MigrationActions == null ? '' : `
-{ // *C* migrate pre-anchor datetime-local values
+{
   const memoized = me.memoized
   const Value    = memoized?.Value
   if (ValueIsString(Value) && /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}/.test(Value)) {
@@ -8768,7 +8762,7 @@ ${MigrationActions}
     }), { JCL_native, WAT_MonthRegExp, ValueIsString });
     /**** FileInput ****/
     const WAT_FileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x30 ****/
+        // @DefaultSize: 200x30
         installStylesheet(`
       .WAT.Widget > .WAT.FileInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -8863,7 +8857,7 @@ ${MigrationActions}
     // this behavior only contributes widget geometry, file type filtering and
     // the WAT property interface
     const WAT_PseudoFileInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 30x30 ****/
+        // @DefaultSize: 30x30
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoFileInput > div {
         user-select:none;
@@ -8946,7 +8940,7 @@ ${MigrationActions}
     // file slicing now come from JCL, this behavior only contributes widget
     // geometry, the WAT property interface and the WAT callbacks
     const WAT_FileDropArea = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x120 ****/
+        // @DefaultSize: 200x120
         installStylesheet(`
       .WAT.Widget > .WAT.FileDropArea {
         left:0px; top:0px; width:100%; height:100%;
@@ -9072,7 +9066,7 @@ Object_assign(me,{
     // entry without any value of its own, replacing WAT's former
     // "<option hidden selected>" logic)
     const WAT_DropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x30 ****/
+        // @DefaultSize: 200x30
         installStylesheet(`
       .WAT.Widget > .WAT.DropDown {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9111,7 +9105,7 @@ Object_assign(me,{
     // "javascript-code-library" (JCL) - JCL now also provides WAT's former
     // "<option hidden selected>" logic for missing or unmatched "Value"s
     const WAT_PseudoDropDown = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 30x30 ****/
+        // @DefaultSize: 30x30
         installStylesheet(`
       .WAT.Widget > .WAT.PseudoDropDown {
         left:0px; top:0px; width:100%; height:100%;
@@ -9170,7 +9164,7 @@ Object_assign(me,{
     // only contributes widget geometry, the WAT property interface and the
     // WAT-specific file dropping support
     const WAT_TextInput = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x120 ****/
+        // @DefaultSize: 200x120
         installStylesheet(`
       .WAT.Widget > .WAT.TextInput {
         left:1px; top:1px; right:1px; bottom:1px; width:auto; height:auto;
@@ -9311,7 +9305,7 @@ Object_assign(me,{
     // n.b.: since JCL list items must be unique plain objects, all list items
     // are internally wrapped in { Value } boxes - scripts never see these boxes
     const WAT_FlatListView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x240 ****/
+        // @DefaultSize: 200x240
         installStylesheet(`
       .WAT.Widget > .WAT.FlatListView {
         left:0px; top:0px; width:100%; height:100%;
@@ -9530,7 +9524,7 @@ Object_assign(me,{
     // volatile (in contrast to "me.Value") - list views usually show projections
     // of script-managed state and should be filled in an "onReady" callback
     const WAT_NestedListView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 200x240 ****/
+        // @DefaultSize: 200x240
         installStylesheet(`
       .WAT.Widget > .WAT.NestedListView {
         left:0px; top:0px; width:100%; height:100%;
@@ -9790,7 +9784,7 @@ Object_assign(me,{
     registerIntrinsicBehavior(Applet, 'widget', 'other_controls.NestedListView', WAT_NestedListView);
     /**** TextlineTab ****/
     const WAT_TextlineTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 100x30 ****/
+        // @DefaultSize: 100x30
         installStylesheet(`
       .WAT.Widget > .WAT.TextlineTab {
         font-weight:bold; color:black;
@@ -9831,7 +9825,7 @@ Object_assign(me,{
     Applet, 'widget', 'traditional_controls.TextlineTab', WAT_TextlineTab);
     /**** IconTab ****/
     const WAT_IconTab = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 30x30 ****/
+        // @DefaultSize: 30x30
         installStylesheet(`
       .WAT.Widget > .WAT.IconTab        { border:solid 2px transparent; border-radius:0px }
       .WAT.Widget > .WAT.active.IconTab { border-bottom:solid 2px black }
@@ -9904,8 +9898,7 @@ Object_assign(me,{
     // import map of the hosting page)
     const WAT_QRCodeECCLevels = ['L', 'M', 'Q', 'H'];
     const WAT_QRCodeView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 120x120 ****/
-        /**** @DefaultValue "https://example.com" ****/
+        // @DefaultSize: 120x120 @DefaultValue: "https://example.com"
         const legacyQRCodeView = JCL_legacy.QRCodeView;
         installStylesheet(`
       .WAT.Widget > .WAT.QRCodeView {
@@ -9966,7 +9959,7 @@ Object_assign(me,{
     // entries (with "Renderer" functions) still render but are skipped upon
     // serialization
     const WAT_ChatView = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 240x320 ****/
+        // @DefaultSize: 240x320
         installStylesheet(`
       .WAT.Widget > .WAT.ChatView {
         left:0px; top:0px; width:100%; height:100%;
@@ -10071,7 +10064,7 @@ Object_assign(me,{
         { Id: 'done', Title: 'Done' },
     ]; // sensible defaults for new widgets
     const WAT_KanbanBoard = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 480x320 ****/
+        // @DefaultSize: 480x320
         const ValueIsObjectList = (Value) => (ValueIsListSatisfying(Value, ValueIsPlainObject));
         installStylesheet(`
       .WAT.Widget > .WAT.KanbanBoard {
@@ -10232,7 +10225,7 @@ Object_assign(me,{
         'python', 'xml', 'java', 'yaml'
     ];
     const WAT_CodeEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 320x240 ****/
+        // @DefaultSize: 320x240
         installStylesheet(`
       .WAT.Widget > .WAT.CodeEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10305,7 +10298,7 @@ Object_assign(me,{
     //   me.EditorHandle     // toggleBold/setLink/insertImage/... (once mounted)
     // e.g. in order to implement a custom toolbar with other WAT widgets
     const WAT_RichTextEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 320x240 ****/
+        // @DefaultSize: 320x240
         installStylesheet(`
       .WAT.Widget > .WAT.RichTextEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10370,7 +10363,7 @@ Object_assign(me,{
     //   me.on('cell-change',(x,y,newValue) => {...})
     //   me.EditorHandle          // getCell/setCell/getData/... (once mounted)
     const WAT_Spreadsheet = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 400x240 ****/
+        // @DefaultSize: 400x240
         const ValueIsRowList = (Value) => (ValueIsListSatisfying(Value, ValueIsList));
         installStylesheet(`
       .WAT.Widget > .WAT.Spreadsheet {
@@ -10493,7 +10486,7 @@ Object_assign(me,{
         'rect', 'ellipse', 'line', 'polyline', 'bezier', 'freehand', 'text'
     ];
     const WAT_DrawingEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 400x300 ****/
+        // @DefaultSize: 400x300
         installStylesheet(`
       .WAT.Widget > .WAT.DrawingEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10618,7 +10611,7 @@ Object_assign(me,{
         'text', 'fill', 'eyeDropper', 'pan', 'select'
     ];
     const WAT_BitmapEditor = async (me, my, html, reactively, on, onReady, onRender, onMount, onUpdate, onUnmount, onValueChange, installStylesheet, BehaviorIsNew) => {
-        /**** @DefaultSize 400x300 ****/
+        // @DefaultSize: 400x300
         installStylesheet(`
       .WAT.Widget > .WAT.BitmapEditor {
         left:0px; top:0px; width:100%; height:100%;
@@ -10937,7 +10930,7 @@ Object_assign(me,{
                 '    style="position:absolute; left:0px; top:0px; width:100%; height:100%;"\n' +
                 '  >\${NoteView}</>\`'
             : '  return NoteView');
-        return `/**** @DefaultSize 160x120 ****/
+        return `// @DefaultSize: 160x120
 
 installStylesheet(\`
   .WAT.Widget ${FrameCombinator}.WAT.${NoteClass} {

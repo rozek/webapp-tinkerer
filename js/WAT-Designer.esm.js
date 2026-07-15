@@ -581,12 +581,12 @@ appendStyle(`
 
 /**** Selection Markers ****/
 
-  .WAD.Cover[selected] {
+  .WAD.Cover.selected {
     outline:dotted 2px orangered;
     cursor:grab;
   }
 
-  .WAD.Cover.dragging[selected] {
+  .WAD.Cover.dragging.selected {
     cursor:grabbing;
   }
 
@@ -3693,7 +3693,8 @@ function doCreateWidget(Behavior) {
         ? undefined
         : DesignerState.Applet.DefaultValueOfBehavior('widget', Behavior));
     if (DefaultValue != null) { // gives otherwise invisible widgets
-        Serialization.Value = DefaultValue; // (e.g., TitleView) initial content
+        Serialization.memoized = Object.assign(Object.assign({}, Serialization.memoized), { Value: DefaultValue // "Value" is backed by
+         }); // "memoized", not a plain property
     }
     doOperation(() => new WAD_WidgetDeserializationOperation([Serialization], visitedPage, 0));
 }
@@ -4837,7 +4838,7 @@ class WAD_MCPConnector {
         return null;
     }
     _WidgetAdd(Params) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d;
         const Page = this._PageFor(Params.page);
         const InsertionIndex = (_a = Params.index) !== null && _a !== void 0 ? _a : Page.WidgetCount;
         const Serialization = Object.assign(Object.assign({}, ((_b = Params.props) !== null && _b !== void 0 ? _b : {})), { Behavior: Params.behavior });
@@ -4850,10 +4851,11 @@ class WAD_MCPConnector {
                 ];
             }
         }
-        if ((Serialization.Value == null) && (Params.behavior != null)) {
+        if ((((_c = Serialization.memoized) === null || _c === void 0 ? void 0 : _c.Value) == null) && (Params.behavior != null)) {
             const DefaultValue = DesignerState.Applet.DefaultValueOfBehavior('widget', Params.behavior);
             if (DefaultValue != null) { // gives otherwise invisible widgets
-                Serialization.Value = DefaultValue; // (e.g., TitleView) initial content
+                Serialization.memoized = Object.assign(Object.assign({}, Serialization.memoized), { Value: DefaultValue // "Value" is backed
+                 }); // by "memoized", not a flat prop
             }
         }
         this._perform(() => new WAD_WidgetDeserializationOperation([Serialization], Page, InsertionIndex));
@@ -4862,7 +4864,7 @@ class WAD_MCPConnector {
             const { x, y, width, height } = Params.geometry;
             this._perform(() => new WAD_WidgetShapeOperation([newWidget], [{ x, y, Width: width, Height: height }]));
         }
-        return { index: newWidget.Index, name: (_c = newWidget.Name) !== null && _c !== void 0 ? _c : null };
+        return { index: newWidget.Index, name: (_d = newWidget.Name) !== null && _d !== void 0 ? _d : null };
     }
     _WidgetDuplicate(Params) {
         var _a, _b;
